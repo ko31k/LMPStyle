@@ -610,58 +610,75 @@
         });
     
         // Общая функция получения рейтингов по ID
-        function fetchRatings(filmId, localCurrentCard) {
-            var xmlUrl = 'https://rating.kinopoisk.ru/' + filmId + '.xml';
-            
-            fetchWithProxy(xmlUrl, localCurrentCard, function(error, xmlText) {
-                if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Try to get KP ratings from XML");
-                if (!error && xmlText) {
-                    try {
-                        var parser = new DOMParser();
-                        var xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                        var kpRatingNode = xmlDoc.getElementsByTagName("kp_rating")[0];
-                        var imdbRatingNode = xmlDoc.getElementsByTagName("imdb_rating")[0];
-                        
-                        var kpRating = kpRatingNode ? parseFloat(kpRatingNode.textContent) : null;
-                        var imdbRating = imdbRatingNode ? parseFloat(imdbRatingNode.textContent) : null;
-                        
-                        var hasValidKp = !isNaN(kpRating) && kpRating > 0;
-                        var hasValidImdb = !isNaN(imdbRating) && imdbRating > 0;
-                        
-                        if (hasValidKp || hasValidImdb) {
-                            if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Got KP ratings from XML");
-                            return callback({
-                                kinopoisk: hasValidKp ? kpRating : null,
-                                imdb: hasValidImdb ? imdbRating : null
-                            });
-                        }
-                    } catch (e) {
-                        if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", XML parse error, fallback to API");
-                    }
-                }
+function fetchRatings(filmId, localCurrentCard) {
+    var xmlUrl = 'https://rating.kinopoisk.ru/' + filmId + '.xml';
+    
+    fetchWithProxy(xmlUrl, localCurrentCard, function(error, xmlText) {
+        if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Try to get KP ratings from XML");
+        if (!error && xmlText) {
+            try {
+                var parser = new DOMParser();
+                var xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                var kpRatingNode = xmlDoc.getElementsByTagName("kp_rating")[0];
+                var imdbRatingNode = xmlDoc.getElementsByTagName("imdb_rating")[0];
                 
-                // Fallback к API
-                if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Try to get KP ratings from API");
-                fetch('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + filmId, {
-                    headers: { 'X-API-KEY': apiKey }
-                })
-                    .then(function(response) {
-                        if (!response.ok) throw new Error('API error');
-                        return response.json();
-                    })
-                    .then(function(data) {
-                        if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Got KP ratings from API");
-                        callback({
-                            kinopoisk: data.ratingKinopoisk || null,
-                            imdb: data.ratingImdb || null
-                        });
-                    })
-                    .catch(function() {
-                        callback(null);
-                    });
-            });
+                var kpRating = kpRatingNode ? parseFloat(kpRatingNode.textContent) : null;
+                var imdbRating = imdbRatingNode ? parseFloat(imdbRatingNode.textContent) : null;
+                
+                var hasValidKp = !isNaN(kpRating) && kpRating > 0;
+                var hasValidImdb = !isNaN(imdbRating) && imdbRating > 0;
+                
+                if (hasValidKp || hasValidImdb) {
+                    if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Got KP ratings from XML");
+                    
+                    var ratingsData = {
+                        kinopoisk: hasValidKp ? kpRating : null,
+                        imdb: hasValidImdb ? imdbRating : null
+                    };
+
+                    // --- Додаємо бейдж якості ---
+                    createQualityTag(localCurrentCard, localCurrentCard.data);
+
+                    // --- Рендеримо всі рейтинги ---
+                    appendRatings(localCurrentCard, ratingsData);
+
+                    return callback(ratingsData);
+                }
+            } catch (e) {
+                if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", XML parse error, fallback to API");
+            }
         }
-    }
+        
+        // Fallback к API
+        if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Try to get KP ratings from API");
+        fetch('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + filmId, {
+            headers: { 'X-API-KEY': apiKey }
+        })
+            .then(function(response) {
+                if (!response.ok) throw new Error('API error');
+                return response.json();
+            })
+            .then(function(data) {
+                if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Got KP ratings from API");
+
+                var ratingsData = {
+                    kinopoisk: data.ratingKinopoisk || null,
+                    imdb: data.ratingImdb || null
+                };
+
+                // --- Додаємо бейдж якості ---
+                createQualityTag(localCurrentCard, localCurrentCard.data);
+
+                // --- Рендеримо всі рейтинги ---
+                appendRatings(localCurrentCard, ratingsData);
+
+                callback(ratingsData);
+            })
+            .catch(function() {
+                callback(null);
+            });
+    });
+}
 //-------------------------------------------------end---get---kinopoisk-----------------------------------
     function addLoadingAnimation(localCurrentCard, render) {
         //var render = Lampa.Activity.active().activity.render();
@@ -2219,4 +2236,6 @@
     }
 
     if (!window.maxsmRatingsPlugin) startPlugin();
+
 })();
+

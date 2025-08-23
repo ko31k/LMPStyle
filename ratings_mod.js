@@ -813,9 +813,7 @@
                     var bestTorrent = null;
                     var findStopWords = false;
                     var searchYearNum = parseInt(searchYear, 10);
-                        
-                    // Закомментированная функция извлечения качества из названия (ES5) - ОСТАВЛЯЕМ ДЛЯ БУДУЩЕГО
-                    /*
+                      
                     function extractQuality(title) {
                         if (!title) return 0;
                         var lower = title.toLowerCase();
@@ -826,8 +824,6 @@
                     }
                     */
                     
-                    // Закомментированная функция извлечения года из названия - ОСТАВЛЯЕМ ДЛЯ БУДУЩЕГО
-                    /*
                     function extractYear(title) {
                         if (!title) return 0;
                         
@@ -2262,3 +2258,4 @@
 
     if (!window.maxsmRatingsPlugin) startPlugin();
 })();
+

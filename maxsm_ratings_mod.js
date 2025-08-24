@@ -2343,7 +2343,7 @@
             if (e.type == 'complite') {
                 var render = e.object.activity.render();
                 globalCurrentCard = e.data.movie.id;
-                fetchAdditionalRatings(e.data.movie, render);
+                fetchAdditionalRatings(e.data.movie);
             }
         });
     }
@@ -2351,3 +2351,4 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+

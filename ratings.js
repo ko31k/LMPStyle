@@ -474,7 +474,7 @@
     var JACRED_PROTOCOL = 'https://'; // Протокол JacRed
     var JACRED_URL = Lampa.Storage.get('jacred.xyz'); // Адрес JacRed для получения информации о карточках без протокола (jacred.xyz)
     var JACRED_API_KEY = Lampa.Storage.get('jackett_key'); // api ключ JacRed
-    // var JACRED_URL = 'parser.lampa.ruzha.ru';
+    // var JACRED_URL = 'jacred.xyz';
     // var JACRED_API_KEY = '1';
     var PROXY_LIST = [
 		'https://proxy.scalar.com/?scalar_url=',	
@@ -2414,6 +2414,7 @@
         startPlugin();
 
 })();
+
 
 
 

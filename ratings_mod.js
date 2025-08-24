@@ -474,6 +474,27 @@
     var JACRED_PROTOCOL = 'https://'; // Протокол JacRed
     var JACRED_URL = Lampa.Storage.get('jackett_url'); // Адрес JacRed для получения информации о карточках без протокола (jacred.xyz)
     var JACRED_API_KEY = Lampa.Storage.get('jackett_key'); // api ключ JacRed
+	function getJacredQuality(id, callback) {
+        var url = JACRED_PROTOCOL + JACRED_URL + '/api/search/' + JACRED_API_KEY + '?id=' + id;
+        Lampa.Utils.request({
+            url: url,
+            cache: false,
+            dataType: 'json',
+            timeout: 5000,
+            async: true,
+            success: function (json) {
+                if (json && json.results && json.results.quality) {
+                    var quality = json.results.quality;
+                    callback(quality);
+                } else {
+                    callback(null);
+                }
+            },
+            error: function () {
+                callback(null);
+            }
+        });
+    }
     // var JACRED_URL = 'parser.lampa.ruzha.ru';
     // var JACRED_API_KEY = '1';
     var PROXY_LIST = [
@@ -2412,3 +2433,4 @@
         startPlugin();
 
 })();
+

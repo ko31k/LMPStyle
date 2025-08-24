@@ -77,46 +77,7 @@
 
         // Додавання кнопки очищення кешу
         // Оригінальний обробник для TV (повертаємо стару логіку)
-        $('#' + clearBtnId).on('hover:enter hover:click hover:touch', function() {
-            try {
-                $(this).addClass('loading');
-                
-                if (Lampa && Lampa.Cache && typeof Lampa.Cache.clear === 'function') {
-                    Lampa.Cache.clear();
-                    setTimeout(() => {
-                        alert('🗑 Кеш Lampa очищено');
-                        $(this).removeClass('loading');
-                        setTimeout(() => location.reload(), 300);
-                    }, 800);
-                } else {
-                    setTimeout(() => {
-                        let removed = 0;
-                        const keysToRemove = [];
-                        for (let i = 0; i < localStorage.length; i++) {
-                            const key = localStorage.key(i);
-                            if (key.startsWith('card_') || key.startsWith('full_card_') || 
-                                key.startsWith('lite_card_') || key.startsWith('viewed_card_') || 
-                                key.startsWith('viewed_continue_') || key.startsWith('parser_') || 
-                                key.startsWith('cub_') || key.startsWith('start_time_') || 
-                                key.startsWith('cache_')) {
-                                keysToRemove.push(key);
-                            }
-                        }
-                        keysToRemove.forEach(key => {
-                            localStorage.removeItem(key);
-                            removed++;
-                        });
-                        alert(`🗑 Локальний кеш очищено: ${removed} ключів`);
-                        $(this).removeClass('loading');
-                        setTimeout(() => location.reload(), 300);
-                    }, 800);
-                }
-            } catch (e) {
-                console.error('Помилка очищення кешу:', e);
-                $('#' + clearBtnId).removeClass('loading');
-            }
-        });
-
+    
         // Оновлення кнопок
         function updateButtons() {
             $('.full-start__button.view--torrent svg').replaceWith(`

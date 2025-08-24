@@ -2219,5 +2219,5 @@
     }
 
     if (!window.maxsmRatingsPlugin) startPlugin();
-
 })();
+

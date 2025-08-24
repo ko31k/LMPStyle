@@ -1017,7 +1017,7 @@
         }
     }
 	
-    // ------------------------------------------------------------JacRed------------------------------------------------------------------------------   
+ // ------------------------------------------------------------JacRed------------------------------------------------------------------------------
     function getBestReleaseFromJacred(normalizedCard, localCurrentCard, callback) {
         if (Q_LOGGING)
             console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Optimized search");
@@ -1058,7 +1058,7 @@
             }
             return false;
         }
-		
+
         // Извлечение года
         var year = '';
         var dateStr = normalizedCard.release_date || '';
@@ -1094,111 +1094,123 @@
         }
         if (Q_LOGGING)
             console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Unified Request URL: " + apiUrl);
-        new Lampa.Reguest().silent(apiUrl, function (response) {
-            if (!response) {
-                if (Q_LOGGING)
-                    console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Request failed");
-                callback(null);
-                return;
-            }
-            try {
-                // Парсим ответ и извлекаем Results
-                var data = typeof response === 'string' ? JSON.parse(response) : response;
-                var torrents = data.Results || [];
-                if (!Array.isArray(torrents)) {
-                    torrents = [];
-                }
-                if (torrents.length === 0) {
+        Lampa.Utils.request({
+            url: apiUrl,
+            cache: false,
+            dataType: 'json',
+            timeout: 5000,
+            async: true,
+            success: function (response) {
+                if (!response) {
                     if (Q_LOGGING)
-                        console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Empty response");
+                        console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Request failed");
                     callback(null);
                     return;
                 }
-                var bestQuality = -1;
-                var bestTorrent = null;
-                var findStopWords = false;
-                var searchYearNum = parseInt(year, 10);
-                var prevYear = searchYearNum - 1;
-                for (var i = 0; i < torrents.length; i++) {
-                    var t = torrents[i];
-                    var info = t.Info || {};
-                    var usedQuality = info.quality;
-                    var usedYear = info.relased;
-                    var titleForCheck = t.Title || '';
-                    // Пропускаем торренты без информации о качестве
-                    if (typeof usedQuality !== 'number' || usedQuality === 0) {
-                        continue;
+                try {
+                    // Парсим ответ и извлекаем Results
+                    var data = typeof response === 'string' ? JSON.parse(response) : response;
+                    var torrents = data.Results || [];
+                    if (!Array.isArray(torrents)) {
+                        torrents = [];
                     }
-                    // Проверяем валидность года
-                    var yearValid = false;
-                    var parsedYear = 0;
-                    if (usedYear && !isNaN(usedYear)) {
-                        parsedYear = parseInt(usedYear, 10);
-                        if (parsedYear > 1900) {
-                            yearValid = true;
-                        }
-                    }
-                    if (!yearValid) {
-                        continue;
-                    }
-                    // Проверяем соответствие года (текущий или предыдущий)
-                    if (parsedYear !== searchYearNum && parsedYear !== prevYear) {
-                        continue;
-                    }
-                    // Проверяем на стоп-слова
-                    if (isScreenCopy(titleForCheck)) {
-                        findStopWords = true;
-                        continue;
-                    }
-                    // Проверяем максимальное качество
-                    if (usedQuality === MAX_QUALITY) {
+                    if (torrents.length === 0) {
                         if (Q_LOGGING)
-                            console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Found MAX quality: " + usedQuality);
-                        callback({
-                            quality: translateQuality(usedQuality),
-                            title: titleForCheck
-                        });
+                            console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Empty response");
+                        callback(null);
                         return;
                     }
-                    // Обновляем лучший торрент
-                    if (usedQuality > bestQuality) {
-                        bestQuality = usedQuality;
-                        bestTorrent = {
-                            title: titleForCheck,
-                            quality: usedQuality,
-                            year: parsedYear
-                        };
+                    var bestQuality = -1;
+                    var bestTorrent = null;
+                    var findStopWords = false;
+                    var searchYearNum = parseInt(year, 10);
+                    var prevYear = searchYearNum - 1;
+                    for (var i = 0; i < torrents.length; i++) {
+                        var t = torrents[i];
+                        var info = t.Info || {};
+                        var usedQuality = info.quality;
+                        var usedYear = info.relased;
+                        var titleForCheck = t.Title || '';
+                        // Пропускаем торренты без информации о качестве
+                        if (typeof usedQuality !== 'number' || usedQuality === 0) {
+                            continue;
+                        }
+                        // Проверяем валидность года
+                        var yearValid = false;
+                        var parsedYear = 0;
+                        if (usedYear && !isNaN(usedYear)) {
+                            parsedYear = parseInt(usedYear, 10);
+                            if (parsedYear > 1900) {
+                                yearValid = true;
+                            }
+                        }
+                        if (!yearValid) {
+                            continue;
+                        }
+                        // Проверяем соответствие года (текущий или предыдущий)
+                        if (parsedYear !== searchYearNum && parsedYear !== prevYear) {
+                            continue;
+                        }
+                        // Проверяем на стоп-слова
+                        if (isScreenCopy(titleForCheck)) {
+                            findStopWords = true;
+                            continue;
+                        }
+                        // Проверяем максимальное качество
+                        if (usedQuality === MAX_QUALITY) {
+                            if (Q_LOGGING)
+                                console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Found MAX quality: " + usedQuality);
+                            callback({
+                                quality: translateQuality(usedQuality),
+                                title: titleForCheck
+                            });
+                            return;
+                        }
+                        // Обновляем лучший торрент
+                        if (usedQuality > bestQuality) {
+                            bestQuality = usedQuality;
+                            bestTorrent = {
+                                title: titleForCheck,
+                                quality: usedQuality,
+                                year: parsedYear
+                            };
+                        }
+                    }
+                    if (bestTorrent) {
+                        var translatedQuality = translateQuality(bestTorrent.quality);
+                        if (Q_LOGGING)
+                            console.log("MAXSM-RATINGS", "card: " + localCurrentCard +
+                                ", quality: JacRed: Found torrent: " + bestTorrent.title +
+                                " quality: " + translatedQuality + " (" + bestTorrent.quality + "p)" +
+                                " year: " + bestTorrent.year);
+                        callback({
+                            quality: translatedQuality,
+                            title: bestTorrent.title
+                        });
+                    }
+                    else if (findStopWords) {
+                        if (Q_LOGGING)
+                            console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Screen copy detected");
+                        callback({
+                            quality: translateQuality('TS'),
+                            title: "NOT SAVED"
+                        });
+                    }
+                    else {
+                        if (Q_LOGGING)
+                            console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: No suitable torrents found");
+                        callback(null);
                     }
                 }
-                if (bestTorrent) {
-                    var translatedQuality = translateQuality(bestTorrent.quality);
+                catch (e) {
                     if (Q_LOGGING)
-                        console.log("MAXSM-RATINGS", "card: " + localCurrentCard +
-                            ", quality: JacRed: Found torrent: " + bestTorrent.title +
-                            " quality: " + translatedQuality + " (" + bestTorrent.quality + "p)" +
-                            " year: " + bestTorrent.year);
-                    callback({
-                        quality: translatedQuality,
-                        title: bestTorrent.title
-                    });
-                }
-                else if (findStopWords) {
-                    if (Q_LOGGING)
-                        console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Screen copy detected");
-                    callback({
-                        quality: translateQuality('TS'),
-                        title: "NOT SAVED"
-                    });
-                }
-                else {
-                    if (Q_LOGGING)
-                        console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: No suitable torrents found");
+                        console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Processing error: " + e.message);
                     callback(null);
                 }
-            }
-            catch (e) {
+            },
+            error: function () {
                 if (Q_LOGGING)
-                    console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Processing error: " + e.message);
+                    console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Request failed with error.");
                 callback(null);
             }
         });

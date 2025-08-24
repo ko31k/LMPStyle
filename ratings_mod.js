@@ -777,11 +777,12 @@
             year = dateStr.substring(0, 4);
         }
     
-        if (!year || isNaN(year)) {
-            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Missing/invalid year");
-            callback(null);
-            return;
-        }
+        
+if (!year || isNaN(year)) {
+    if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: JacRed: Missing/invalid year -> fallback to title-only search");
+    year = ''; // allow search without strict year filter
+}
+
     
         // Основная функция поиска
         function searchJacred(searchTitle, searchYear, exact, stepName, callback) {
@@ -813,7 +814,9 @@
                     var bestTorrent = null;
                     var findStopWords = false;
                     var searchYearNum = parseInt(searchYear, 10);
-                      
+                        
+                    // Закомментированная функция извлечения качества из названия (ES5) - ОСТАВЛЯЕМ ДЛЯ БУДУЩЕГО
+                    /*
                     function extractQuality(title) {
                         if (!title) return 0;
                         var lower = title.toLowerCase();
@@ -824,6 +827,8 @@
                     }
                     */
                     
+                    // Закомментированная функция извлечения года из названия - ОСТАВЛЯЕМ ДЛЯ БУДУЩЕГО
+                    /*
                     function extractYear(title) {
                         if (!title) return 0;
                         
@@ -1870,8 +1875,35 @@
            
     
             (function(currentCard) {
-                var data = currentCard.card_data;
-                if (!data) return;
+                
+var data = currentCard.card_data;
+if (!data) {
+    try {
+        var ds = currentCard.dataset || {};
+        data = {
+            id: ds.id || ds.cardId || ds.tmdbId || '',
+            title: ds.title || ds.name || (function(){
+                var n = currentCard.querySelector('.card__title');
+                return n ? (n.textContent || '').trim() : '';
+            })(),
+            original_title: ds.originalTitle || ds.original_title || ds.originalName || ds.original_name || '',
+            release_date: ds.releaseDate || ds.release_date || ds.firstAirDate || ds.first_air_date || ''
+        };
+        if (!data.release_date) {
+            var yearNode = currentCard.querySelector('.card__year, .card__meta, .card__subline, .card__age');
+            if (yearNode) {
+                var m = (yearNode.textContent || '').match(/(19|20)\d{2}/);
+                if (m) data.release_date = m[0] + '-01-01';
+            }
+        }
+        // If both titles are empty, keep data null to skip
+        if (!data.title && !data.original_title) data = null;
+    } catch (e) {
+        data = null;
+    }
+}
+if (!data) return;
+
                 
                 if (CARDLIST_LOGGING) console.log("MAXSM-RATINGS", "CARDLIST: card data: ", data);
                 
@@ -2210,52 +2242,9 @@
 				var render = e.object.activity.render();
 				globalCurrentCard = e.data.movie.id;
                 fetchAdditionalRatings(e.data.movie, render);
-
-            
 			}
 		});
-
-		Lampa.Listener.follow('card', function (e) {
-			if (e.type == 'complite') {
-				var render = e.object.activity.render();
-				globalCurrentCard = e.data.movie.id;
-                fetchAdditionalRatings(e.data.movie, render);
-
-            
-			}
-		});
-
-		Lampa.Listener.follow('line', function (e) {
-			if (e.type == 'complite') {
-				var render = e.object.activity.render();
-				globalCurrentCard = e.data.movie.id;
-                fetchAdditionalRatings(e.data.movie, render);
-
-            
-			}
-		});
-
-		Lampa.Listener.follow('items', function (e) {
-			if (e.type == 'complite') {
-				var render = e.object.activity.render();
-				globalCurrentCard = e.data.movie.id;
-                fetchAdditionalRatings(e.data.movie, render);
-
-            
-			}
-		});
-
-		Lampa.Listener.follow('build', function (e) {
-			if (e.type == 'complite') {
-				var render = e.object.activity.render();
-				globalCurrentCard = e.data.movie.id;
-                fetchAdditionalRatings(e.data.movie, render);
-
-            
-			}
-		});    
-        }
+    }
 
     if (!window.maxsmRatingsPlugin) startPlugin();
 })();
-

@@ -1161,7 +1161,7 @@
             $('.full-start__status.maxsm-quality', render).remove();
     }
 
-    // Плейсхолдер качества
+    /*// Плейсхолдер качества
     function showQualityPlaceholder(localCurrentCard, render) {
         if (!render)
             return;
@@ -1176,7 +1176,7 @@
             placeholder.style.opacity = '0.7';
             rateLine.append(placeholder);
         }
-    }
+    }*/
 
     // Получаем касество
     /*function fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render) {
@@ -2351,5 +2351,6 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 
 

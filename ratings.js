@@ -994,7 +994,7 @@
 
 
     // [REPLACED] Replaced old getBestReleaseFromJacred with the one from Quality.js and adapted it.
-    function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
+    /*function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         if (!JACRED_URL) {
             if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: JACRED_URL is not set.");
             callback(null);
@@ -1152,7 +1152,7 @@
         }
     }
 
-    // ============================ END: JacRed Integration ============================
+    // ============================ END: JacRed Integration ============================*/
 
     // Функции работы с качеством
     // Удаляем качество с карточки если есть
@@ -2351,3 +2351,4 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+

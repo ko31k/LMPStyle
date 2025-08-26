@@ -944,7 +944,7 @@
         }
     }
 
-    // ============================ START: JacRed Integration from Quality.js ============================
+    /*// ============================ START: JacRed Integration from Quality.js ============================
 
     // [NEW] Added robust fetchWithProxy function from Quality.js
     function fetchWithProxy(url, cardId, callback) {
@@ -994,7 +994,7 @@
 
 
     // [REPLACED] Replaced old getBestReleaseFromJacred with the one from Quality.js and adapted it.
-    /*function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
+    function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         if (!JACRED_URL) {
             if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: JACRED_URL is not set.");
             callback(null);
@@ -2353,6 +2353,7 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 
 
 

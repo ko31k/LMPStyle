@@ -1198,7 +1198,7 @@
     }*/
 
     // Обновляем качество в карточке
-    function updateQualityElement(quality, localCurrentCard, render) {
+   /* function updateQualityElement(quality, localCurrentCard, render) {
         if (!render)
             return;
         var element = $('.full-start__status.maxsm-quality', render);
@@ -1218,7 +1218,7 @@
             div.textContent = quality;
             rateLine.append(div);
         }
-    }
+    }*/
 
     // Основная функция
     function fetchAdditionalRatings(card, render) {
@@ -1262,7 +1262,7 @@
         var kpExists = kpElement.length > 0 && !!kpElement.find('> div').eq(0).text().trim();
         var imdbExists = imdbElement.length > 0 && !!imdbElement.find('> div').eq(0).text().trim();
         // Асинхронно ищем качество
-        if (localStorage.getItem('maxsm_ratings_quality') === 'true' && !(localStorage.getItem('maxsm_ratings_quality_tv') === 'false' && normalizedCard.type === 'tv')) {
+        /*if (localStorage.getItem('maxsm_ratings_quality') === 'true' && !(localStorage.getItem('maxsm_ratings_quality_tv') === 'false' && normalizedCard.type === 'tv')) {
             if (Q_LOGGING)
                 console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Start quality');
             // 1. Обрабатываем кеш качества
@@ -1276,7 +1276,7 @@
                 showQualityPlaceholder(localCurrentCard, render);
                 fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render);
             }
-        }
+        }*/
         // Запрос рейтинга IMDB
         if (cachedIMDBData) {
             ratingsData.imdb = cachedIMDBData.imdb;
@@ -1616,7 +1616,7 @@
     }
 
     // Функции для работы с кешем качества
-    function getQualityCache(key) {
+    /*function getQualityCache(key) {
         var cache = Lampa.Storage.get(QUALITY_CACHE) || {};
         var item = cache[key];
         return item && (Date.now() - item.timestamp < Q_CACHE_TIME) ? item : null;
@@ -1630,7 +1630,7 @@
             timestamp: Date.now()
         };
         Lampa.Storage.set(QUALITY_CACHE, cache);
-    }
+    }*/
 
     // Получаем IMDB id из TMDB id по API
     function getImdbIdFromTmdb(tmdbId, type, localCurrentCard, callback) {
@@ -2026,7 +2026,7 @@
     }*/
 
 	// Общая функция для применения качества к карточке
-    function applyQualityToCard(card, quality, source, qCacheKey) {
+    /*function applyQualityToCard(card, quality, source, qCacheKey) {
         var _a, _b, _c;
         if (!document.body.contains(card)) {
             if (Q_LOGGING)
@@ -2048,7 +2048,7 @@
 		if (source === 'JacRed' && quality && quality !== 'NO') {
             saveQualityCache(qCacheKey, { quality: quality }, (_b = card.card_data) === null || _b === void 0 ? void 0 : _b.id);
         }
-		*/
+		
 
 		if (quality && quality !== 'NO') {
             if (Q_LOGGING)
@@ -2061,7 +2061,7 @@
             qualityDiv.appendChild(qualityInner);
             cardView.appendChild(qualityDiv);
         }
-    }
+    }*/
 
 	// Обсервер DOM для новых карт
     var observer = new MutationObserver(function (mutations) {
@@ -2353,6 +2353,7 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 
 
 

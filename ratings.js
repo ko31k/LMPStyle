@@ -1179,7 +1179,7 @@
     }
 
     // Получаем касество
-    function fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render) {
+    /*function fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render) {
         if (Q_LOGGING)
             console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Starting JacRed request');
         getBestReleaseFromJacred(normalizedCard, localCurrentCard, function (jrResult) {
@@ -1195,7 +1195,7 @@
             }
             clearQualityElements(localCurrentCard, render);
         });
-    }
+    }*/
 
     // Обновляем качество в карточке
     function updateQualityElement(quality, localCurrentCard, render) {
@@ -1975,7 +1975,7 @@
     }
 
 	//------------------------------------------------- Лепим на карточки ярлыки качества (через получение с JacRed)
-    function updateCards(cards) {
+    /*function updateCards(cards) {
         for (var i = 0; i < cards.length; i++) {
             var card = cards[i];
             if (card.hasAttribute('data-quality-added'))
@@ -2012,7 +2012,7 @@
                     applyQualityToCard(currentCard, cacheQualityData.quality, 'Cache');
                 }
                 // Если нет кеша - запрашиваем у JacRed
-                else {
+                /*else {
                     //applyQualityToCard(currentCard, '...', 'Pending'); // You can show a placeholder
                     getBestReleaseFromJacred(normalizedCard, localCurrentCard, function (jrResult) {
                         if (Q_LOGGING)
@@ -2020,10 +2020,10 @@
                         var quality = (jrResult && jrResult.quality) || null;
                         applyQualityToCard(currentCard, quality, 'JacRed', qCacheKey);
                     });
-                }
+                }*/
             })(card);
         }
-    }
+    }*/
 
 	// Общая функция для применения качества к карточке
     function applyQualityToCard(card, quality, source, qCacheKey) {
@@ -2044,9 +2044,9 @@
         }
 
 		// Сохраняем в кеш если данные от JacRed
-        if (source === 'JacRed' && quality && quality !== 'NO') {
+        /*if (source === 'JacRed' && quality && quality !== 'NO') {
             saveQualityCache(qCacheKey, { quality: quality }, (_b = card.card_data) === null || _b === void 0 ? void 0 : _b.id);
-        }
+        }*/
 
 		if (quality && quality !== 'NO') {
             if (Q_LOGGING)
@@ -2351,4 +2351,5 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 

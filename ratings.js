@@ -2083,8 +2083,8 @@
                 }
             }
         }
-        if (newCards.length)
-            updateCards(newCards);
+ /*       if (newCards.length)
+            updateCards(newCards);*/
     });
 
 	// Инициализация плагина
@@ -2353,6 +2353,7 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 
 
 

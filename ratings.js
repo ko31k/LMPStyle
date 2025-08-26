@@ -1975,18 +1975,9 @@
     }
 
 	//------------------------------------------------- Лепим на карточки ярлыки качества (через получение с JacRed)
-   /* function updateCards(cards) {
-        for (var i = 0; i < cards.length; i++) {
-            var card = cards[i];
-            if (card.hasAttribute('data-quality-added'))
-                continue;
-            var cardView = card.querySelector('.card__view');
-            if (localStorage.getItem('maxsm_ratings_quality_tv') === 'false') {
-                if (cardView) {
-                    var typeElements = cardView.getElementsByClassName('card__type');
-                    if (typeElements.length > 0)
-                        continue;
-                }
+   /* function updateCards() {
+  // Заглушка: вимкнено відображення бірок якості
+}
             }
             (function (currentCard) {
                 var data = currentCard.card_data;

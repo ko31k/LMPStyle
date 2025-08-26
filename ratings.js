@@ -1250,7 +1250,7 @@
         var cachedData = getOmdbCache(cacheKey);
         var cachedKpData = getKpCache(cacheKey);
         var cachedIMDBData = getIMDBCache(cacheKey);
-        var cacheQualityData = getQualityCache(qCacheKey);
+       // var cacheQualityData = getQualityCache(qCacheKey);
         var ratingsData = {};
 
         // Оптимищируем ли запросы 1 - экономия, 0 - точность (не избегаем запросов ксли на карточке есть IMDb и KP)
@@ -2353,6 +2353,7 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 
 
 

@@ -326,9 +326,7 @@
 		".rutor { min-width: 7.0em; }" +
 		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00 !important; color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: italic; border-radius: 0.3em !important; padding: 0.2em 0.8em !important;}" +
         ".card__view {position: relative !important;}" +
-        ".card__quality { position: absolute !important; bottom: 0.5em !important; left: -0.8em !important; background-color: transparent !important; z-index: 10; width: fit-content !important; max-width: calc(100% - 1em) !important; }" +
-        ".card__quality div { text-transform: none !important; border: 1.1px solid #FFFF00 !important; background-color: rgba(255, 255, 0, 0.7) !important; color: #000000; font-weight: 600; font-size: 1.3em; font-style: italic; border-radius: 0em !important; padding: 0.15em 0.3em !important; }" +
-		/* Адаптация для WebOS (если нужно) */
+       /* Адаптация для WebOS (если нужно) */
 		"@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
 		"    .full-start-new__rate-line {" +
 		"        gap: 0.01em;" + /* Минимальный отступ между элементами */
@@ -943,217 +941,7 @@
             return true;
         }
     }
-
-    // ============================ START: JacRed Integration from Quality.js ============================
-
-    // [NEW] Added robust fetchWithProxy function from Quality.js
-    function fetchWithProxy(url, cardId, callback) {
-        var currentProxyIndex = 0;
-        var callbackCalled = false;
-
-        function tryNextProxy() {
-            if (currentProxyIndex >= PROXY_LIST.length) {
-                if (!callbackCalled) {
-                    callbackCalled = true;
-                    callback(new Error('All proxies failed for ' + url));
-                }
-                return;
-            }
-            var proxyUrl = PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
-            if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
-            var timeoutId = setTimeout(function() {
-                if (!callbackCalled) {
-                    currentProxyIndex++;
-                    tryNextProxy();
-                }
-            }, PROXY_TIMEOUT);
-            fetch(proxyUrl)
-                .then(function(response) {
-                    clearTimeout(timeoutId);
-                    if (!response.ok) throw new Error('Proxy error: ' + response.status);
-                    return response.text();
-                })
-                .then(function(data) {
-                    if (!callbackCalled) {
-                        callbackCalled = true;
-                        clearTimeout(timeoutId);
-                        callback(null, data);
-                    }
-                })
-                .catch(function(error) {
-                    console.error("MAXSM-RATINGS", "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":", error);
-                    clearTimeout(timeoutId);
-                    if (!callbackCalled) {
-                        currentProxyIndex++;
-                        tryNextProxy();
-                    }
-                });
-        }
-        tryNextProxy();
-    }
-
-
-    // [REPLACED] Replaced old getBestReleaseFromJacred with the one from Quality.js and adapted it.
-    function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
-        if (!JACRED_URL) {
-            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: JACRED_URL is not set.");
-            callback(null);
-            return;
-        }
-
-        // Helper function to translate numeric quality to string as expected by this plugin
-        function translateQuality(quality) {
-            if (typeof quality !== 'number') return quality; // Handle cases like 'TS'
-            if (quality >= 2160) return '4K';
-            if (quality >= 1080) return 'FHD';
-            if (quality >= 720) return 'HD';
-            if (quality > 0) return 'SD';
-            return null;
-        }
-
-        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Search initiated.");
-        var year = '';
-        var dateStr = normalizedCard.release_date || '';
-        if (dateStr.length >= 4) {
-            year = dateStr.substring(0, 4);
-        }
-        if (!year || isNaN(year)) {
-            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Missing/invalid year for normalizedCard:", normalizedCard);
-            callback(null);
-            return;
-        }
-
-        function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
-            var userId = Lampa.Storage.get('lampac_unic_id', '');
-            var apiUrl = JACRED_PROTOCOL + JACRED_URL + '/api/v1.0/torrents?search=' +
-                encodeURIComponent(searchTitle) +
-                '&year=' + searchYear +
-                (exactMatch ? '&exact=true' : '') +
-                '&uid=' + userId;
-
-            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " URL: " + apiUrl);
-
-            var controller = new AbortController();
-            var timeoutId = setTimeout(function() {
-                controller.abort();
-                if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " request timed out.");
-                apiCallback(null);
-            }, PROXY_TIMEOUT * PROXY_LIST.length + 1000);
-
-            fetchWithProxy(apiUrl, cardId, function(error, responseText) {
-                clearTimeout(timeoutId);
-                if (error) {
-                    console.error("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " request failed:", error);
-                    apiCallback(null);
-                    return;
-                }
-                if (!responseText) {
-                    if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " failed or empty response.");
-                    apiCallback(null);
-                    return;
-                }
-                try {
-                    var torrents = JSON.parse(responseText);
-                    if (!Array.isArray(torrents) || torrents.length === 0) {
-                        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " received no torrents or invalid array.");
-                        apiCallback(null);
-                        return;
-                    }
-                    var bestNumericQuality = -1;
-                    var bestFoundTorrent = null;
-
-                    for (var i = 0; i < torrents.length; i++) {
-                        var currentTorrent = torrents[i];
-                        var currentNumericQuality = currentTorrent.quality;
-                        
-                        // Simple check for screen copies in the title
-                        var lowerTitle = (currentTorrent.title || '').toLowerCase();
-                        if (/\b(ts|telesync|camrip|cam)\b/i.test(lowerTitle)) {
-                           if (currentNumericQuality < 720) continue; // Skip low quality screeners
-                        }
-
-                        if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
-                           continue;
-                        }
-
-                        if (Q_LOGGING) {
-                            console.log(
-                                "MAXSM-RATINGS-Q",
-                                "card: " + cardId +
-                                ", Torrent: " + currentTorrent.title +
-                                " | Quality: " + currentNumericQuality + "p" +
-                                " | Strategy: " + strategyName
-                            );
-                        }
-                        if (currentNumericQuality > bestNumericQuality) {
-                            bestNumericQuality = currentNumericQuality;
-                            bestFoundTorrent = currentTorrent;
-                        }
-                    }
-                    if (bestFoundTorrent) {
-                        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Found best torrent in " + strategyName + ": \"" + bestFoundTorrent.title + "\" with quality: " + (bestFoundTorrent.quality || bestNumericQuality) + "p");
-                        // Use the local translateQuality function
-                        apiCallback({
-                            quality: translateQuality(bestFoundTorrent.quality || bestNumericQuality),
-                            title: bestFoundTorrent.title
-                        });
-                    } else {
-                        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: No suitable torrents found in " + strategyName + ".");
-                        apiCallback(null);
-                    }
-                } catch (e) {
-                    console.error("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " error parsing response:", e);
-                    apiCallback(null);
-                }
-            });
-        }
-
-        var searchStrategies = [];
-        if (normalizedCard.original_title && /[a-zа-яё0-9]/i.test(normalizedCard.original_title)) {
-            searchStrategies.push({
-                title: normalizedCard.original_title.trim(),
-                year: year,
-                exact: true,
-                name: "OriginalTitle Exact Year"
-            });
-        }
-        if (normalizedCard.title && /[a-zа-яё0-9]/i.test(normalizedCard.title)) {
-            searchStrategies.push({
-                title: normalizedCard.title.trim(),
-                year: year,
-                exact: true,
-                name: "Title Exact Year"
-            });
-        }
-
-        function executeNextStrategy(index) {
-            if (index >= searchStrategies.length) {
-                if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: All strategies failed. No quality found.");
-                callback(null);
-                return;
-            }
-            var strategy = searchStrategies[index];
-            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Trying strategy: " + strategy.name);
-            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, function(result) {
-                if (result !== null) {
-                    if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Successfully found quality using strategy " + strategy.name + ": " + result.quality);
-                    callback(result);
-                } else {
-                    executeNextStrategy(index + 1);
-                }
-            });
-        }
-
-        if (searchStrategies.length > 0) {
-            executeNextStrategy(0);
-        } else {
-            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: No valid search titles or strategies defined.");
-            callback(null);
-        }
-    }
-
-    // ============================ END: JacRed Integration ============================
-
+	
     // Функции работы с качеством
     // Удаляем качество с карточки если есть
     /*function clearQualityElements(localCurrentCard, render) {
@@ -1178,48 +966,7 @@
         }
     }*/
 
-    // Получаем касество
-    /*function fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render) {
-        if (Q_LOGGING)
-            console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Starting JacRed request');
-        getBestReleaseFromJacred(normalizedCard, localCurrentCard, function (jrResult) {
-            if (Q_LOGGING)
-                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: JacRed callback received');
-            var quality = (jrResult && jrResult.quality) || null;
-            if (quality && quality !== 'NO') {
-                if (Q_LOGGING)
-                    console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: JacRed found quality: ' + quality);
-                saveQualityCache(qCacheKey, { quality: quality }, localCurrentCard);
-                updateQualityElement(quality, localCurrentCard, render);
-                return;
-            }
-            clearQualityElements(localCurrentCard, render);
-        });
-    }*/
-
-    // Обновляем качество в карточке
-    /* function updateQualityElement(quality, localCurrentCard, render) {
-        if (!render)
-            return;
-        var element = $('.full-start__status.maxsm-quality', render);
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length)
-            return;
-        if (element.length) {
-            if (Q_LOGGING)
-                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Updating existing element with quality "' + quality + '" (displayed as "' + quality + '")');
-            element.text(quality).css('opacity', '1');
-        }
-        else {
-            if (Q_LOGGING)
-                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Creating new element with quality "' + quality + '" (displayed as "' + quality + '")');
-            var div = document.createElement('div');
-            div.className = 'full-start__status maxsm-quality';
-            div.textContent = quality;
-            rateLine.append(div);
-        }
-    }*/
-
+   
     // Основная функция
     function fetchAdditionalRatings(card, render) {
         if (!render)
@@ -1261,22 +1008,7 @@
         // Проверяем, что оба рейтинга уже есть и содержат числовые значения
         var kpExists = kpElement.length > 0 && !!kpElement.find('> div').eq(0).text().trim();
         var imdbExists = imdbElement.length > 0 && !!imdbElement.find('> div').eq(0).text().trim();
-        // Асинхронно ищем качество
-        /*if (localStorage.getItem('maxsm_ratings_quality') === 'true' && !(localStorage.getItem('maxsm_ratings_quality_tv') === 'false' && normalizedCard.type === 'tv')) {
-            if (Q_LOGGING)
-                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Start quality');
-            // 1. Обрабатываем кеш качества
-            if (cacheQualityData) {
-                if (Q_LOGGING)
-                    console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: Get Quality data from cache");
-                updateQualityElement(cacheQualityData.quality, localCurrentCard, render);
-            }
-            else {
-                clearQualityElements(localCurrentCard, render);
-                showQualityPlaceholder(localCurrentCard, render);
-                fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render);
-            }
-        }*/
+        
         // Запрос рейтинга IMDB
         if (cachedIMDBData) {
             ratingsData.imdb = cachedIMDBData.imdb;
@@ -1974,108 +1706,6 @@
         }
     }
 
-	//------------------------------------------------- Лепим на карточки ярлыки качества (через получение с JacRed)
-    function updateCards() {
-  // Заглушка: вимкнено відображення бірок якості
-}
-            }
-            (function (currentCard) {
-                var data = currentCard.card_data;
-                if (!data)
-                    return;
-                if (Q_LOGGING)
-                    console.log("MAXSM-RATINGS", "CARDLIST: card data: ", data);
-                var normalizedCard = {
-                    id: data.id || '',
-                    title: data.title || data.name || '',
-                    original_title: data.original_title || data.original_name || '',
-                    release_date: data.release_date || data.first_air_date || '',
-                    imdb_id: data.imdb_id || data.imdb || null,
-                    type: getCardType(data)
-                };
-                var localCurrentCard = normalizedCard.id;
-                var qCacheKey = normalizedCard.type + '_' + (normalizedCard.id || normalizedCard.imdb_id);
-                var cacheQualityData = getQualityCache(qCacheKey);
-                // Если есть кеш - сразу применяем
-                if (cacheQualityData) {
-                    if (Q_LOGGING)
-                        console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", quality: Get Quality data from cache");
-                    applyQualityToCard(currentCard, cacheQualityData.quality, 'Cache');
-                }
-                // Если нет кеша - запрашиваем у JacRed
-                else {
-                    //applyQualityToCard(currentCard, '...', 'Pending'); // You can show a placeholder
-                    getBestReleaseFromJacred(normalizedCard, localCurrentCard, function (jrResult) {
-                        if (Q_LOGGING)
-                            console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', CARDLIST: JacRed callback received');
-                        var quality = (jrResult && jrResult.quality) || null;
-                        applyQualityToCard(currentCard, quality, 'JacRed', qCacheKey);
-                    });
-                }
-            })(card);
-        }
-    }
-
-	// Общая функция для применения качества к карточке
-   /* function applyQualityToCard(card, quality, source, qCacheKey) {
-        var _a, _b, _c;
-        if (!document.body.contains(card)) {
-            if (Q_LOGGING)
-                console.log('MAXSM-RATINGS', 'Card removed from DOM:', (_a = card.card_data) === null || _a === void 0 ? void 0 : _a.id);
-            return;
-        }
-        card.setAttribute('data-quality-added', 'true');
-        var cardView = card.querySelector('.card__view');
-        if (!cardView) return;
-
-        // Remove existing quality labels first
-        var existingQualityElements = cardView.getElementsByClassName('card__quality');
-        while(existingQualityElements.length > 0){
-            existingQualityElements[0].parentNode.removeChild(existingQualityElements[0]);
-        }*/
-
-		// Сохраняем в кеш если данные от JacRed
-      /*  if (source === 'JacRed' && quality && quality !== 'NO') {
-            saveQualityCache(qCacheKey, { quality: quality }, (_b = card.card_data) === null || _b === void 0 ? void 0 : _b.id);
-        }
-
-		if (quality && quality !== 'NO') {
-            if (Q_LOGGING)
-                console.log('MAXSM-RATINGS', ' card: ' + ((_c = card.card_data) === null || _c === void 0 ? void 0 : _c.id) + ', CARDLIST: ' + source + ' found quality: ' + quality);
-
-            var qualityDiv = document.createElement('div');
-            qualityDiv.className = 'card__quality';
-            var qualityInner = document.createElement('div');
-            qualityInner.textContent = quality;
-            qualityDiv.appendChild(qualityInner);
-            cardView.appendChild(qualityDiv);
-        }
-    }*/
-
-	// Обсервер DOM для новых карт
-    var observer = new MutationObserver(function (mutations) {
-        var newCards = [];
-        for (var m = 0; m < mutations.length; m++) {
-            var mutation = mutations[m];
-            if (mutation.addedNodes) {
-                for (var j = 0; j < mutation.addedNodes.length; j++) {
-                    var node = mutation.addedNodes[j];
-                    if (node.nodeType !== 1)
-                        continue;
-                    if (node.classList && node.classList.contains('card')) {
-                        newCards.push(node);
-                    }
-                    var nestedCards = node.querySelectorAll('.card');
-                    for (var k = 0; k < nestedCards.length; k++) {
-                        newCards.push(nestedCards[k]);
-                    }
-                }
-            }
-        }
-        if (newCards.length)
-            updateCards(newCards);
-    });
-
 	// Инициализация плагина
     function startPlugin() {
         if (C_LOGGING)
@@ -2342,4 +1972,5 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 

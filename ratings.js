@@ -2012,7 +2012,7 @@
                     applyQualityToCard(currentCard, cacheQualityData.quality, 'Cache');
                 }
                 // Если нет кеша - запрашиваем у JacRed
-                /*else {
+                else {
                     //applyQualityToCard(currentCard, '...', 'Pending'); // You can show a placeholder
                     getBestReleaseFromJacred(normalizedCard, localCurrentCard, function (jrResult) {
                         if (Q_LOGGING)
@@ -2020,7 +2020,7 @@
                         var quality = (jrResult && jrResult.quality) || null;
                         applyQualityToCard(currentCard, quality, 'JacRed', qCacheKey);
                     });
-                }*/
+                }
             })(card);
         }
     }*/
@@ -2044,9 +2044,11 @@
         }
 
 		// Сохраняем в кеш если данные от JacRed
-        /*if (source === 'JacRed' && quality && quality !== 'NO') {
+        /*
+		if (source === 'JacRed' && quality && quality !== 'NO') {
             saveQualityCache(qCacheKey, { quality: quality }, (_b = card.card_data) === null || _b === void 0 ? void 0 : _b.id);
-        }*/
+        }
+		*/
 
 		if (quality && quality !== 'NO') {
             if (Q_LOGGING)
@@ -2351,6 +2353,7 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 
 
 

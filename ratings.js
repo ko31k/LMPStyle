@@ -456,7 +456,7 @@
     var globalCurrentCard = null;
     // Перепемнные настройки
     var C_LOGGING = true; // Общий логгинг
-    var Q_LOGGING = true; // Логгинг качества
+    //var Q_LOGGING = true; // Логгинг качества
     var CARDLIST_LOGGING = false; // Логгинг в списках карточек
     var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // Время, которое кеш считается валидным
     var Q_CACHE_TIME = 24 * 60 * 60 * 1000; // Время, которое кеш считается валидным
@@ -468,9 +468,9 @@
     var OMDB_API_KEYS = (window.RATINGS_PLUGIN_TOKENS && window.RATINGS_PLUGIN_TOKENS.OMDB_API_KEYS) || ['1c149048']; // api ключи массивом
     var KP_API_KEYS = (window.RATINGS_PLUGIN_TOKENS && window.RATINGS_PLUGIN_TOKENS.KP_API_KEYS) || ['2a4a0808-81a3-40ae-b0d3-e11335ede616']; // api ключи массивом
     var PROXY_TIMEOUT = 5000; // Таймаут прокси
-    var JACRED_PROTOCOL = 'http://'; // Протокол JacRed
-    var JACRED_URL = Lampa.Storage.get('jacred.xyz') || 'jacred.xyz'; // Адрес JacRed
-    var JACRED_API_KEY = Lampa.Storage.get(''); // api ключ JacRed
+    //var JACRED_PROTOCOL = 'http://'; // Протокол JacRed
+    //var JACRED_URL = Lampa.Storage.get('jacred.xyz') || 'jacred.xyz'; // Адрес JacRed
+    //var JACRED_API_KEY = Lampa.Storage.get(''); // api ключ JacRed
     var PROXY_LIST = [
         'http://api.allorigins.win/raw?url=',
         'http://cors.bwa.workers.dev/'
@@ -944,11 +944,280 @@
         }
     }
 
+    // ============================ START: JacRed Integration from Quality.js ============================
+
+    // [NEW] Added robust fetchWithProxy function from Quality.js
+    function fetchWithProxy(url, cardId, callback) {
+        var currentProxyIndex = 0;
+        var callbackCalled = false;
+
+        function tryNextProxy() {
+            if (currentProxyIndex >= PROXY_LIST.length) {
+                if (!callbackCalled) {
+                    callbackCalled = true;
+                    callback(new Error('All proxies failed for ' + url));
+                }
+                return;
+            }
+            var proxyUrl = PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
+            if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
+            var timeoutId = setTimeout(function() {
+                if (!callbackCalled) {
+                    currentProxyIndex++;
+                    tryNextProxy();
+                }
+            }, PROXY_TIMEOUT);
+            fetch(proxyUrl)
+                .then(function(response) {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error('Proxy error: ' + response.status);
+                    return response.text();
+                })
+                .then(function(data) {
+                    if (!callbackCalled) {
+                        callbackCalled = true;
+                        clearTimeout(timeoutId);
+                        callback(null, data);
+                    }
+                })
+                .catch(function(error) {
+                    console.error("MAXSM-RATINGS", "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":", error);
+                    clearTimeout(timeoutId);
+                    if (!callbackCalled) {
+                        currentProxyIndex++;
+                        tryNextProxy();
+                    }
+                });
+        }
+        tryNextProxy();
+    }
+
+
+    // [REPLACED] Replaced old getBestReleaseFromJacred with the one from Quality.js and adapted it.
+    function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
+        if (!JACRED_URL) {
+            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: JACRED_URL is not set.");
+            callback(null);
+            return;
+        }
+
+        // Helper function to translate numeric quality to string as expected by this plugin
+        function translateQuality(quality) {
+            if (typeof quality !== 'number') return quality; // Handle cases like 'TS'
+            if (quality >= 2160) return '4K';
+            if (quality >= 1080) return 'FHD';
+            if (quality >= 720) return 'HD';
+            if (quality > 0) return 'SD';
+            return null;
+        }
+
+        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Search initiated.");
+        var year = '';
+        var dateStr = normalizedCard.release_date || '';
+        if (dateStr.length >= 4) {
+            year = dateStr.substring(0, 4);
+        }
+        if (!year || isNaN(year)) {
+            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Missing/invalid year for normalizedCard:", normalizedCard);
+            callback(null);
+            return;
+        }
+
+        function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
+            var userId = Lampa.Storage.get('lampac_unic_id', '');
+            var apiUrl = JACRED_PROTOCOL + JACRED_URL + '/api/v1.0/torrents?search=' +
+                encodeURIComponent(searchTitle) +
+                '&year=' + searchYear +
+                (exactMatch ? '&exact=true' : '') +
+                '&uid=' + userId;
+
+            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " URL: " + apiUrl);
+
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function() {
+                controller.abort();
+                if (C_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " request timed out.");
+                apiCallback(null);
+            }, PROXY_TIMEOUT * PROXY_LIST.length + 1000);
+
+            fetchWithProxy(apiUrl, cardId, function(error, responseText) {
+                clearTimeout(timeoutId);
+                if (error) {
+                    console.error("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " request failed:", error);
+                    apiCallback(null);
+                    return;
+                }
+                if (!responseText) {
+                    if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " failed or empty response.");
+                    apiCallback(null);
+                    return;
+                }
+                try {
+                    var torrents = JSON.parse(responseText);
+                    if (!Array.isArray(torrents) || torrents.length === 0) {
+                        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " received no torrents or invalid array.");
+                        apiCallback(null);
+                        return;
+                    }
+                    var bestNumericQuality = -1;
+                    var bestFoundTorrent = null;
+
+                    for (var i = 0; i < torrents.length; i++) {
+                        var currentTorrent = torrents[i];
+                        var currentNumericQuality = currentTorrent.quality;
+                        
+                        // Simple check for screen copies in the title
+                        var lowerTitle = (currentTorrent.title || '').toLowerCase();
+                        if (/\b(ts|telesync|camrip|cam)\b/i.test(lowerTitle)) {
+                           if (currentNumericQuality < 720) continue; // Skip low quality screeners
+                        }
+
+                        if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
+                           continue;
+                        }
+
+                        if (Q_LOGGING) {
+                            console.log(
+                                "MAXSM-RATINGS-Q",
+                                "card: " + cardId +
+                                ", Torrent: " + currentTorrent.title +
+                                " | Quality: " + currentNumericQuality + "p" +
+                                " | Strategy: " + strategyName
+                            );
+                        }
+                        if (currentNumericQuality > bestNumericQuality) {
+                            bestNumericQuality = currentNumericQuality;
+                            bestFoundTorrent = currentTorrent;
+                        }
+                    }
+                    if (bestFoundTorrent) {
+                        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Found best torrent in " + strategyName + ": \"" + bestFoundTorrent.title + "\" with quality: " + (bestFoundTorrent.quality || bestNumericQuality) + "p");
+                        // Use the local translateQuality function
+                        apiCallback({
+                            quality: translateQuality(bestFoundTorrent.quality || bestNumericQuality),
+                            title: bestFoundTorrent.title
+                        });
+                    } else {
+                        if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: No suitable torrents found in " + strategyName + ".");
+                        apiCallback(null);
+                    }
+                } catch (e) {
+                    console.error("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: " + strategyName + " error parsing response:", e);
+                    apiCallback(null);
+                }
+            });
+        }
+
+        var searchStrategies = [];
+        if (normalizedCard.original_title && /[a-zа-яё0-9]/i.test(normalizedCard.original_title)) {
+            searchStrategies.push({
+                title: normalizedCard.original_title.trim(),
+                year: year,
+                exact: true,
+                name: "OriginalTitle Exact Year"
+            });
+        }
+        if (normalizedCard.title && /[a-zа-яё0-9]/i.test(normalizedCard.title)) {
+            searchStrategies.push({
+                title: normalizedCard.title.trim(),
+                year: year,
+                exact: true,
+                name: "Title Exact Year"
+            });
+        }
+
+        function executeNextStrategy(index) {
+            if (index >= searchStrategies.length) {
+                if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: All strategies failed. No quality found.");
+                callback(null);
+                return;
+            }
+            var strategy = searchStrategies[index];
+            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Trying strategy: " + strategy.name);
+            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, function(result) {
+                if (result !== null) {
+                    if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: Successfully found quality using strategy " + strategy.name + ": " + result.quality);
+                    callback(result);
+                } else {
+                    executeNextStrategy(index + 1);
+                }
+            });
+        }
+
+        if (searchStrategies.length > 0) {
+            executeNextStrategy(0);
+        } else {
+            if (Q_LOGGING) console.log("MAXSM-RATINGS", "card: " + cardId + ", quality: JacRed: No valid search titles or strategies defined.");
+            callback(null);
+        }
+    }
+
+    // ============================ END: JacRed Integration ============================
+
     // Функции работы с качеством
     // Удаляем качество с карточки если есть
     function clearQualityElements(localCurrentCard, render) {
         if (render)
             $('.full-start__status.maxsm-quality', render).remove();
+    }
+
+    // Плейсхолдер качества
+    function showQualityPlaceholder(localCurrentCard, render) {
+        if (!render)
+            return;
+        var rateLine = $('.full-start-new__rate-line', render);
+        if (!rateLine.length)
+            return;
+        // Проверяем, не добавлен ли уже плейсхолдер
+        if (!$('.full-start__status.maxsm-quality', render).length) {
+            var placeholder = document.createElement('div');
+            placeholder.className = 'full-start__status maxsm-quality';
+            placeholder.textContent = '...';
+            placeholder.style.opacity = '0.7';
+            rateLine.append(placeholder);
+        }
+    }
+
+    // Получаем касество
+    function fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render) {
+        if (Q_LOGGING)
+            console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Starting JacRed request');
+        getBestReleaseFromJacred(normalizedCard, localCurrentCard, function (jrResult) {
+            if (Q_LOGGING)
+                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: JacRed callback received');
+            var quality = (jrResult && jrResult.quality) || null;
+            if (quality && quality !== 'NO') {
+                if (Q_LOGGING)
+                    console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: JacRed found quality: ' + quality);
+                saveQualityCache(qCacheKey, { quality: quality }, localCurrentCard);
+                updateQualityElement(quality, localCurrentCard, render);
+                return;
+            }
+            clearQualityElements(localCurrentCard, render);
+        });
+    }
+
+    // Обновляем качество в карточке
+    function updateQualityElement(quality, localCurrentCard, render) {
+        if (!render)
+            return;
+        var element = $('.full-start__status.maxsm-quality', render);
+        var rateLine = $('.full-start-new__rate-line', render);
+        if (!rateLine.length)
+            return;
+        if (element.length) {
+            if (Q_LOGGING)
+                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Updating existing element with quality "' + quality + '" (displayed as "' + quality + '")');
+            element.text(quality).css('opacity', '1');
+        }
+        else {
+            if (Q_LOGGING)
+                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Creating new element with quality "' + quality + '" (displayed as "' + quality + '")');
+            var div = document.createElement('div');
+            div.className = 'full-start__status maxsm-quality';
+            div.textContent = quality;
+            rateLine.append(div);
+        }
     }
 
     // Основная функция
@@ -2082,4 +2351,3 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
-

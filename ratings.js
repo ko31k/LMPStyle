@@ -1975,7 +1975,7 @@
     }
 
 	//------------------------------------------------- Лепим на карточки ярлыки качества (через получение с JacRed)
-   /* function updateCards() {
+    function updateCards() {
   // Заглушка: вимкнено відображення бірок якості
 }
             }
@@ -2015,7 +2015,7 @@
             })(card);
         }
     }
-*/
+
 	// Общая функция для применения качества к карточке
    /* function applyQualityToCard(card, quality, source, qCacheKey) {
         var _a, _b, _c;
@@ -2342,3 +2342,4 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+

@@ -142,46 +142,46 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     "gap: 0.4em 0;" +
     "}" +
     ".full-start-new__rate-line > * {" +
-    "margin-right: 0.5em !important;" +
+    "margin-right: 0.5em " +
     "flex-shrink: 0;" +
     "flex-grow: 0;" +
     "}" +
     ".lqe-quality {" +
     " min-width: 2.8em;" +
     " text-align: center;" +
-    " text-transform: none !important;" +
-    " border: 1.1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
+    " text-transform: none " +
+    " border: 1.1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " " +
     " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + ";" +
     " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + ";" +
     " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + ";" +
     " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + ";" +
-    " border-radius: 0.3em !important;" +
-    " padding: 0.2em 0.8em !important;" +
+    " border-radius: 0.3em " +
+    " padding: 0.2em 0.8em " +
     "}" +
     ".card__view {" +
-    " position: relative !important;" +
+    " position: relative " +
     "}" +
     ".card__quality {" +
-    " position: absolute !important;" +
-    " bottom: 0 !important;" +
-    " left: 0 !important;" +
+    " position: absolute " +
+    " bottom: 0 " +
+    " left: 0 " +
     " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + ";" +
     " z-index: 10;" +
-    " width: fit-content !important;" +
-    " max-width: calc(100% - 1em) !important;" +
-    " border-radius: 0 0.3em 0 0 !important;" +
+    " width: fit-content " +
+    " max-width: calc(100% - 1em) " +
+    " border-radius: 0 0.3em 0 0 " +
     " overflow: hidden;" +
     "}" +
     ".card__quality div {" +
-    " text-transform: uppercase !important;" +
-    " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important;" +
-    " font-weight: 700 !important;" +
-    " letter-spacing: 0.5px !important;" +
-    " font-size: 0.85em !important;" +
+    " text-transform: uppercase " +
+    " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif " +
+    " font-weight: 700 " +
+    " letter-spacing: 0.5px " +
+    " font-size: 0.85em " +
     " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + ";" +
-    " padding: 0.1em 0.5em 0.08em 0.4em !important;" + // Изменено: уменьшена высота
+    " padding: 0.1em 0.5em 0.08em 0.4em " + // Изменено: уменьшена высота
     " white-space: nowrap;" +
-    " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important;" +
+    " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) " +
     "}" +
     "</style>";
 

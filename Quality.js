@@ -165,7 +165,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " position: absolute !important;" +
     " bottom: 0 !important;" +
     " left: 0 !important;" +
-    " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + ";" +
+    " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" +
     " z-index: 10;" +
     " width: fit-content !important;" +
     " max-width: calc(100% - 1em) !important;" +
@@ -929,4 +929,3 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         initializeLampaQualityPlugin();
     }
 })();
-

@@ -306,13 +306,13 @@
 		"    max-width: 100%;" +
 		"}" +
 		".full-start-new__rate-line > * {" +
-		"    margin-right: 0.05em !important;" +
+		"    margin-right: 0.05em " +
 		"    flex-shrink: 0;" +
 		"}" +
 		/* Фикс для SVG на WebOS */
 		".full-start-new__rate-line svg {" +
-		"    width: 1.8em !important;" + /* Фиксированная ширина */
-		"    height: 1.8em !important;" + /* Фиксированная высота */
+		"    width: 1.8em " + /* Фиксированная ширина */
+		"    height: 1.8em " + /* Фиксированная высота */
 		"    flex-shrink: 0;" + /* Запрет сжатия */
 		"}" +
 		".rate--green  { color: #4caf50; }" +
@@ -324,10 +324,10 @@
 		".full-start__rate > div:last-child { padding: 0.2em 0.4em; }" +
 		".jr { min-width: 5.0em; }" +
 		".rutor { min-width: 7.0em; }" +
-		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00 !important; color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: italic; border-radius: 0.3em !important; padding: 0.2em 0.8em !important;}" +
-        ".card__view {position: relative !important;}" +
-        ".card__quality { position: absolute !important; bottom: 0.5em !important; left: -0.8em !important; background-color: transparent !important; z-index: 10; width: fit-content !important; max-width: calc(100% - 1em) !important; }" +
-        ".card__quality div { text-transform: none !important; border: 1.1px solid #FFFF00 !important; background-color: rgba(255, 255, 0, 0.7) !important; color: #000000; font-weight: 600; font-size: 1.3em; font-style: italic; border-radius: 0em !important; padding: 0.15em 0.3em !important; }" +
+		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00  color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: italic; border-radius: 0.3em  padding: 0.2em 0.8em }" +
+        ".card__view {position: relative }" +
+        ".card__quality { position: absolute  bottom: 0.5em  left: -0.8em  background-color: transparent  z-index: 10; width: fit-content  max-width: calc(100% - 1em)  }" +
+        ".card__quality div { text-transform: none  border: 1.1px solid #FFFF00  background-color: rgba(255, 255, 0, 0.7)  color: #000000; font-weight: 600; font-size: 1.3em; font-style: italic; border-radius: 0em  padding: 0.15em 0.3em  }" +
 		/* Адаптация для WebOS (если нужно) */
 		"@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
 		"    .full-start-new__rate-line {" +
@@ -351,8 +351,8 @@
 		"    display: flex;" +
 		"    flex-direction: column-reverse;" +
 		"    align-items: center;" +
-		"    min-width: auto !important;" +
-		"    margin-right: 0.5em !important;" + // Уменьшенный отступ между столбцами //
+		"    min-width: auto " +
+		"    margin-right: 0.5em " + // Уменьшенный отступ между столбцами //
 		"}" +
 		// Значение рейтинга (первый div) //
 		".full-start__rate > div:first-child {" +
@@ -369,8 +369,8 @@
 		"}" +
 		// Фикс для SVG (одинаковый размер) //
 		".full-start-new__rate-line > div:not(.full-start__age):not(.full-start__status) svg {" +
-		"    width: 1.3em !important;" +
-		"    height: 1.3em !important;" +
+		"    width: 1.3em " +
+		"    height: 1.3em " +
 		"    vertical-align: middle;" +
 		"}" +
 		".rate--green  { color: #4caf50; }" +
@@ -2351,3 +2351,4 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+

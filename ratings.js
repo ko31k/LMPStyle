@@ -306,13 +306,13 @@
 		"    max-width: 100%;" +
 		"}" +
 		".full-start-new__rate-line > * {" +
-		"    margin-right: 0.05em !important;" +
+		"    margin-right: 0.05em " +
 		"    flex-shrink: 0;" +
 		"}" +
 		/* Фикс для SVG на WebOS */
 		".full-start-new__rate-line svg {" +
-		"    width: 1.8em !important;" + /* Фиксированная ширина */
-		"    height: 1.8em !important;" + /* Фиксированная высота */
+		"    width: 1.8em " + /* Фиксированная ширина */
+		"    height: 1.8em " + /* Фиксированная высота */
 		"    flex-shrink: 0;" + /* Запрет сжатия */
 		"}" +
 		".rate--green  { color: #4caf50; }" +
@@ -324,10 +324,10 @@
 		".full-start__rate > div:last-child { padding: 0.2em 0.4em; }" +
 		".jr { min-width: 5.0em; }" +
 		".rutor { min-width: 7.0em; }" +
-		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00 !important; color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: italic; border-radius: 0.3em !important; padding: 0.2em 0.8em !important;}" +
-        ".card__view {position: relative !important;}" +
-        ".card__quality { position: absolute !important; bottom: 0.5em !important; left: -0.8em !important; background-color: transparent !important; z-index: 10; width: fit-content !important; max-width: calc(100% - 1em) !important; }" +
-        ".card__quality div { text-transform: none !important; border: 1.1px solid #FFFF00 !important; background-color: rgba(255, 255, 0, 0.7) !important; color: #000000; font-weight: 600; font-size: 1.3em; font-style: italic; border-radius: 0em !important; padding: 0.15em 0.3em !important; }" +
+		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00  color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: italic; border-radius: 0.3em  padding: 0.2em 0.8em }" +
+        ".card__view {position: relative }" +
+        ".card__quality { position: absolute  bottom: 0.5em  left: -0.8em  background-color: transparent  z-index: 10; width: fit-content  max-width: calc(100% - 1em)  }" +
+        ".card__quality div { text-transform: none  border: 1.1px solid #FFFF00  background-color: rgba(255, 255, 0, 0.7)  color: #000000; font-weight: 600; font-size: 1.3em; font-style: italic; border-radius: 0em  padding: 0.15em 0.3em  }" +
 		/* Адаптация для WebOS (если нужно) */
 		"@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
 		"    .full-start-new__rate-line {" +
@@ -351,8 +351,8 @@
 		"    display: flex;" +
 		"    flex-direction: column-reverse;" +
 		"    align-items: center;" +
-		"    min-width: auto !important;" +
-		"    margin-right: 0.5em !important;" + // Уменьшенный отступ между столбцами //
+		"    min-width: auto " +
+		"    margin-right: 0.5em " + // Уменьшенный отступ между столбцами //
 		"}" +
 		// Значение рейтинга (первый div) //
 		".full-start__rate > div:first-child {" +
@@ -369,8 +369,8 @@
 		"}" +
 		// Фикс для SVG (одинаковый размер) //
 		".full-start-new__rate-line > div:not(.full-start__age):not(.full-start__status) svg {" +
-		"    width: 1.3em !important;" +
-		"    height: 1.3em !important;" +
+		"    width: 1.3em " +
+		"    height: 1.3em " +
 		"    vertical-align: middle;" +
 		"}" +
 		".rate--green  { color: #4caf50; }" +
@@ -456,7 +456,7 @@
     var globalCurrentCard = null;
     // Перепемнные настройки
     var C_LOGGING = true; // Общий логгинг
-    //var Q_LOGGING = true; // Логгинг качества
+    var Q_LOGGING = true; // Логгинг качества
     var CARDLIST_LOGGING = false; // Логгинг в списках карточек
     var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // Время, которое кеш считается валидным
     var Q_CACHE_TIME = 24 * 60 * 60 * 1000; // Время, которое кеш считается валидным
@@ -468,9 +468,9 @@
     var OMDB_API_KEYS = (window.RATINGS_PLUGIN_TOKENS && window.RATINGS_PLUGIN_TOKENS.OMDB_API_KEYS) || ['1c149048']; // api ключи массивом
     var KP_API_KEYS = (window.RATINGS_PLUGIN_TOKENS && window.RATINGS_PLUGIN_TOKENS.KP_API_KEYS) || ['2a4a0808-81a3-40ae-b0d3-e11335ede616']; // api ключи массивом
     var PROXY_TIMEOUT = 5000; // Таймаут прокси
-    //var JACRED_PROTOCOL = 'http://'; // Протокол JacRed
-    //var JACRED_URL = Lampa.Storage.get('jacred.xyz') || 'jacred.xyz'; // Адрес JacRed
-    //var JACRED_API_KEY = Lampa.Storage.get(''); // api ключ JacRed
+    var JACRED_PROTOCOL = 'http://'; // Протокол JacRed
+    var JACRED_URL = Lampa.Storage.get('jacred.xyz') || 'jacred.xyz'; // Адрес JacRed
+    var JACRED_API_KEY = Lampa.Storage.get(''); // api ключ JacRed
     var PROXY_LIST = [
         'http://api.allorigins.win/raw?url=',
         'http://cors.bwa.workers.dev/'
@@ -944,7 +944,7 @@
         }
     }
 
-    /*// ============================ START: JacRed Integration from Quality.js ============================
+    // ============================ START: JacRed Integration from Quality.js ============================
 
     // [NEW] Added robust fetchWithProxy function from Quality.js
     function fetchWithProxy(url, cardId, callback) {
@@ -1152,7 +1152,7 @@
         }
     }
 
-    // ============================ END: JacRed Integration ============================*/
+    // ============================ END: JacRed Integration ============================
 
     // Функции работы с качеством
     // Удаляем качество с карточки если есть
@@ -1161,7 +1161,7 @@
             $('.full-start__status.maxsm-quality', render).remove();
     }
 
-    /*// Плейсхолдер качества
+    // Плейсхолдер качества
     function showQualityPlaceholder(localCurrentCard, render) {
         if (!render)
             return;
@@ -1176,10 +1176,10 @@
             placeholder.style.opacity = '0.7';
             rateLine.append(placeholder);
         }
-    }*/
+    }
 
     // Получаем касество
-    /*function fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render) {
+    function fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render) {
         if (Q_LOGGING)
             console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Starting JacRed request');
         getBestReleaseFromJacred(normalizedCard, localCurrentCard, function (jrResult) {
@@ -1195,10 +1195,10 @@
             }
             clearQualityElements(localCurrentCard, render);
         });
-    }*/
+    }
 
     // Обновляем качество в карточке
-   /* function updateQualityElement(quality, localCurrentCard, render) {
+    function updateQualityElement(quality, localCurrentCard, render) {
         if (!render)
             return;
         var element = $('.full-start__status.maxsm-quality', render);
@@ -1218,7 +1218,7 @@
             div.textContent = quality;
             rateLine.append(div);
         }
-    }*/
+    }
 
     // Основная функция
     function fetchAdditionalRatings(card, render) {
@@ -1250,7 +1250,7 @@
         var cachedData = getOmdbCache(cacheKey);
         var cachedKpData = getKpCache(cacheKey);
         var cachedIMDBData = getIMDBCache(cacheKey);
-       // var cacheQualityData = getQualityCache(qCacheKey);
+        var cacheQualityData = getQualityCache(qCacheKey);
         var ratingsData = {};
 
         // Оптимищируем ли запросы 1 - экономия, 0 - точность (не избегаем запросов ксли на карточке есть IMDb и KP)
@@ -1262,7 +1262,7 @@
         var kpExists = kpElement.length > 0 && !!kpElement.find('> div').eq(0).text().trim();
         var imdbExists = imdbElement.length > 0 && !!imdbElement.find('> div').eq(0).text().trim();
         // Асинхронно ищем качество
-        /*if (localStorage.getItem('maxsm_ratings_quality') === 'true' && !(localStorage.getItem('maxsm_ratings_quality_tv') === 'false' && normalizedCard.type === 'tv')) {
+        if (localStorage.getItem('maxsm_ratings_quality') === 'true' && !(localStorage.getItem('maxsm_ratings_quality_tv') === 'false' && normalizedCard.type === 'tv')) {
             if (Q_LOGGING)
                 console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Start quality');
             // 1. Обрабатываем кеш качества
@@ -1276,7 +1276,7 @@
                 showQualityPlaceholder(localCurrentCard, render);
                 fetchQualitySequentially(normalizedCard, localCurrentCard, qCacheKey, render);
             }
-        }*/
+        }
         // Запрос рейтинга IMDB
         if (cachedIMDBData) {
             ratingsData.imdb = cachedIMDBData.imdb;
@@ -1616,7 +1616,7 @@
     }
 
     // Функции для работы с кешем качества
-    /*function getQualityCache(key) {
+    function getQualityCache(key) {
         var cache = Lampa.Storage.get(QUALITY_CACHE) || {};
         var item = cache[key];
         return item && (Date.now() - item.timestamp < Q_CACHE_TIME) ? item : null;
@@ -1630,7 +1630,7 @@
             timestamp: Date.now()
         };
         Lampa.Storage.set(QUALITY_CACHE, cache);
-    }*/
+    }
 
     // Получаем IMDB id из TMDB id по API
     function getImdbIdFromTmdb(tmdbId, type, localCurrentCard, callback) {
@@ -1975,7 +1975,7 @@
     }
 
 	//------------------------------------------------- Лепим на карточки ярлыки качества (через получение с JacRed)
-    /*function updateCards(cards) {
+    function updateCards(cards) {
         for (var i = 0; i < cards.length; i++) {
             var card = cards[i];
             if (card.hasAttribute('data-quality-added'))
@@ -2023,10 +2023,10 @@
                 }
             })(card);
         }
-    }*/
+    }
 
 	// Общая функция для применения качества к карточке
-    /*function applyQualityToCard(card, quality, source, qCacheKey) {
+    function applyQualityToCard(card, quality, source, qCacheKey) {
         var _a, _b, _c;
         if (!document.body.contains(card)) {
             if (Q_LOGGING)
@@ -2044,11 +2044,9 @@
         }
 
 		// Сохраняем в кеш если данные от JacRed
-        /*
-		if (source === 'JacRed' && quality && quality !== 'NO') {
+        if (source === 'JacRed' && quality && quality !== 'NO') {
             saveQualityCache(qCacheKey, { quality: quality }, (_b = card.card_data) === null || _b === void 0 ? void 0 : _b.id);
         }
-		
 
 		if (quality && quality !== 'NO') {
             if (Q_LOGGING)
@@ -2061,7 +2059,7 @@
             qualityDiv.appendChild(qualityInner);
             cardView.appendChild(qualityDiv);
         }
-    }*/
+    }
 
 	// Обсервер DOM для новых карт
     var observer = new MutationObserver(function (mutations) {
@@ -2083,8 +2081,8 @@
                 }
             }
         }
- /*       if (newCards.length)
-            updateCards(newCards);*/
+        if (newCards.length)
+            updateCards(newCards);
     });
 
 	// Инициализация плагина
@@ -2353,11 +2351,3 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
-
-
-
-
-
-
-
-

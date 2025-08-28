@@ -1,18 +1,19 @@
-(function() {
-    'use strict';
+(function() {    // Початок анонімної функції-обгортки (щоб не засмічувати глобальну область)
+    'use strict';    // Увімкнення суворого режиму JS (менше помилок)
 
-    var LQE_CONFIG = {
-        CACHE_VERSION: 2,
+// ПОЧАТОК: Конфігурація плагіна (налаштування кешу, логів, стилів, проксі)
+    var LQE_CONFIG = {    // Основний об'єкт з усіма налаштуваннями плагіна
+        CACHE_VERSION: 2,    // Версія кешу (щоб скидати старий кеш при оновленнях)
         LOGGING_GENERAL: false,
         LOGGING_QUALITY: true,
         LOGGING_CARDLIST: false,
-        CACHE_VALID_TIME_MS: 3 * 24 * 60 * 60 * 1000, // 1 день
-        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // 12 часов для фонового обновления
+        CACHE_VALID_TIME_MS: 3 * 24 * 60 * 60 * 1000, // 1 день    // Час життя кешу (тут: 3 дні)
+        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // 12 часов для фонового обновления    // Коли кеш старий (12 год), робимо фонове оновлення
         CACHE_KEY: 'lampa_quality_cache',
         JACRED_PROTOCOL: 'http://',
         JACRED_URL: 'jacred.xyz',
         JACRED_API_KEY: '',
-        PROXY_LIST: [
+        PROXY_LIST: [    // Список проксі-серверів для обходу CORS блокувань
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
@@ -31,7 +32,7 @@
         LIST_CARD_LABEL_FONT_SIZE: '1.3em',
         LIST_CARD_LABEL_FONT_STYLE: 'italic',
 
-        MANUAL_OVERRIDES: {
+        MANUAL_OVERRIDES: {    // Ручні перевизначення якості для окремих ID фільмів/серіалів
             '90802': { quality_code: 2160, full_label: '4K Web-DLRip' },
             '20873': { quality_code: 2160, full_label: '4K BDRip' },
             '1128655': { quality_code: 2160, full_label: '4K Web-DL' },
@@ -52,6 +53,9 @@
 
     var currentGlobalMovieId = null;
 
+// КІНЕЦЬ: Конфігурація
+
+// ПОЧАТОК: Відповідність назв якості (як писано у торренті → як показати користувачу)
     var QUALITY_DISPLAY_MAP = {
         "WEBRip 1080p | AVC @ звук с TS": "1080P WEBRip/Ts",
         "TeleSynch 1080P": "TeleSynch",
@@ -130,11 +134,17 @@
         "ts": "TeleSync"
     };
 
+// КІНЕЦЬ: Відповідність назв якості
+
+// ПОЧАТОК: Які параметри якості важливіші при складанні позначки
     var QUALITY_PRIORITY_ORDER = [
         'resolution',
         'source',
     ];
 
+// КІНЕЦЬ: Порядок пріоритетів
+
+// ПОЧАТОК: CSS стилі для відображення якості на картках та у повному описі
 var styleLQE = "<style id=\"lampa_quality_styles\">" +
     ".full-start-new__rate-line {" +
     "visibility: hidden;" +
@@ -188,6 +198,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     Lampa.Template.add('lampa_quality_css', styleLQE);
     $('body').append(Lampa.Template.get('lampa_quality_css', {}, true));
 
+// КІНЕЦЬ: CSS стилі для ярликів якості
+
+// ПОЧАТОК: CSS стилі для анімації завантаження (три точки)
     var loadingStylesLQE = "<style id=\"lampa_quality_loading_animation\">" +
         ".loading-dots-container {" +
         "    position: absolute;" +
@@ -241,19 +254,22 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     Lampa.Template.add('lampa_quality_loading_animation_css', loadingStylesLQE);
     $('body').append(Lampa.Template.get('lampa_quality_loading_animation_css', {}, true));
 
+// КІНЕЦЬ: CSS стилі для анімації завантаження
+
+// ПОЧАТОК: Завантаження даних з JacRed через список проксі
     function fetchWithProxy(url, cardId, callback) {
         var currentProxyIndex = 0;
         var callbackCalled = false;
 
         function tryNextProxy() {
-            if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {
+            if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {    // Список проксі-серверів для обходу CORS блокувань
                 if (!callbackCalled) {
                     callbackCalled = true;
                     callback(new Error('All proxies failed for ' + url));
                 }
                 return;
             }
-            var proxyUrl = LQE_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
+            var proxyUrl = LQE_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);    // Список проксі-серверів для обходу CORS блокувань
             if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
             var timeoutId = setTimeout(function() {
                 if (!callbackCalled) {
@@ -286,6 +302,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         tryNextProxy();
     }
 
+// КІНЕЦЬ: fetchWithProxy
+
+// ПОЧАТОК: Додати анімацію 'Завантаження...' на картку
     function addLoadingAnimation(cardId, renderElement) {
         if (!renderElement) return;
         if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Add loading animation");
@@ -307,18 +326,27 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         });
     }
 
+// КІНЕЦЬ: addLoadingAnimation
+
+// ПОЧАТОК: Прибрати анімацію 'Завантаження...' з картки
     function removeLoadingAnimation(cardId, renderElement) {
         if (!renderElement) return;
         if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Remove loading animation");
         $('.loading-dots-container', renderElement).remove();
     }
 
+// КІНЕЦЬ: removeLoadingAnimation
+
+// ПОЧАТОК: Визначення типу картки (фільм чи серіал)
     function getCardType(cardData) {
         var type = cardData.media_type || cardData.type;
         if (type === 'movie' || type === 'tv') return type;
         return cardData.name || cardData.original_name ? 'tv' : 'movie';
     }
 
+// КІНЕЦЬ: getCardType
+
+// ПОЧАТОК: Перетворення сирого ярлика якості у гарний вигляд
     function translateQualityLabel(qualityCode, fullTorrentTitle) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Received qualityCode:", qualityCode, "fullTorrentTitle:", fullTorrentTitle);
         let finalDisplayLabel = '';
@@ -428,6 +456,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         return finalDisplayLabel;
     }
 
+// КІНЕЦЬ: translateQualityLabel
+
+// ПОЧАТОК: Пошук найкращого релізу у JacRed API
     function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         if (!LQE_CONFIG.JACRED_URL) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: JACRED_URL is not set.");
@@ -460,7 +491,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
                 controller.abort();
                 if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", `card: ${cardId}, JacRed: ${strategyName} request timed out.`);
                 apiCallback(null);
-            }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);
+            }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);    // Список проксі-серверів для обходу CORS блокувань
             fetchWithProxy(apiUrl, cardId, function(error, responseText) {
                 clearTimeout(timeoutId);
                 if (error) {
@@ -615,16 +646,22 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         }
     }
 
+// КІНЕЦЬ: getBestReleaseFromJacred
+
+// ПОЧАТОК: Перевірка кешу наявності даних про якість
     function getQualityCache(key) {
         var cache = Lampa.Storage.get(LQE_CONFIG.CACHE_KEY) || {};
         var item = cache[key];
-        var isCacheValid = item && (Date.now() - item.timestamp < LQE_CONFIG.CACHE_VALID_TIME_MS);
+        var isCacheValid = item && (Date.now() - item.timestamp < LQE_CONFIG.CACHE_VALID_TIME_MS);    // Час життя кешу (тут: 3 дні)
         if (LQE_CONFIG.LOGGING_QUALITY) {
             console.log("LQE-QUALITY", "Cache: Checking quality cache for key:", key, "Found:", !!item, "Valid:", isCacheValid);
         }
         return isCacheValid ? item : null;
     }
 
+// КІНЕЦЬ: getQualityCache
+
+// ПОЧАТОК: Збереження інформації про якість у кеш
     function saveQualityCache(key, data, cardId) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Cache: Saving quality cache for key:", key, "Data:", data);
         var cache = Lampa.Storage.get(LQE_CONFIG.CACHE_KEY) || {};
@@ -636,6 +673,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         Lampa.Storage.set(LQE_CONFIG.CACHE_KEY, cache);
     }
 
+// КІНЕЦЬ: saveQualityCache
+
+// ПОЧАТОК: Видалення старих елементів якості з повної картки
     function clearFullCardQualityElements(cardId, renderElement) {
         if (renderElement) {
             var existingElements = $('.full-start__status.lqe-quality', renderElement);
@@ -646,6 +686,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         }
     }
 
+// КІНЕЦЬ: clearFullCardQualityElements
+
+// ПОЧАТОК: Додати плейсхолдер 'Завантаження...' у повну картку
     function showFullCardQualityPlaceholder(cardId, renderElement) {
         if (!renderElement) return;
         var rateLine = $('.full-start-new__rate-line', renderElement);
@@ -668,8 +711,11 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     /**
      * ИСПРАВЛЕНИЕ: Добавлен флаг bypassTranslation.
      * Если true, label используется напрямую, без вызова translateQualityLabel.
-     * Это нужно для MANUAL_OVERRIDES, чтобы отображать метку "как есть".
+     * Это нужно для MANUAL_OVERRIDES, чтобы отображать метку "как есть".    // Ручні перевизначення якості для окремих ID фільмів/серіалів
      */
+// КІНЕЦЬ: showFullCardQualityPlaceholder
+
+// ПОЧАТОК: Оновлення (або створення) ярлика якості на повній картці
     function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation = false) {
         if (!renderElement) return;
         var element = $('.full-start__status.lqe-quality', renderElement);
@@ -690,6 +736,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         }
     }
 
+// КІНЕЦЬ: updateFullCardQualityElement
+
+// ПОЧАТОК: Логіка обробки повної картки (перевірка кешу, JacRed, ручних правил)
     function processFullCardQuality(cardData, renderElement) {
         if (!renderElement) {
             console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
@@ -714,10 +763,10 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
             if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", .full-start-new__rate-line not found, skipping loading animation.");
         }
         var isTvSeries = (normalizedCard.type === 'tv' || normalizedCard.name);
-        var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + (isTvSeries ? 'tv_' : 'movie_') + normalizedCard.id;
+        var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + (isTvSeries ? 'tv_' : 'movie_') + normalizedCard.id;    // Версія кешу (щоб скидати старий кеш при оновленнях)
         
         // ИСПРАВЛЕНИЕ: Проверяем ручные настройки
-        var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+        var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];    // Ручні перевизначення якості для окремих ID фільмів/серіалів
         if (manualOverrideData) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override:", manualOverrideData);
             // Вызываем обновление UI, передавая true для обхода трансляции
@@ -734,7 +783,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
                 updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement);
                 
-                if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+                if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {    // Коли кеш старий (12 год), робимо фонове оновлення
                     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
                     getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
                         if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
@@ -786,6 +835,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
      * ИСПРАВЛЕНИЕ: Добавлен флаг bypassTranslation.
      * Аналогично `updateFullCardQualityElement`, позволяет обойти трансляцию для ручных настроек.
      */
+// КІНЕЦЬ: processFullCardQuality
+
+// ПОЧАТОК: Оновлення ярлика якості на картці у списку
     function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation = false) {
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
         
@@ -801,6 +853,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     }
 
 
+// КІНЕЦЬ: updateCardListQualityElement
+
+// ПОЧАТОК: Основна логіка роботи зі списковими картками (серіали/фільми)
     function updateCardListQuality(cardElement) {
         if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "updateCardListQuality called for card.");
         if (cardElement.hasAttribute('data-lqe-quality-processed')) {
@@ -826,11 +881,11 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
             release_date: cardData.release_date || cardData.first_air_date || ''
         };
         var cardId = normalizedCard.id;
-        var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + normalizedCard.type + '_' + cardId;
+        var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + normalizedCard.type + '_' + cardId;    // Версія кешу (щоб скидати старий кеш при оновленнях)
         cardElement.setAttribute('data-lqe-quality-processed', 'true');
 
         // ИСПРАВЛЕНИЕ: Проверяем ручные настройки для карточек в списке
-        var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+        var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];    // Ручні перевизначення якості для окремих ID фільмів/серіалів
         if (manualOverrideData) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override for card list:", manualOverrideData);
             updateCardListQualityElement(cardView, null, manualOverrideData.full_label, true);
@@ -842,7 +897,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
             if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Quality data found in cache for card list:', cachedQualityData);
             updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label);
 
-            if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+            if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {    // Коли кеш старий (12 год), робимо фонове оновлення
                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh.");
                 getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
                     if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
@@ -883,6 +938,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         });
     }
 
+// КІНЕЦЬ: updateCardListQuality
+
+// ПОЧАТОК: Спостерігач за DOM (MutationObserver) для нових карток
     var observer = new MutationObserver(function(mutations) {
         var newCards = [];
         for (var m = 0; m < mutations.length; m++) {
@@ -907,6 +965,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         }
     });
 
+// КІНЕЦЬ: observer
+
+// ПОЧАТОК: Ініціалізація плагіна Lampa Quality (старт логіки)
     function initializeLampaQualityPlugin() {
         if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "Lampa Quality Enhancer: Plugin Initialization Started!");
         window.lampaQualityPlugin = true;
@@ -925,6 +986,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         });
     }
 
+// КІНЕЦЬ: initializeLampaQualityPlugin
+
+// ПОЧАТОК: Запуск плагіна, якщо він ще не був запущений
     if (!window.lampaQualityPlugin) {
         initializeLampaQualityPlugin();
     }

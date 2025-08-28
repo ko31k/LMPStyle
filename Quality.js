@@ -838,7 +838,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
 // КІНЕЦЬ: processFullCardQuality
 
 // ПОЧАТОК: Оновлення ярлика якості на картці у списку
-    function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation = false) {
+        function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation = false) {
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
         
         var existingQualityElements = cardView.getElementsByClassName('card__quality');
@@ -846,12 +846,9 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
 
         var qualityDiv = document.createElement('div');
         qualityDiv.className = 'card__quality';
-        var innerElement = document.createElement('div');
-        innerElement.textContent = displayQuality;
-        qualityDiv.appendChild(innerElement);
+        qualityDiv.textContent = displayQuality; // Текст додаємо напряму
         cardView.appendChild(qualityDiv);
     }
-
 
 // КІНЕЦЬ: updateCardListQualityElement
 

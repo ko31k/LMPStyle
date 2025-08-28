@@ -25,7 +25,7 @@
         FULL_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         FULL_CARD_LABEL_FONT_WEIGHT: 'normal',
         FULL_CARD_LABEL_FONT_SIZE: '1.22em',
-        FULL_CARD_LABEL_FONT_STYLE: 'italic',
+        FULL_CARD_LABEL_FONT_STYLE: 'normal',
 
         // --- СТИЛІ ДЛЯ ЛЕЙБЛА НА КАРТКАХ У СПИСКУ ---
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D', // <-- Колір рамки (червоний)
@@ -161,13 +161,13 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " text-align: center;" +
     " text-transform: none; " +
     // --- ЗМІНА: Додано !important до рамки, щоб гарантувати застосування кольору ---
-    " border: 0.7px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
+    " border: 0.8px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
     " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" +
     " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
     " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
     " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
     " border-radius: 0.17em; " +
-    " padding: 0.20em 0.30em; " +
+    " padding: 0.21em 0.31em; " +
     "}" +
     ".card__view {" +
     " position: relative; " +

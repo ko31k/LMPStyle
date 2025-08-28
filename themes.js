@@ -116,7 +116,7 @@
         Lampa.Storage.set('background', 'true');
         Lampa.Storage.set('card_interfice_type', 'new');
         Lampa.Storage.set('glass_style', 'false');
-        Lampa.Storage.set('card_interfice_poster', 'false');
+      //Lampa.Storage.set('card_interfice_poster', 'false');
         Lampa.Storage.set('card_interfice_cover', 'true');
         Lampa.Storage.set('advanced_animation', 'false');
 
@@ -261,5 +261,6 @@
     window.maxsm_themes = maxsm_themes;
 
 })();
+
 
 

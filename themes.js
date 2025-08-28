@@ -105,9 +105,9 @@
                 e.body.find('[data-name="glass_style"]').prev('.settings-param-title').remove();
                 e.body.find('[data-name="glass_style"]').remove();
                 e.body.find('[data-name="glass_opacity"]').remove();
-                e.body.find('[data-name="card_interfice_poster"]').prev('.settings-param-title').remove();
-                e.body.find('[data-name="card_interfice_poster"]').remove();
-                e.body.find('[data-name="card_interfice_cover"]').remove();
+                //e.body.find('[data-name="card_interfice_poster"]').prev('.settings-param-title').remove();
+                //e.body.find('[data-name="card_interfice_poster"]').remove();
+                //e.body.find('[data-name="card_interfice_cover"]').remove();
                 e.body.find('[data-name="advanced_animation"]').remove();
             }
         });
@@ -261,3 +261,4 @@
     window.maxsm_themes = maxsm_themes;
 
 })();
+

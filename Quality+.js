@@ -161,13 +161,13 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " text-align: center;" +
     " text-transform: none; " +
     // --- ЗМІНА: Додано !important до рамки, щоб гарантувати застосування кольору ---
-    " border: 0.9px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
+    " border: 0.7px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
     " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" +
     " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
     " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
     " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
-    " border-radius: 0.13em; " +
-    " padding: 0.16em 0.26em; " +
+    " border-radius: 0.15em; " +
+    " padding: 0.18em 0.28em; " +
     "}" +
     ".card__view {" +
     " position: relative; " +

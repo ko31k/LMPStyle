@@ -113,7 +113,7 @@
         });
         // Настройки интерфейса под темы
         Lampa.Storage.set('light_version', 'false');
-        Lampa.Storage.set('background', 'false');
+        //Lampa.Storage.set('background', 'false');
         Lampa.Storage.set('card_interfice_type', 'new');
         Lampa.Storage.set('glass_style', 'false');
         Lampa.Storage.set('card_interfice_poster', 'false');
@@ -259,4 +259,5 @@
 
     // Экспортируем объект плагина для внешнего доступа
     window.maxsm_themes = maxsm_themes;
+
 })();

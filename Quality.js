@@ -22,14 +22,14 @@
         FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF',
         FULL_CARD_LABEL_TEXT_COLOR: '#FFFFFF',
         FULL_CARD_LABEL_FONT_WEIGHT: 'normal',
-        FULL_CARD_LABEL_FONT_SIZE: '1.3em',
+        FULL_CARD_LABEL_FONT_SIZE: '1.25em',
         FULL_CARD_LABEL_FONT_STYLE: 'italic',
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
         LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)',
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF',
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
-        LIST_CARD_LABEL_FONT_SIZE: '1.1em',
+        LIST_CARD_LABEL_FONT_SIZE: '1.0em',
         LIST_CARD_LABEL_FONT_STYLE: 'italic',
 
         MANUAL_OVERRIDES: {    // Ручні перевизначення якості для окремих ID фільмів/серіалів
@@ -165,8 +165,8 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + ";" +
     " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + ";" +
     " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + ";" +
-    " border-radius: 0.2em " +
-    " padding: 0.2em 0.3em " +
+    " border-radius: 0.15em " +
+    " padding: 0.15em 0.25em " +
     "}" +
     ".card__view {" +
     " position: relative " +

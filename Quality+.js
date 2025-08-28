@@ -21,15 +21,15 @@
         SHOW_QUALITY_FOR_TV_SERIES: true,
         
         // --- СТИЛІ ДЛЯ ЛЕЙБЛА НА ПОВНІЙ КАРТЦІ ФІЛЬМУ ---
-        FULL_CARD_LABEL_BORDER_COLOR: '#FF0000', // <-- Колір рамки лейбла (червоний)
+        FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF', // <-- Колір рамки лейбла (червоний)
         FULL_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         FULL_CARD_LABEL_FONT_WEIGHT: 'normal',
         FULL_CARD_LABEL_FONT_SIZE: '1.2em',
         FULL_CARD_LABEL_FONT_STYLE: 'italic',
 
         // --- СТИЛІ ДЛЯ ЛЕЙБЛА НА КАРТКАХ У СПИСКУ ---
-        LIST_CARD_LABEL_BORDER_COLOR: '#FF0000', // <-- Колір рамки (червоний)
-        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(255, 0, 0, 0.8)', // <-- Колір фону лейбла (червоний)
+        LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D', // <-- Колір рамки (червоний)
+        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)', // <-- Колір фону лейбла (червоний)
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         LIST_CARD_LABEL_FONT_WEIGHT: '600',

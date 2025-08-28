@@ -35,8 +35,8 @@
     // Цвета loader'а для каждой темы
     var loaderColors = {
         "default": '#fff',
-        violet_blue: '#6a11cb',!important;
-        mint_dark: '#3da18d', !important;
+        violet_blue: '#6a11cb',
+        mint_dark: '#3da18d',
         deep_aurora: '#7e7ed9',
         crystal_cyan: '#7ed0f9',
         amber_noir: '#f4a261',
@@ -113,7 +113,7 @@
         });
         // Настройки интерфейса под темы
         Lampa.Storage.set('light_version', 'false');
-        Lampa.Storage.set('background', 'true');
+        Lampa.Storage.set('background', 'false');
         Lampa.Storage.set('card_interfice_type', 'new');
         Lampa.Storage.set('glass_style', 'false');
       //Lampa.Storage.set('card_interfice_poster', 'false');
@@ -261,6 +261,7 @@
     window.maxsm_themes = maxsm_themes;
 
 })();
+
 
 
 

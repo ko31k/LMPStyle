@@ -22,7 +22,7 @@
         FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF',
         FULL_CARD_LABEL_TEXT_COLOR: '#FFFFFF',
         FULL_CARD_LABEL_FONT_WEIGHT: 'normal',
-        FULL_CARD_LABEL_FONT_SIZE: '1.3em',
+        FULL_CARD_LABEL_FONT_SIZE: '1.2em',
         FULL_CARD_LABEL_FONT_STYLE: 'italic',
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
         LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)',
@@ -159,12 +159,12 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     ".lqe-quality {" +
     " min-width: 2.8em;" +
     " text-align: center;" +
-    " text-transform: none " +
+        " text-transform: none " +
     " border: 1.1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " " +
-    " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + ";" +
-    " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + ";" +
-    " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + ";" +
-    " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + ";" +
+    " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" +
+    " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
+    " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
+    " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
     " border-radius: 0.13em " +
     " padding: 0.13em 0.23em " +
     "}" +
@@ -175,7 +175,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " position: absolute " +
     " bottom: 0 " +
     " left: 0 " +
-    " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + ";" +
+    " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + "!important;" +
     " z-index: 10;" +
     " width: fit-content " +
     " max-width: calc(100% - 1em) " +

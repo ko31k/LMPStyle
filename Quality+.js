@@ -152,7 +152,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     "gap: 0.4em 0;" +
     "}" +
     ".full-start-new__rate-line > * {" +
-    "margin-right: 0.5em " +
+    "margin-right: 0.5em;" +
     "flex-shrink: 0;" +
     "flex-grow: 0;" +
     "}" +
@@ -174,13 +174,13 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     "}" +
     ".card__quality {" +
     " position: absolute; " +
-    " bottom: 2.5em; " +
+    " bottom: 3.0em; " +
     " left: 0; " +
     " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" +
     " z-index: 10;" +
     " width: fit-content; " +
     " max-width: calc(100% - 1em); " +
-    " border-radius: 0.6em 0.6em 0.6em 0.6em; " +
+    " border-radius: 0 0.8em 0.8em 0; " +
     " overflow: hidden;" +
     "}" +
     ".card__quality div {" +

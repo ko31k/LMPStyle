@@ -105,15 +105,15 @@
                 e.body.find('[data-name="glass_style"]').prev('.settings-param-title').remove();
                 e.body.find('[data-name="glass_style"]').remove();
                 e.body.find('[data-name="glass_opacity"]').remove();
-                //e.body.find('[data-name="card_interfice_poster"]').prev('.settings-param-title').remove();
-                //e.body.find('[data-name="card_interfice_poster"]').remove();
-                //e.body.find('[data-name="card_interfice_cover"]').remove();
+                e.body.find('[data-name="card_interfice_poster"]').prev('.settings-param-title').remove();
+                e.body.find('[data-name="card_interfice_poster"]').remove();
+                e.body.find('[data-name="card_interfice_cover"]').remove();
                 e.body.find('[data-name="advanced_animation"]').remove();
             }
         });
         // Настройки интерфейса под темы
         Lampa.Storage.set('light_version', 'false');
-        //Lampa.Storage.set('background', 'false');
+        Lampa.Storage.set('background', 'true');
         Lampa.Storage.set('card_interfice_type', 'new');
         Lampa.Storage.set('glass_style', 'false');
         Lampa.Storage.set('card_interfice_poster', 'false');
@@ -261,4 +261,5 @@
     window.maxsm_themes = maxsm_themes;
 
 })();
+
 

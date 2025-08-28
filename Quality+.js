@@ -58,15 +58,15 @@
 // ПОЧАТОК: Відповідність назв якості (як писано у торренті → як показати користувачу)
     var QUALITY_DISPLAY_MAP = {
         "WEBRip 1080p | AVC @ звук с TS": "1080P WEBRip/Ts",
-        "TeleSynch 1080P": "TeleSynch",
-        "4K Web-DL 10bit HDR P81 HEVC": "4K Web-DL",
-        "Telecine [H.264/1080P] [звук с TS] [AD]": "1080P Ts",
-        "WEB-DLRip @ Синема УС": "Web-DLRip",
+        "TeleSynch 1080P": "TS",
+        "4K Web-DL 10bit HDR P81 HEVC": "4K WEB-DL",
+        "Telecine [H.264/1080P] [звук с TS] [AD]": "1080P TS",
+        "WEB-DLRip @ Синема УС": "WEB-DLRip",
         "UHD Blu-ray disc 2160p": "4K Blu-ray",
         "Blu-ray disc 1080P]": "1080P Blu-ray",
         "Blu-Ray Remux (1080P)": "1080P BDRemux",
         "BDRemux 1080P] [Крупный план]": "1080P BDRemux",
-        "Blu-ray disc (custom) 1080P]": "1080P Web-DLRip",
+        "Blu-ray disc (custom) 1080P]": "1080P WEB-DLRip",
         "DVDRip [AV1/2160p] [4K, SDR, 10-bit] [hand made Upscale AI]": "4K Upscale AI",
         "Hybrid (2160p)": "4K Hybrid",
         "Blu-ray disc] [Mastered in 4K] [Extended Cut]": "4K Blu-ray",
@@ -93,12 +93,12 @@
         "hybrid 2160p": "4K Hybrid",
         "480p": "SD",
         "480": "SD",
-        "web-dl": "Web-DL",
+        "web-dl": "WEB-DL",
         "webrip": "WEBRip",
-        "web-dlrip (2160p)": "4K Web-DLRip",
+        "web-dlrip (2160p)": "4K WEB-DLRip",
         "web-dlrip": "WEB-DLRip",
-        "1080p web-dlrip": "1080p Web-DLRip",
-        "webdlrip": "Web-DLRip",
+        "1080p web-dlrip": "1080p WEB-DLRip",
+        "webdlrip": "WEB-DLRip",
         "hdtvrip-avc": "HDTVRip-AVC",
         "bluray": "BluRay",
         "bdrip": "BDRip",
@@ -161,13 +161,13 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " text-align: center;" +
     " text-transform: none; " +
     // --- ЗМІНА: Додано !important до рамки, щоб гарантувати застосування кольору ---
-    " border: 1.1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
+    " border: 0.9px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
     " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" +
     " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
     " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
     " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
-    " border-radius: 0.11em; " +
-    " padding: 0.14em 0.24em; " +
+    " border-radius: 0.13em; " +
+    " padding: 0.16em 0.26em; " +
     "}" +
     ".card__view {" +
     " position: relative; " +

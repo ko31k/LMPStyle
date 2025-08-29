@@ -297,24 +297,10 @@
 	$('body').append(Lampa.Template.get('maxsm_ratings_modal', {}, true));
 
 	var style = "<style id=\"maxsm_ratings\">" +
-		".full-start-new__rate-line {" +
-		"    visibility: hidden;" +
-		"    display: flex;" +
-		"    flex-wrap: wrap;" +
-		"    align-items: center;" +
-		"    width: fit-content;" +
-		"    max-width: 100%;" +
-		"}" +
-		".full-start-new__rate-line > * {" +
-		"    margin-right: 0.05em " +
-		"    flex-shrink: 0;" +
-		"}" +
+		"." +
+		"." +
 		/* Фикс для SVG на WebOS */
-		".full-start-new__rate-line svg {" +
-		"    width: 1.8em " + /* Фиксированная ширина */
-		"    height: 1.8em " + /* Фиксированная высота */
-		"    flex-shrink: 0;" + /* Запрет сжатия */
-		"}" +
+		"." +
 		".rate--green  { color: #4caf50; }" +
 		".rate--lime   { color: #cddc39; }" +
 		".rate--orange { color: #ff9800; }" +
@@ -330,9 +316,7 @@
         ".card__quality div { text-transform: none  border: 1.1px solid #FFFF00  background-color: rgba(255, 255, 0, 0.7)  color: #000000; font-weight: 600; font-size: 1.3em; font-style: italic; border-radius: 0em  padding: 0.15em 0.3em  }" +
 		/* Адаптация для WebOS (если нужно) */
 		"@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
-		"    .full-start-new__rate-line {" +
-		"        gap: 0.01em;" + /* Минимальный отступ между элементами */
-		"    }" +
+		"    ." +
 		"}" +
 		"</style>";
 
@@ -341,11 +325,7 @@
 
 	var style = "<style id=\"maxsm_ratings_table\">" +
 		// Основной контейнер //
-		".full-start-new__rate-line {" +
-		"    display: flex;" +
-		"    flex-wrap: nowrap;" +
-		"    gap: 0.01em;" +
-		"}" +
+		"." +
 		// Блок рейтинга //
 		".full-start__rate {" +
 		"    display: flex;" +
@@ -368,11 +348,7 @@
 		//"    text-transform: uppercase;" +
 		"}" +
 		// Фикс для SVG (одинаковый размер) //
-		".full-start-new__rate-line > div:not(.full-start__age):not(.full-start__status) svg {" +
-		"    width: 1.3em " +
-		"    height: 1.3em " +
-		"    vertical-align: middle;" +
-		"}" +
+		"." +
 		".rate--green  { color: #4caf50; }" +
 		".rate--lime   { color: #cddc39; }" +
 		".rate--orange { color: #ff9800; }" +
@@ -385,12 +361,10 @@
 		".maxsm-quality { min-width: 2.8em; text-align: center; }" +
 		// Адаптация для WebOS (если нужно) //
 		"@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
-		"    .full-start-new__rate-line {" +
-		"        gap: 0.01em;" + // Минимальный отступ между элементами //
-		"    }" +
+		"    ." +
 		// Адаптация для мобильных //
 		"@media (max-width: 600px) {" +
-		"    .full-start-new__rate-line { gap: 0.3em; }" +
+		"    ." +
 		"    .full-start__rate > div:first-child { font-size: 1em; }" +
 		"    .full-start__rate > div:last-child, .full-start__rate > .source--name { font-size: 0.7em; }" +
 		"}" +
@@ -409,9 +383,7 @@
         "    transform: translateY(-50%);" +
         "    z-index: 10;" +
         "}" +
-        ".full-start-new__rate-line {" +
-        "    position: relative;" +
-        "}" +
+        "." +
         ".loading-dots {" +
         "    display: inline-flex;" +
         "    align-items: center;" +
@@ -881,21 +853,7 @@
             return;
         if (C_LOGGING)
             console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Add loading animation");
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length || $('.loading-dots-container', rateLine).length)
-            return;
-        rateLine.append('<div class="loading-dots-container">' +
-            '<div class="loading-dots">' +
-            '<span class="loading-dots__text">' + Lampa.Lang.translate("maxsm_ratings_loading") + '</span>' +
-            '<span class="loading-dots__dot"></span>' +
-            '<span class="loading-dots__dot"></span>' +
-            '<span class="loading-dots__dot"></span>' +
-            '</div>' +
-            '</div>');
-        $('.loading-dots-container', rateLine).css({
-            'opacity': '1',
-            'visibility': 'visible'
-        });
+        var rateLine = $('.);
     }
 
     // Улучшенная функция удаления анимации
@@ -1165,17 +1123,7 @@
     function showQualityPlaceholder(localCurrentCard, render) {
         if (!render)
             return;
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length)
-            return;
-        // Проверяем, не добавлен ли уже плейсхолдер
-        if (!$('.full-start__status.maxsm-quality', render).length) {
-            var placeholder = document.createElement('div');
-            placeholder.className = 'full-start__status maxsm-quality';
-            placeholder.textContent = '...';
-            placeholder.style.opacity = '0.7';
-            rateLine.append(placeholder);
-        }
+        var rateLine = $('.
     }
 
     // Получаем касество
@@ -1202,14 +1150,7 @@
         if (!render)
             return;
         var element = $('.full-start__status.maxsm-quality', render);
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length)
-            return;
-        if (element.length) {
-            if (Q_LOGGING)
-                console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Updating existing element with quality "' + quality + '" (displayed as "' + quality + '")');
-            element.text(quality).css('opacity', '1');
-        }
+        var rateLine = $('.
         else {
             if (Q_LOGGING)
                 console.log('MAXSM-RATINGS', ' card: ' + localCurrentCard + ', quality: Creating new element with quality "' + quality + '" (displayed as "' + quality + '")');
@@ -1239,12 +1180,7 @@
         };
         if (C_LOGGING)
             console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", imdb id: " + normalizedCard.imdb_id + " title: " + normalizedCard.title + " orig: " + normalizedCard.original_title + " type: " + normalizedCard.type + " date: " + normalizedCard.release_date);
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (rateLine.length) {
-            rateLine.css('visibility', 'hidden');
-            rateLine.addClass('done');
-            addLoadingAnimation(localCurrentCard, render);
-        }
+        var rateLine = $('.
         var cacheKey = normalizedCard.type + '_' + (normalizedCard.imdb_id || normalizedCard.id);
         var qCacheKey = normalizedCard.type + '_' + (normalizedCard.id || normalizedCard.imdb_id);
         var cachedData = getOmdbCache(cacheKey);
@@ -1426,60 +1362,7 @@
         // Создаем контейнер для модального окна
         var modalContent = $('<div class="maxsm-modal-ratings"></div>');
         // Находим строку рейтингов
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length)
-            return;
-        // Порядок отображения рейтингов
-        var ratingOrder = [
-            'rate--avg',
-            'rate--oscars',
-            'rate--emmy',
-            'rate--awards',
-            'rate--tmdb',
-            'rate--imdb',
-            'rate--kp',
-            'rate--rt',
-            'rate--mc'
-        ];
-
-        // Собираем рейтинги в нужном порядке
-        ratingOrder.forEach(function (className) {
-            var element = $('.' + className, rateLine);
-            if (element.length) {
-                // Берем значение из первого дочернего элемента
-                var value = element.children().eq(0).text().trim();
-                var numericValue = parseFloat(value);
-                // Определяем название рейтинга
-                var label = '';
-                switch (className) {
-                    case 'rate--avg':
-                        label = Lampa.Lang.translate("maxsm_ratings_mode");
-                        break;
-                    case 'rate--oscars':
-                        label = Lampa.Lang.translate("maxsm_ratings_oscars");
-                        break;
-                    case 'rate--emmy':
-                        label = Lampa.Lang.translate("maxsm_ratings_emmy");
-                        break;
-                    case 'rate--awards':
-                        label = Lampa.Lang.translate("maxsm_ratings_awards");
-                        break;
-                    case 'rate--tmdb':
-                        label = 'TMDB';
-                        break;
-                    case 'rate--imdb':
-                        label = 'IMDb';
-                        break;
-                    case 'rate--kp':
-                        label = 'Кинопоиск';
-                        break;
-                    case 'rate--rt':
-                        label = 'Rotten Tomatoes';
-                        break;
-                    case 'rate--mc':
-                        label = 'Metacritic';
-                        break;
-                }
+        var rateLine = $('.
                 // Создаем элемент строки с префиксными классами
                 var item = $('<div class="maxsm-modal-rating-line"></div>');
                 // Применяем цветовые классы если включена настройка
@@ -1842,27 +1725,7 @@
             return;
         if (C_LOGGING)
             console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Insert OMDB ratings");
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length)
-            return;
-        var lastRate = $('.full-start__rate:last', rateLine);
-        var showRT = localStorage.getItem('maxsm_ratings_critic') === 'true';
-        var showMC = localStorage.getItem('maxsm_ratings_critic') === 'true';
-        var showAwards = localStorage.getItem('maxsm_ratings_awards') === 'true';
-        var showOscar = localStorage.getItem('maxsm_ratings_awards') === 'true';
-        var showColors = localStorage.getItem('maxsm_ratings_colors') === 'true';
-        var showEmmy = localStorage.getItem('maxsm_ratings_awards') === 'true';
-        var elemLabel;
-        if (showRT && rtRating && !isNaN(rtRating) && !$('.rate--rt', rateLine).length) {
-            if (C_LOGGING)
-                console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Insert Tomatoes");
-            var rtElement = $('<div class="full-start__rate rate--rt">' +
-                '<div>' + rtRating + '</div>' +
-                '<div class="source--name">Tomatoes</div>' +
-                '</div>');
-            if (lastRate.length) {
-                rtElement.insertAfter(lastRate);
-            }
+        var rateLine = $('.
             else {
                 rateLine.prepend(rtElement);
             }
@@ -1927,16 +1790,7 @@
         if (C_LOGGING)
             console.log("MAXSM-RATINGS", "card: " + localCurrentCard + ", Calculate avarage rating");
         //if (!stillHere(localCurrentCard)) return;
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length)
-            return;
-        var ratings = {
-            imdb: parseFloat($('.rate--imdb div:first', rateLine).text()) || 0,
-            tmdb: parseFloat($('.rate--tmdb div:first', rateLine).text()) || 0,
-            kp: parseFloat($('.rate--kp div:first', rateLine).text()) || 0,
-            mc: (parseFloat($('.rate--mc div:first', rateLine).text()) || 0) / 10,
-            rt: (parseFloat($('.rate--rt div:first', rateLine).text()) || 0) / 10
-        };
+        var rateLine = $('.;
         var totalWeight = 0;
         var weightedSum = 0;
         var ratingsCount = 0;

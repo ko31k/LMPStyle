@@ -21,19 +21,19 @@
         SHOW_QUALITY_FOR_TV_SERIES: true,
         
         // --- СТИЛІ ДЛЯ ЛЕЙБЛА НА ПОВНІЙ КАРТЦІ ФІЛЬМУ ---
-        FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF', // <-- Колір рамки лейбла (червоний)
+        FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF', // <-- Колір рамки лейбла (білий)
         FULL_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         FULL_CARD_LABEL_FONT_WEIGHT: 'normal',
         FULL_CARD_LABEL_FONT_SIZE: '1.22em',
         FULL_CARD_LABEL_FONT_STYLE: 'normal',
 
         // --- СТИЛІ ДЛЯ ЛЕЙБЛА НА КАРТКАХ У СПИСКУ ---
-        LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D', // <-- Колір рамки (червоний)
-        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)', // <-- Колір фону лейбла (червоний)
+        LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D', // <-- Колір рамки (м'ятний)
+        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)', // <-- Колір фону лейбла (м'ятний)
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
-        LIST_CARD_LABEL_FONT_SIZE: '1.0em',
+        LIST_CARD_LABEL_FONT_SIZE: '1.22em',
         LIST_CARD_LABEL_FONT_STYLE: 'italic',
 
         MANUAL_OVERRIDES: {    // Ручні перевизначення якості для окремих ID фільмів/серіалів
@@ -57,7 +57,7 @@
 
 // ПОЧАТОК: Відповідність назв якості (як писано у торренті → як показати користувачу)
     var QUALITY_DISPLAY_MAP = {
-        "WEBRip 1080p | AVC @ звук с TS": "1080P WEBRip/Ts",
+        "WEBRip 1080p | AVC @ звук с TS": "1080P WEBRip/TS",
         "TeleSynch 1080P": "TS",
         "4K Web-DL 10bit HDR P81 HEVC": "4K WEB-DL",
         "Telecine [H.264/1080P] [звук с TS] [AD]": "1080P TS",
@@ -75,7 +75,7 @@
         "4K, HEVC, HDR, Dolby Vision P7 / Blu-Ray Remux (2160p)": "4K BDRemux",
         "4K, HEVC, HDR, Dolby Vision / Blu-Ray Remux (2160p)": "4K BDRemux",
         "Blu-Ray Remux 2160p | 4K | HDR | Dolby Vision P7": "4K BDRemux",
-        "4K, HEVC, HDR / WEB-DLRip (2160p)": "4K Web-DLRip",
+        "4K, HEVC, HDR / WEB-DLRip (2160p)": "4K WEB-DLRip",
         "Blu-ray disc (custom) 1080P] [StudioCanal]": "1080P BDRip",
         "HDTVRip [H.264/720p]": "720p HDTVRip",
         "HDTVRip 720p": "720p HDTVRip",
@@ -166,15 +166,15 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
     " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
     " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
-    " border-radius: 0.17em; " +
-    " padding: 0.21em 0.31em; " +
+    " border-radius: 0.19em; " +
+    " padding: 0.23em 0.31em; " +
     "}" +
     ".card__view {" +
     " position: relative; " +
     "}" +
     ".card__quality {" +
     " position: absolute; " +
-    " bottom: 0.5em; " +
+    " bottom: 0.55em; " +
     " left: 0; " +
     " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" +
     " z-index: 10;" +
@@ -188,7 +188,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " +
     " font-weight: 700; " +
     " letter-spacing: 0.5px; " +
-    " font-size: 0.65em; " +
+    " font-size: 0.75em; " +
     // --- ЗМІНА: Додано !important до кольору тексту, щоб гарантувати застосування ---
     " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" +
     " padding: 0.1em 0.5em 0.08em 0.4em; " +

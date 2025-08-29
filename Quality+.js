@@ -167,7 +167,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
     " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
     " border-radius: 0.19em; " +
-    " padding: 0.23em 0.31em; " +
+    " padding: 0.25em 0.31em; " +
     "}" +
     ".card__view {" +
     " position: relative; " +

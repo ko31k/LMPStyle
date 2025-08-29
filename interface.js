@@ -617,7 +617,7 @@
                         // Формируем строку для серий
                         var episodesText = '';
                         if (totalEpisodes > 0 && airedEpisodes > 0 && airedEpisodes < totalEpisodes) {
-                            episodesText = airedEpisodes + ' ' + plural(airedEpisodes, 'Серія', 'Серії', 'Серій') + ' из ' + totalEpisodes;
+                            episodesText = airedEpisodes + ' ' + plural(airedEpisodes, 'Серія', 'Серії', 'Серій') + ' з ' + totalEpisodes;
                         } else if (totalEpisodes > 0) {
                             episodesText = totalEpisodes + ' ' + plural(totalEpisodes, 'Серія', 'Серії', 'Серій');
                         }
@@ -643,7 +643,7 @@
                             var nextText = '';
                             if (diffDays === 0) nextText = 'Наступна серія вже сьогодні';
                             else if (diffDays === 1) nextText = 'Наступна серія вже завтра';
-                            else if (diffDays > 1) nextText = 'Наступна серія через ' + diffDays + ' ' + plural(diffDays, 'день', 'дня', 'днів');
+                            else if (diffDays > 1) nextText = 'Наступна серія через ' + diffDays + ' ' + plural(diffDays, 'день', 'дні', 'днів');
                             if (nextText) {
                                 var nextStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.3em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'background-color': colors.next.bg, 'color': colors.next.text, 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
                                 var $nextBadge = $('<span>').text(nextText).css(nextStyle);
@@ -2529,4 +2529,5 @@
             }
         });
     }
+
 })();

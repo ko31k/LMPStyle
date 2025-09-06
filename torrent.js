@@ -14,45 +14,37 @@
     // Конфігурація стилів
     const STYLES = {
         // Стилі для роздач (Роздають)
-        '.torrent-item__seeds span.low-seeds': {
+        '.torrent-item span.low-seeds': {
             color: '#ff0000',
             'font-weight': 'bold'
         },
-        '.torrent-item__seeds span.medium-seeds': {
+        '.torrent-item span.medium-seeds': {
             color: '#ffff00',
             'font-weight': 'bold'
         },
-        '.torrent-item__seeds span.high-seeds': {
-            color: '#00ff00',
-            'font-weight': 'bold'
-        },
-        // Стилі для бітрейту
-        '.torrent-item__bitrate span.low-bitrate': {
-            color: '#3498db',
-            'font-weight': 'bold'
-        },
-        '.torrent-item__bitrate span.medium-bitrate': {
+        '.torrent-item span.high-seeds': {
             color: '#2ecc71',
             'font-weight': 'bold'
         },
-        '.torrent-item__bitrate span.high-bitrate': {
+        // Стилі для бітрейту
+        '.torrent-item span.low-bitrate': {
+            color: '#3498db',
+            'font-weight': 'bold'
+        },
+        '.torrent-item span.medium-bitrate': {
+            color: '#2ecc71',
+            'font-weight': 'bold'
+        },
+        '.torrent-item span.high-bitrate': {
             color: '#e74c3c',
             'font-weight': 'bold'
         },
         // Стилі для трекерів
-        '.torrent-item__tracker.utopia': {
-            color: '#9b59b6',
-            'font-weight': 'bold'
-        },
-        '.torrent-item__tracker.toloka': {
+        '.torrent-item span.toloka-tracker': {
             color: '#2ecc71',
             'font-weight': 'bold'
         },
-        '.torrent-item__info span.toloka-text': {
-            color: '#2ecc71',
-            'font-weight': 'bold'
-        },
-        '.torrent-item__info span.utopia-text': {
+        '.torrent-item span.utopia-tracker': {
             color: '#9b59b6',
             'font-weight': 'bold'
         }
@@ -100,57 +92,47 @@
 
     // Функція для оновлення стилів торентів
     function updateTorrentStyles() {
-        // Роздають (Seeds) - три діапазони
-        document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
-            const seeds = parseInt(span.textContent) || 0;
-            span.classList.remove('low-seeds', 'medium-seeds', 'high-seeds');
+        // Шукаємо всі span в torrent-item
+        document.querySelectorAll('.torrent-item span').forEach(span => {
+            const text = span.textContent.trim();
+            const lowerText = text.toLowerCase();
             
-            if (seeds <= 4) {
-                span.classList.add('low-seeds'); // червоний: 0-4
-            } else if (seeds <= 14) {
-                span.classList.add('medium-seeds'); // жовтий: 5-14
-            } else {
-                span.classList.add('high-seeds'); // зелений: 15+
+            // Обробка роздач (Роздають)
+            if (text.includes('Роздають:')) {
+                const seeds = parseInt(text.replace('Роздають:', '').trim()) || 0;
+                span.classList.remove('low-seeds', 'medium-seeds', 'high-seeds');
+                
+                if (seeds <= 4) {
+                    span.classList.add('low-seeds');
+                } else if (seeds <= 14) {
+                    span.classList.add('medium-seeds');
+                } else {
+                    span.classList.add('high-seeds');
+                }
             }
-        });
-
-        // Бітрейт - три діапазони
-        document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
-            const bitrate = parseFloat(span.textContent) || 0;
-            span.classList.remove('low-bitrate', 'medium-bitrate', 'high-bitrate');
             
-            if (bitrate <= 10) {
-                span.classList.add('low-bitrate'); // синій: до 10
-            } else if (bitrate <= 40) {
-                span.classList.add('medium-bitrate'); // зелений: 11-40
-            } else {
-                span.classList.add('high-bitrate'); // червоний: 41+
+            // Обробка бітрейту
+            else if (text.includes('Бітрейт:')) {
+                const bitrateText = text.replace('Бітрейт:', '').replace('Мбіт/с', '').trim();
+                const bitrate = parseFloat(bitrateText) || 0;
+                span.classList.remove('low-bitrate', 'medium-bitrate', 'high-bitrate');
+                
+                if (bitrate <= 10) {
+                    span.classList.add('low-bitrate');
+                } else if (bitrate <= 40) {
+                    span.classList.add('medium-bitrate');
+                } else {
+                    span.classList.add('high-bitrate');
+                }
             }
-        });
-
-        // Шукаємо всі span в інформації про торент
-        document.querySelectorAll('.torrent-item__info span').forEach(span => {
-            const text = span.textContent.trim().toLowerCase();
             
-            // Видаляємо попередні класи
-            span.classList.remove('toloka-text', 'utopia-text');
-            
-            // Додаємо класи залежно від тексту
-            if (text.includes('toloka')) {
-                span.classList.add('toloka-text');
+            // Обробка трекерів
+            else if (lowerText.includes('toloka')) {
+                span.classList.add('toloka-tracker');
             }
-            else if (text.includes('utopia')) {
-                span.classList.add('utopia-text');
+            else if (lowerText.includes('utopia')) {
+                span.classList.add('utopia-tracker');
             }
-        });
-
-        // Також перевіряємо елементи з класом tracker
-        document.querySelectorAll('.torrent-item__tracker').forEach(tracker => {
-            const text = tracker.textContent.trim().toLowerCase();
-            tracker.classList.remove('utopia', 'toloka');
-            
-            if (text.includes('utopia')) tracker.classList.add('utopia');
-            else if (text.includes('toloka')) tracker.classList.add('toloka');
         });
     }
 

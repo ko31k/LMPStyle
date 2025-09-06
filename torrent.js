@@ -17,6 +17,14 @@
             color: '#00ff00',
             'font-weight': 'bold'
         },
+        '.torrent-item__seeds span.no-seeds': {
+            color: '#ff0000',
+            'font-weight': 'bold'
+        },
+        '.torrent-item__bitrate span.medium-bitrate': {
+            color: '#00ff00',
+            'font-weight': 'bold'
+        },
         '.torrent-item__bitrate span.high-bitrate': {
             color: '#ff0000',
             'font-weight': 'bold'
@@ -81,14 +89,34 @@
 
     // Функція для оновлення стилів торентів
     function updateTorrentStyles() {
-        // Seeds > 14
+        // Seeds
         document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
-            span.classList.toggle('high-seeds', (parseInt(span.textContent) || 0) > 14);
+            const seeds = parseInt(span.textContent) || 0;
+            
+            // Видаляємо попередні класи
+            span.classList.remove('high-seeds', 'no-seeds');
+            
+            // Додаємо класи залежно від кількості
+            if (seeds === 0) {
+                span.classList.add('no-seeds'); // Червоний для 0
+            } else if (seeds > 14) {
+                span.classList.add('high-seeds'); // Зелений для >14
+            }
         });
 
-        // Бітрейт > 19
+        // Бітрейт
         document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
-            span.classList.toggle('high-bitrate', (parseFloat(span.textContent) || 0) > 19);
+            const bitrate = parseFloat(span.textContent) || 0;
+            
+            // Видаляємо попередні класи
+            span.classList.remove('medium-bitrate', 'high-bitrate');
+            
+            // Додаємо класи залежно від значення
+            if (bitrate > 15 && bitrate <= 25) {
+                span.classList.add('medium-bitrate'); // Зелений для 15-25
+            } else if (bitrate > 25) {
+                span.classList.add('high-bitrate'); // Червоний для >25
+            }
         });
 
         // Шукаємо всі span в інформації про торент

@@ -15,7 +15,7 @@
     const STYLES = {
         // Стилі для роздач (Роздають) - три діапазони
         '.torrent-item__seeds span.low-seeds': {
-            color: '#ff0000',
+            color: '#e74c3c',
             'font-weight': 'bold'
         },
         '.torrent-item__seeds span.medium-seeds': {
@@ -23,7 +23,7 @@
             'font-weight': 'bold'
         },
         '.torrent-item__seeds span.high-seeds': {
-            color: '#00ff00',
+            color: '#2ecc71',
             'font-weight': 'bold'
         },
         // Стилі для бітрейту - три діапазони

@@ -81,14 +81,14 @@
 
     // Функція для оновлення стилів торентів
     function updateTorrentStyles() {
-        // Seeds > 19
+        // Seeds > 14
         document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
-            span.classList.toggle('high-seeds', (parseInt(span.textContent) || 0) > 19);
+            span.classList.toggle('high-seeds', (parseInt(span.textContent) || 0) > 14);
         });
 
-        // Бітрейт > 50
+        // Бітрейт > 15
         document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
-            span.classList.toggle('high-bitrate', (parseFloat(span.textContent) || 0) > 50);
+            span.classList.toggle('high-bitrate', (parseFloat(span.textContent) || 0) > 15);
         });
 
         // Шукаємо всі span в інформації про торент

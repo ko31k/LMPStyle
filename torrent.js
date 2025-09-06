@@ -20,7 +20,7 @@
         },
         '.torrent-item__seeds span.medium-seeds': {
             color: '#ffff00',
-            'font-weight': 'bold'
+           'font-weight': 'bold'
         },
         '.torrent-item__seeds span.high-seeds': {
             color: '#2ecc71',
@@ -28,7 +28,7 @@
         },
         // Стилі для бітрейту - три діапазони
         '.torrent-item__bitrate span.low-bitrate': {
-            color: '#3498db',
+            color: '#ffff00', // #3498db (синій)
             'font-weight': 'bold'
         },
         '.torrent-item__bitrate span.medium-bitrate': {

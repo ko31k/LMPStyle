@@ -86,9 +86,9 @@
             span.classList.toggle('high-seeds', (parseInt(span.textContent) || 0) > 14);
         });
 
-        // Бітрейт > 15
+        // Бітрейт > 19
         document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
-            span.classList.toggle('high-bitrate', (parseFloat(span.textContent) || 0) > 15);
+            span.classList.toggle('high-bitrate', (parseFloat(span.textContent) || 0) > 19);
         });
 
         // Шукаємо всі span в інформації про торент

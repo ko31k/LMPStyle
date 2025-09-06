@@ -84,14 +84,14 @@
         });
 
         // Трекери
-        document.querySelectorAll('.torrent-item__tracker').forEach(tracker => {
-            const text = tracker.textContent.trim();
-            tracker.classList.remove('utopia', 'toloka');
-            
-            if (text.includes('UTOPIA (API)')) tracker.classList.add('utopia');
-            else if (text.includes('Toloka')) tracker.classList.add('toloka');
-        });
-    }
+document.querySelectorAll('.torrent-item__tracker').forEach(tracker => {
+        const text = tracker.textContent.trim().toLowerCase();
+        tracker.classList.remove('utopia', 'toloka');
+        
+        if (text.includes('utopia')) tracker.classList.add('utopia');
+        else if (text.includes('toloka')) tracker.classList.add('toloka');
+    });
+}
 
     // Основна функція оновлення
     function updateAll() {

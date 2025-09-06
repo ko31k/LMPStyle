@@ -13,22 +13,33 @@
 
     // Конфігурація стилів
     const STYLES = {
+        // Стилі для роздач (Роздають)
+        '.torrent-item__seeds span.low-seeds': {
+            color: '#ff0000',
+            'font-weight': 'bold'
+        },
+        '.torrent-item__seeds span.medium-seeds': {
+            color: '#ffff00',
+            'font-weight': 'bold'
+        },
         '.torrent-item__seeds span.high-seeds': {
             color: '#00ff00',
             'font-weight': 'bold'
         },
-        '.torrent-item__seeds span.no-seeds': {
-            color: '#ff0000',
+        // Стилі для бітрейту
+        '.torrent-item__bitrate span.low-bitrate': {
+            color: '#3498db',
             'font-weight': 'bold'
         },
         '.torrent-item__bitrate span.medium-bitrate': {
-            color: '#00ff00',
+            color: '#2ecc71',
             'font-weight': 'bold'
         },
         '.torrent-item__bitrate span.high-bitrate': {
-            color: '#ff0000',
+            color: '#e74c3c',
             'font-weight': 'bold'
         },
+        // Стилі для трекерів
         '.torrent-item__tracker.utopia': {
             color: '#9b59b6',
             'font-weight': 'bold'
@@ -89,33 +100,31 @@
 
     // Функція для оновлення стилів торентів
     function updateTorrentStyles() {
-        // Seeds
+        // Роздають (Seeds) - три діапазони
         document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
             const seeds = parseInt(span.textContent) || 0;
+            span.classList.remove('low-seeds', 'medium-seeds', 'high-seeds');
             
-            // Видаляємо попередні класи
-            span.classList.remove('high-seeds', 'no-seeds');
-            
-            // Додаємо класи залежно від кількості
-            if (seeds === 0) {
-                span.classList.add('no-seeds'); // Червоний для 0
-            } else if (seeds > 14) {
-                span.classList.add('high-seeds'); // Зелений для >14
+            if (seeds <= 4) {
+                span.classList.add('low-seeds'); // червоний: 0-4
+            } else if (seeds <= 14) {
+                span.classList.add('medium-seeds'); // жовтий: 5-14
+            } else {
+                span.classList.add('high-seeds'); // зелений: 15+
             }
         });
 
-        // Бітрейт
+        // Бітрейт - три діапазони
         document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
             const bitrate = parseFloat(span.textContent) || 0;
+            span.classList.remove('low-bitrate', 'medium-bitrate', 'high-bitrate');
             
-            // Видаляємо попередні класи
-            span.classList.remove('medium-bitrate', 'high-bitrate');
-            
-            // Додаємо класи залежно від значення
-            if (bitrate > 15 && bitrate <= 25) {
-                span.classList.add('medium-bitrate'); // Зелений для 15-25
-            } else if (bitrate > 25) {
-                span.classList.add('high-bitrate'); // Червоний для >25
+            if (bitrate <= 10) {
+                span.classList.add('low-bitrate'); // синій: до 10
+            } else if (bitrate <= 40) {
+                span.classList.add('medium-bitrate'); // зелений: 11-40
+            } else {
+                span.classList.add('high-bitrate'); // червоний: 41+
             }
         });
 

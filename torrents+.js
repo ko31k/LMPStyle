@@ -1,12 +1,20 @@
 (function(){
-    // Список текстових замін з Unicode символами прапора
+    // Додамо CSS для підтримки емодзі
+    const EMOJI_STYLES = `
+        .emoji-font {
+            font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Arial', sans-serif;
+            font-weight: normal;
+        }
+    `;
+
+    // Список текстових замін
     const REPLACEMENTS = {
         'Дублированный': 'Дубльований',
-        'Ukr': '\uD83C\uDDFA\uD83C\uDDE6 Українською',  // Прапор Unicode
-        'Ua': '\uD83C\uDDFA\uD83C\uDDE6 Ua',            // Прапор Unicode
+        'Ukr': '🇺🇦 Українською',
+        'Ua': '🇺🇦 Ua',
         'Дубляж': 'Дубльований',
         'Многоголосый': 'Багатоголосий',
-        'Украинский': '\uD83C\uDDFA\uD83C\uDDE6 Українською',  // Прапор Unicode
+        'Украинский': '🇺🇦 Українською',
         'Zetvideo': 'UaFlix',
         'Нет истории просмотра': 'Історія перегляду відсутня'
     };
@@ -53,12 +61,12 @@
 
     // Додаємо CSS-стилі
     let style = document.createElement('style');
-    style.innerHTML = Object.entries(STYLES).map(([selector, props]) => {
+    style.innerHTML = EMOJI_STYLES + '\n' + Object.entries(STYLES).map(([selector, props]) => {
         return `${selector} { ${Object.entries(props).map(([prop, val]) => `${prop}: ${val} !important`).join('; ')} }`;
     }).join('\n');
     document.head.appendChild(style);
 
-    // Функція для заміни текстів у вказаних контейнерах
+    // Функція для заміни текстів
     function replaceTexts() {
         const containers = [
             '.online-prestige-watched__body',
@@ -81,6 +89,10 @@
                     Object.entries(REPLACEMENTS).forEach(([original, replacement]) => {
                         if (text.includes(original)) {
                             text = text.replace(new RegExp(original, 'g'), replacement);
+                            // Додаємо клас для емодзі
+                            if (node.parentNode && !node.parentNode.classList.contains('emoji-font')) {
+                                node.parentNode.classList.add('emoji-font');
+                            }
                         }
                     });
                     node.nodeValue = text;
@@ -89,33 +101,27 @@
         });
     }
 
-    // Функція для оновлення стилів торентів
+    // Інші функції залишаються без змін
     function updateTorrentStyles() {
-        // Роздають (Seeds)
         document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
             const seeds = parseInt(span.textContent) || 0;
             span.classList.remove('low-seeds', 'medium-seeds', 'high-seeds');
-            
             if (seeds <= 4) span.classList.add('low-seeds');
             else if (seeds <= 14) span.classList.add('medium-seeds');
             else span.classList.add('high-seeds');
         });
 
-        // Бітрейт
         document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
             const bitrate = parseFloat(span.textContent) || 0;
             span.classList.remove('low-bitrate', 'medium-bitrate', 'high-bitrate');
-            
             if (bitrate <= 10) span.classList.add('low-bitrate');
             else if (bitrate <= 40) span.classList.add('medium-bitrate');
             else span.classList.add('high-bitrate');
         });
 
-        // Трекери
         document.querySelectorAll('.torrent-item__tracker').forEach(tracker => {
             const text = tracker.textContent.trim().toLowerCase();
             tracker.classList.remove('utopia', 'toloka', 'mazepa');
-            
             if (text.includes('utopia')) tracker.classList.add('utopia');
             else if (text.includes('toloka')) tracker.classList.add('toloka');
             else if (text.includes('mazepa')) tracker.classList.add('mazepa');
@@ -129,7 +135,7 @@
 
     const observer = new MutationObserver(mutations => {
         if (mutations.some(m => m.addedNodes.length)) {
-            setTimeout(updateAll, 100); // Додаємо невелику затримку
+            setTimeout(updateAll, 100);
         }
     });
 

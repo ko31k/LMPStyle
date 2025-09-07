@@ -26,10 +26,11 @@
             display: inline-block;
             vertical-align: middle;
             margin-right: 8px;
-            border-radius: 4px;
+            margin-top: -5px; /* Піднімаємо прапорець вище */
+            border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             border: 1px solid rgba(0,0,0,0.15);
-            transform: translateY(-1px); /* Тонке вирівнювання по вертикалі */
+            transform: translateY(-3px); /* Додаткове підняття */
         }
         /* Спеціальні стилі для тексту біля прапора */
         .flag-container ~ span,

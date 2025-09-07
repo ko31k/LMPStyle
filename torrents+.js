@@ -6,11 +6,13 @@
     const REPLACEMENTS = {
         'Дублированный': 'Дубльований',
         'Ukr': UKRAINE_FLAG_SVG + ' Українською',
-        'Ua': UKRAINE_FLAG_SVG + ' Ua',
+        'Ua': UKRAINE_FLAG_SVG + ' UA',
         'Дубляж': 'Дубльований',
         'Многоголосый': 'Багатоголосий',
         'Украинский': UKRAINE_FLAG_SVG + ' Українською',
         'Zetvideo': 'UaFlix',
+        'Uaflix': 'UAFlix',
+        'UaFlix': 'UAFlix',
         'Нет истории просмотра': 'Історія перегляду відсутня'
     };
 
@@ -30,8 +32,8 @@
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     border: 1px solid rgba(0,0,0,0.15);
-    width: 23px;          /* нова ширина */
-    height: 17px;         /* нова висота */
+    width: 25px;          /* нова ширина */
+    height: 19px;         /* нова висота */
 }
     .flag-container ~ span,
     .flag-container + * {

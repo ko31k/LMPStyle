@@ -12,9 +12,9 @@
     // Локализация
     Lampa.Lang.add({
         interface_mod_new_plugin_name: {
-            ru: 'Интерфейс MOD',
-            en: 'Interface MOD',
-            uk: 'Інтерфейс MOD'
+            ru: 'Интерфейс +',
+            en: 'Interface +',
+            uk: 'Інтерфейс +'
         },
         interface_mod_new_about_plugin: {
             ru: 'О плагине',
@@ -2127,16 +2127,27 @@ dark_emerald: `
         background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18323a 100%) !important; 
         color: #dfdfdf !important; 
     }
+    .menu__item, .settings-folder, .settings-param, .selectbox-item, .full-start__button, .full-descr__tag, .player-panel .button,
+    .custom-online-btn, .custom-torrent-btn, .main2-more-btn, .simple-button, .menu__version {
+        border-radius: 1.5em !important;
+    }
     .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
     .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
         background: linear-gradient(to right, #1a594d, #0e3652) !important;
         color: #fff !important;
         box-shadow: 0 2px 8px rgba(26, 89, 77, 0.2) !important;
-        border-radius: 16px !important;
+        border-radius: 1.5em !important;
+    }
+    .card, .card.focus, .card.hover {
+        border-radius: 1.5em !important;
     }
     .card.focus .card__view::after, .card.hover .card__view::after {
         border: 2px solid #1a594d !important;
         box-shadow: 0 0 10px rgba(26, 89, 77, 0.3) !important;
+        border-radius: 1.5em !important;
+    }
+    .head__action, .head__action.focus, .head__action.hover {
+        border-radius: 1.5em !important;
     }
     .head__action.focus, .head__action.hover {
         background: linear-gradient(45deg, #1a594d, #0e3652) !important;
@@ -2148,9 +2159,11 @@ dark_emerald: `
     .settings__content, .settings-input__content, .selectbox__content, .modal__content {
         background: rgba(12, 22, 25, 0.97) !important;
         border: 1px solid rgba(26, 89, 77, 0.1) !important;
+        border-radius: 1.5em !important;
     }
-`
-
+    `
+	};
+		
         style.textContent = themes[theme] || '';
         document.head.appendChild(style);
     }
@@ -2533,3 +2546,4 @@ dark_emerald: `
     }
 
 })();
+

@@ -2132,7 +2132,7 @@ dark_emerald: `
     .full-start__button, .full-descr__tag, .player-panel .button,
     .custom-online-btn, .custom-torrent-btn, .main2-more-btn,
     .simple-button, .menu__version {
-        border-radius: 12px !important;
+        border-radius: 1.5em !important; /* Змінено з 12px на 1.5em */
         transition: all 0.3s ease !important;
     }
     
@@ -2144,7 +2144,7 @@ dark_emerald: `
         background: linear-gradient(to right, #1a594d, #0e3652) !important;
         color: #fff !important;
         box-shadow: 0 2px 8px rgba(26, 89, 77, 0.2) !important;
-        border-radius: 16px !important;
+        border-radius: 1.5em !important; /* Змінено з 16px на 1.8em */
         transform: scale(1.02) !important;
     }
     
@@ -2152,19 +2152,6 @@ dark_emerald: `
         border: 2px solid #1a594d !important;
         box-shadow: 0 0 10px rgba(26, 89, 77, 0.3) !important;
         border-radius: 12px !important;
-    }
-    
-    /* НОВІ СТИЛІ ДЛЯ КНОПОК У КАРТКАХ */
-    .card .custom-online-btn,
-    .card .custom-torrent-btn {
-        border-radius: 1.5em !important;
-    }
-    
-    .card .custom-online-btn.focus,
-    .card .custom-online-btn.hover,
-    .card .custom-torrent-btn.focus,
-    .card .custom-torrent-btn.hover {
-        border-radius: 1.5em !important;
     }
     
     .head__action.focus, .head__action.hover {
@@ -2185,17 +2172,11 @@ dark_emerald: `
     
     @media (max-width: 768px) {
         .menu__item, .settings-folder {
-            border-radius: 10px !important;
+            border-radius: 1.2em !important; /* Змінено з 10px на 1.2em */
         }
         
         .menu__item.focus, .settings-folder.focus {
-            border-radius: 14px !important;
-        }
-        
-        /* АДАПТАЦІЯ ДЛЯ МОБІЛЬНИХ */
-        .card .custom-online-btn,
-        .card .custom-torrent-btn {
-            border-radius: 1.2em !important;
+            border-radius: 1.2em !important; /* Змінено з 14px на 1.5em */
         }
     }
 `
@@ -2582,4 +2563,5 @@ dark_emerald: `
     }
 
 })();
+
 

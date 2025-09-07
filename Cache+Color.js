@@ -5,7 +5,7 @@
         // Видалення існуючої кнопки
         $('#' + clearBtnId).remove();
 
-        // Додавання CSS (без змін)
+        // Додавання CSS
         if (!document.getElementById('clearcache-style')) {
             const css = `
                 /* Новий стиль для кнопки Стрічка */
@@ -418,7 +418,7 @@
             $modal.addClass('active');
         });
 
-        // Оновлення кнопок (без змін)
+        // Оновлення кнопок
         function updateButtons() {
             $('.full-start__button.view--torrent svg').replaceWith(`
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="50px" height="50px">
@@ -445,14 +445,8 @@
             Lampa.Listener.follow('full', updateButtons);
         }
 
-        // Реєстрація плагіна
-        window.plugin && window.plugin('clear_cache_plugin', {
-            type: 'component',
-            name: 'Оптилізовані кнопки + очистка кешу',
-            version: '2.5.0',
-            author: 'Oleksandr',
-            description: 'Фікс для TV + стандартні анімації + синя кнопка Стрічка + вибіркове очищення кешу з детальними описами'
-        });
+        // Видалено реєстрацію плагіна, щоб уникнути помилки
+        // window.plugin is not a function
 
     }, 1000);
 })();

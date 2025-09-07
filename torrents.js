@@ -1,19 +1,18 @@
 (function(){
-    // Список текстових замін
+    // Список текстових замін з HTML-сущностями для прапора
     const REPLACEMENTS = {
         'Дублированный': 'Дубльований',
-        'Ukr': '🇺🇦 Українською',
-        'Ua': '🇺🇦 Ua',
+        'Ukr': '&#127482;&#127462; Українською',
+        'Ua': '&#127482;&#127462; Ua',
         'Дубляж': 'Дубльований',
         'Многоголосый': 'Багатоголосий',
-        'Украинский': '🇺🇦 Українською',
+        'Украинский': '&#127482;&#127462; Українською',
         'Zetvideo': 'UaFlix',
         'Нет истории просмотра': 'Історія перегляду відсутня'
     };
 
     // Конфігурація стилів
     const STYLES = {
-        // Стилі для роздач (Роздають) - три діапазони
         '.torrent-item__seeds span.low-seeds': {
             color: '#e74c3c',
             'font-weight': 'bold'
@@ -26,7 +25,6 @@
             color: '#2ecc71',
             'font-weight': 'bold'
         },
-        // Стилі для бітрейту - три діапазони
         '.torrent-item__bitrate span.low-bitrate': {
             color: '#ffff00',
             'font-weight': 'bold'
@@ -39,7 +37,6 @@
             color: '#e74c3c',
             'font-weight': 'bold'
         },
-        // Стилі для трекерів
         '.torrent-item__tracker.utopia': {
             color: '#9b59b6',
             'font-weight': 'bold'
@@ -49,7 +46,7 @@
             'font-weight': 'bold'
         },
         '.torrent-item__tracker.mazepa': {
-            color: '#C9A0DC', // Лавандовий колір для Mazepa
+            color: '#C9A0DC',
             'font-weight': 'bold'
         }
     };
@@ -63,7 +60,6 @@
 
     // Функція для заміни текстів у вказаних контейнерах
     function replaceTexts() {
-        // Список селекторів, де потрібно шукати тексти для заміни
         const containers = [
             '.online-prestige-watched__body',
             '.online-prestige--full .online-prestige__title',
@@ -72,59 +68,41 @@
 
         containers.forEach(selector => {
             document.querySelectorAll(selector).forEach(container => {
-                // Заміняємо текст у всіх вузлах-нащадках
-                const walker = document.createTreeWalker(
-                    container,
-                    NodeFilter.SHOW_TEXT,
-                    null,
-                    false
-                );
-
-                let node;
-                while (node = walker.nextNode()) {
-                    let text = node.nodeValue;
-                    Object.entries(REPLACEMENTS).forEach(([original, replacement]) => {
-                        if (text.includes(original)) {
-                            text = text.replace(new RegExp(original, 'g'), replacement);
-                        }
-                    });
-                    node.nodeValue = text;
-                }
+                // Новий спосіб заміни з підтримкою HTML
+                let html = container.innerHTML;
+                Object.entries(REPLACEMENTS).forEach(([original, replacement]) => {
+                    if (html.includes(original)) {
+                        html = html.replace(new RegExp(original, 'g'), replacement);
+                    }
+                });
+                container.innerHTML = html;
             });
         });
     }
 
     // Функція для оновлення стилів торентів
     function updateTorrentStyles() {
-        // Роздають (Seeds) - три діапазони
+        // Роздають (Seeds)
         document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
             const seeds = parseInt(span.textContent) || 0;
             span.classList.remove('low-seeds', 'medium-seeds', 'high-seeds');
             
-            if (seeds <= 4) {
-                span.classList.add('low-seeds'); // червоний: 0-4
-            } else if (seeds <= 14) {
-                span.classList.add('medium-seeds'); // жовтий: 5-14
-            } else {
-                span.classList.add('high-seeds'); // зелений: 15+
-            }
+            if (seeds <= 4) span.classList.add('low-seeds');
+            else if (seeds <= 14) span.classList.add('medium-seeds');
+            else span.classList.add('high-seeds');
         });
 
-        // Бітрейт - три діапазони
+        // Бітрейт
         document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
             const bitrate = parseFloat(span.textContent) || 0;
             span.classList.remove('low-bitrate', 'medium-bitrate', 'high-bitrate');
             
-            if (bitrate <= 10) {
-                span.classList.add('low-bitrate'); // синій: до 10 включно
-            } else if (bitrate <= 40) {
-                span.classList.add('medium-bitrate'); // зелений: 11-40
-            } else {
-                span.classList.add('high-bitrate'); // червоний: 41+
-            }
+            if (bitrate <= 10) span.classList.add('low-bitrate');
+            else if (bitrate <= 40) span.classList.add('medium-bitrate');
+            else span.classList.add('high-bitrate');
         });
 
-        // Трекери - нечутлива до регістру перевірка
+        // Трекери
         document.querySelectorAll('.torrent-item__tracker').forEach(tracker => {
             const text = tracker.textContent.trim().toLowerCase();
             tracker.classList.remove('utopia', 'toloka', 'mazepa');
@@ -135,20 +113,17 @@
         });
     }
 
-    // Основна функція оновлення
     function updateAll() {
         replaceTexts();
         updateTorrentStyles();
     }
 
-    // Оптимізований спостерігач
     const observer = new MutationObserver(mutations => {
         if (mutations.some(m => m.addedNodes.length)) {
             updateAll();
         }
     });
 
-    // Ініціалізація
     observer.observe(document.body, { childList: true, subtree: true });
     updateAll();
 })();

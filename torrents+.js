@@ -30,7 +30,7 @@
         border-radius: 0.3125em;
         box-shadow: 0 0.125em 0.25em rgba(0,0,0,0.2);
         border: 0.0625em solid rgba(0,0,0,0.15);
-        transform: translateY(-0.22em);
+        transform: translateY(-0.20em);
     }
     .flag-container ~ span,
     .flag-container + * {

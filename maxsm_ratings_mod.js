@@ -324,10 +324,10 @@
 		".full-start__rate > div:last-child { padding: 0.2em 0.4em; }" +
 		".jr { min-width: 5.0em; }" +
 		".rutor { min-width: 7.0em; }" +
-		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00  color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: italic; border-radius: 0.3em  padding: 0.2em 0.8em }" +
+		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00  color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: normal; border-radius: 0.3em  padding: 0.2em 0.8em }" +
         ".card__view {position: relative }" +
         ".card__quality { position: absolute  bottom: 0.5em  left: -0.8em  background-color: transparent  z-index: 10; width: fit-content  max-width: calc(100% - 1em)  }" +
-        ".card__quality div { text-transform: none  border: 1.1px solid #FFFF00  background-color: rgba(255, 255, 0, 0.7)  color: #000000; font-weight: 600; font-size: 1.3em; font-style: italic; border-radius: 0em  padding: 0.15em 0.3em  }" +
+        ".card__quality div { text-transform: none  border: 1.1px solid #FFFF00  background-color: rgba(255, 255, 0, 0.7)  color: #000000; font-weight: 600; font-size: 1.3em; font-style: normal; border-radius: 0em  padding: 0.15em 0.3em  }" +
 		/* Адаптация для WebOS (если нужно) */
 		"@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
 		"    .full-start-new__rate-line {" +
@@ -2351,6 +2351,7 @@
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
 })();
+
 
 
 

@@ -45,7 +45,7 @@
             'font-weight': 'bold'
         },
         '.torrent-item__tracker.toloka': {
-            color: '#2ecc71',
+            color: '#3498db',
             'font-weight': 'bold'
         }
     };

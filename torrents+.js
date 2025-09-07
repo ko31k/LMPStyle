@@ -26,11 +26,12 @@
     display: inline-block;
     vertical-align: middle;
     margin-right: 8px;
-    margin-top: -7.5px;       /* НОВЕ: підняття на висоту лінії розділу */
+    margin-top: -5.5px;    /* - (11px / 2) = -5.5px */
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     border: 1px solid rgba(0,0,0,0.15);
-    /* transform більше не потрібен */
+    width: 15px;          /* нова ширина */
+    height: 11px;         /* нова висота */
 }
     .flag-container ~ span,
     .flag-container + * {

@@ -5,7 +5,7 @@
         // Видалення існуючої кнопки
         $('#' + clearBtnId).remove();
 
-        // Додавання CSS
+        // Додавання CSS (без змін)
         if (!document.getElementById('clearcache-style')) {
             const css = `
                 /* Новий стиль для кнопки Стрічка */
@@ -120,6 +120,17 @@
                 .cache-modal__checkbox label {
                     color: white;
                     cursor: pointer;
+                    font-size: 14px;
+                    line-height: 1.4;
+                }
+                
+                .cache-modal__description {
+                    font-size: 12px;
+                    color: #aaa;
+                    margin-left: 28px;
+                    margin-top: -5px;
+                    margin-bottom: 10px;
+                    line-height: 1.3;
                 }
                 
                 .cache-modal__select-all {
@@ -185,6 +196,14 @@
                     .cache-modal__btn {
                         width: 100%;
                     }
+                    
+                    .cache-modal__checkbox label {
+                        font-size: 13px;
+                    }
+                    
+                    .cache-modal__description {
+                        font-size: 11px;
+                    }
                 }
             `;
             const style = document.createElement('style');
@@ -204,7 +223,7 @@
             </div>
         `);
 
-        // Створення модального вікна
+        // Створення модального вікна з детальними описами
         const modalHtml = `
             <div class="cache-modal">
                 <div class="cache-modal__content">
@@ -215,46 +234,61 @@
                     <div class="cache-modal__group">
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheCards" checked>
-                            <label for="cacheCards">Картки фільмів/серіалів (card_*)</label>
+                            <label for="cacheCards">Мініатюри контенту</label>
                         </div>
+                        <div class="cache-modal__description">Картки фільмів/серіалів (попередній перегляд, назви, рік випуску)</div>
+                        
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheFullCards" checked>
-                            <label for="cacheFullCards">Повні картки (full_card_*)</label>
+                            <label for="cacheFullCards">Повна інформація про контент</label>
                         </div>
+                        <div class="cache-modal__description">Детальна інформація про фільми/серіали (описи, актори, рейтинги)</div>
+                        
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheLiteCards" checked>
-                            <label for="cacheLiteCards">Лайт-картки (lite_card_*)</label>
+                            <label for="cacheLiteCards">Спрощені картки</label>
                         </div>
+                        <div class="cache-modal__description">Спрощена інформація для швидкого завантаження</div>
                     </div>
                     
                     <div class="cache-modal__group">
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheViewed" checked>
-                            <label for="cacheViewed">Переглянуті (viewed_*)</label>
+                            <label for="cacheViewed">Історія переглядів</label>
                         </div>
+                        <div class="cache-modal__description">Інформація про переглянуті серії/фільми та час зупинки</div>
+                        
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheParsers" checked>
-                            <label for="cacheParsers">Парсери (parser_*)</label>
+                            <label for="cacheParsers">Дані парсерів</label>
                         </div>
+                        <div class="cache-modal__description">Кешовані результати пошуку та інформація з джерел</div>
+                        
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheCub" checked>
-                            <label for="cacheCub">Куб (cub_*)</label>
+                            <label for="cacheCub">Налаштування відтворення</label>
                         </div>
+                        <div class="cache-modal__description">Налаштування плеєра та параметри відтворення</div>
                     </div>
                     
                     <div class="cache-modal__group">
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheStartTime" checked>
-                            <label for="cacheStartTime">Час запуску (start_time_*)</label>
+                            <label for="cacheStartTime">Тимчасові мітки</label>
                         </div>
+                        <div class="cache-modal__description">Час запуску відео для продовження перегляду</div>
+                        
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheOther" checked>
-                            <label for="cacheOther">Інший кеш (cache_*)</label>
+                            <label for="cacheOther">Інший тимчасовий кеш</label>
                         </div>
+                        <div class="cache-modal__description">Різні тимчасові дані та проміжні результати</div>
+                        
                         <div class="cache-modal__checkbox">
                             <input type="checkbox" id="cacheAll">
-                            <label for="cacheAll">Весь кеш (не рекомендується)</label>
+                            <label for="cacheAll">ВЕСЬ КЕШ (скинути все)</label>
                         </div>
+                        <div class="cache-modal__description">Повне очищення всіх даних (включаючи налаштування)</div>
                     </div>
                     
                     <div class="cache-modal__buttons">
@@ -320,7 +354,7 @@
                 if (Lampa && Lampa.Cache && typeof Lampa.Cache.clear === 'function' && cacheTypes.all) {
                     Lampa.Cache.clear();
                     setTimeout(() => {
-                        alert('🗑 Кеш Lampa очищено');
+                        alert('🗑 Весь кеш Lampa очищено');
                         $('#' + clearBtnId).removeClass('loading');
                         setTimeout(() => location.reload(), 300);
                     }, 800);
@@ -354,7 +388,20 @@
                             removed++;
                         });
                         
-                        alert(`🗑 Локальний кеш очищено: ${removed} ключів`);
+                        let message = '🗑 Очищено: ';
+                        const parts = [];
+                        if (cacheTypes.cards) parts.push('мініатюри');
+                        if (cacheTypes.fullCards) parts.push('детальна інформація');
+                        if (cacheTypes.liteCards) parts.push('спрощені картки');
+                        if (cacheTypes.viewed) parts.push('історія переглядів');
+                        if (cacheTypes.parsers) parts.push('дані парсерів');
+                        if (cacheTypes.cub) parts.push('налаштування відтворення');
+                        if (cacheTypes.startTime) parts.push('тимчасові мітки');
+                        if (cacheTypes.other) parts.push('тимчасовий кеш');
+                        
+                        message += parts.join(', ') + ` (${removed} ключів)`;
+                        
+                        alert(message);
                         $('#' + clearBtnId).removeClass('loading');
                         setTimeout(() => location.reload(), 300);
                     }, 800);
@@ -371,7 +418,7 @@
             $modal.addClass('active');
         });
 
-        // Оновлення кнопок
+        // Оновлення кнопок (без змін)
         function updateButtons() {
             $('.full-start__button.view--torrent svg').replaceWith(`
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="50px" height="50px">
@@ -402,9 +449,9 @@
         window.plugin && window.plugin('clear_cache_plugin', {
             type: 'component',
             name: 'Оптилізовані кнопки + очистка кешу',
-            version: '2.4.0',
+            version: '2.5.0',
             author: 'Oleksandr',
-            description: 'Фікс для TV + стандартні анімації + синя кнопка Стрічка + вибіркове очищення кешу'
+            description: 'Фікс для TV + стандартні анімації + синя кнопка Стрічка + вибіркове очищення кешу з детальними описами'
         });
 
     }, 1000);

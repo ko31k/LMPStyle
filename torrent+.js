@@ -6,6 +6,7 @@
 
     // ===================== СИСТЕМА ТЕКСТОВИХ ЗАМІН =====================
     // Важливий порядок: спочатку довші слова, потім коротші
+    // Додано маркери для уникнення повторної обробки
     const REPLACEMENTS = [
         // ---------- Перший пріоритет: складні та довші слова ----------
         ['Uaflix', 'UAFlix'],                    // Заміна бренду (від Zetvideo до UAFlix)
@@ -17,13 +18,19 @@
         
         // ---------- Другий пріоритет: слова з прапорами ----------
         ['Украинский', UKRAINE_FLAG_SVG + ' Українською'], // Повна форма з прапором
-        ['Ukr', UKRAINE_FLAG_SVG + ' Українською'],        // Коротка форма (малі літери)
-        ['UKR', UKRAINE_FLAG_SVG + ' Українською'],        // Коротка форма (великі літери)
-        ['Ua', UKRAINE_FLAG_SVG + ' UA'],                  // Скорочення (малі літери)
         
-        // ---------- Третій пріоритет: регулярні вирази (нечутливі до регістру) ----------
-        [/\bUa\b/gi, UKRAINE_FLAG_SVG + ' UA'],           // Будь-який регістр: UA, ua, Ua
-        [/\bUkr\b/gi, UKRAINE_FLAG_SVG + ' Українською']  // Будь-який регістр: UKR, ukr, Ukr
+        // ---------- Третій пріоритет: регулярні вирази з умовами ----------
+        // Додано перевірку на наявність прапора перед заміною
+        {
+            pattern: /\bUkr\b/gi,
+            replacement: UKRAINE_FLAG_SVG + ' Українською',
+            condition: (text) => !text.includes('flag-container') // Не замінюємо якщо вже є прапор
+        },
+        {
+            pattern: /\bUa\b/gi, 
+            replacement: UKRAINE_FLAG_SVG + ' UA',
+            condition: (text) => !text.includes('flag-container') // Не замінюємо якщо вже є прапор
+        }
     ];
 
     // ===================== СИСТЕМА СТИЛІВ ДЛЯ ПРАПОРЦЯ =====================
@@ -53,6 +60,11 @@
         .flag-container ~ span,
         .flag-container + * {
             vertical-align: middle;              /* Центрування тексту відносно прапора */
+        }
+        
+        /* Маркер для вже оброблених елементів - запобігає повторній обробці */
+        .ua-flag-processed {
+            position: relative;
         }
     `;
 
@@ -118,24 +130,24 @@
             '.online-prestige--full .online-prestige__info'   // Інформаційні блоки
         ];
 
-        // Обхід всіх контейнерів
+        // Обхід всіх контейнерів (виключаємо вже оброблені)
         containers.forEach(selector => {
-            document.querySelectorAll(selector).forEach(container => {
+            document.querySelectorAll(selector + ':not(.ua-flag-processed)').forEach(container => {
                 let html = container.innerHTML; // Оригінальний HTML вміст
                 let changed = false;           // Флаг змін
                 
                 // Послідовна обробка всіх шаблонів заміни
-                REPLACEMENTS.forEach(([original, replacement]) => {
-                    if (original instanceof RegExp) {
-                        // Обробка регулярних виразів (нечутливі до регістру)
-                        if (original.test(html)) {
-                            html = html.replace(original, replacement);
+                REPLACEMENTS.forEach(item => {
+                    if (Array.isArray(item)) {
+                        // Обробка звичайних рядків (чутливі до регістру)
+                        if (html.includes(item[0])) {
+                            html = html.replace(new RegExp(item[0], 'g'), item[1]);
                             changed = true; // Встановлення флагу змін
                         }
-                    } else {
-                        // Обробка звичайних рядків (чутливі до регістру)
-                        if (html.includes(original)) {
-                            html = html.replace(new RegExp(original, 'g'), replacement);
+                    } else if (item.pattern) {
+                        // Обробка регулярних виразів з умовами
+                        if ((!item.condition || item.condition(html)) && item.pattern.test(html)) {
+                            html = html.replace(item.pattern, item.replacement);
                             changed = true; // Встановлення флагу змін
                         }
                     }
@@ -144,12 +156,14 @@
                 // Якщо були зміни - оновлюємо вміст
                 if (changed) {
                     container.innerHTML = html;
+                    container.classList.add('ua-flag-processed'); // Маркуємо як оброблений
                     
                     // Обробка SVG прапорців для вирівнювання
                     container.querySelectorAll('svg').forEach(svg => {
-                        svg.classList.add('flag-svg'); // Додавання CSS класу
-                        // Створення контейнера для вирівнювання
-                        if (svg.parentNode && !svg.parentNode.classList.contains('flag-container')) {
+                        // Перевіряємо чи вже не знаходиться в контейнері
+                        if (!svg.closest('.flag-container')) {
+                            svg.classList.add('flag-svg'); // Додавання CSS класу
+                            // Створення контейнера для вирівнювання
                             const wrapper = document.createElement('span');
                             wrapper.className = 'flag-container';
                             svg.parentNode.insertBefore(wrapper, svg);

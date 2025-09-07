@@ -22,7 +22,7 @@
         display: inline-flex;
         align-items: center;
         vertical-align: middle;
-        height: 1.25em; /* 20px при 16px шрифті */
+        height: 1.27em; /* 20px при 16px шрифті */
     }
 .flag-svg {
     display: inline-block;

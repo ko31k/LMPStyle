@@ -1,11 +1,6 @@
 (function(){
-    // Створюємо SVG іконку прапора України
-    const UKRAINE_FLAG_SVG = `
-        <svg width="16" height="12" viewBox="0 0 16 12" style="display:inline-block;vertical-align:middle;margin-right:5px">
-            <rect width="16" height="6" y="0" fill="#0057B7"/>
-            <rect width="16" height="6" y="6" fill="#FFD700"/>
-        </svg>
-    `;
+    // SVG прапорець України
+    const UKRAINE_FLAG_SVG = '<svg width="16" height="12" viewBox="0 0 16 12" style="display:inline-block;vertical-align:middle;margin-right:5px"><rect width="16" height="6" y="0" fill="#0057B7"/><rect width="16" height="6" y="6" fill="#FFD700"/></svg>';
 
     // Список текстових замін
     const REPLACEMENTS = {
@@ -66,7 +61,7 @@
     }).join('\n');
     document.head.appendChild(style);
 
-    // Функція для заміни текстів
+    // Функція для заміни текстів з підтримкою HTML
     function replaceTexts() {
         const containers = [
             '.online-prestige-watched__body',

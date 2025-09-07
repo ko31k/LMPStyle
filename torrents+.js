@@ -26,7 +26,7 @@
             display: inline-block;
             vertical-align: middle;
             margin-right: 8px;
-            margin-top: -6px; /* Піднімаємо прапорець вище */
+            margin-top: -5px; /* Піднімаємо прапорець вище */
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             border: 1px solid rgba(0,0,0,0.15);

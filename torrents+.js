@@ -1,30 +1,20 @@
 (function(){
-    // Додамо CSS для підтримки емодзі
-    const EMOJI_STYLES = `
-        .emoji-font {
-            font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Arial', sans-serif;
-            font-weight: normal;
-        }
-        .ua-flag {
-            display: inline-block;
-            width: 16px;
-            height: 12px;
-            background: linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);
-            margin-right: 5px;
-            vertical-align: middle;
-            border: 1px solid #ccc;
-            border-radius: 2px;
-        }
+    // Створюємо SVG іконку прапора України
+    const UKRAINE_FLAG_SVG = `
+        <svg width="16" height="12" viewBox="0 0 16 12" style="display:inline-block;vertical-align:middle;margin-right:5px">
+            <rect width="16" height="6" y="0" fill="#0057B7"/>
+            <rect width="16" height="6" y="6" fill="#FFD700"/>
+        </svg>
     `;
 
-    // Список текстових замін з HTML-прапорцями
+    // Список текстових замін
     const REPLACEMENTS = {
         'Дублированный': 'Дубльований',
-        'Ukr': '<span class="ua-flag"></span> Українською',
-        'Ua': '<span class="ua-flag"></span> UA',
+        'Ukr': UKRAINE_FLAG_SVG + ' Українською',
+        'Ua': UKRAINE_FLAG_SVG + ' Ua',
         'Дубляж': 'Дубльований',
         'Многоголосый': 'Багатоголосий',
-        'Украинский': '<span class="ua-flag"></span> Українською',
+        'Украинский': UKRAINE_FLAG_SVG + ' Українською',
         'Zetvideo': 'UaFlix',
         'Нет истории просмотра': 'Історія перегляду відсутня'
     };
@@ -71,12 +61,12 @@
 
     // Додаємо CSS-стилі
     let style = document.createElement('style');
-    style.innerHTML = EMOJI_STYLES + '\n' + Object.entries(STYLES).map(([selector, props]) => {
+    style.innerHTML = Object.entries(STYLES).map(([selector, props]) => {
         return `${selector} { ${Object.entries(props).map(([prop, val]) => `${prop}: ${val} !important`).join('; ')} }`;
     }).join('\n');
     document.head.appendChild(style);
 
-    // Функція для заміни текстів з підтримкою HTML
+    // Функція для заміни текстів
     function replaceTexts() {
         const containers = [
             '.online-prestige-watched__body',
@@ -98,18 +88,12 @@
                 
                 if (changed) {
                     container.innerHTML = html;
-                    // Додаємо клас emoji-font до всіх елементів всередині контейнера
-                    container.querySelectorAll('*').forEach(el => {
-                        if (!el.classList.contains('emoji-font')) {
-                            el.classList.add('emoji-font');
-                        }
-                    });
                 }
             });
         });
     }
 
-    // Інші функції залишаються без змін
+    // Функція для оновлення стилів торентів
     function updateTorrentStyles() {
         document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
             const seeds = parseInt(span.textContent) || 0;

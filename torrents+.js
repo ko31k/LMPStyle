@@ -1,6 +1,6 @@
 (function(){
     // SVG прапорець України з покращеними стилями
-    const UKRAINE_FLAG_SVG = '<svg width="18" height="14" viewBox="0 0 18 14" style="display:inline-block;vertical-align:middle;margin-right:6px;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,0.3);border:1px solid rgba(0,0,0,0.1)"><rect width="18" height="7" y="0" fill="#0057B7"/><rect width="18" height="7" y="7" fill="#FFD700"/></svg>';
+    const UKRAINE_FLAG_SVG = '<svg width="20" height="15" viewBox="0 0 20 15" style="display:inline-block;vertical-align:middle;margin-right:8px;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.3);border:1px solid rgba(0,0,0,0.2)"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';
 
     // Список текстових замін
     const REPLACEMENTS = {
@@ -20,14 +20,21 @@
             display: inline-flex;
             align-items: center;
             vertical-align: middle;
+            height: 20px;
         }
         .flag-svg {
             display: inline-block;
             vertical-align: middle;
-            margin-right: 6px;
-            border-radius: 2px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-            border: 1px solid rgba(0,0,0,0.1);
+            margin-right: 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 1px solid rgba(0,0,0,0.15);
+            transform: translateY(-1px); /* Тонке вирівнювання по вертикалі */
+        }
+        /* Спеціальні стилі для тексту біля прапора */
+        .flag-container ~ span,
+        .flag-container + * {
+            vertical-align: middle;
         }
     `;
 

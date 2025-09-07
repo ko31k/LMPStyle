@@ -12,9 +12,9 @@
     // Локализация
     Lampa.Lang.add({
         interface_mod_new_plugin_name: {
-            ru: 'Интерфейс MOD',
-            en: 'Interface MOD',
-            uk: 'Інтерфейс MOD'
+            ru: 'Интерфейс +',
+            en: 'Interface +',
+            uk: 'Інтерфейс +'
         },
         interface_mod_new_about_plugin: {
             ru: 'О плагине',
@@ -2123,28 +2123,28 @@
                 }
             `,
             dark_emerald: `
-                body { background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18323a 100%); color: #dfdfdf; }
+                body { background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18323a 100%) !important; color: #dfdfdf !important; }
                 .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
                 .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
-                    background: linear-gradient(to right, #1a594d, #0e3652);
-                    color: #fff;
-                    box-shadow: 0 2px 8px rgba(26, 89, 77, 0.2);
-                    border-radius: 3px;
+                    background: linear-gradient(to right, #1a594d, #0e3652) !important;
+                    color: #fff !important;
+                    box-shadow: 0 2px 8px rgba(26, 89, 77, 0.2) !important;
+                    border-radius: 3px !important;
                 }
                 .card.focus .card__view::after, .card.hover .card__view::after {
-                    border: 2px solid #1a594d;
-                    box-shadow: 0 0 10px rgba(26, 89, 77, 0.3);
+                    border: 2px solid #1a594d! important;
+                    box-shadow: 0 0 10px rgba(26, 89, 77, 0.3) !important;
                 }
                 .head__action.focus, .head__action.hover {
-                    background: linear-gradient(45deg, #1a594d, #0e3652);
+                    background: linear-gradient(45deg, #1a594d, #0e3652) !important;
                 }
                 .full-start__background {
-                    opacity: 0.75;
-                    filter: brightness(0.9) saturate(1.1);
+                    opacity: 0.75 !important;
+                    filter: brightness(0.9) saturate(1.1) !important;
                 }
                 .settings__content, .settings-input__content, .selectbox__content, .modal__content {
-                    background: rgba(12, 22, 25, 0.97);
-                    border: 1px solid rgba(26, 89, 77, 0.1);
+                    background: rgba(12, 22, 25, 0.97) !important;
+                    border: 1px solid rgba(26, 89, 77, 0.1) !important;
                 }
             `
         };
@@ -2531,3 +2531,4 @@
     }
 
 })();
+

@@ -5,19 +5,29 @@
             font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Arial', sans-serif;
             font-weight: normal;
         }
+        .ua-flag {
+            display: inline-block;
+            width: 16px;
+            height: 12px;
+            background: linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);
+            margin-right: 5px;
+            vertical-align: middle;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+        }
     `;
 
-    // Список текстових замін
-const REPLACEMENTS = {
-    'Дублированный': 'Дубльований',
-    'Ukr': '<span style="display:inline-block;width:16px;height:12px;background:linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);margin-right:5px;vertical-align:middle"></span> Українською',
-    'Ua': '<span style="display:inline-block;width:16px;height:12px;background:linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);margin-right:5px;vertical-align:middle"></span> Ua',
-    'Дубляж': 'Дубльований',
-    'Многоголосый': 'Багатоголосий',
-    'Украинский': '<span style="display:inline-block;width:16px;height:12px;background:linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);margin-right:5px;vertical-align:middle"></span> Українською',
-    'Zetvideo': 'UaFlix',
-    'Нет истории просмотра': 'Історія перегляду відсутня'
-};
+    // Список текстових замін з HTML-прапорцями
+    const REPLACEMENTS = {
+        'Дублированный': 'Дубльований',
+        'Ukr': '<span class="ua-flag"></span> Українською',
+        'Ua': '<span class="ua-flag"></span> Ua',
+        'Дубляж': 'Дубльований',
+        'Многоголосый': 'Багатоголосий',
+        'Украинский': '<span class="ua-flag"></span> Українською',
+        'Zetvideo': 'UaFlix',
+        'Нет истории просмотра': 'Історія перегляду відсутня'
+    };
 
     // Конфігурація стилів
     const STYLES = {
@@ -66,7 +76,7 @@ const REPLACEMENTS = {
     }).join('\n');
     document.head.appendChild(style);
 
-    // Функція для заміни текстів
+    // Функція для заміни текстів з підтримкою HTML
     function replaceTexts() {
         const containers = [
             '.online-prestige-watched__body',
@@ -76,26 +86,24 @@ const REPLACEMENTS = {
 
         containers.forEach(selector => {
             document.querySelectorAll(selector).forEach(container => {
-                const walker = document.createTreeWalker(
-                    container,
-                    NodeFilter.SHOW_TEXT,
-                    null,
-                    false
-                );
-
-                let node;
-                while (node = walker.nextNode()) {
-                    let text = node.nodeValue;
-                    Object.entries(REPLACEMENTS).forEach(([original, replacement]) => {
-                        if (text.includes(original)) {
-                            text = text.replace(new RegExp(original, 'g'), replacement);
-                            // Додаємо клас для емодзі
-                            if (node.parentNode && !node.parentNode.classList.contains('emoji-font')) {
-                                node.parentNode.classList.add('emoji-font');
-                            }
+                let html = container.innerHTML;
+                let changed = false;
+                
+                Object.entries(REPLACEMENTS).forEach(([original, replacement]) => {
+                    if (html.includes(original)) {
+                        html = html.replace(new RegExp(original, 'g'), replacement);
+                        changed = true;
+                    }
+                });
+                
+                if (changed) {
+                    container.innerHTML = html;
+                    // Додаємо клас emoji-font до всіх елементів всередині контейнера
+                    container.querySelectorAll('*').forEach(el => {
+                        if (!el.classList.contains('emoji-font')) {
+                            el.classList.add('emoji-font');
                         }
                     });
-                    node.nodeValue = text;
                 }
             });
         });

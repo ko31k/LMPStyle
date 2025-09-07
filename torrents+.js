@@ -21,7 +21,7 @@
     const REPLACEMENTS = {
         'Дублированный': 'Дубльований',
         'Ukr': '<span class="ua-flag"></span> Українською',
-        'Ua': '<span class="ua-flag"></span> Ua',
+        'Ua': '<span class="ua-flag"></span> UA',
         'Дубляж': 'Дубльований',
         'Многоголосый': 'Багатоголосий',
         'Украинский': '<span class="ua-flag"></span> Українською',

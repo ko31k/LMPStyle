@@ -1,8 +1,8 @@
 (function(){
-    // SVG прапорець України з покращеними стилями
+    // SVG прапорець України
     const UKRAINE_FLAG_SVG = '<svg width="20" height="15" viewBox="0 0 20 15" style="display:inline-block;vertical-align:middle;margin-right:8px;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.3);border:1px solid rgba(0,0,0,0.2)"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';
 
-    // Список текстових замін
+    // Список текстових замін з обережними умовами
     const REPLACEMENTS = {
         'Дублированный': 'Дубльований',
         'Ukr': UKRAINE_FLAG_SVG + ' Українською',
@@ -12,38 +12,36 @@
         'Украинский': UKRAINE_FLAG_SVG + ' Українською',
         'Zetvideo': 'UaFlix',
         'Uaflix': 'UAFlix',
-        'UaFlix': 'UAFlix',
         'Нет истории просмотра': 'Історія перегляду відсутня'
     };
 
     // Додаткові стилі для вирівнювання
-   const FLAG_STYLES = `
-    .flag-container {
-        display: inline-flex;
-        align-items: center;
-        vertical-align: middle;
-        height: 1.27em; /* 20px при 16px шрифті */
-    }
-.flag-svg {
-    display: inline-block;
-    vertical-align: middle;
-    margin-right: 8px;
-    margin-top: -8.5px;    /* - (17px / 2) = -8.5px */
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    border: 1px solid rgba(0,0,0,0.15);
-    width: 25px;          /* нова ширина */
-    height: 19px;         /* нова висота */
-}
-    .flag-container ~ span,
-    .flag-container + * {
-        vertical-align: middle;
-    }
-`;
+    const FLAG_STYLES = `
+        .flag-container {
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+            height: 1.27em;
+        }
+        .flag-svg {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+            margin-top: -8.5px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 1px solid rgba(0,0,0,0.15);
+            width: 25px;
+            height: 19px;
+        }
+        .flag-container ~ span,
+        .flag-container + * {
+            vertical-align: middle;
+        }
+    `;
 
     // Конфігурація стилів
     const STYLES = {
-        // Стилі для роздач (Роздають) - три діапазони
         '.torrent-item__seeds span.low-seeds': {
             color: '#e74c3c',
             'font-weight': 'bold'
@@ -56,7 +54,6 @@
             color: '#2ecc71',
             'font-weight': 'bold'
         },
-        // Стилі для бітрейту - три діапазони
         '.torrent-item__bitrate span.low-bitrate': {
             color: '#ffff00',
             'font-weight': 'bold'
@@ -69,7 +66,6 @@
             color: '#e74c3c',
             'font-weight': 'bold'
         },
-        // Стилі для трекерів
         '.torrent-item__tracker.utopia': {
             color: '#9b59b6',
             'font-weight': 'bold'
@@ -79,7 +75,7 @@
             'font-weight': 'bold'
         },
         '.torrent-item__tracker.mazepa': {
-            color: '#C9A0DC', // Лавандовий колір для Mazepa
+            color: '#C9A0DC',
             'font-weight': 'bold'
         }
     };
@@ -91,9 +87,8 @@
     }).join('\n');
     document.head.appendChild(style);
 
-    // Функція для заміни текстів у вказаних контейнерах
+    // Функція для заміни текстів з перевіркою на слово
     function replaceTexts() {
-        // Список селекторів, де потрібно шукати тексти для заміни
         const containers = [
             '.online-prestige-watched__body',
             '.online-prestige--full .online-prestige__title',
@@ -102,33 +97,39 @@
 
         containers.forEach(selector => {
             document.querySelectorAll(selector).forEach(container => {
-                let html = container.innerHTML;
-                let changed = false;
-                
-                Object.entries(REPLACEMENTS).forEach(([original, replacement]) => {
-                    if (html.includes(original)) {
-                        html = html.replace(new RegExp(original, 'g'), replacement);
-                        changed = true;
-                    }
-                });
-                
-                if (changed) {
-                    container.innerHTML = html;
+                const walker = document.createTreeWalker(
+                    container,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+
+                let node;
+                while (node = walker.nextNode()) {
+                    let text = node.nodeValue;
+                    let changed = false;
                     
-                    // Додаємо додаткові класи для кращого вирівнювання
-                    container.querySelectorAll('svg').forEach(svg => {
-                        svg.classList.add('flag-svg');
-                        if (svg.parentNode && !svg.parentNode.classList.contains('flag-container')) {
-                            const wrapper = document.createElement('span');
-                            wrapper.className = 'flag-container';
-                            svg.parentNode.insertBefore(wrapper, svg);
-                            wrapper.appendChild(svg);
-                            // Додаємо текст після прапора в той же контейнер
-                            if (svg.nextSibling && svg.nextSibling.nodeType === 3) {
-                                wrapper.appendChild(svg.nextSibling);
-                            }
+                    // Використовуємо регулярні вирази для пошуку окремих слів
+                    Object.entries(REPLACEMENTS).forEach(([original, replacement]) => {
+                        const regex = new RegExp(`\\b${original}\\b`, 'g'); // \b - межа слова
+                        if (regex.test(text)) {
+                            text = text.replace(regex, replacement);
+                            changed = true;
                         }
                     });
+                    
+                    if (changed) {
+                        // Безпечна заміна з HTML
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = text;
+                        
+                        const newNode = document.createDocumentFragment();
+                        while (tempDiv.firstChild) {
+                            newNode.appendChild(tempDiv.firstChild);
+                        }
+                        
+                        node.parentNode.replaceChild(newNode, node);
+                    }
                 }
             });
         });

@@ -2533,33 +2533,37 @@
 })();
 
 // Додаємо після ініціалізації плагіну, в самому кінці файлу
-(function addDesktopThemePatch(){
-  const themeColor = getComputedStyle(document.body).backgroundColor;
-  const patch = document.createElement('style');
-  patch.id = 'interface_mod_theme_patch';
-  patch.textContent = `
+// === Патч для десктопної Lampa: фон теми + кнопки ===
+(function applyDesktopThemePatch() {
+    // пробуємо взяти колір фону із вибраної теми
+    var currentTheme = Lampa.Storage.get('interface_mod_new_theme_select', 'default');
+    var css = (typeof themes !== 'undefined' && themes[currentTheme]) ? themes[currentTheme] : '';
+    var match = css.match(/body\s*{[^}]*background:\s*([^;]+);/i);
+    var bgColor = match ? match[1].trim() : '#000';
+
+    var patch = document.createElement('style');
+    patch.id = 'interface_mod_theme_patch';
+    patch.textContent = `
     /* фон для десктопа */
     html, body,
-    .app, .content, .background,
-    .app__body, .app__content,
-    .layer, .layout, .page, .wrap, .scroll, .screensaver__body {
-        background: ${themeColor} !important;
+    .app, .app__body, .app__content,
+    .content, .background, .layer, .layout,
+    .page, .wrap, .scroll, .screensaver__body {
+        background: ${bgColor} !important;
     }
 
     /* одразу заокруглені кнопки */
     .full-start__button,
     .full-start-new__buttons .button,
     .buttons-container .button {
-        border-radius: 1.5em !important;          /* базове заокруглення */
+        border-radius: 1.5em !important;
         transition: border-radius 0.3s ease;
     }
-    /* при наведенні ще трохи більше */
+    /* при наведенні більше */
     .full-start__button:hover,
     .full-start-new__buttons .button:hover,
     .buttons-container .button:hover {
-        border-radius: 1.5em !important;        /* більше заокруглення */
+        border-radius: 1.5em !important;
     }`;
-  document.head.appendChild(patch);
+    document.head.appendChild(patch);
 })();
-
-

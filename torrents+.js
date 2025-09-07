@@ -15,29 +15,28 @@
     };
 
     // Додаткові стилі для вирівнювання
-    const FLAG_STYLES = `
-        .flag-container {
-            display: inline-flex;
-            align-items: center;
-            vertical-align: middle;
-            height: 20px;
-        }
-        .flag-svg {
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 8px;
-            margin-top: -4px; /* Піднімаємо прапорець вище */
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            border: 1px solid rgba(0,0,0,0.15);
-            transform: translateY(-4px); /* Додаткове підняття */
-        }
-        /* Спеціальні стилі для тексту біля прапора */
-        .flag-container ~ span,
-        .flag-container + * {
-            vertical-align: middle;
-        }
-    `;
+   const FLAG_STYLES = `
+    .flag-container {
+        display: inline-flex;
+        align-items: center;
+        vertical-align: middle;
+        height: 1.25em; /* 20px при 16px шрифті */
+    }
+    .flag-svg {
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 0.5em;
+        margin-top: -0.365em;
+        border-radius: 0.3125em;
+        box-shadow: 0 0.125em 0.25em rgba(0,0,0,0.2);
+        border: 0.0625em solid rgba(0,0,0,0.15);
+        transform: translateY(-0.22em);
+    }
+    .flag-container ~ span,
+    .flag-container + * {
+        vertical-align: middle;
+    }
+`;
 
     // Конфігурація стилів
     const STYLES = {

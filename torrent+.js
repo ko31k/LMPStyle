@@ -1,150 +1,160 @@
 (function(){
-    // SVG прапорець України з вбудованими стилями
-    const UKRAINE_FLAG_SVG = '<svg width="20" height="15" viewBox="0 0 20 15" style="display:inline-block;vertical-align:middle;margin-right:8px;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.3);border:1px solid rgba(0,0,0,0.2)"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';
+    // ===================== КОНФІГУРАЦІЯ ПРАПОРЦЯ =====================
+    // SVG прапорець України БЕЗ вбудованих стилів - лише векторні дані
+    // Видалено width, height, style з SVG щоб CSS мав повний контроль
+    const UKRAINE_FLAG_SVG = '<svg viewBox="0 0 20 15"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';
 
-    // Список текстових замін в правильному порядку (важливо для уникнення конфліктів)
+    // ===================== СИСТЕМА ТЕКСТОВИХ ЗАМІН =====================
+    // Важливий порядок: спочатку довші слова, потім коротші
     const REPLACEMENTS = [
-        // Спочатку замінюємо складніші та довші слова
-        ['Uaflix', 'UAFlix'],                    // Заміна назви сервісу
-        ['Zetvideo', 'UaFlix'],                  // Заміна іншого найменування сервісу
-        ['Нет истории просмотра', 'Історія перегляду відсутня'], // Заміна російського тексту
-        ['Дублированный', 'Дубльований'],        // Заміна терміну дублювання
-        ['Дубляж', 'Дубльований'],               // Альтернативна заміна терміну
-        ['Многоголосый', 'Багатоголосий'],       // Заміна типу озвучення
+        // ---------- Перший пріоритет: складні та довші слова ----------
+        ['Uaflix', 'UAFlix'],                    // Заміна бренду (від Zetvideo до UAFlix)
+        ['Zetvideo', 'UaFlix'],                  // Альтернативна назва сервісу
+        ['Нет истории просмотра', 'Історія перегляду відсутня'], // Переклад російського тексту
+        ['Дублированный', 'Дубльований'],        // Корекція терміну дублювання
+        ['Дубляж', 'Дубльований'],               // Альтернативний варіант терміну
+        ['Многоголосый', 'Багатоголосий'],       // Переклад типу озвучення
         
-        // Потім замінюємо слова з прапорами - ВАЖЛИВИЙ ПОРЯДОК!
-        ['Украинский', UKRAINE_FLAG_SVG + ' Українською'], // Заміна з прапором
-        ['Ukr', UKRAINE_FLAG_SVG + ' Українською'],        // Коротка форма з прапором
+        // ---------- Другий пріоритет: слова з прапорами ----------
+        ['Украинский', UKRAINE_FLAG_SVG + ' Українською'], // Повна форма з прапором
+        ['Ukr', UKRAINE_FLAG_SVG + ' Українською'],        // Коротка форма (малі літери)
+        ['UKR', UKRAINE_FLAG_SVG + ' Українською'],        // Коротка форма (великі літери)
+        ['Ua', UKRAINE_FLAG_SVG + ' UA'],                  // Скорочення (малі літери)
         
-        // Використовуємо регулярний вираз для точної заміни лише окремих слів
-        [/\bUa\b/g, UKRAINE_FLAG_SVG + ' UA']    // Заміняємо тільки окреме слово "Ua"
+        // ---------- Третій пріоритет: регулярні вирази (нечутливі до регістру) ----------
+        [/\bUa\b/gi, UKRAINE_FLAG_SVG + ' UA'],           // Будь-який регістр: UA, ua, Ua
+        [/\bUkr\b/gi, UKRAINE_FLAG_SVG + ' Українською']  // Будь-який регістр: UKR, ukr, Ukr
     ];
 
-    // Додаткові CSS стилі для коректного відображення прапорців
+    // ===================== СИСТЕМА СТИЛІВ ДЛЯ ПРАПОРЦЯ =====================
     const FLAG_STYLES = `
+        /* Контейнер для прапора та тексту - забезпечує точне вирівнювання */
         .flag-container {
-            display: inline-flex;                /* Гнучкий контейнер */
-            align-items: center;                 /* Вертикальне вирівнювання по центру */
+            display: inline-flex;                /* Гнучкий контейнер в рядку */
+            align-items: center;                 /* Вертикальне центрування вмісту */
             vertical-align: middle;              /* Вирівнювання по середині рядка */
-            height: 1.27em;                      /* Відносна висота (20px при 16px шрифті) */
+            height: 1.27em;                      /* Адаптивна висота (емівські одиниці) */
         }
+        
+        /* Стилі безпосередньо для SVG прапора */
         .flag-svg {
-            display: inline-block;               /* Блоковий елемент в рядку */
-            vertical-align: middle;              /* Вирівнювання по середині */
-            margin-right: 8px;                   /* Відступ праворуч від прапора */
-            margin-top: -7.0px;                  /* Корекція положення по вертикалі */
-            border-radius: 5px;                  /* Закруглені кути */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Легка тінь для об'ємного ефекту */
-            border: 1px solid rgba(0,0,0,0.15);  /* Тонка рамка */
-            width: 25px;                         /* Ширина прапора */
-            height: 19px;                        /* Висота прапора */
+            display: inline-block;               /* Блоковий елемент в потокі тексту */
+            vertical-align: middle;              /* Вертикальне центрування в рядку */
+            margin-right: 8px;                   /* Простір між прапором і текстом */
+            margin-top: -5.5px;                  /* Точна корекція позиції по вертикалі */
+            border-radius: 5px;                  /* Закруглені кути для сучасного вигляду */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Легка тінь для 3D ефекту */
+            border: 1px solid rgba(0,0,0,0.15);  /* Тонка рамка для кращого контрасту */
+            width: 25px;                         /* Фіксована ширина прапора */
+            height: 19px;                        /* Фіксована висота прапора */
         }
-        /* Стилі для сусідніх елементів біля прапора */
+        
+        /* Стилі для тексту поруч з прапором - забезпечують узгоджене вирівнювання */
         .flag-container ~ span,
         .flag-container + * {
-            vertical-align: middle;              /* Вирівнювання тексту по центру */
+            vertical-align: middle;              /* Центрування тексту відносно прапора */
         }
     `;
 
-    // Конфігурація кольорових стилів для різних елементів
+    // ===================== СИСТЕМА КОЛЬОРОВИХ ІНДИКАТОРІВ =====================
     const STYLES = {
-        // Стилі для кількості роздач (Seeds) - три кольорові діапазони
+        // ---------- Індикатори кількості роздач (Seeds) ----------
         '.torrent-item__seeds span.low-seeds': {
-            color: '#e74c3c',                    // Червоний колір для низької кількості
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#e74c3c',                    // Червоний - критично мало (0-4)
+            'font-weight': 'bold'                // Жирний шрифт для акценту
         },
         '.torrent-item__seeds span.medium-seeds': {
-            color: '#ffff00',                    // Жовтий колір для середньої кількості
-           'font-weight': 'bold'                 // Жирний шрифт
+            color: '#ffff00',                    // Жовтий - середня кількість (5-14)
+           'font-weight': 'bold'                 // Жирний шрифт для помітності
         },
         '.torrent-item__seeds span.high-seeds': {
-            color: '#2ecc71',                    // Зелений колір для високої кількості
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#2ecc71',                    // Зелений - багато роздач (15+)
+            'font-weight': 'bold'                // Жирний шрифт для виділення
         },
         
-        // Стилі для бітрейту - три кольорові діапазони
+        // ---------- Індикатори якості (бітрейт) ----------
         '.torrent-item__bitrate span.low-bitrate': {
-            color: '#ffff00',                    // Жовтий колір для низького бітрейту
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#ffff00',                    // Жовтий - низька якість (≤10)
+            'font-weight': 'bold'                // Жирний шрифт для попередження
         },
         '.torrent-item__bitrate span.medium-bitrate': {
-            color: '#2ecc71',                    // Зелений колір для середнього бітрейту
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#2ecc71',                    // Зелений - середня якість (11-40)
+            'font-weight': 'bold'                // Жирний шрифт для позитивного акценту
         },
         '.torrent-item__bitrate span.high-bitrate': {
-            color: '#e74c3c',                    // Червоний колір для високого бітрейту
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#e74c3c',                    // Червоний - висока якість (41+)
+            'font-weight': 'bold'                // Жирний шрифт для виділення
         },
         
-        // Стилі для трекерів (різні кольори для різних джерел)
+        // ---------- Індикатори джерел (трекери) ----------
         '.torrent-item__tracker.utopia': {
-            color: '#9b59b6',                    // Фіолетовий колір для Utopia
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#9b59b6',                    // Фіолетовий - трекер Utopia
+            'font-weight': 'bold'                // Жирний шрифт для ідентифікації
         },
         '.torrent-item__tracker.toloka': {
-            color: '#3498db',                    // Блакитний колір для Toloka
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#3498db',                    // Блакитний - трекер Toloka  
+            'font-weight': 'bold'                // Жирний шрифт для ідентифікації
         },
         '.torrent-item__tracker.mazepa': {
-            color: '#C9A0DC',                    // Лавандовий колір для Mazepa
-            'font-weight': 'bold'                // Жирний шрифт
+            color: '#C9A0DC',                    // Лавандовий - трекер Mazepa
+            'font-weight': 'bold'                // Жирний шрифт для ідентифікації
         }
     };
 
-    // Створюємо та додаємо CSS стилі до документу
-    let style = document.createElement('style'); // Створюємо элемент style
+    // ===================== ІНІЦІАЛІЗАЦІЯ СТИЛІВ =====================
+    let style = document.createElement('style'); // Створення динамічного стилевого елемента
     style.innerHTML = FLAG_STYLES + '\n' + Object.entries(STYLES).map(([selector, props]) => {
-        // Генеруємо CSS правила для кожного селектора
+        // Генерація CSS правил для кожного селектора
         return `${selector} { ${Object.entries(props).map(([prop, val]) => `${prop}: ${val} !important`).join('; ')} }`;
-    }).join('\n'); // Об'єднуємо всі правила
-    document.head.appendChild(style); // Додаємо стилі до head документа
+    }).join('\n'); // Об'єднання всіх правил в один рядок
+    document.head.appendChild(style); // Вставка стилів в голову документа
 
-    // Функція для заміни текстів в указаних контейнерах
+    // ===================== СИСТЕМА ЗАМІНИ ТЕКСТУ =====================
     function replaceTexts() {
-        // Список CSS селекторів контейнерів, де потрібно шукати тексти для заміни
+        // Список контейнерів для обробки (CSS селектори)
         const containers = [
-            '.online-prestige-watched__body',     // Контейнер історії перегляду
-            '.online-prestige--full .online-prestige__title', // Заголовок повного опису
-            '.online-prestige--full .online-prestige__info'   // Інформація повного опису
+            '.online-prestige-watched__body',     // Історія перегляду
+            '.online-prestige--full .online-prestige__title', // Заголовки повних описів
+            '.online-prestige--full .online-prestige__info'   // Інформаційні блоки
         ];
 
-        // Обробляємо кожен контейнер
+        // Обхід всіх контейнерів
         containers.forEach(selector => {
             document.querySelectorAll(selector).forEach(container => {
-                let html = container.innerHTML; // Отримуємо HTML вміст контейнера
-                let changed = false;           // Прапорець змін
+                let html = container.innerHTML; // Оригінальний HTML вміст
+                let changed = false;           // Флаг змін
                 
-                // Виконуємо заміни в строгому порядку
+                // Послідовна обробка всіх шаблонів заміни
                 REPLACEMENTS.forEach(([original, replacement]) => {
                     if (original instanceof RegExp) {
-                        // Для регулярних виразів (як \bUa\b)
+                        // Обробка регулярних виразів (нечутливі до регістру)
                         if (original.test(html)) {
                             html = html.replace(original, replacement);
-                            changed = true;
+                            changed = true; // Встановлення флагу змін
                         }
                     } else {
-                        // Для звичайних рядків
+                        // Обробка звичайних рядків (чутливі до регістру)
                         if (html.includes(original)) {
                             html = html.replace(new RegExp(original, 'g'), replacement);
-                            changed = true;
+                            changed = true; // Встановлення флагу змін
                         }
                     }
                 });
                 
-                // Якщо були зміни, оновлюємо вміст контейнера
+                // Якщо були зміни - оновлюємо вміст
                 if (changed) {
                     container.innerHTML = html;
                     
-                    // Додаємо CSS класи для кращого вирівнювання прапорців
+                    // Обробка SVG прапорців для вирівнювання
                     container.querySelectorAll('svg').forEach(svg => {
-                        svg.classList.add('flag-svg'); // Додаємо клас для SVG
-                        // Створюємо контейнер для прапора та тексту
+                        svg.classList.add('flag-svg'); // Додавання CSS класу
+                        // Створення контейнера для вирівнювання
                         if (svg.parentNode && !svg.parentNode.classList.contains('flag-container')) {
                             const wrapper = document.createElement('span');
                             wrapper.className = 'flag-container';
                             svg.parentNode.insertBefore(wrapper, svg);
                             wrapper.appendChild(svg);
-                            // Додаємо текст після прапора в той же контейнер
+                            // Додавання сусіднього тексту в контейнер
                             if (svg.nextSibling && svg.nextSibling.nodeType === 3) {
                                 wrapper.appendChild(svg.nextSibling);
                             }
@@ -155,73 +165,73 @@
         });
     }
 
-    // Функція для оновлення стилів торентів (кольори, класи)
+    // ===================== СИСТЕМА ОНОВЛЕННЯ СТИЛІВ ТОРЕНТІВ =====================
     function updateTorrentStyles() {
-        // Оновлюємо стилі для кількості роздач (Seeds)
+        // Оновлення індикаторів кількості роздач
         document.querySelectorAll('.torrent-item__seeds span').forEach(span => {
-            const seeds = parseInt(span.textContent) || 0; // Парсимо кількість seeds
-            span.classList.remove('low-seeds', 'medium-seeds', 'high-seeds'); // Видаляємо старі класи
+            const seeds = parseInt(span.textContent) || 0; // Числове значення
+            span.classList.remove('low-seeds', 'medium-seeds', 'high-seeds'); // Очищення старих класів
             
-            // Додаємо класи залежно від кількості seeds
+            // Динамічне додавання класів за значенням
             if (seeds <= 4) {
-                span.classList.add('low-seeds'); // Червоний: 0-4
+                span.classList.add('low-seeds'); // Червоний індикатор
             } else if (seeds <= 14) {
-                span.classList.add('medium-seeds'); // Жовтий: 5-14
+                span.classList.add('medium-seeds'); // Жовтий індикатор
             } else {
-                span.classList.add('high-seeds'); // Зелений: 15+
+                span.classList.add('high-seeds'); // Зелений індикатор
             }
         });
 
-        // Оновлюємо стилі для бітрейту
+        // Оновлення індикаторів якості (бітрейт)
         document.querySelectorAll('.torrent-item__bitrate span').forEach(span => {
-            const bitrate = parseFloat(span.textContent) || 0; // Парсимо бітрейт
-            span.classList.remove('low-bitrate', 'medium-bitrate', 'high-bitrate'); // Видаляємо старі класи
+            const bitrate = parseFloat(span.textContent) || 0; // Числове значення
+            span.classList.remove('low-bitrate', 'medium-bitrate', 'high-bitrate'); // Очищення
             
-            // Додаємо класи залежно від бітрейту
+            // Динамічне додавання класів за значенням
             if (bitrate <= 10) {
-                span.classList.add('low-bitrate'); // Жовтий: до 10 включно
+                span.classList.add('low-bitrate'); // Жовтий індикатор
             } else if (bitrate <= 40) {
-                span.classList.add('medium-bitrate'); // Зелений: 11-40
+                span.classList.add('medium-bitrate'); // Зелений індикатор
             } else {
-                span.classList.add('high-bitrate'); // Червоний: 41+
+                span.classList.add('high-bitrate'); // Червоний індикатор
             }
         });
 
-        // Оновлюємо стилі для трекерів (джерел)
+        // Оновлення індикаторів джерел (трекери)
         document.querySelectorAll('.torrent-item__tracker').forEach(tracker => {
-            const text = tracker.textContent.trim().toLowerCase(); // Отримуємо текст трекера
-            tracker.classList.remove('utopia', 'toloka', 'mazepa'); // Видаляємо старі класи
+            const text = tracker.textContent.trim().toLowerCase(); // Текст в нижньому регістрі
+            tracker.classList.remove('utopia', 'toloka', 'mazepa'); // Очищення старих класів
             
-            // Додаємо класи залежно від назви трекера
+            // Додавання класів за назвою трекера
             if (text.includes('utopia')) tracker.classList.add('utopia');
             else if (text.includes('toloka')) tracker.classList.add('toloka');
             else if (text.includes('mazepa')) tracker.classList.add('mazepa');
         });
     }
 
-    // Основна функція оновлення - викликає всі необхідні функції
+    // ===================== ОСНОВНА ФУНКЦІЯ ОНОВЛЕННЯ =====================
     function updateAll() {
-        replaceTexts();        // Замінюємо тексти
-        updateTorrentStyles(); // Оновлюємо стилі
+        replaceTexts();        // Виконання текстових замін
+        updateTorrentStyles(); // Оновлення візуальних стилів
     }
 
-    // Створюємо спостерігач (MutationObserver) для відстеження змін DOM
+    // ===================== СИСТЕМА СПОСТЕРЕЖЕННЯ ЗМІН DOM =====================
     const observer = new MutationObserver(mutations => {
-        // Якщо з'явилися нові елементи
+        // Перевірка на додані нові елементи
         if (mutations.some(m => m.addedNodes.length)) {
-            setTimeout(updateAll, 100); // Викликаємо оновлення з невеликою затримкою
+            setTimeout(updateAll, 100); // Відкладене оновлення (100ms)
         }
     });
 
-    // Починаємо спостерігати за змінами в body
+    // Запуск спостерігача за змінами в DOM
     observer.observe(document.body, { 
-        childList: true,    // Спостерігаємо за додаванням/видаленням дочірніх елементів
-        subtree: true       // Спостерігаємо за всіма нащадками
+        childList: true,    // Спостереження за зміною дочірніх елементів
+        subtree: true       // Спостереження за всіма вкладеними елементами
     });
     
-    // Викликаємо перше оновлення при завантаженні
+    // Первинна ініціалізація при завантаженні
     updateAll();
 })();
 
-// Ініціалізація TV платформи Lampa
+// ===================== ІНІЦІАЛІЗАЦІЯ TV РЕЖИМУ LAMPA =====================
 Lampa.Platform.tv();

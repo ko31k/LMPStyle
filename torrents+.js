@@ -26,7 +26,7 @@
         display: inline-block;
         vertical-align: middle;
         margin-right: 0.5em;
-        margin-top: -0.365em;
+        margin-top: -0.3em;
         border-radius: 0.3125em;
         box-shadow: 0 0.125em 0.25em rgba(0,0,0,0.2);
         border: 0.0625em solid rgba(0,0,0,0.15);

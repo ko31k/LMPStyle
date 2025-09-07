@@ -26,12 +26,12 @@
     display: inline-block;
     vertical-align: middle;
     margin-right: 8px;
-    margin-top: -5.5px;    /* - (11px / 2) = -5.5px */
+    margin-top: -8.5px;    /* - (17px / 2) = -8.5px */
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     border: 1px solid rgba(0,0,0,0.15);
-    width: 15px;          /* нова ширина */
-    height: 11px;         /* нова висота */
+    width: 23px;          /* нова ширина */
+    height: 17px;         /* нова висота */
 }
     .flag-container ~ span,
     .flag-container + * {

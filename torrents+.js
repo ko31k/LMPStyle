@@ -8,16 +8,16 @@
     `;
 
     // Список текстових замін
-    const REPLACEMENTS = {
-        'Дублированный': 'Дубльований',
-        'Ukr': '🇺🇦 Українською',
-        'Ua': '🇺🇦 Ua',
-        'Дубляж': 'Дубльований',
-        'Многоголосый': 'Багатоголосий',
-        'Украинский': '🇺🇦 Українською',
-        'Zetvideo': 'UaFlix',
-        'Нет истории просмотра': 'Історія перегляду відсутня'
-    };
+const REPLACEMENTS = {
+    'Дублированный': 'Дубльований',
+    'Ukr': '<span style="display:inline-block;width:16px;height:12px;background:linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);margin-right:5px;vertical-align:middle"></span> Українською',
+    'Ua': '<span style="display:inline-block;width:16px;height:12px;background:linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);margin-right:5px;vertical-align:middle"></span> Ua',
+    'Дубляж': 'Дубльований',
+    'Многоголосый': 'Багатоголосий',
+    'Украинский': '<span style="display:inline-block;width:16px;height:12px;background:linear-gradient(to bottom, #0057B7 50%, #FFD700 50%);margin-right:5px;vertical-align:middle"></span> Українською',
+    'Zetvideo': 'UaFlix',
+    'Нет истории просмотра': 'Історія перегляду відсутня'
+};
 
     // Конфігурація стилів
     const STYLES = {

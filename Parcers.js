@@ -63,7 +63,7 @@
       }
   }, {
       base: 'spawnum_duckdns_org_59117',
-      name: 'Spawn 🇺🇦', // Додано прапорець України
+      name: 'Spawn UA', // Парсер UA
       settings: {
           url: 'spawnum.duckdns.org:59117',
           key: '2',

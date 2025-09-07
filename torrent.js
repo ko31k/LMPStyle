@@ -28,7 +28,7 @@
         },
         // Стилі для бітрейту - три діапазони
         '.torrent-item__bitrate span.low-bitrate': {
-            color: '#ffff00', // #3498db (синій)
+            color: '#ffff00',
             'font-weight': 'bold'
         },
         '.torrent-item__bitrate span.medium-bitrate': {
@@ -46,6 +46,10 @@
         },
         '.torrent-item__tracker.toloka': {
             color: '#3498db',
+            'font-weight': 'bold'
+        },
+        '.torrent-item__tracker.mazepa': {
+            color: '#C9A0DC', // Лавандовий колір для Mazepa
             'font-weight': 'bold'
         }
     };
@@ -123,10 +127,11 @@
         // Трекери - нечутлива до регістру перевірка
         document.querySelectorAll('.torrent-item__tracker').forEach(tracker => {
             const text = tracker.textContent.trim().toLowerCase();
-            tracker.classList.remove('utopia', 'toloka');
+            tracker.classList.remove('utopia', 'toloka', 'mazepa');
             
             if (text.includes('utopia')) tracker.classList.add('utopia');
             else if (text.includes('toloka')) tracker.classList.add('toloka');
+            else if (text.includes('mazepa')) tracker.classList.add('mazepa');
         });
     }
 

@@ -2550,7 +2550,7 @@
     .full-start__button,
     .full-start-new__buttons .button,
     .buttons-container .button {
-        border-radius: 1em !important;          /* базове заокруглення */
+        border-radius: 1.5em !important;          /* базове заокруглення */
         transition: border-radius 0.3s ease;
     }
     /* при наведенні ще трохи більше */
@@ -2561,4 +2561,5 @@
     }`;
   document.head.appendChild(patch);
 })();
+
 

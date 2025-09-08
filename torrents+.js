@@ -21,6 +21,7 @@
         ['Український', UKRAINE_FLAG_SVG + ' Українською'], // Повна форма з прапором (українська)
         ['Украинская', UKRAINE_FLAG_SVG + ' Українською'], // Жіноча форма з прапором (російська)
         ['Українська', UKRAINE_FLAG_SVG + ' Українською'], // Жіноча форма з прапором (українська)
+        ['1+1', UKRAINE_FLAG_SVG + ' 1+1'],      // Телеканал 1+1 з прапором
         
         // ---------- Третій пріоритет: регулярні вирази з умовами ----------
         // Додано перевірку на наявність прапора перед заміною
@@ -79,6 +80,14 @@
         .ua-flag-processed {
             position: relative;
         }
+
+        /* Стилі для описів відео та текстів - покращує читабельність */
+        .online-prestige__description,
+        .video-description,
+        [class*="description"],
+        [class*="info"] {
+            line-height: 1.5;                    /* Збільшений міжрядковий інтервал */
+        }
     `;
 
     // ===================== СИСТЕМА КОЛЬОРОВИХ ІНДИКАТОРІВ =====================
@@ -134,16 +143,80 @@
     }).join('\n'); // Об'єднання всіх правил в один рядок
     document.head.appendChild(style); // Вставка стилів в голову документа
 
-    // ===================== СИСТЕМА ЗАМІНИ ТЕКСТУ =====================
+    // ===================== УНІВЕРСАЛЬНА СИСТЕМА ЗАМІНИ ТЕКСТУ =====================
     function replaceTexts() {
-        // Список контейнерів для обробки (CSS селектори)
+        // Розширений список контейнерів для пошуку текстів
         const containers = [
             '.online-prestige-watched__body',     // Історія перегляду
             '.online-prestige--full .online-prestige__title', // Заголовки повних описів
-            '.online-prestige--full .online-prestige__info'   // Інформаційні блоки
+            '.online-prestige--full .online-prestige__info',  // Інформаційні блоки
+            '.online-prestige__description',      // Опис відео
+            '.video-description',                 // Альтернативний клас для опису
+            '[class*="description"]',             // Будь-які елементи з "description" в класі
+            '[class*="info"]',                    // Будь-які елементи з "info" в класі
+            '.content__description',              // Додатковий клас для опису
+            '.movie-info',                        // Інформація про фільм
+            '.series-info'                        // Інформація про серіал
         ];
 
-        // Обхід всіх контейнерів (виключаємо вже оброблені)
+        // Додатково шукаємо тексти в усіх елементах з текстовим вмістом
+        const textElements = document.querySelectorAll('div, p, span:not(.ua-flag-processed)');
+        
+        // Обробка всіх текстових елементів на сторінці
+        textElements.forEach(element => {
+            // Пропускаємо елементи, які вже оброблені або містять SVG
+            if (element.classList.contains('ua-flag-processed') || 
+                element.querySelector('svg') || 
+                element.closest('.flag-container')) {
+                return;
+            }
+
+            let html = element.innerHTML; // Оригінальний HTML вміст
+            let changed = false;          // Флаг змін
+            
+            // Послідовна обробка всіх шаблонів заміни
+            REPLACEMENTS.forEach(item => {
+                if (Array.isArray(item)) {
+                    // Обробка звичайних рядків (чутливі до регістру)
+                    if (html.includes(item[0])) {
+                        html = html.replace(new RegExp(item[0], 'g'), item[1]);
+                        changed = true; // Встановлення флагу змін
+                    }
+                } else if (item.pattern) {
+                    // Обробка регулярних виразів з умовами
+                    if ((!item.condition || item.condition(html)) && item.pattern.test(html)) {
+                        html = html.replace(item.pattern, item.replacement);
+                        changed = true; // Встановлення флагу змін
+                    }
+                }
+            });
+            
+            // Якщо були зміни - оновлюємо вміст
+            if (changed) {
+                element.innerHTML = html;
+                element.classList.add('ua-flag-processed'); // Маркуємо як оброблений
+                
+                // Обробка SVG прапорців для вирівнювання
+                element.querySelectorAll('svg').forEach(svg => {
+                    // Перевіряємо чи вже не знаходиться в контейнері
+                    if (!svg.closest('.flag-container')) {
+                        svg.classList.add('flag-svg'); // Додавання CSS класу
+                        // Створення контейнера для вирівнювання
+                        const wrapper = document.createElement('span');
+                        wrapper.className = 'flag-container';
+                        svg.parentNode.insertBefore(wrapper, svg);
+                        wrapper.appendChild(svg);
+                        
+                        // Додавання сусіднього тексту в контейнер
+                        if (svg.nextSibling && svg.nextSibling.nodeType === 3) {
+                            wrapper.appendChild(svg.nextSibling);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Додаткова обробка конкретних контейнерів (для надійності)
         containers.forEach(selector => {
             document.querySelectorAll(selector + ':not(.ua-flag-processed)').forEach(container => {
                 let html = container.innerHTML; // Оригінальний HTML вміст
@@ -181,6 +254,7 @@
                             wrapper.className = 'flag-container';
                             svg.parentNode.insertBefore(wrapper, svg);
                             wrapper.appendChild(svg);
+                            
                             // Додавання сусіднього тексту в контейнер
                             if (svg.nextSibling && svg.nextSibling.nodeType === 3) {
                                 wrapper.appendChild(svg.nextSibling);

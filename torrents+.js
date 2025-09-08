@@ -71,10 +71,12 @@
             position: relative;
         }
 
-        /* Стилі для фільтрів та випадаючих списків */
+        /* Спеціальні стилі для фільтрів та випадаючих списків */
         .filter-item .flag-svg,
         .selector-item .flag-svg,
-        .dropdown-item .flag-svg {
+        .dropdown-item .flag-svg,
+        .voice-option .flag-svg,
+        .audio-option .flag-svg {
             margin-right: 6px;
             margin-top: -2px;
             width: 20px;
@@ -137,6 +139,79 @@
     }).join('\n');
     document.head.appendChild(style);
 
+    // ===================== СИСТЕМА ЗАМІНИ ТЕКСТУ ДЛЯ ФІЛЬТРІВ =====================
+    const UKRAINIAN_STUDIOS = [
+        'DniproFilm', 'Дніпрофільм', 'Цікава Ідея', 'Колодій Трейлерів', 
+        'UaFlix', 'BaibaKo', 'В одне рило', 'Так Треба Продакшн', 
+        'TreleMore', 'Гуртом', 'Exit Studio', 'FilmUA', 'Novator Film', 
+        'LeDoyen', 'Postmodern', 'Pryanik', 'CinemaVoice', 'UkrainianVoice'
+    ];
+
+    function processVoiceFilters() {
+        const voiceFilterSelectors = [
+            '[data-type="voice"]',
+            '[data-type="audio"]',
+            '.voice-options',
+            '.audio-options',
+            '.voice-list',
+            '.audio-list',
+            '.studio-list',
+            '.translation-filter',
+            '.dubbing-filter'
+        ];
+
+        voiceFilterSelectors.forEach(selector => {
+            try {
+                const filters = document.querySelectorAll(selector);
+                filters.forEach(filter => {
+                    if (filter.classList.contains('ua-voice-processed')) return;
+                    
+                    let html = filter.innerHTML;
+                    let changed = false;
+                    
+                    // Додаємо прапори тільки для українських студій у фільтрах
+                    UKRAINIAN_STUDIOS.forEach(studio => {
+                        if (html.includes(studio) && !html.includes(UKRAINE_FLAG_SVG)) {
+                            html = html.replace(new RegExp(studio, 'g'), UKRAINE_FLAG_SVG + ' ' + studio);
+                            changed = true;
+                        }
+                    });
+
+                    // Додаємо прапори для загальних українських позначень
+                    if (html.includes('Українська') && !html.includes(UKRAINE_FLAG_SVG)) {
+                        html = html.replace(/Українська/g, UKRAINE_FLAG_SVG + ' Українська');
+                        changed = true;
+                    }
+                    if (html.includes('Украинская') && !html.includes(UKRAINE_FLAG_SVG)) {
+                        html = html.replace(/Украинская/g, UKRAINE_FLAG_SVG + ' Українська');
+                        changed = true;
+                    }
+                    if (html.includes('Ukr') && !html.includes(UKRAINE_FLAG_SVG)) {
+                        html = html.replace(/Ukr/gi, UKRAINE_FLAG_SVG + ' Українською');
+                        changed = true;
+                    }
+                    
+                    if (changed) {
+                        filter.innerHTML = html;
+                        filter.classList.add('ua-voice-processed');
+                        
+                        filter.querySelectorAll('svg').forEach(svg => {
+                            if (!svg.closest('.flag-container')) {
+                                svg.classList.add('flag-svg');
+                                const wrapper = document.createElement('span');
+                                wrapper.className = 'flag-container';
+                                svg.parentNode.insertBefore(wrapper, svg);
+                                wrapper.appendChild(svg);
+                            }
+                        });
+                    }
+                });
+            } catch (error) {
+                console.warn('Помилка обробки фільтрів озвучення:', error);
+            }
+        });
+    }
+
     // ===================== ОПТИМІЗОВАНА СИСТЕМА ЗАМІНИ ТЕКСТУ =====================
     function replaceTexts() {
         // Обмежений список контейнерів для уникнення зависання
@@ -148,16 +223,7 @@
             '.video-description',
             '.content__description',
             '.movie-info',
-            '.series-info',
-            // Контейнери для фільтрів та вибору озвучення
-            '.filter-item',
-            '.selector-item',
-            '.dropdown-item',
-            '.voice-selector',
-            '.audio-option',
-            '[class*="filter"]',
-            '[class*="selector"]',
-            '[class*="dropdown"]'
+            '.series-info'
         ];
 
         // Безпечний пошук елементів з обмеженням
@@ -173,12 +239,12 @@
                         
                         REPLACEMENTS.forEach(item => {
                             if (Array.isArray(item)) {
-                                if (html.includes(item[0])) {
+                                if (html.includes(item[0]) && !html.includes(UKRAINE_FLAG_SVG)) {
                                     html = html.replace(new RegExp(item[0], 'g'), item[1]);
                                     changed = true;
                                 }
                             } else if (item.pattern) {
-                                if ((!item.condition || item.condition(html)) && item.pattern.test(html)) {
+                                if ((!item.condition || item.condition(html)) && item.pattern.test(html) && !html.includes(UKRAINE_FLAG_SVG)) {
                                     html = html.replace(item.pattern, item.replacement);
                                     changed = true;
                                 }
@@ -210,72 +276,15 @@
             });
         };
 
-        // Обробка текстів у фільтрах з особливою обережністю
-        const processFilters = () => {
-            const filterSelectors = [
-                '.filter-options',
-                '.voice-options',
-                '.audio-options',
-                '[data-type="voice"]',
-                '[data-type="audio"]'
-            ];
-
-            filterSelectors.forEach(selector => {
-                try {
-                    const filters = document.querySelectorAll(selector);
-                    filters.forEach(filter => {
-                        if (filter.classList.contains('ua-flag-processed')) return;
-                        
-                        let html = filter.innerHTML;
-                        let changed = false;
-                        
-                        // Спеціальні заміни для фільтрів (тільки українські варіанти)
-                        const filterReplacements = [
-                            ['Украинский', UKRAINE_FLAG_SVG + ' Українською'],
-                            ['Український', UKRAINE_FLAG_SVG + ' Українською'],
-                            ['Украинская', UKRAINE_FLAG_SVG + ' Українською'],
-                            ['Українська', UKRAINE_FLAG_SVG + ' Українською'],
-                            ['Ukr', UKRAINE_FLAG_SVG + ' Українською'],
-                            ['Ua', UKRAINE_FLAG_SVG + ' UA']
-                        ];
-                        
-                        filterReplacements.forEach(([original, replacement]) => {
-                            if (html.includes(original)) {
-                                html = html.replace(new RegExp(original, 'g'), replacement);
-                                changed = true;
-                            }
-                        });
-                        
-                        if (changed) {
-                            filter.innerHTML = html;
-                            filter.classList.add('ua-flag-processed');
-                            
-                            filter.querySelectorAll('svg').forEach(svg => {
-                                if (!svg.closest('.flag-container')) {
-                                    svg.classList.add('flag-svg');
-                                    const wrapper = document.createElement('span');
-                                    wrapper.className = 'flag-container';
-                                    svg.parentNode.insertBefore(wrapper, svg);
-                                    wrapper.appendChild(svg);
-                                }
-                            });
-                        }
-                    });
-                } catch (error) {
-                    console.warn('Помилка обробки фільтрів:', error);
-                }
-            });
-        };
-
         // Виконуємо обробку з обмеженням часу
         const startTime = Date.now();
-        const TIME_LIMIT = 50; // 50ms максимальний час обробки
+        const TIME_LIMIT = 50;
         
         processSafeElements();
         
-        // Перевіряємо час та обробляємо фільтри тільки якщо є час
+        // Окремо обробляємо фільтри озвучення
         if (Date.now() - startTime < TIME_LIMIT) {
-            processFilters();
+            processVoiceFilters();
         }
     }
 
@@ -343,7 +352,7 @@
 
         if (hasImportantChanges) {
             clearTimeout(updateTimeout);
-            updateTimeout = setTimeout(updateAll, 150); // Збільшена затримка
+            updateTimeout = setTimeout(updateAll, 150);
         }
     });
 
@@ -351,8 +360,8 @@
     observer.observe(document.body, { 
         childList: true,
         subtree: true,
-        attributes: false, // Вимкнути спостереження за атрибутами
-        characterData: false // Вимкнути спостереження за текстом
+        attributes: false,
+        characterData: false
     });
     
     // Відкладена ініціалізація

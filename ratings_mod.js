@@ -296,51 +296,55 @@
 	Lampa.Template.add('maxsm_ratings_modal', modalStyle);
 	$('body').append(Lampa.Template.get('maxsm_ratings_modal', {}, true));
 
-	/* ПОЧАТОК КОМЕНТАРЯ
+	// ПОЧАТОК КОМЕНТАРЯ
 	
 		var style = "<style id=\"maxsm_ratings\">" +
-		".full-start-new__rate-line {" +
-		"    visibility: hidden;" +
-		"    display: flex;" +
-		"    flex-wrap: wrap;" +
-		"    align-items: center;" +
-		"    width: fit-content;" +
-		"    max-width: 100%;" +
-		"}" +
-		".full-start-new__rate-line > * {" +
-		"    margin-right: 0.05em " +
-		"    flex-shrink: 0;" +
-		"}" +
-		
-		// Фикс для SVG на WebOS 
-		".full-start-new__rate-line svg {" +
-		"    width: 1.8em " + // Фиксированная ширина 
-		"    height: 1.8em " + // Фиксированная высота 
-		"    flex-shrink: 0;" + // Запрет сжатия 
-		"}" +
-		".rate--green  { color: #4caf50; }" +
-		".rate--lime   { color: #cddc39; }" +
-		".rate--orange { color: #ff9800; }" +
-		".rate--red    { color: #f44336; }" +
-		".rate--gold   { color: gold; }" +
-		".rate--icon   { height: 1.8em; }" +
-		".full-start__rate > div:last-child { padding: 0.2em 0.4em; }" +
-		".jr { min-width: 5.0em; }" +
-		".rutor { min-width: 7.0em; }" +
-		".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00  color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: normal; border-radius: 0.3em  padding: 0.2em 0.8em }" +
-        ".card__view {position: relative }" +
-        ".card__quality { position: absolute  bottom: 0.5em  left: -0.8em  background-color: transparent  z-index: 10; width: fit-content  max-width: calc(100% - 1em)  }" +
-        ".card__quality div { text-transform: none  border: 1.1px solid #FFFF00  background-color: rgba(255, 255, 0, 0.7)  color: #000000; font-weight: 600; font-size: 1.3em; font-style: normal; border-radius: 0em  padding: 0.15em 0.3em  }" +
-		// Адаптация для WebOS (если нужно)
-		"@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
-		"    .full-start-new__rate-line {" +
-		"        gap: 0.01em;" + // Минимальный отступ между элементами 
-		"    }" +
-		"}" +
-		"</style>"; 
+    ".full-start-new__rate-line {" +
+    "    visibility: hidden;" +
+    "    display: flex;" +
+    "    flex-wrap: wrap;" +
+    "    align-items: center;" +
+    "    width: fit-content;" +
+    "    max-width: 100%;" +
+    "}" +
+    ".full-start-new__rate-line > * {" +
+    "    margin-right: 0.05em;" +
+    "    flex-shrink: 0;" +
+    "}" +
+    
+    // Фикс для SVG на WebOS 
+    ".full-start-new__rate-line svg {" +
+    "    width: 1.8em;" + 
+    "    height: 1.8em;" + 
+    "    flex-shrink: 0;" + 
+    "}" +
+    ".rate--green  { color: #4caf50; }" +
+    ".rate--lime   { color: #cddc39; }" +
+    ".rate--orange { color: #ff9800; }" +
+    ".rate--red    { color: #f44336; }" +
+    ".rate--gold   { color: gold; }" +
+    ".rate--icon   { height: 1.8em; }" +
+    ".full-start__rate > div:last-child { padding: 0.2em 0.4em; }" +
+    ".jr { min-width: 5.0em; }" +
+    ".rutor { min-width: 7.0em; }" +
+    
+    /* ========== ЗАКОМЕНТОВАНІ СТИЛІ ЯКОСТІ ==========
+    ".maxsm-quality { min-width: 2.8em; text-align: center; border: 1.1px solid #FFFF00; color: #FFFFFF; font-weight: normal; font-size: 1.5em; font-style: normal; border-radius: 0.3em; padding: 0.2em 0.8em; }" +
+    ".card__view { position: relative; }" +
+    ".card__quality { position: absolute; bottom: 0.5em; left: -0.8em; background-color: transparent; z-index: 10; width: fit-content; max-width: calc(100% - 1em); }" +
+    ".card__quality div { text-transform: none; border: 1.1px solid #FFFF00; background-color: rgba(255, 255, 0, 0.7); color: #000000; font-weight: 600; font-size: 1.3em; font-style: normal; border-radius: 0em; padding: 0.15em 0.3em; }" +
+    ========== КІНЕЦЬ КОМЕНТАРЯ ========== */
+    
+    // Адаптация для WebOS
+    "@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
+    "    .full-start-new__rate-line {" +
+    "        gap: 0.01em;" +
+    "    }" +
+    "}" +
+    "</style>";
 
-	Lampa.Template.add('maxsm_ratings_css', style);
-	$('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true)); */
+Lampa.Template.add('maxsm_ratings_css', style);
+$('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 	
 
 	var style = "<style id=\"maxsm_ratings_table\">" +
@@ -2331,7 +2335,7 @@
                 localStorage.removeItem(KP_CACHE);
                 localStorage.removeItem(IMDB_CACHE);
                 localStorage.removeItem(ID_MAPPING_CACHE);
-                localStorage.removeItem(QUALITY_CACHE);
+                //localStorage.removeItem(QUALITY_CACHE);
                 window.location.reload();
             }
         });
@@ -2354,5 +2358,6 @@
 
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
+
 
 })();

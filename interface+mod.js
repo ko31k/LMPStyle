@@ -456,6 +456,7 @@
 		 // прибрати попередню вставку
 		$('.info-unified-line').remove();
         //кінець доданого коду
+
 		var colors = {
             seasons: { bg: 'rgba(52, 152, 219, 0.8)', text: 'white' },
             episodes: { bg: 'rgba(46, 204, 113, 0.8)', text: 'white' },
@@ -2538,12 +2539,25 @@ const themes = {
         }
     
 	//додатковий код!!!
-	Lampa.Listener.follow('full', function (event) {
-    if (event.type === 'complite') {           // прибрати панель від попередньої картки
-        $('.info-unified-line').remove();      // дати DOMу побудуватись і вставити нову панель
-        setTimeout(newInfoPanel, 100);
-		}
-		});
+    Lampa.Listener.follow('full', function (event) {
+        if (event.type === 'complite') {
+            // прибрати стару панель
+            $('.full-start-new__details .info-unified-line').remove();
+
+            // чекати поки з’являться деталі
+            let tries = 0;
+            function initPanelWhenReady() {
+                const details = $('.full-start-new__details');
+                if (details.length && details.find('span').length) {
+                    newInfoPanel(); // створити панель
+                } else if (tries < 10) { // до 10 спроб
+                    tries++;
+                    setTimeout(initPanelWhenReady, 150);
+                }
+            }
+            initPanelWhenReady();
+        }
+    });
 	//Кінець додаткового коду!!!
 	}
 
@@ -2559,6 +2573,7 @@ const themes = {
     }
 
 })();
+
 
 
 

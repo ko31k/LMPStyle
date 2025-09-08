@@ -114,62 +114,145 @@
     }).join('\n');
     document.head.appendChild(style);
 
-    // ===================== ОБРОБКА ФІЛЬТРІВ ПЕРЕКЛАДУ =====================
-    function processTranslationFilters() {
-        // Спеціальні селектори тільки для фільтрів перекладу
-        const translationSelectors = [
+    // ===================== ОБРОБКА ФІЛЬТРІВ ПЕРЕКЛАДУ ДЛЯ СЕРІАЛІВ =====================
+    function processSeriesTranslationFilters() {
+        console.log('Пошук фільтрів перекладу для серіалів...');
+        
+        // ВСІ МОЖЛИВІ СЕЛЕКТОРИ ДЛЯ ФІЛЬТРІВ СЕРІАЛІВ
+        const allPossibleSelectors = [
+            // Основні контейнери
+            '.selector',
+            '.dropdown',
+            '.filter',
+            '.voice-selector',
+            '.audio-selector',
+            '.translation-selector',
+            '.dubbing-selector',
+            
+            // Тіла контейнерів
             '.selector__body',
             '.dropdown__body',
             '.filter__body',
+            '.selector__content',
+            '.dropdown__content',
+            '.filter__content',
+            
+            // Списки
+            '.selector__list',
+            '.dropdown__list',
+            '.filter__list',
+            '.voice-list',
+            '.audio-list',
+            '.translation-list',
+            '.dubbing-list',
+            '.studio-list',
+            
+            // Елементи списків
+            '.selector__item',
+            '.dropdown__item',
+            '.filter__item',
+            '.voice-item',
+            '.audio-item',
+            '.translation-item',
+            '.dubbing-item',
+            '.studio-item',
+            
+            // Опції
+            '.selector__option',
+            '.dropdown__option',
+            '.filter__option',
+            '.voice-option',
+            '.audio-option',
+            '.translation-option',
+            '.dubbing-option',
+            
+            // Data-атрибути
             '[data-type="voice"]',
             '[data-type="audio"]',
-            '[data-type="translation"]'
+            '[data-type="translation"]',
+            '[data-type="dubbing"]',
+            '[data-type="studio"]',
+            
+            // Загальні класи
+            '[class*="voice"]',
+            '[class*="audio"]',
+            '[class*="translation"]',
+            '[class*="dubbing"]',
+            '[class*="studio"]',
+            '[class*="переклад"]',
+            '[class*="озвучення"]',
+            '[class*="дубляж"]'
         ];
 
-        translationSelectors.forEach(selector => {
-            const containers = document.querySelectorAll(selector);
-            containers.forEach(container => {
-                if (container.classList.contains('ua-translation-processed')) return;
-                
-                // Шукаємо тільки елементи з текстом перекладу
-                const textElements = container.querySelectorAll('.selector__item, .dropdown__item, .filter__item, [class*="item"]');
-                
-                textElements.forEach(element => {
-                    if (element.classList.contains('ua-flag-processed')) return;
-                    
-                    const text = element.textContent;
-                    let newHtml = element.innerHTML;
-                    let changed = false;
+        // Спроба знайти фільтри перекладу
+        let foundFilters = false;
 
-                    // Тільки для українських перекладів
-                    const isUkrainian = text.match(/(Українськ|Украинск|Ukr|UKR|\[UKR\]|Цікава Ідея|DniproFilm)/i);
+        allPossibleSelectors.forEach(selector => {
+            try {
+                const elements = document.querySelectorAll(selector);
+                if (elements.length > 0) {
+                    console.log('Знайдено елементи за селектором:', selector, elements.length);
                     
-                    if (isUkrainian && !newHtml.includes(UKRAINE_FLAG_SVG)) {
-                        // Додаємо прапор тільки на початок тексту
-                        newHtml = UKRAINE_FLAG_SVG + ' ' + newHtml;
-                        changed = true;
-                    }
-                    
-                    if (changed) {
-                        element.innerHTML = newHtml;
-                        element.classList.add('ua-flag-processed');
+                    elements.forEach(element => {
+                        if (element.classList.contains('ua-series-processed')) return;
                         
-                        // Додаємо контейнер для прапора
-                        element.querySelectorAll('svg').forEach(svg => {
-                            if (!svg.closest('.flag-container')) {
-                                svg.classList.add('flag-svg');
-                                const wrapper = document.createElement('span');
-                                wrapper.className = 'flag-container';
-                                svg.parentNode.insertBefore(wrapper, svg);
-                                wrapper.appendChild(svg);
+                        // Шукаємо текстовий вміст з перекладами
+                        const text = element.textContent || '';
+                        const isTranslationFilter = text.includes('Переклад') || 
+                                                   text.includes('Озвучення') ||
+                                                   text.includes('DniproFilm') ||
+                                                   text.includes('Цікава Ідея') ||
+                                                   text.includes('LostFilm') ||
+                                                   text.match(/(Українськ|Украинск|Ukr|UKR|рус|eng)/i);
+                        
+                        if (isTranslationFilter && !element.innerHTML.includes(UKRAINE_FLAG_SVG)) {
+                            console.log('Обробка фільтра перекладу:', text.substring(0, 50));
+                            
+                            // Додаємо прапори до українських варіантів
+                            let newHtml = element.innerHTML;
+                            let changed = false;
+                            
+                            // Українські студії та позначення
+                            const ukrainianPatterns = [
+                                'Цікава Ідея', 'DniproFilm', 'Українська', 'Украинская', 'Ukr', 'UKR', '[UKR]'
+                            ];
+                            
+                            ukrainianPatterns.forEach(pattern => {
+                                if (newHtml.includes(pattern) && !newHtml.includes(UKRAINE_FLAG_SVG)) {
+                                    newHtml = newHtml.replace(new RegExp(pattern, 'g'), UKRAINE_FLAG_SVG + ' ' + pattern);
+                                    changed = true;
+                                }
+                            });
+                            
+                            if (changed) {
+                                element.innerHTML = newHtml;
+                                foundFilters = true;
+                                
+                                // Додаємо контейнери для прапорів
+                                element.querySelectorAll('svg').forEach(svg => {
+                                    if (!svg.closest('.flag-container')) {
+                                        svg.classList.add('flag-svg');
+                                        const wrapper = document.createElement('span');
+                                        wrapper.className = 'flag-container';
+                                        svg.parentNode.insertBefore(wrapper, svg);
+                                        wrapper.appendChild(svg);
+                                    }
+                                });
                             }
-                        });
-                    }
-                });
-                
-                container.classList.add('ua-translation-processed');
-            });
+                        }
+                        
+                        element.classList.add('ua-series-processed');
+                    });
+                }
+            } catch (error) {
+                console.warn('Помилка обробки селектора', selector, error);
+            }
         });
+
+        if (!foundFilters) {
+            console.log('Фільтри перекладу не знайдено, спроба через 2 секунди...');
+            setTimeout(processSeriesTranslationFilters, 2000);
+        }
     }
 
     // ===================== ОБРОБКА ЗАГАЛЬНИХ ТЕКСТІВ =====================
@@ -249,7 +332,6 @@
     function updateAll() {
         try {
             replaceTexts();
-            processTranslationFilters();
             updateTorrentStyles();
         } catch (error) {
             console.warn('Помилка оновлення:', error);
@@ -270,6 +352,7 @@
     
     // Первинна ініціалізація
     setTimeout(updateAll, 1000);
+    setTimeout(processSeriesTranslationFilters, 1500);
 })();
 
 // ===================== ІНІЦІАЛІЗАЦІЯ TV РЕЖИМУ LAMPA =====================

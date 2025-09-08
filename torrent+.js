@@ -38,7 +38,8 @@
         'UaFlix', 'BaibaKo', 'В одне рило', 'Так Треба Продакшн', 
         'TreleMore', 'Гуртом', 'Exit Studio', 'FilmUA', 'Novator Film', 
         'LeDoyen', 'Postmodern', 'Pryanik', 'CinemaVoice', 'UkrainianVoice',
-        'Цікава Iдея', 'Цікава Iден' // Різні варіанти написання
+        'Цікава Iдея', 'Цікава Iден', 'Jaskier', 'LE-Production', 'HDRezka',
+        'WStudio', 'ColdNoAds', 'Кубик в Кубе', 'Дубляж [DMS]'
     ];
 
     // ===================== СИСТЕМА СТИЛІВ ДЛЯ ПРАПОРЦЯ =====================
@@ -86,7 +87,8 @@
         .dropdown-item .flag-svg,
         .voice-option .flag-svg,
         .audio-option .flag-svg,
-        .translation-item .flag-svg {
+        .translation-item .flag-svg,
+        .studio-item .flag-svg {
             margin-right: 6px;
             margin-top: -2px;
             width: 20px;
@@ -96,7 +98,10 @@
         /* Стилі для студій озвучення в списках */
         .studio-list .flag-svg,
         .voice-list .flag-svg,
-        .translation-list .flag-svg {
+        .translation-list .flag-svg,
+        .dubbing-list .flag-svg,
+        .voice-options .flag-svg,
+        .audio-options .flag-svg {
             margin-right: 8px;
             margin-top: -3px;
             width: 22px;
@@ -166,14 +171,16 @@
             '[data-type="voice"]',
             '[data-type="audio"]',
             '[data-type="translation"]',
+            '[data-type="dubbing"]',
             '.voice-options',
             '.audio-options',
             '.translation-options',
+            '.dubbing-options',
             '.voice-list',
             '.audio-list',
             '.translation-list',
-            '.studio-list',
             '.dubbing-list',
+            '.studio-list',
             // Селектори для списків у випадаючих меню
             '.filter-options',
             '.selector-options',
@@ -182,17 +189,31 @@
             '.voice-item',
             '.audio-item',
             '.translation-item',
+            '.dubbing-item',
             '.studio-item',
-            '.dubbing-item'
+            // Загальні селектори для списків
+            '.list',
+            '.options',
+            '.items',
+            // Спеціальні селектори для Lampa
+            '.selector__body',
+            '.dropdown__body',
+            '.filter__body',
+            // Спеціальні селектори для перекладів
+            '[class*="voice"]',
+            '[class*="audio"]',
+            '[class*="translation"]',
+            '[class*="dubbing"]',
+            '[class*="studio"]'
         ];
 
         voiceFilterSelectors.forEach(selector => {
             try {
-                const filters = document.querySelectorAll(selector);
-                filters.forEach(filter => {
-                    if (filter.classList.contains('ua-voice-processed')) return;
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(element => {
+                    if (element.classList.contains('ua-voice-processed')) return;
                     
-                    let html = filter.innerHTML;
+                    let html = element.innerHTML;
                     let changed = false;
                     
                     // Додаємо прапори для українських студій
@@ -213,7 +234,8 @@
                         { pattern: /Ukr/gi, replacement: UKRAINE_FLAG_SVG + ' Українською' },
                         { pattern: /UKR/gi, replacement: UKRAINE_FLAG_SVG + ' Українською' },
                         { pattern: /\[UKR\]/g, replacement: UKRAINE_FLAG_SVG + ' Українською' },
-                        { pattern: /\[ua\]/gi, replacement: UKRAINE_FLAG_SVG + ' UA' }
+                        { pattern: /\[ua\]/gi, replacement: UKRAINE_FLAG_SVG + ' UA' },
+                        { pattern: /MVO.*Ukr/gi, replacement: UKRAINE_FLAG_SVG + ' MVO Українською' }
                     ];
 
                     ukrainianPatterns.forEach(({pattern, replacement}) => {
@@ -224,10 +246,10 @@
                     });
                     
                     if (changed) {
-                        filter.innerHTML = html;
-                        filter.classList.add('ua-voice-processed');
+                        element.innerHTML = html;
+                        element.classList.add('ua-voice-processed');
                         
-                        filter.querySelectorAll('svg').forEach(svg => {
+                        element.querySelectorAll('svg').forEach(svg => {
                             if (!svg.closest('.flag-container')) {
                                 svg.classList.add('flag-svg');
                                 const wrapper = document.createElement('span');
@@ -240,6 +262,35 @@
                 });
             } catch (error) {
                 console.warn('Помилка обробки фільтрів озвучення:', error);
+            }
+        });
+
+        // Додаткова обробка для всіх елементів з текстом студій
+        const textElements = document.querySelectorAll('*:not(.ua-voice-processed)');
+        textElements.forEach(element => {
+            if (element.children.length > 5 || element.textContent.length > 100) return;
+            
+            const text = element.textContent;
+            let changed = false;
+            
+            UKRAINIAN_STUDIOS.forEach(studio => {
+                if (text.includes(studio) && !element.innerHTML.includes(UKRAINE_FLAG_SVG)) {
+                    element.innerHTML = element.innerHTML.replace(studio, UKRAINE_FLAG_SVG + ' ' + studio);
+                    changed = true;
+                }
+            });
+            
+            if (changed) {
+                element.classList.add('ua-voice-processed');
+                element.querySelectorAll('svg').forEach(svg => {
+                    if (!svg.closest('.flag-container')) {
+                        svg.classList.add('flag-svg');
+                        const wrapper = document.createElement('span');
+                        wrapper.className = 'flag-container';
+                        svg.parentNode.insertBefore(wrapper, svg);
+                        wrapper.appendChild(svg);
+                    }
+                });
             }
         });
     }

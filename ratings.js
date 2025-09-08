@@ -2087,7 +2087,7 @@
         }
         if (newCards.length)
             updateCards(newCards);
-    }*/);
+    });*/
 
 	// Инициализация плагина
     function startPlugin() {
@@ -2354,4 +2354,5 @@
 
 	if (!window.maxsmRatingsPlugin)
         startPlugin();
+
 })();

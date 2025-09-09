@@ -617,8 +617,32 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
             }
         }
     }
-
-    function showFullCardQualityPlaceholder(cardId, renderElement) {
+//Новий код
+function showFullCardQualityPlaceholder(cardId, renderElement) {
+    if (!renderElement) return;
+    
+    // Перевіряємо чи є інший плагін рейтингів
+    var hasRatingPlugin = document.querySelector('.full-start-new__rate-line .full-start__status:not(.lqe-quality)');
+    if (hasRatingPlugin) return; // Не показуємо placeholder, якщо є інший плагін
+    
+    var rateLine = $(actualSelectors.fullCardRateLine, renderElement);
+    if (!rateLine.length) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cannot show placeholder, rate line not found.");
+        return;
+    }
+    if (!$('.full-start__status.lqe-quality', rateLine).length) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Adding quality placeholder on full card.");
+        var placeholder = document.createElement('div');
+        placeholder.className = 'full-start__status lqe-quality';
+        placeholder.textContent = 'Загрузка...';
+        placeholder.style.opacity = '0.7';
+        rateLine.append(placeholder);
+    } else {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Placeholder already exists on full card, skipping.");
+    }
+}
+//Кінець нового коду
+    /*function showFullCardQualityPlaceholder(cardId, renderElement) {
         if (!renderElement) return;
         var rateLine = $(actualSelectors.fullCardRateLine, renderElement);
         if (!rateLine.length) {
@@ -635,9 +659,41 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
         } else {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Placeholder already exists on full card, skipping.");
         }
+    }*/
+//Новий код
+function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation = false) {
+    if (!renderElement) return;
+    
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
+    var element = $('.full-start__status.lqe-quality', renderElement);
+    var rateLine = $(actualSelectors.fullCardRateLine, renderElement);
+    
+    // Перевіряємо чи є інший плагін рейтингів
+    var hasRatingPlugin = document.querySelector('.full-start-new__rate-line .full-start__status:not(.lqe-quality)');
+    
+    if (!rateLine.length) return;
+    
+    if (element.length) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Updating existing element with quality "' + displayQuality + '" on full card.');
+        element.text(displayQuality).css('opacity', '1');
+    } else {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Creating new element with quality '" + displayQuality + "' on full card.");
+        var div = document.createElement('div');
+        div.className = 'full-start__status lqe-quality';
+        div.textContent = displayQuality;
+        
+        // ЗМІНА: Якщо є інший плагін, додаємо якість після rateLine
+        if (hasRatingPlugin) {
+            rateLine.after(div);
+        } else {
+            rateLine.append(div);
+        }
     }
+}
+//Кінець нового коду
 
-    function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation = false) {
+    
+/*    function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation = false) {
         if (!renderElement) return;
         var element = $('.full-start__status.lqe-quality', renderElement);
         var rateLine = $(actualSelectors.fullCardRateLine, renderElement);
@@ -654,8 +710,118 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
             rateLine.append(div);
         }
     }
-
-    function processFullCardQuality(cardData, renderElement) {
+*/
+//Новий код
+function processFullCardQuality(cardData, renderElement) {
+    // Додаємо перевірку на наявність іншого плагіну рейтингів
+    var hasRatingPlugin = document.querySelector('.full-start-new__rate-line .full-start__status:not(.lqe-quality)');
+    
+    if (!renderElement) {
+        console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
+        return;
+    }
+    var cardId = cardData.id;
+    if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Processing full card. Data: ", cardData);
+    var normalizedCard = {
+        id: cardData.id,
+        title: cardData.title || cardData.name || '',
+        original_title: cardData.original_title || cardData.original_name || '',
+        type: getCardType(cardData),
+        release_date: cardData.release_date || cardData.first_air_date || ''
+    };
+    if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Normalized full card data: ", normalizedCard);
+    
+    var rateLine = $(actualSelectors.fullCardRateLine, renderElement);
+    
+    // ЗМІНА: Не приховуємо rateLine, якщо є інший плагін
+    if (rateLine.length && !hasRatingPlugin) {
+        rateLine.css('visibility', 'hidden');
+        rateLine.addClass('done');
+        addLoadingAnimation(cardId, renderElement);
+    } else if (hasRatingPlugin) {
+        console.log("LQE-LOG: Rating plugin detected, working in compatibility mode");
+    } else {
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Rate line not found, skipping loading animation.");
+    }
+    
+    var isTvSeries = (normalizedCard.type === 'tv' || normalizedCard.name);
+    var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + (isTvSeries ? 'tv_' : 'movie_') + normalizedCard.id;
+    var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+    
+    if (manualOverrideData) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override:", manualOverrideData);
+        updateFullCardQualityElement(null, manualOverrideData.full_label, cardId, renderElement, true);
+        
+        // ЗМІНА: Показуємо rateLine тільки якщо немає іншого плагіна
+        if (!hasRatingPlugin) {
+            removeLoadingAnimation(cardId, renderElement);
+            rateLine.css('visibility', 'visible');
+        }
+        return;
+    }
+    
+    var cachedQualityData = getQualityCache(cacheKey);
+    if (!(isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature enabled for this content, starting processing.');
+        if (cachedQualityData) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
+            updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement);
+            if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
+                getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
+                    if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
+                        saveQualityCache(cacheKey, {quality_code: jrResult.quality, full_label: jrResult.full_label}, cardId);
+                        updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement);
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed.");
+                    }
+                });
+            }
+            // ЗМІНА: Показуємо rateLine тільки якщо немає іншого плагіна
+            if (!hasRatingPlugin) {
+                removeLoadingAnimation(cardId, renderElement);
+                rateLine.css('visibility', 'visible');
+            }
+        } else {
+            // ЗМІНА: Не додаємо placeholder, якщо є інший плагін
+            if (!hasRatingPlugin) {
+                clearFullCardQualityElements(cardId, renderElement);
+                showFullCardQualityPlaceholder(cardId, renderElement);
+            }
+            
+            getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', JacRed callback received for full card. Result:', jrResult);
+                var qualityCode = (jrResult && jrResult.quality) || null;
+                var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log(`LQE-QUALITY: JacRed returned - qualityCode: "${qualityCode}", full label: "${fullTorrentTitle}"`);
+                if (qualityCode && qualityCode !== 'NO') {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', JacRed found quality code: ' + qualityCode + ', full label: ' + fullTorrentTitle);
+                    saveQualityCache(cacheKey, {quality_code: qualityCode, full_label: fullTorrentTitle}, cardId);
+                    updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement);
+                } else {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", 'card: ' + cardId + ', No quality found from JacRed or it was "NO". Clearing quality elements.');
+                    clearFullCardQualityElements(cardId, renderElement);
+                }
+                // ЗМІНА: Показуємо rateLine тільки якщо немає іншого плагіна
+                if (!hasRatingPlugin) {
+                    removeLoadingAnimation(cardId, renderElement);
+                    rateLine.css('visibility', 'visible');
+                }
+            });
+        }
+    } else {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature disabled for TV series (as configured), skipping quality fetch.');
+        clearFullCardQualityElements(cardId, renderElement);
+        // ЗМІНА: Показуємо rateLine тільки якщо немає іншого плагіна
+        if (!hasRatingPlugin) {
+            removeLoadingAnimation(cardId, renderElement);
+            rateLine.css('visibility', 'visible');
+        }
+    }
+    if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Full card quality processing initiated.");
+}
+//Кінець нового коду
+    
+   /* function processFullCardQuality(cardData, renderElement) {
         
         // Додайте цей код в самий початок функції processFullCardQuality
         var hasRatingPlugin = document.querySelector('.full-start-new__rate-line .full-start__status:not(.lqe-quality)');
@@ -744,7 +910,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
             rateLine.css('visibility', 'visible');
         }
         if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Full card quality processing initiated.");
-    }
+    }*/
 
     function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation = false) {
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);

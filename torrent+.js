@@ -4,17 +4,32 @@
 
     // ===================== СИСТЕМА ТЕКСТОВИХ ЗАМІН =====================
     const REPLACEMENTS = [
+        // ---------- Перший пріоритет: складні та довші слова ----------
         ['Uaflix', 'UAFlix'],
         ['Zetvideo', 'UaFlix'],
         ['Нет истории просмотра', 'Історія перегляду відсутня'],
         ['Дублированный', 'Дубльований'],
         ['Дубляж', 'Дубльований'],
         ['Многоголосый', 'Багатоголосий'],
+        
+        // ---------- Другий пріоритет: слова з прапорами ----------
         ['Украинский', UKRAINE_FLAG_SVG + ' Українською'],
         ['Український', UKRAINE_FLAG_SVG + ' Українською'],
         ['Украинская', UKRAINE_FLAG_SVG + ' Українською'],
         ['Українська', UKRAINE_FLAG_SVG + ' Українською'],
-        ['1+1', UKRAINE_FLAG_SVG + ' 1+1']
+        ['1+1', UKRAINE_FLAG_SVG + ' 1+1'],
+        
+        // ---------- Третій пріоритет: регулярні вирази з умовами ----------
+        {
+            pattern: /\bUkr\b/gi,
+            replacement: UKRAINE_FLAG_SVG + ' Українською',
+            condition: (text) => !text.includes('flag-container')
+        },
+        {
+            pattern: /\bUa\b/gi, 
+            replacement: UKRAINE_FLAG_SVG + ' UA',
+            condition: (text) => !text.includes('flag-container')
+        }
     ];
 
     // ===================== СИСТЕМА СТИЛІВ ДЛЯ ПРАПОРЦЯ =====================
@@ -29,7 +44,7 @@
         .flag-svg {
             display: inline-block;
             vertical-align: middle;
-            margin-right: 8px;
+            margin-right: 3px;
             margin-top: -5.5px;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -40,10 +55,10 @@
         
         @media (max-width: 767px) {
             .flag-svg {
-                width: 16.88px;
-                height: 12.83px;
-                margin-right: 5px;
-                margin-top: -3px;
+                width: 18.75px;
+                height: 14.25px;
+                margin-right: 2px;
+                margin-top: -4px;
             }
         }
         
@@ -56,30 +71,19 @@
             position: relative;
         }
 
+        /* Спеціальні стилі для фільтрів та випадаючих списків */
         .filter-item .flag-svg,
         .selector-item .flag-svg,
         .dropdown-item .flag-svg,
         .voice-option .flag-svg,
         .audio-option .flag-svg {
-            margin-right: 6px;
+            margin-right: 2px;
             margin-top: -2px;
             width: 20px;
             height: 15px;
         }
 
-        @media (max-width: 767px) {
-            .filter-item .flag-svg,
-            .selector-item .flag-svg,
-            .dropdown-item .flag-svg,
-            .voice-option .flag-svg,
-            .audio-option .flag-svg {
-                width: 14px;
-                height: 10.5px;
-                margin-right: 4px;
-                margin-top: -1px;
-            }
-        }
-
+        /* Стилі для описів відео */
         .online-prestige__description,
         .video-description,
         [class*="description"],
@@ -165,6 +169,7 @@
                     let html = filter.innerHTML;
                     let changed = false;
                     
+                    // Додаємо прапори тільки для українських студій у фільтрах
                     UKRAINIAN_STUDIOS.forEach(studio => {
                         if (html.includes(studio) && !html.includes(UKRAINE_FLAG_SVG)) {
                             html = html.replace(new RegExp(studio, 'g'), UKRAINE_FLAG_SVG + ' ' + studio);
@@ -172,6 +177,7 @@
                         }
                     });
 
+                    // Додаємо прапори для загальних українських позначень
                     if (html.includes('Українська') && !html.includes(UKRAINE_FLAG_SVG)) {
                         html = html.replace(/Українська/g, UKRAINE_FLAG_SVG + ' Українська');
                         changed = true;
@@ -208,6 +214,7 @@
 
     // ===================== ОПТИМІЗОВАНА СИСТЕМА ЗАМІНИ ТЕКСТУ =====================
     function replaceTexts() {
+        // Обмежений список контейнерів для уникнення зависання
         const safeContainers = [
             '.online-prestige-watched__body',
             '.online-prestige--full .online-prestige__title',
@@ -219,6 +226,7 @@
             '.series-info'
         ];
 
+        // Безпечний пошук елементів з обмеженням
         const processSafeElements = () => {
             safeContainers.forEach(selector => {
                 try {
@@ -268,11 +276,13 @@
             });
         };
 
+        // Виконуємо обробку з обмеженням часу
         const startTime = Date.now();
         const TIME_LIMIT = 50;
         
         processSafeElements();
         
+        // Окремо обробляємо фільтри озвучення
         if (Date.now() - startTime < TIME_LIMIT) {
             processVoiceFilters();
         }
@@ -280,6 +290,7 @@
 
     // ===================== СИСТЕМА ОНОВЛЕННЯ СТИЛІВ ТОРЕНТІВ =====================
     function updateTorrentStyles() {
+        // Швидка обробка тільки видимих елементів
         const visibleElements = {
             seeds: document.querySelectorAll('.torrent-item__seeds span:not([style*="display: none"])'),
             bitrate: document.querySelectorAll('.torrent-item__bitrate span:not([style*="display: none"])'),
@@ -333,6 +344,7 @@
     // ===================== ОПТИМІЗОВАНА СИСТЕМА СПОСТЕРЕЖЕННЯ =====================
     let updateTimeout = null;
     const observer = new MutationObserver(mutations => {
+        // Фільтруємо тільки важливі зміни
         const hasImportantChanges = mutations.some(mutation => {
             return mutation.addedNodes.length > 0 && 
                    !mutation.target.closest('.hidden, [style*="display: none"]');
@@ -344,6 +356,7 @@
         }
     });
 
+    // Обмежене спостереження
     observer.observe(document.body, { 
         childList: true,
         subtree: true,
@@ -351,6 +364,7 @@
         characterData: false
     });
     
+    // Відкладена ініціалізація
     setTimeout(updateAll, 1000);
 })();
 

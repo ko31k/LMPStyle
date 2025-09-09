@@ -656,6 +656,17 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     }
 
     function processFullCardQuality(cardData, renderElement) {
+        
+        // Додайте цей код в самий початок функції processFullCardQuality
+        var hasRatingPlugin = document.querySelector('.full-start-new__rate-line .full-start__status:not(.lqe-quality)');
+        if (hasRatingPlugin) {
+        // Якщо знайдено інший плагін рейтингів, пропускаємо приховування
+        console.log("LQE-LOG: Rating plugin detected, skipping visibility changes");
+        return; // або пропустіть лише конфліктуючі частини
+        }
+        //кінець додано коду
+        
+        
         if (!renderElement) {
             console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
             return;

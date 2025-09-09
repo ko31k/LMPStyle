@@ -306,7 +306,7 @@ var style = "<style id=\"maxsm_ratings\">" +
     "    align-items: center;" +
     "    width: fit-content;" +
     "    max-width: 100%;" +
-    "    align-items: baseline;" + // НОВИЙ РЯДОК
+    "    align-items: center;" + // НОВИЙ РЯДОК
     "    vertical-align: middle;" + // НОВИЙ РЯДОК
     "}" +
     ".full-start-new__rate-line > * {" +
@@ -2371,4 +2371,5 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 
 
 })();
+
 

@@ -411,8 +411,18 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 		"    .full-start-new__rate-line { gap: 0.3em; }" +
 		"    .full-start__rate > div:first-child { font-size: 1em; }" +
 		"    .full-start__rate > div:last-child, .full-start__rate > .source--name { font-size: 0.7em; }" +
-		"}" +
-		"</style>";
+        "}" + // закриваюча дужка від @media (max-width: 600px)
+
+//НОВА ЧАСТИНА КОДУ   
+"/* Видимість на мобільних */" +
+"@media (max-width: 768px) {" +
+"    .full-start-new__rate-line.done { " +
+"        visibility: visible !important; " +
+"        display: flex !important; " +
+"    }" +
+"}" +
+
+    	"</style>";
 
 	Lampa.Template.add('maxsm_ratings_table_css', style);
 	$('body').append(Lampa.Template.get('maxsm_ratings_table_css', {}, true));
@@ -2371,6 +2381,7 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 
 
 })();
+
 
 
 

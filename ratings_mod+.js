@@ -297,7 +297,7 @@
 	$('body').append(Lampa.Template.get('maxsm_ratings_modal', {}, true));
 
 	// ПОЧАТОК КОМЕНТАРЯ
-	
+
 var style = "<style id=\"maxsm_ratings\">" +
     ".full-start-new__rate-line {" +
     "    visibility: hidden;" +
@@ -306,7 +306,7 @@ var style = "<style id=\"maxsm_ratings\">" +
     "    align-items: center;" +
     "    width: fit-content;" +
     "    max-width: 100%;" +
-    "    align-items: center;" + // НОВИЙ РЯДОК
+    //"    align-items: center;" + // НОВИЙ РЯДОК
     "    vertical-align: middle;" + // НОВИЙ РЯДОК
     "}" +
     ".full-start-new__rate-line > * {" +
@@ -314,7 +314,7 @@ var style = "<style id=\"maxsm_ratings\">" +
     "    flex-shrink: 0;" +
     "    vertical-align: middle;" + // НОВИЙ РЯДОК
     "}" +
-    
+
     // Фикс для SVG на WebOS 
     ".full-start-new__rate-line svg {" +
     "    width: 1.8em;" + 
@@ -344,27 +344,18 @@ var style = "<style id=\"maxsm_ratings\">" +
     ".jr { min-width: 5.0em; }" +
     ".rutor { min-width: 7.0em; }" +
 
-    
+
     // Адаптация для WebOS
     "@media all and (-webkit-min-device-pixel-ratio:0) and (max-width: 1920px) {" +
     "    .full-start-new__rate-line {" +
     "        gap: 0.01em;" +
     "    }" +
     "}" +
-    
-    /* Видимість на мобільних */ +
-    "@media (max-width: 768px) {" +
-    "    .full-start-new__rate-line.done {" +
-    "        visibility: visible !important;" +
-    "        display: flex !important;" +
-    "    }" +
-    "}" +
-    //кінець доданого коду
     "</style>";
 
 Lampa.Template.add('maxsm_ratings_css', style);
 $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
-	
+
 
 	var style = "<style id=\"maxsm_ratings_table\">" +
 		// Основной контейнер //
@@ -378,8 +369,8 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 		"    display: flex;" +
 		"    flex-direction: column-reverse;" +
 		"    align-items: center;" +
-		"    min-width: auto " +
-		"    margin-right: 0.5em " + // Уменьшенный отступ между столбцами //
+		"    min-width: auto;" +
+		"    margin-right: 0.5em;" + // Уменьшенный отступ между столбцами //
 		"}" +
 		// Значение рейтинга (первый div) //
 		".full-start__rate > div:first-child {" +
@@ -396,8 +387,8 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 		"}" +
 		// Фикс для SVG (одинаковый размер) //
 		".full-start-new__rate-line > div:not(.full-start__age):not(.full-start__status) svg {" +
-		"    width: 1.3em " +
-		"    height: 1.3em " +
+		"    width: 1.3em;" +
+		"    height: 1.3em;" +
 		"    vertical-align: middle;" +
 		"}" +
 		".rate--green  { color: #4caf50; }" +
@@ -420,10 +411,8 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 		"    .full-start-new__rate-line { gap: 0.3em; }" +
 		"    .full-start__rate > div:first-child { font-size: 1em; }" +
 		"    .full-start__rate > div:last-child, .full-start__rate > .source--name { font-size: 0.7em; }" +
-        "}" + // закриваюча дужка від @media (max-width: 600px)
-
-
-    	"</style>";
+		"}" +
+		"</style>";
 
 	Lampa.Template.add('maxsm_ratings_table_css', style);
 	$('body').append(Lampa.Template.get('maxsm_ratings_table_css', {}, true));
@@ -2382,8 +2371,3 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 
 
 })();
-
-
-
-
-

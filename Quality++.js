@@ -33,7 +33,7 @@
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF',
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
-        LIST_CARD_LABEL_FONT_SIZE: '1.22em',
+        LIST_CARD_LABEL_FONT_SIZE: '1.3em',
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
 
         // Ручні перевизначення якості для конкретних ID
@@ -161,30 +161,72 @@
 
     var QUALITY_PRIORITY_ORDER = ['resolution', 'source'];
 
-    // ==================== CSS СТИЛІ ====================
-    var styleLQE = "<style id=\"lampa_quality_styles\">" +
-        ".full-start-new__rate-line { visibility: hidden; flex-wrap: wrap; gap: 0.4em 0; }" +
-        ".full-start-new__rate-line > * { margin-right: 0.5em; flex-shrink: 0; flex-grow: 0; }" +
-        ".lqe-quality { min-width: 2.8em; text-align: center; text-transform: none; " +
-        "border: 0.8px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important; " +
-        "color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important; " +
-        "font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important; " +
-        "font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important; " +
-        "font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important; " +
-        "border-radius: 0.19em; padding: 0.25em 0.31em; }" +
-        ".card__view { position: relative; }" +
-        ".card__quality { position: absolute; bottom: 0.55em; left: 0; " +
-        "background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important; " +
-        "z-index: 10; width: fit-content; max-width: calc(100% - 1em); " +
-        "border-radius: 0 0.8em 0.8em 0; overflow: hidden; }" +
-        ".card__quality div { text-transform: uppercase; " +
-        "font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " +
-        "font-weight: 700; letter-spacing: 0.5px; font-size: 0.75em; " +
-        "color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important; " +
-        "padding: 0.1em 0.5em 0.08em 0.4em; white-space: nowrap; " +
-        "text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); }" +
-        "</style>";
-
+// ==================== CSS СТИЛІ ДЛЯ ЛЕЙБЛІВ ЯКОСТІ ====================
+var styleLQE = "<style id=\"lampa_quality_styles\">" +
+    
+    // Стилі для основної лінії рейтингів (прихована до завантаження)
+    ".full-start-new__rate-line { " +
+    "   visibility: hidden !important; " +
+    "   flex-wrap: wrap !important; " +
+    "   gap: 0.4em 0 !important; " +
+    "}" +
+    
+    // Стилі для всіх елементів у лінії рейтингів
+    ".full-start-new__rate-line > * { " +
+    "   margin-right: 0.5em !important; " +
+    "   flex-shrink: 0 !important; " +
+    "   flex-grow: 0 !important; " +
+    "}" +
+    
+    // Стилі для лейбла якості на повній картці (детальний перегляд) - ЗАЛИШАЄМО БЕЗ ЗМІН
+    ".lqe-quality { " +
+    "   min-width: 2.8em !important; " +
+    "   text-align: center !important; " +
+    "   text-transform: none !important; " +
+    "   border: 0.8px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important; " +
+    "   color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important; " +
+    "   font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important; " +
+    "   font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important; " +
+    "   font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important; " +
+    "   border-radius: 0.19em !important; " +
+    "   padding: 0.25em 0.31em !important; " +
+    "}" +
+    
+    // БАТЬКІВСЬКИЙ КОНТЕЙНЕР ДЛЯ КАРТКИ У СПИСКАХ - ОСНОВА ДЛЯ АБСОЛЮТНОГО ПОЗИЦІОНУВАННЯ
+    ".card__view { " +
+    "   position: relative !important; " +  // Необхідно для коректного позиціонування лейбла
+    "}" +
+    
+    // ОСНОВНОЙ КОНТЕЙНЕР ЛЕЙБЛА ЯКОСТІ ДЛЯ КАРТОК У СПИСКАХ
+    ".card__quality { " +
+    "   position: absolute !important; " +          // Абсолютне позиціонування відносно .card__view
+    "   bottom: 0.55em !important; " +              // Відстань 0.55em від нижнього краю картки
+    "   left: 0 !important; " +                     // Притискаємо до лівого краю картки
+    "   background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? 
+                              "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important; " + // Колір фону з налаштувань
+    "   z-index: 10 !important; " +                 // Гарантуємо, що лейбл буде поверх інших елементів
+    "   width: fit-content !important; " +          // Ширина автоматично підлаштовується під вміст
+    "   max-width: calc(100% - 1em) !important; " + // Максимальна ширина (не більше ніж картка мінус 1em)
+    "   border-radius: 0 0.8em 0.8em 0 !important; " + // Скруглення тільки правих кутів (ліві залишаються прямими)
+    "   overflow: hidden !important; " +            // Запобігає виходу вмісту за межі скруглених кутів
+    "}" +
+    
+    // ВНУТРІШНІЙ ЕЛЕМЕНТ ЛЕЙБЛА - ВІДПОВІДАЄ ЗА ВІДОБРАЖЕННЯ ТЕКСТУ
+    ".card__quality div { " +
+    "   text-transform: uppercase !important; " +       // Всі літери великі (напр: "4K", "FHD")
+    "   font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " + // Конденсований шрифт для компактності
+    "   font-weight: 700 !important; " +                // Жирний шрифт для кращої видимості
+    "   letter-spacing: 0.5px !important; " +           // Невеликий міжлітерний інтервал для компактності
+    "   font-size: 0.75em !important; " +               // Компактний розмір шрифту (75% від базового)
+    "   color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important; " + // Колір тексту з налаштувань
+    "   padding: 0.1em 0.5em 0.08em 0.4em !important; " + // Внутрішні відступи: верх 0.1em, право 0.5em, низ 0.08em, ліво 0.4em
+    "   white-space: nowrap !important; " +             // Забороняє перенесення тексту на кілька рядків
+    "   text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " + // Легка тінь тексту для покращення читабельності на різних фонах
+    "   border: 0.8px solid " + LQE_CONFIG.LIST_CARD_LABEL_BORDER_COLOR + " !important; " + // Рамка навколо тексту з кольором з налаштувань
+    "}" +
+    
+"</style>";
+    
     Lampa.Template.add('lampa_quality_css', styleLQE);
     $('body').append(Lampa.Template.get('lampa_quality_css', {}, true));
 

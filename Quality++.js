@@ -222,7 +222,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     "   padding: 0.1em 0.5em 0.08em 0.4em !important; " + // Внутрішні відступи: верх 0.1em, право 0.5em, низ 0.08em, ліво 0.4em
     "   white-space: nowrap !important; " +             // Забороняє перенесення тексту на кілька рядків
     "   text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " + // Легка тінь тексту для покращення читабельності на різних фонах
-    "   border: 0.8px solid " + LQE_CONFIG.LIST_CARD_LABEL_BORDER_COLOR + " !important; " + // Рамка навколо тексту з кольором з налаштувань
+    //"   border: 0.8px solid " + LQE_CONFIG.LIST_CARD_LABEL_BORDER_COLOR + " !important; " + // Рамка навколо тексту з кольором з налаштувань
     "}" +
     
 "</style>";

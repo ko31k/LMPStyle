@@ -306,17 +306,19 @@
     "    align-items: center;" +
     "    width: fit-content;" +
     "    max-width: 100%;" +
+	"    vertical-align: middle;"+ //НОВИЙ РЯДОК
     "}" +
     ".full-start-new__rate-line > * {" +
     "    margin-right: 0.05em;" +
     "    flex-shrink: 0;" +
+	"    vertical-align: middle;"+ //НОВИЙ РЯДОК
     "}" +
     
     // Фикс для SVG на WebOS 
     ".full-start-new__rate-line svg {" +
     "    width: 1.8em;" + 
     "    height: 1.8em;" + 
-    "    flex-shrink: 0;" + 
+    "    flex-shrink: 0;" +
     "}" +
     ".rate--green  { color: #4caf50; }" +
     ".rate--lime   { color: #cddc39; }" +
@@ -387,7 +389,6 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 		".rate--red    { color: #f44336; }" +
 		".rate--gold   { color: gold; }" +
 		".rate--icon   { height: 1.8em; }" +
-		"[data-rating-view='classic'] .rate--icon { display: flex; align-items: center; justify-content: center; margin-top: -2px; }" + //НОВЕ ВИРІВНЮВАННЯ
 		".full-start__rate > div:last-child { padding: 0.2em 0.4em; }" +
 		".jr { min-width: 5.0em; }" +
 		".rutor { min-width: 7.0em; }" +

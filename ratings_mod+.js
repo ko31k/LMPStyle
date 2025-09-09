@@ -333,12 +333,12 @@ var style = "<style id=\"maxsm_ratings\">" +
     "    justify-content: center;" + // НОВИЙ РЯДОК
     "    vertical-align: middle;" + // НОВИЙ РЯДОК
     "    position: relative;" + // НОВИЙ РЯДОК
-    "    top: -2px;" + // НОВИЙ РЯДОК - піднімає іконки
+    //"    top: -2px;" + // НОВИЙ РЯДОК - піднімає іконки
     "}" +
     ".rate--icon svg {" + // НОВИЙ БЛОК
     "    vertical-align: middle;" +
     "    position: relative;" +
-    "    top: -1px;" + // Додаткове коригування
+    //"    top: -1px;" + // Додаткове коригування
     "}" +
     ".full-start__rate > div:last-child { padding: 0.2em 0.4em; }" +
     ".jr { min-width: 5.0em; }" +
@@ -2371,5 +2371,6 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 
 
 })();
+
 
 

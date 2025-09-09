@@ -44,7 +44,7 @@
         .flag-svg {
             display: inline-block;
             vertical-align: middle;
-            margin-right: 8px;
+            margin-right: 3px;
             margin-top: -5.5px;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -57,7 +57,7 @@
             .flag-svg {
                 width: 18.75px;
                 height: 14.25px;
-                margin-right: 6px;
+                margin-right: 2px;
                 margin-top: -4px;
             }
         }
@@ -77,7 +77,7 @@
         .dropdown-item .flag-svg,
         .voice-option .flag-svg,
         .audio-option .flag-svg {
-            margin-right: 6px;
+            margin-right: 2px;
             margin-top: -2px;
             width: 20px;
             height: 15px;

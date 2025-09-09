@@ -39,25 +39,26 @@
             align-items: center;
             vertical-align: middle;
             height: 1.27em;
+            margin-left: 2px;                    /* Додано відступ зліва 2px */
         }
         
         .flag-svg {
             display: inline-block;
             vertical-align: middle;
-            margin-right: 3px;
+            margin-right: 2px;                   /* Зменшено відступ справа з 3px до 2px */
             margin-top: -5.5px;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             border: 1px solid rgba(0,0,0,0.15);
-            width: 25px;
-            height: 19px;
+            width: 23.75px;                      /* Зменшено на 5% (25px - 5% = 23.75px) */
+            height: 18.05px;                     /* Зменшено на 5% (19px - 5% = 18.05px) */
         }
         
         @media (max-width: 767px) {
             .flag-svg {
-                width: 18.75px;
-                height: 14.25px;
-                margin-right: 2px;
+                width: 16.88px;                  /* Зменшено на 10% (18.75px - 10% = 16.88px) */
+                height: 12.83px;                 /* Зменшено на 10% (14.25px - 10% = 12.83px) */
+                margin-right: 1px;               /* Зменшено відступ справа з 2px до 1px */
                 margin-top: -4px;
             }
         }
@@ -77,10 +78,23 @@
         .dropdown-item .flag-svg,
         .voice-option .flag-svg,
         .audio-option .flag-svg {
-            margin-right: 2px;
+            margin-right: 1px;                   /* Зменшено відступ справа з 2px до 1px */
             margin-top: -2px;
-            width: 20px;
-            height: 15px;
+            width: 19px;                         /* Зменшено на 5% (20px - 5% = 19px) */
+            height: 14.25px;                     /* Зменшено на 5% (15px - 5% = 14.25px) */
+        }
+
+        @media (max-width: 767px) {
+            .filter-item .flag-svg,
+            .selector-item .flag-svg,
+            .dropdown-item .flag-svg,
+            .voice-option .flag-svg,
+            .audio-option .flag-svg {
+                width: 12.6px;                   /* Зменшено на 10% (14px - 10% = 12.6px) */
+                height: 9.45px;                  /* Зменшено на 10% (10.5px - 10% = 9.45px) */
+                margin-right: 0px;               /* Зменшено відступ справа до 0px */
+                margin-top: -1px;
+            }
         }
 
         /* Стилі для описів відео */
@@ -139,7 +153,7 @@
     }).join('\n');
     document.head.appendChild(style);
 
-    // ===================== СИСТЕМА ЗАМІНИ ТЕКСТУ ДЛЯ ФІЛЬТРІВ =====================
+    // ===================== СИСТЕМА ЗАМІНИ ТЕКСТУ ДЛА ФІЛЬТРІВ =====================
     const UKRAINIAN_STUDIOS = [
         'DniproFilm', 'Дніпрофільм', 'Цікава Ідея', 'Колодій Трейлерів', 
         'UaFlix', 'BaibaKo', 'В одне рило', 'Так Треба Продакшн', 
@@ -288,7 +302,7 @@
         }
     }
 
-    // ===================== СИСТЕМА ОНОВЛЕННЯ СТИЛІВ ТОРЕНТІВ =====================
+    // ===================== СИСТЕМА ОНОвлення стилів торентів =====================
     function updateTorrentStyles() {
         // Швидка обробка тільки видимих елементів
         const visibleElements = {
@@ -331,7 +345,7 @@
         }
     }
 
-    // ===================== ОСНОВНА ФУНКЦІЯ ОНОВЛЕННЯ =====================
+    // ===================== Основна функція оновлення =====================
     function updateAll() {
         try {
             replaceTexts();
@@ -341,7 +355,7 @@
         }
     }
 
-    // ===================== ОПТИМІЗОВАНА СИСТЕМА СПОСТЕРЕЖЕННЯ =====================
+    // ===================== Оптимізована система спостереження =====================
     let updateTimeout = null;
     const observer = new MutationObserver(mutations => {
         // Фільтруємо тільки важливі зміни

@@ -351,6 +351,15 @@ var style = "<style id=\"maxsm_ratings\">" +
     "        gap: 0.01em;" +
     "    }" +
     "}" +
+    
+    /* Видимість на мобільних */ +
+    "@media (max-width: 768px) {" +
+    "    .full-start-new__rate-line.done {" +
+    "        visibility: visible !important;" +
+    "        display: flex !important;" +
+    "    }" +
+    "}" +
+    //кінець доданого коду
     "</style>";
 
 Lampa.Template.add('maxsm_ratings_css', style);
@@ -413,14 +422,6 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 		"    .full-start__rate > div:last-child, .full-start__rate > .source--name { font-size: 0.7em; }" +
         "}" + // закриваюча дужка від @media (max-width: 600px)
 
-//НОВА ЧАСТИНА КОДУ   
-"/* Видимість на мобільних */" +
-"@media (max-width: 768px) {" +
-"    .full-start-new__rate-line.done { " +
-"        visibility: visible !important; " +
-"        display: flex !important; " +
-"    }" +
-"}" +
 
     	"</style>";
 
@@ -2381,6 +2382,7 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 
 
 })();
+
 
 
 

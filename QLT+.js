@@ -60,7 +60,7 @@
         // Товщина шрифту лейбла якості на картках у списку
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
         // Розмір шрифту лейбла якості на картках у списку
-        LIST_CARD_LABEL_FONT_SIZE: '1.5em',
+        LIST_CARD_LABEL_FONT_SIZE: '1.7em',
         // Стиль шрифту лейбла якості на картках у списку (normal, italic)
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
 
@@ -173,55 +173,55 @@
     // КІНЕЦЬ: Порядок пріоритетів
 
     // ПОЧАТОК: CSS стилі для відображення якості на картках та у повному описі
-    var styleLQE = "<style id=\"lampa_quality_styles\">" +
-        ".full-start-new__rate-line {" +
-        "visibility: hidden !important;" +
-        "flex-wrap: wrap !important;" +
-        "gap: 0.4em 0 !important;" +
+var styleLQE = "<style id=\"lampa_quality_styles\">" + // Початок CSS стилів для плагіна якості
+        ".full-start-new__rate-line {" + // Стилі для контейнера рейтингу на повній картці
+        "visibility: hidden !important;" + // Ховаємо контейнер до завантаження даних
+        "flex-wrap: wrap !important;" + // Дозволяємо перенесення елементів на новий рядок
+        "gap: 0.4em 0 !important;" + // Відстань між елементами по вертикалі
         "}" +
-        ".full-start-new__rate-line > * {" +
-        "margin-right: 0.5em !important;" +
-        "flex-shrink: 0 !important;" +
-        "flex-grow: 0 !important;" +
+        ".full-start-new__rate-line > * {" + // Стилі для всіх дочірніх елементів контейнера
+        "margin-right: 0.5em !important;" + // Відступ праворуч між елементами
+        "flex-shrink: 0 !important;" + // Забороняємо стискання елементів
+        "flex-grow: 0 !important;" + // Забороняємо розширення елементів
         "}" +
-        ".lqe-quality {" +
-        " min-width: 2.8em !important;" +
-        " text-align: center !important;" +
-        " text-transform: none !important;" +
-        " border: 0.8px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
-        " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" +
-        " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
-        " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
-        " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
-        " border-radius: 0.19em !important;" +
-        " padding: 0.25em 0.31em !important;" +
+        ".lqe-quality {" + // Стилі для мітки якості на повній картці
+        " min-width: 2.8em !important;" + // Мінімальна ширина мітки
+        " text-align: center !important;" + // Вирівнювання тексту по центру
+        " text-transform: none !important;" + // Без трансформації тексту (великі/малі літери)
+        " border: 0.8px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" + // Рамка з кольором з конфігурації
+        " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту з конфігурації
+        " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" + // Товщина шрифту з конфігурації
+        " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" + // Розмір шрифту з конфігурації
+        " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" + // Стиль шрифту з конфігурації
+        " border-radius: 0.19em !important;" + // Закруглення кутів рамки
+        " padding: 0.25em 0.31em !important;" + // Внутрішні відступи
         "}" +
-        ".card__view {" +
-        " position: relative !important;" +
+        ".card__view {" + // Стилі для контейнера картки у списку
+        " position: relative !important;" + // Відносне позиціонування для абсолютного позиціонування мітки якості
         "}" +
-        ".card__quality {" +
-        " position: absolute !important;" +
-        " bottom: 0.55em !important;" +
-        " left: 0 !important;" +
-        " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" +
-        " z-index: 10 !important;" +
-        " width: fit-content !important;" +
-        " max-width: calc(100% - 1em) !important;" +
-        " border-radius: 0 0.8em 0.8em 0 !important;" +
-        " overflow: hidden !important;" +
+        ".card__quality {" + // Стилі для контейнера мітки якості на картці у списку
+        " position: absolute !important;" + // Абсолютне позиціонування
+        " bottom: 0.6em !important;" + // Відстань від нижнього краю
+        " left: 0 !important;" + // Відстань від лівого краю
+        " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // Колір фону (прозорий або з конфігурації)
+        " z-index: 10 !important;" + // Висота шару (поверх інших елементів)
+        " width: fit-content !important;" + // Ширина за вмістом
+        " max-width: calc(100% - 1em) !important;" + // Максимальна ширина
+        " border-radius: 0 0.8em 0.8em 0 !important;" + // Закруглення правых кутів
+        " overflow: hidden !important;" + // Обрізання вмісту, що виходить за межі
         "}" +
-        ".card__quality div {" +
-        " text-transform: uppercase !important;" +
-        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important;" +
-        " font-weight: 700 !important;" +
-        " letter-spacing: 0.5px !important;" +
-        " font-size: 0.75em !important;" +
-        " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" +
-        " padding: 0.1em 0.5em 0.08em 0.4em !important;" +
-        " white-space: nowrap !important;" +
-        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important;" +
+        ".card__quality div {" + // Стилі для внутрішнього div мітки якості
+        " text-transform: uppercase !important;" + // Текст у верхньому регістрі
+        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important;" + // Сімейство шрифтів
+        " font-weight: 700 !important;" + // Товщина шрифту (жирний)
+        " letter-spacing: 0.5px !important;" + // Відстань між літерами
+        " font-size: 0.75em !important;" + // Розмір шрифту
+        " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту з конфігурації
+        " padding: 0.1em 0.5em 0.08em 0.4em !important;" + // Внутрішні відступи
+        " white-space: nowrap !important;" + // Заборона переносу тексту
+        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important;" + // Тінь тексту для кращої читабельності
         "}" +
-        "</style>";
+        "</style>"; // Кінець CSS стилів
     // Додаємо шаблон CSS до системи шаблонів Lampac і вставляємо його в <body>
     Lampa.Template.add('lampa_quality_css', styleLQE);
     $('body').append(Lampa.Template.get('lampa_quality_css', {}, true));

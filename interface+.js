@@ -1804,13 +1804,14 @@
                         // --- конец блока кастомных кнопок main2 ---
                         //Нова функція
 						if (needToggle) {
-						    setTimeout(function() {
+    					setTimeout(function() {
+        					// перевіряємо, що ще активний контролер full_start
         					if (Lampa.Controller.enabled() === 'full_start') {
-            					Lampa.Controller.toggle('full_start');
-        						}
-    						}, 100);
+            				Lampa.Controller.toggle('full_start');
+        					}
+    					}, 100);
 						}
-		
+
 						//Оригінальна функція
 						/*if (needToggle) {
                             setTimeout(function() {
@@ -2556,6 +2557,7 @@ const themes = {
     }
 
 })();
+
 
 
 

@@ -33,7 +33,7 @@
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
-        LIST_CARD_LABEL_FONT_SIZE: '1.22em',
+        LIST_CARD_LABEL_FONT_SIZE: '1.5em',
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
 
         MANUAL_OVERRIDES: {    // Ручні перевизначення якості для окремих ID фільмів/серіалів

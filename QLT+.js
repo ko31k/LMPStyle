@@ -142,7 +142,7 @@
         "hdr10": "HDR",
         "dolby vision": "DV",
         "p8": "P8",
-        "h.265": "H.265",
+        "h.265": "H.265',
         "hevc": "HEVC",
         "h.264": "H.264",
         "av1": "AV1",
@@ -175,51 +175,51 @@
     // ПОЧАТОК: CSS стилі для відображення якості на картках та у повному описі
 var styleLQE = "<style id=\"lampa_quality_styles\">" + // Початок CSS стилів для плагіна якості
         ".full-start-new__rate-line {" + // Стилі для контейнера рейтингу на повній картці
-        "visibility: hidden !important;" + // Ховаємо контейнер до завантаження даних
-        "flex-wrap: wrap !important;" + // Дозволяємо перенесення елементів на новий рядок
-        "gap: 0.4em 0 !important;" + // Відстань між елементами по вертикалі
+        "visibility: hidden;" + // Ховаємо контейнер до завантаження даних
+        "flex-wrap: wrap;" + // Дозволяємо перенесення елементів на новий рядок
+        "gap: 0.4em 0;" + // Відстань між елементами по вертикалі
         "}" +
         ".full-start-new__rate-line > * {" + // Стилі для всіх дочірніх елементів контейнера
-        "margin-right: 0.5em !important;" + // Відступ праворуч між елементами
-        "flex-shrink: 0 !important;" + // Забороняємо стискання елементів
-        "flex-grow: 0 !important;" + // Забороняємо розширення елементів
+        "margin-right: 0.5em;" + // Відступ праворуч між елементами
+        "flex-shrink: 0;" + // Забороняємо стискання елементів
+        "flex-grow: 0;" + // Забороняємо розширення елементів
         "}" +
         ".lqe-quality {" + // Стилі для мітки якості на повній картці
-        " min-width: 2.8em !important;" + // Мінімальна ширина мітки
-        " text-align: center !important;" + // Вирівнювання тексту по центру
-        " text-transform: none !important;" + // Без трансформації тексту (великі/малі літери)
-        " border: 0.8px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" + // Рамка з кольором з конфігурації
-        " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту з конфігурації
-        " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" + // Товщина шрифту з конфігурації
-        " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" + // Розмір шрифту з конфігурації
-        " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" + // Стиль шрифту з конфігурації
-        " border-radius: 0.19em !important;" + // Закруглення кутів рамки
-        " padding: 0.25em 0.31em !important;" + // Внутрішні відступи
+        " min-width: 2.8em;" + // Мінімальна ширина мітки
+        " text-align: center;" + // Вирівнювання тексту по центру
+        " text-transform: none;" + // Без трансформації тексту (великі/малі літери)
+        " border: 0.8px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + ";" + // Рамка з кольором з конфігурації
+        " color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + ";" + // Колір тексту з конфігурації
+        " font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + ";" + // Товщина шрифту з конфігурації
+        " font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + ";" + // Розмір шрифту з конфігурації
+        " font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + ";" + // Стиль шрифту з конфігурації
+        " border-radius: 0.19em;" + // Закруглення кутів рамки
+        " padding: 0.25em 0.31em;" + // Внутрішні відступи
         "}" +
         ".card__view {" + // Стилі для контейнера картки у списку
-        " position: relative !important;" + // Відносне позиціонування для абсолютного позиціонування мітки якості
+        " position: relative;" + // Відносне позиціонування для абсолютного позиціонування мітки якості
         "}" +
         ".card__quality {" + // Стилі для контейнера мітки якості на картці у списку
-        " position: absolute !important;" + // Абсолютне позиціонування
-        " bottom: 0.6em !important;" + // Відстань від нижнього краю
-        " left: 0 !important;" + // Відстань від лівого краю
-        " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // Колір фону (прозорий або з конфігурації)
-        " z-index: 10 !important;" + // Висота шару (поверх інших елементів)
-        " width: fit-content !important;" + // Ширина за вмістом
-        " max-width: calc(100% - 1em) !important;" + // Максимальна ширина
-        " border-radius: 0 0.8em 0.8em 0 !important;" + // Закруглення правых кутів
-        " overflow: hidden !important;" + // Обрізання вмісту, що виходить за межі
+        " position: absolute;" + // Абсолютне позиціонування
+        " bottom: 1.6em;" + // Відстань від нижнього краю (збільшено на 2 позиції)
+        " left: 0;" + // Відстань від лівого краю
+        " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + ";" + // Колір фону (прозорий або з конфігурації)
+        " z-index: 10;" + // Висота шару (поверх інших елементів)
+        " width: fit-content;" + // Ширина за вмістом
+        " max-width: calc(100% - 1em);" + // Максимальна ширина
+        " border-radius: 0 0.8em 0.8em 0;" + // Закруглення правых кутів
+        " overflow: hidden;" + // Обрізання вмісту, що виходить за межі
         "}" +
         ".card__quality div {" + // Стилі для внутрішнього div мітки якості
-        " text-transform: uppercase !important;" + // Текст у верхньому регістрі
-        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important;" + // Сімейство шрифтів
-        " font-weight: 700 !important;" + // Товщина шрифту (жирний)
-        " letter-spacing: 0.5px !important;" + // Відстань між літерами
-        " font-size: 0.75em !important;" + // Розмір шрифту
-        " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту з конфігурації
-        " padding: 0.1em 0.5em 0.08em 0.4em !important;" + // Внутрішні відступи
-        " white-space: nowrap !important;" + // Заборона переносу тексту
-        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important;" + // Тінь тексту для кращої читабельності
+        " text-transform: uppercase;" + // Текст у верхньому регістрі
+        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;" + // Сімейство шрифтів
+        " font-weight: 700;" + // Товщина шрифту (жирний)
+        " letter-spacing: 0.5px;" + // Відстань між літерами
+        " font-size: 0.85em;" + // Розмір шрифту (збільшено на 2 позиції)
+        " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + ";" + // Колір тексту з конфігурації
+        " padding: 0.2em 0.6em 0.18em 0.5em;" + // Внутрішні відступи (збільшено)
+        " white-space: nowrap;" + // Заборона переносу тексту
+        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);" + // Тінь тексту для кращої читабельності
         "}" +
         "</style>"; // Кінець CSS стилів
     // Додаємо шаблон CSS до системи шаблонів Lampac і вставляємо його в <body>
@@ -230,52 +230,52 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" + // Початок CSS с�
     // ПОЧАТОК: CSS стилі для анімації завантаження (три точки)
     var loadingStylesLQE = "<style id=\"lampa_quality_loading_animation\">" +
         ".loading-dots-container {" +
-        "    position: absolute !important;" +
-        "    top: 50% !important;" +
-        "    left: 0 !important;" +
-        "    right: 0 !important;" +
-        "    text-align: left !important;" +
-        "    transform: translateY(-50%) !important;" +
-        "    z-index: 10 !important;" +
+        "    position: absolute;" +
+        "    top: 50%;" +
+        "    left: 0;" +
+        "    right: 0;" +
+        "    text-align: left;" +
+        "    transform: translateY(-50%);" +
+        "    z-index: 10;" +
         "}" +
         ".full-start-new__rate-line {" +
-        "    position: relative !important;" +
+        "    position: relative;" +
         "}" +
         ".loading-dots {" +
-        "    display: inline-flex !important;" +
-        "    align-items: center !important;" +
-        "    gap: 0.4em !important;" +
-        "    color: #ffffff !important;" +
-        "    font-size: 0.7em !important;" +
-        "    background: rgba(0, 0, 0, 0.3) !important;" +
-        "    padding: 0.6em 1em !important;" +
-        "    border-radius: 0.5em !important;" +
+        "    display: inline-flex;" +
+        "    align-items: center;" +
+        "    gap: 0.4em;" +
+        "    color: #ffffff;" +
+        "    font-size: 0.7em;" +
+        "    background: rgba(0, 0, 0, 0.3);" +
+        "    padding: 0.6em 1em;" +
+        "    border-radius: 0.5em;" +
         "}" +
         ".loading-dots__text {" +
-        "    margin-right: 1em !important;" +
+        "    margin-right: 1em;" +
         "}" +
         ".loading-dots__dot {" +
-        "    width: 0.5em !important;" +
-        "    height: 0.5em !important;" +
-        "    border-radius: 50% !important;" +
-        "    background-color: currentColor !important;" +
-        "    opacity: 0.3 !important;" +
-        "    animation: loading-dots-fade 1.5s infinite both !important;" +
+        "    width: 0.5em;" +
+        "    height: 0.5em;" +
+        "    border-radius: 50%;" +
+        "    background-color: currentColor;" +
+        "    opacity: 0.3;" +
+        "    animation: loading-dots-fade 1.5s infinite both;" +
         "}" +
         ".loading-dots__dot:nth-child(1) {" +
-        "    animation-delay: 0s !important;" +
+        "    animation-delay: 0s;" +
         "}" +
         ".loading-dots__dot:nth-child(2) {" +
-        "    animation-delay: 0.5s !important;" +
+        "    animation-delay: 0.5s;" +
         "}" +
         ".loading-dots__dot:nth-child(3) {" +
-        "    animation-delay: 1s !important;" +
+        "    animation-delay: 1s;" +
         "}" +
         "@keyframes loading-dots-fade {" +
-        "    0%, 90%, 100% { opacity: 0.3 !important; }" +
-        "    35% { opacity: 1 !important; }" +
+        "    0%, 90%, 100% { opacity: 0.3; }" +
+        "    35% { opacity: 1; }" +
         "}" +
-        "@media screen and (max-width: 480px) { .loading-dots-container { -webkit-justify-content: center !important; justify-content: center !important; text-align: center !important; max-width: 100% !important; }}" +
+        "@media screen and (max-width: 480px) { .loading-dots-container { -webkit-justify-content: center; justify-content: center; text-align: center; max-width: 100%; }}" +
         "</style>";
     // Додаємо шаблон анімації завантаження до системи шаблонів Lampac і вставляємо його в <body>
     Lampa.Template.add('lampa_quality_loading_animation_css', loadingStylesLQE);
@@ -846,7 +846,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" + // Початок CSS с�
             element.text(displayQuality).css('opacity', '1');
         } else {
             // Якщо елемента немає, створюємо новий
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Creating new element with quality '" + displayQuality + "' on full card.");
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ', Creating new element with quality \'' + displayQuality + '\' on full card.');
             var div = document.createElement('div');
             div.className = 'full-start__status lqe-quality';
             div.textContent = displayQuality;

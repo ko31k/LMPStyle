@@ -187,11 +187,11 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " text-transform: uppercase; " +
     " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " +
     " font-weight: 700; " +
-    " letter-spacing: 0.2px; " +
+    " letter-spacing: 0.1px; " +
     " font-size: 1.30em; " +
     // --- ЗМІНА: Додано !important до кольору тексту, щоб гарантувати застосування ---
     " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" +
-    " padding: 0.1em 0.2em 0.08em 0.2em; " +
+    " padding: 0.1em 0.1em 0.08em 0.1em; " +
     " white-space: nowrap;" +
     " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); " +
     "}" +

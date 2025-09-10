@@ -33,7 +33,7 @@
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
-        LIST_CARD_LABEL_FONT_SIZE: '1.5em',
+        LIST_CARD_LABEL_FONT_SIZE: '2.0em',
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
 
         MANUAL_OVERRIDES: {    // Ручні перевизначення якості для окремих ID фільмів/серіалів
@@ -174,7 +174,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     "}" +
     ".card__quality {" +
     " position: absolute; " +
-    " bottom: 0.55em; " +
+    " bottom: 0.85em; " +
     " left: 0; " +
     " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" +
     " z-index: 10;" +
@@ -188,7 +188,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " +
     " font-weight: 700; " +
     " letter-spacing: 0.5px; " +
-    " font-size: 0.75em; " +
+    " font-size: 0.95em; " +
     // --- ЗМІНА: Додано !important до кольору тексту, щоб гарантувати застосування ---
     " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" +
     " padding: 0.1em 0.5em 0.08em 0.4em; " +

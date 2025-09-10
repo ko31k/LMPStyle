@@ -180,7 +180,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " z-index: 10;" +
     " width: fit-content; " +
     " max-width: calc(100% - 1em); " +
-    " border-radius: 0 0.8em 0.8em 0; " +
+    " border-radius: 0 0.8em 0.8em 0.2em; " +
     " overflow: hidden;" +
     "}" +
     ".card__quality div {" +

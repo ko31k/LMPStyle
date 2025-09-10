@@ -187,7 +187,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " text-transform: uppercase; " +
     " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " +
     " font-weight: 700; " +
-    " letter-spacing: 0.5px; " +
+    " letter-spacing: 0.2px; " +
     " font-size: 1.30em; " +
     // --- ЗМІНА: Додано !important до кольору тексту, щоб гарантувати застосування ---
     " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" +

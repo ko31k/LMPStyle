@@ -1802,11 +1802,21 @@
                             }, 100);
                         }
                         // --- конец блока кастомных кнопок main2 ---
-                        if (needToggle) {
+                        //Нова функція
+						if (needToggle) {
+                           setTimeout(function() {
+                              if (Lampa.Controller.check('full_start')) { // <- Ця перевірка
+                              Lampa.Controller.toggle('full_start');
+                              }
+                              }, 100);
+                        }
+				
+						//Оригінальна функція
+						/*if (needToggle) {
                             setTimeout(function() {
                                 Lampa.Controller.toggle('full_start');
                             }, 100);
-                        }
+                        }*/
                     }, 300);
                 }
             }
@@ -2546,6 +2556,7 @@ const themes = {
     }
 
 })();
+
 
 
 

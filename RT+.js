@@ -1148,7 +1148,12 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
 
     //-------------------------------------------MODALKA---------------------------------------------------------
     function showRatingsModal(cardId, render) {
-        // Проверяем настройку цветов
+        
+		// Додаємо запис в історію
+    	window.history.pushState({ modal: true }, ''); //НОВИЙ КОД
+		
+		
+		// Проверяем настройку цветов
         var showColors = localStorage.getItem('maxsm_ratings_colors') === 'true';
         // Создаем контейнер для модального окна
         var modalContent = $('<div class="maxsm-modal-ratings"></div>');
@@ -1229,7 +1234,30 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
                 modalContent.append(item);
             }
         });
-        // Создаем модальное окно
+    	//НОВИЙ КОД
+		Lampa.Modal.open({
+        title: Lampa.Lang.translate("maxsm_ratings_avg_simple"),
+        html: modalContent,
+        width: 600,
+        onBack: function () {
+            Lampa.Modal.close();
+            // Повертаємося в історії назад
+            window.history.back();
+        }
+    });
+	// Додаємо обробник подій popstate
+    var popstateHandler = function(event) {
+        if (event.state && event.state.modal) {
+            Lampa.Modal.close();
+            window.removeEventListener('popstate', popstateHandler);
+        }
+    };
+    
+    window.addEventListener('popstate', popstateHandler);
+	//КІНЕЦЬ НОВОГО КОДУ
+
+	/*
+		// Создаем модальное окно
         Lampa.Modal.open({
             title: Lampa.Lang.translate("maxsm_ratings_avg_simple"),
             html: modalContent,
@@ -1238,7 +1266,9 @@ $('body').append(Lampa.Template.get('maxsm_ratings_css', {}, true));
                 Lampa.Modal.close();
             }
         });
-    }
+	*/
+    
+	}
    
     //------------------------------------------------------------------------------------------------------------------------
 

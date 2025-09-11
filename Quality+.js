@@ -147,35 +147,36 @@
 // ПОЧАТОК: CSS стилі для відображення якості на картках та у повному описі
 var styleLQE = "<style id=\"lampa_quality_styles\">" +
     ".full-start-new__rate-line {" +
-    "visibility: hidden;" +
-    "flex-wrap: wrap;" +
-    "gap: 0.4em 0;" +
+    "visibility: hidden;" + // Приховуємо оригінальну лінію рейтингу
+    "flex-wrap: wrap;" + // Дозволяємо перенос елементів на новий рядок
+    "gap: 0.4em 0;" + // Відступи між рядами (вертикальні)
     "}" +
     ".full-start-new__rate-line > * {" +
-    "margin-right: 0.5em;" +
-    "flex-shrink: 0;" +
-    "flex-grow: 0;" +
+    "margin-right: 0.5em;" + // Відступ праворуч для всіх дочірніх елементів
+    "flex-shrink: 0;" + // Забороняємо стискання елементів
+    "flex-grow: 0;" + // Забороняємо розширення елементів
     "}" +
     ".lqe-quality {" +
-    "min-width: 2.8em;" + // Мінімальна ширина в em
-    "text-align: center;" +
-    "text-transform: none; " +
-    // --- ТОЧНІ РОЗМІРИ ВІДПОВІДНО ДО ОРИГІНАЛУ (73.33×23.19px) ---
-    "width: 5.45em;" + // 73.33px / 13.4599px (оригінальний розмір шрифту) = 5.45em
-    "height: 1.72em;" + // 23.19px / 13.4599px = 1.72em
-    "border: 1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" + // Товщина межі як в оригіналі
+    "min-width: 2.8em;" + // Мінімальна ширина елемента якості
+    "text-align: center;" + // Центрування тексту по горизонталі
+    "text-transform: none;" + // Вимкнення трансформації тексту (великі/малі літери)
+    // --- Рамка з кольором з конфігурації та !important ---
+    "border: 1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" +
+    // --- Колір тексту з конфігурації та !important ---
     "color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" +
+    // --- Товщина шрифту з конфігурації та !important ---
     "font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
-    "font-size: 13.4599px !important;" + // Оригінальний розмір шрифту
-    "font-family: 'Segoe UI', sans-serif !important;" + // Оригінальний шрифт
+    // --- Розмір шрифту з конфігурації та !important ---
+    "font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" +
+    // --- Стиль шрифту з конфігурації та !important ---
     "font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
-    "border-radius: 0.2em; " + // Радіус як в оригіналі (0.2em)
-    "padding: 0.3em !important;" + // Відступи всередині як в оригіналі (0.3em)
-    "margin: 0px 1em 0px 0px !important;" + // Відступ праворуч 13.4599px = 1em
-    "box-sizing: border-box !important;" + // Щоб padding і border входили в загальні розміри
-    "display: flex;" +
-    "align-items: center;" +
-    "justify-content: center;" +
+    "border-radius: 0.2em;" + // Радіус закруглення кутів (0.2em як в оригіналі)
+    "padding: 0.3em;" + // Внутрішні відступи (0.3em як в оригіналі)
+    "height: 1.72em;" + // Фіксована висота: 23.19px / 13.4599px = 1.72em
+    "display: flex;" + // Flex-контейнер для центрування вмісту
+    "align-items: center;" + // Вертикальне центрування вмісту
+    "justify-content: center;" + // Горизонтальне центрування вмісту
+    "box-sizing: border-box;" + // Padding і border входять у загальні розміри
     "}" +
     /*
     var styleLQE = "<style id=\"lampa_quality_styles\">" +

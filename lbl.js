@@ -98,8 +98,8 @@
     '.card--new_seria span { display: block; white-space: pre; }' +
     '.card--new_seria span:first-child { font-weight: 600; }' +
     '.card--new_seria span:last-child { font-size: 0.859375em; opacity: 0.9; margin-top: 0.15625em; }' +
-    '@media (max-width: 768px) { .card--new_seria { top: 2.5em; } }' +
-    '@media (min-width: 769px) and (max-width: 1366px) { .card--new_seria { top: 0.6em; } }' +
+    '@media (max-width: 768px) { .card--new_seria { top: 3.0em; } }' +
+    '@media (min-width: 769px) and (max-width: 1366px) { .card--new_seria { top: 0.8em; } }' +
     '@media (min-width: 1367px) { .card--new_seria { top: 0.3em; } }' +
     '</style>');
 $('head').append(style);

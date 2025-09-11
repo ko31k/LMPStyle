@@ -157,6 +157,39 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     "flex-grow: 0;" +
     "}" +
     ".lqe-quality {" +
+    "min-width: 2.8em;" + // Мінімальна ширина в em
+    "text-align: center;" +
+    "text-transform: none; " +
+    // --- ТОЧНІ РОЗМІРИ ВІДПОВІДНО ДО ОРИГІНАЛУ (73.33×23.19px) ---
+    "width: 5.45em;" + // 73.33px / 13.4599px (оригінальний розмір шрифту) = 5.45em
+    "height: 1.72em;" + // 23.19px / 13.4599px = 1.72em
+    "border: 1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" + // Товщина межі як в оригіналі
+    "color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" +
+    "font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" +
+    "font-size: 13.4599px !important;" + // Оригінальний розмір шрифту
+    "font-family: 'Segoe UI', sans-serif !important;" + // Оригінальний шрифт
+    "font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
+    "border-radius: 0.2em; " + // Радіус як в оригіналі (0.2em)
+    "padding: 0.3em !important;" + // Відступи всередині як в оригіналі (0.3em)
+    "margin: 0px 1em 0px 0px !important;" + // Відступ праворуч 13.4599px = 1em
+    "box-sizing: border-box !important;" + // Щоб padding і border входили в загальні розміри
+    "display: flex;" +
+    "align-items: center;" +
+    "justify-content: center;" +
+    "}" +
+    /*
+    var styleLQE = "<style id=\"lampa_quality_styles\">" +
+    ".full-start-new__rate-line {" +
+    "visibility: hidden;" +
+    "flex-wrap: wrap;" +
+    "gap: 0.4em 0;" +
+    "}" +
+    ".full-start-new__rate-line > * {" +
+    "margin-right: 0.5em;" +
+    "flex-shrink: 0;" +
+    "flex-grow: 0;" +
+    "}" +
+    ".lqe-quality {" +
     " min-width: 2.8em;" +
     " text-align: center;" +
     " text-transform: none; " +
@@ -169,6 +202,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     " border-radius: 0.19em; " +
     " padding: 0.25em 0.31em; " +
     "}" +
+    */
     ".card__view {" +
     " position: relative; " +
     "}" +

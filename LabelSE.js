@@ -98,7 +98,7 @@ var style = $('<style>' +
     '.card--new_seria span { display: block; white-space: pre; }' +
     '.card--new_seria span:first-child { font-weight: 600; }' +
     '.card--new_seria span:last-child { font-size: 0.7em; opacity: 0.9; margin-top: 0.15em; }' +
-    '@media (max-width: 768px) { .card--new_seria { top: 3.0em; } }' +
+    '@media (max-width: 768px) { .card--new_seria { top: 2.5em; } }' +
     '</style>');
 $('head').append(style);
         

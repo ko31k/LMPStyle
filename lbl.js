@@ -100,7 +100,7 @@
     '.card--new_seria span:last-child { font-size: 0.859375em; opacity: 0.9; margin-top: 0.15625em; }' +
     '@media (max-width: 768px) { .card--new_seria { top: 3.0em; } }' +
     '@media (min-width: 769px) and (max-width: 1366px) { .card--new_seria { top: 0.8em; } }' +
-    '@media (min-width: 1367px) { .card--new_seria { top: 0.3em; } }' +
+    '@media (min-width: 1367px) { .card--new_seria { top: 0.4em; } }' +
     '</style>');
 $('head').append(style);
         

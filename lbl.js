@@ -23,12 +23,12 @@
         },
         season_seria_series_ended: {
             en: "Seasons {seasons} / Episodes {episodes}\nEnded",
-            uk: "Сезонів {seasons} / Епізодів {episodes}\nЗакінчено",
+            uk: "Сезонів {seasons} / Епізодів {episodes}\nЗавершено",
             ru: "Сезонов {seasons} / Эпизодов {episodes}\nЗавершено"
         },
         season_seria_series_canceled: {
             en: "Seasons {seasons} / Episodes {episodes}\nCanceled",
-            uk: "Сезонів {seasons} / Епізодів {episodes}\nПрипинено",
+            uk: "Сезонів {seasons} / Епізодів {episodes}\nСкасовано",
             ru: "Сезонов {seasons} / Эпизодов {episodes}\nОтменено"
         },
         season_seria_series_planned: {
@@ -94,7 +94,7 @@
 
         var style = $('<style>' +
             '.full-start__poster, .full-start-new__poster { position: relative; width: 100%; }' +
-            '.card--new_seria { position: absolute; top: 3em; right: 0; width: auto; max-width: 100%; font-size: 12px; padding: 4px 12px; border-radius: 12px 0 0 12px; z-index: 11; background: rgba(0,0,0,0.5); color: #fff; text-align: center; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; font-weight: 500; line-height: 1.3; backdrop-filter: blur(8px); }' +
+            '.card--new_seria { position: absolute; top: 2.5em; right: 0; width: auto; max-width: 100%; font-size: 12px; padding: 4px 12px; border-radius: 12px 0 0 12px; z-index: 11; background: rgba(0,0,0,0.5); color: #fff; text-align: center; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; font-weight: 500; line-height: 1.3; backdrop-filter: blur(8px); }' +
             '.card--new_seria span { display: block; white-space: pre; }' +
             '.card--new_seria span:first-child { font-weight: 600; }' +
             '.card--new_seria span:last-child { font-size: 11px; opacity: 0.9; margin-top: 2px; }' +

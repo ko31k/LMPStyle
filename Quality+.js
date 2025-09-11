@@ -24,7 +24,7 @@
         FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF', // <-- Колір рамки лейбла (білий)
         FULL_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // <-- Колір тексту всередині (білий)
         FULL_CARD_LABEL_FONT_WEIGHT: 'normal',
-        FULL_CARD_LABEL_FONT_SIZE: '1.22em',
+        FULL_CARD_LABEL_FONT_SIZE: '1.2em',
         FULL_CARD_LABEL_FONT_STYLE: 'normal',
 
         // --- СТИЛІ ДЛЯ ЛЕЙБЛА НА КАРТКАХ У СПИСКУ ---
@@ -172,7 +172,7 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
     "font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" +
     "border-radius: 0.2em;" + // Радіус закруглення кутів (0.2em як в оригіналі)
     "padding: 0.3em;" + // Внутрішні відступи (0.3em як в оригіналі)
-    "height: 1.70em;" + // Фіксована висота: 23.19px / 13.4599px = 1.72em
+    "height: 1.72em;" + // Фіксована висота: 23.19px / 13.4599px = 1.72em
     "display: flex;" + // Flex-контейнер для центрування вмісту
     "align-items: center;" + // Вертикальне центрування вмісту
     "justify-content: center;" + // Горизонтальне центрування вмісту

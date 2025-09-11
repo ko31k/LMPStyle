@@ -93,12 +93,12 @@
         if (!isSeasonSeriaEnabled()) return;
 
          var style = $('<style>' +
-             '.full-start__poster, .full-start-new__poster { position: relative; width: 100%; }' +
-             '.card--new_seria { position: absolute; top: 2.0em; right: 0; width: auto; max-width: 100%; font-size: 0.75em; padding: 0.25em 0.75em; border-radius: 0.75em 0 0 0.75em; z-index: 11; background: rgba(0,0,0,0.5); color: #fff; text-align: center; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; font-weight: 500; line-height: 1.3; backdrop-filter: blur(0.5em); }' +
-             '.card--new_seria span { display: block; white-space: pre; }' +
-             '.card--new_seria span:first-child { font-weight: 600; }' +
-             '.card--new_seria span:last-child { font-size: 0.7em; opacity: 0.9; margin-top: 0.15em; }' +
-             '</style>');
+    '.full-start__poster, .full-start-new__poster { position: relative; width: 100%; }' +
+    '.card--new_seria { position: absolute; top: 2.5em; right: 0; width: auto; max-width: 100%; font-size: 0.9375em; padding: 0.3125em 0.9375em; border-radius: 0.9375em 0 0 0.9375em; z-index: 11; background: rgba(0,0,0,0.5); color: #fff; text-align: center; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; font-weight: 500; line-height: 1.3; backdrop-filter: blur(0.625em); }' +
+    '.card--new_seria span { display: block; white-space: pre; }' +
+    '.card--new_seria span:first-child { font-weight: 600; }' +
+    '.card--new_seria span:last-child { font-size: 0.859375em; opacity: 0.9; margin-top: 0.15625em; }' +
+    '</style>');
         $('head').append(style);
         
        /* var style = $('<style>' +

@@ -499,29 +499,29 @@
                         'display': 'flex',
                         'flex-direction': 'column',
                         'width': '100%',
-                        'gap': '0.6em',
-                        'margin': '0.6em 0 0.6em 0'
+                        'gap': '0em',
+                        'margin': '-1.0em 0 0.2em 0'
                     });
                     var firstRow = $('<div>').css({
                         'display': 'flex',
                         'flex-wrap': 'wrap',
                         'gap': '0.4em',
                         'align-items': 'center',
-                        'margin': '0 0 0.2em 0'
+                        'margin': '0 0 0.1em 0'
                     });
                     var secondRow = $('<div>').css({
                         'display': 'flex',
                         'flex-wrap': 'wrap',
                         'gap': '0.4em',
                         'align-items': 'center',
-                        'margin': '0 0 0.2em 0'
+                        'margin': '0 0 0.1em 0'
                     });
                     var thirdRow = $('<div>').css({
                         'display': 'flex',
                         'flex-wrap': 'wrap',
                         'gap': '0.4em',
                         'align-items': 'center',
-                        'margin': '0 0 0.2em 0'
+                        'margin': '0 0 0.1em 0'
                     });
                     var durationElement = null, seasonElements = [], episodeElements = [], nextEpisodeElements = [], genreElements = [];
                     var tempContainer = $('<div>').html(originalDetails);
@@ -2557,6 +2557,7 @@ const themes = {
     }
 
 })();
+
 
 
 

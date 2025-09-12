@@ -667,6 +667,16 @@
     					'align-items':'center',
     					'margin':'0 0 0.2em 0'
 						});
+			
+// Додаємо елементи жанрів
+// У цьому блоці ми додаємо додаткові перевірки для керування відступами
+genreElements.forEach(function(el) {
+    if (!isTvShow && el.children().length > 1) { // Якщо це фільм з кількома жанрами
+        el.css({ 'margin-left': '0' });
+    }
+    genresRow.append(el);
+});
+			
                         genreElements.forEach(function(el) { genresRow.append(el); });
                         // Очищаем и добавляем строки в контейнер
                         newContainer.empty();

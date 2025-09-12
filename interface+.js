@@ -501,6 +501,7 @@
                         'width': '100%',
                         'gap': '0em',
                         'margin': '-1.0em 0 0.2em 0'
+						'align-items': 'flex-start'
                     });
                     var firstRow = $('<div>').css({
                         'display': 'flex',
@@ -508,6 +509,7 @@
                         'gap': '0.4em',
                         'align-items': 'center',
                         'margin': '0 0 0.1em 0'
+						'justify-content': 'flex-start'
                     });
                     var secondRow = $('<div>').css({
                         'display': 'flex',
@@ -515,6 +517,7 @@
                         'gap': '0.4em',
                         'align-items': 'center',
                         'margin': '0 0 0.1em 0'
+						'justify-content': 'flex-start'
                     });
                     var thirdRow = $('<div>').css({
                         'display': 'flex',
@@ -522,6 +525,7 @@
                         'gap': '0.4em',
                         'align-items': 'center',
                         'margin': '0 0 0.1em 0'
+						'justify-content': 'flex-start'
                     });
                     var durationElement = null, seasonElements = [], episodeElements = [], nextEpisodeElements = [], genreElements = [];
                     var tempContainer = $('<div>').html(originalDetails);
@@ -660,7 +664,7 @@
                             thirdRow.append($avgDurationBadge);
                         }
                         // 4 строка: жанры
-                        var genresRow = $('<div>').css({'display':'flex','flex-wrap':'wrap','align-items':'center'});
+                        var genresRow = $('<div>').css({'display':'flex','flex-wrap':'wrap','align-items':'center' 'justify-content': 'flex-start'}); //ЗМІНЕНО
                         genreElements.forEach(function(el) { genresRow.append(el); });
                         // Очищаем и добавляем строки в контейнер
                         newContainer.empty();
@@ -2557,4 +2561,5 @@ const themes = {
     }
 
 })();
+
 

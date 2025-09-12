@@ -560,7 +560,7 @@
                             for (var i = 0; i < genres.length; i++) {
                                 var genre = genres[i].trim();
                                 var color = colors.genres[genre] || { bg: 'rgba(255, 255, 255, 0.1)', text: 'white' };
-                                var $badge = $('<span>').text(genre).css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text, 'margin-right': '0.2em' })); //margin ЗМІНЕНО з 0.2 на 0
+                                var $badge = $('<span>').text(genre).css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text, 'margin-right': '0.2em', 'margin-bottom': '0.2em'})); //margin ЗМІНЕНО з 0.2 на 0
                                 $genresContainer.append($badge);
                             }
                             genreElements.push($genresContainer);
@@ -2557,6 +2557,7 @@ const themes = {
     }
 
 })();
+
 
 
 

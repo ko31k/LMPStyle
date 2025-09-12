@@ -501,7 +501,7 @@
                         'flex-direction': 'column',
                         'width': '100%',
                         'gap': '0em',
-                        'margin': '-1.0em 0 0.2em 0'
+                        'margin': '-1.0em 0.45em 0.2em 0'  //Змінено з 'margin': '-1.0em 0 0.2em 0'
                     });
                     var firstRow = $('<div>').css({
                         'display': 'flex',

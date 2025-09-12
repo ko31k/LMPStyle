@@ -535,8 +535,7 @@
                         var text = $span.text();
                         if ($span.hasClass('full-start-new__split')) return;
                         var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' }; //ЗМІНЕНО з 0.2
-                        var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.2em', 'margin-bottom': '0.2em' }; //ЗМІНЕНО з 0.4 Right
-                        // Универсальное перефразирование сезонов
+                         // Универсальное перефразирование сезонов
                         var matchSeasons = text.match(/Сезон(?:ы)?:?\s*(\d+)/i);
                         if (matchSeasons) {
                             var n = parseInt(matchSeasons[1], 10);
@@ -561,7 +560,7 @@
                             for (var i = 0; i < genres.length; i++) {
                                 var genre = genres[i].trim();
                                 var color = colors.genres[genre] || { bg: 'rgba(255, 255, 255, 0.1)', text: 'white' };
-                                var $badge = $('<span>').text(genre).css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text, 'margin': '0em' })); //margin ЗМІНЕНО з 0.2 на 0
+                                var $badge = $('<span>').text(genre).css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text, 'margin': '0,2em' })); //margin ЗМІНЕНО з 0.2 на 0
                                 $genresContainer.append($badge);
                             }
                             genreElements.push($genresContainer);
@@ -2558,3 +2557,4 @@ const themes = {
     }
 
 })();
+

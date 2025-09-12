@@ -1,4 +1,5 @@
-		(function () {
+
+(function () {
     'use strict';
 
     // Полифилл для String.prototype.startsWith для ES5

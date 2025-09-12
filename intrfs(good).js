@@ -499,27 +499,27 @@
                         'display': 'flex',
                         'flex-direction': 'column',
                         'width': '100%',
-                        'gap': '0.6em',
-                        'margin': '0.6em 0 0.6em 0'
+                        'gap': '0em',
+                        'margin': '-1.0em 0 0.2em 0'
                     });
                     var firstRow = $('<div>').css({
                         'display': 'flex',
                         'flex-wrap': 'wrap',
-                        'gap': '0.4em',
+                        'gap': '0.2em',
                         'align-items': 'center',
                         'margin': '0 0 0.2em 0'
                     });
                     var secondRow = $('<div>').css({
                         'display': 'flex',
                         'flex-wrap': 'wrap',
-                        'gap': '0.4em',
+                        'gap': '0.2em',
                         'align-items': 'center',
                         'margin': '0 0 0.2em 0'
                     });
                     var thirdRow = $('<div>').css({
                         'display': 'flex',
                         'flex-wrap': 'wrap',
-                        'gap': '0.4em',
+                        'gap': '0.2em',
                         'align-items': 'center',
                         'margin': '0 0 0.2em 0'
                     });
@@ -534,7 +534,7 @@
                         var $span = $(this);
                         var text = $span.text();
                         if ($span.hasClass('full-start-new__split')) return;
-                        var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.3em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
+                        var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
                         // Универсальное перефразирование сезонов
                         var matchSeasons = text.match(/Сезон(?:ы)?:?\s*(\d+)/i);
                         if (matchSeasons) {
@@ -628,7 +628,7 @@
                         // Удаляем все бейджи серий из episodeElements, чтобы не было дублирования
                         // и всегда показываем только наш кастомный бейдж
                         if (episodesText) {
-                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.3em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
+                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
                             var $badge = $('<span>').text(episodesText).css($.extend({}, baseStyle, { 'background-color': colors.episodes.bg, 'color': colors.episodes.text }));
                             firstRow.append($badge);
                         }
@@ -645,7 +645,7 @@
                             else if (diffDays === 1) nextText = 'Наступна серія вже завтра';
                             else if (diffDays > 1) nextText = 'Наступна серія через ' + diffDays + ' ' + plural(diffDays, 'день', 'дні', 'днів');
                             if (nextText) {
-                                var nextStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.3em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'background-color': colors.next.bg, 'color': colors.next.text, 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
+                                var nextStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'background-color': colors.next.bg, 'color': colors.next.text, 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
                                 var $nextBadge = $('<span>').text(nextText).css(nextStyle);
                                 secondRow.append($nextBadge);
                             }
@@ -655,7 +655,7 @@
                         var avgDuration = calculateAverageEpisodeDuration(movie);
                         if (avgDuration > 0) {
                             var durationText = 'Тривалість серії ≈ ' + formatDurationMinutes(avgDuration);
-                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.3em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
+                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
                             var $avgDurationBadge = $('<span>').text(durationText).css($.extend({}, baseStyle, { 'background-color': colors.duration.bg, 'color': colors.duration.text }));
                             thirdRow.append($avgDurationBadge);
                         }

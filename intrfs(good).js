@@ -655,7 +655,7 @@
                         var avgDuration = calculateAverageEpisodeDuration(movie);
                         if (avgDuration > 0) {
                             var durationText = 'Тривалість серії ≈ ' + formatDurationMinutes(avgDuration);
-                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
+                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.2em', 'margin-bottom': '0.2em' }; //Було 'margin-right': '0.4em'
                             var $avgDurationBadge = $('<span>').text(durationText).css($.extend({}, baseStyle, { 'background-color': colors.duration.bg, 'color': colors.duration.text }));
                             thirdRow.append($avgDurationBadge);
                         }

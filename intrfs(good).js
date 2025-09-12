@@ -560,7 +560,7 @@
                             for (var i = 0; i < genres.length; i++) {
                                 var genre = genres[i].trim();
                                 var color = colors.genres[genre] || { bg: 'rgba(255, 255, 255, 0.1)', text: 'white' };
-                                var $badge = $('<span>').text(genre).css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text, 'margin': '0.2em' }));
+                                var $badge = $('<span>').text(genre).css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text })); // видалено margin
                                 $genresContainer.append($badge);
                             }
                             genreElements.push($genresContainer);
@@ -664,7 +664,7 @@
    						'display':'flex',
     					'flex-wrap':'wrap',
     					'gap':'0.2em',
-    					'align-items':'center',
+    					'align-items':'flex-start', // було 'align-items':'center',
     					'margin':'0 0 0.2em 0'
 						});
 			

@@ -1,4 +1,3 @@
-
 (function () {
     'use strict';
 
@@ -501,7 +500,7 @@
                         'flex-direction': 'column',
                         'width': '100%',
                         'gap': '0em',
-                        'margin': '-1.0em 0 0.2em 0.45em' //Змінено відступ цілого блоку 'margin': '-1.0em 0 0.2em 0'
+                        'margin': '-1.0em 0 0.2em 0.45em' //Змінено відступ цілого блоку з 0 на 045
                     });
                     var firstRow = $('<div>').css({
                         'display': 'flex',

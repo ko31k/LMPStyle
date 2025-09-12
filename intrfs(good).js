@@ -1,4 +1,4 @@
-(function () {
+		(function () {
     'use strict';
 
     // Полифилл для String.prototype.startsWith для ES5
@@ -189,7 +189,7 @@
                 bottom: 0.3em!important;
                 background: rgba(0,0,0,0.5)!important;
                 color: #fff!important;
-                font-size: 1.3em!important;
+                font-size: 1.0em!important;
                 padding: 0.2em 0.5em!important;
                 -webkit-border-radius: 1em!important;
                 -moz-border-radius: 1em!important;
@@ -567,7 +567,7 @@
                         } else {
                             var genre = text.trim();
                             var color = colors.genres[genre] || { bg: 'rgba(255, 255, 255, 0.1)', text: 'white' };
-                            $span.css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text, 'margin': '0.2em' }));
+                            $span.css($.extend({}, baseStyle, { 'background-color': color.bg, 'color': color.text, /*'margin': '0.2em'*/ }));
                             genreElements.push($span.clone());
                         }
                     });
@@ -660,7 +660,13 @@
                             thirdRow.append($avgDurationBadge);
                         }
                         // 4 строка: жанры
-                        var genresRow = $('<div>').css({'display':'flex','flex-wrap':'wrap','align-items':'center'});
+                        var genresRow = $('<div>').css({
+   						'display':'flex',
+    					'flex-wrap':'wrap',
+    					'gap':'0.2em',
+    					'align-items':'center',
+    					'margin':'0 0 0.2em 0'
+						});
                         genreElements.forEach(function(el) { genresRow.append(el); });
                         // Очищаем и добавляем строки в контейнер
                         newContainer.empty();
@@ -694,14 +700,14 @@
                         var $badge = $('<span>').text(text).css({
                             'border-radius': '0.3em',
                             'border': '0px',
-                            'font-size': '1.3em',
+                            'font-size': '1.0em',
                             'padding': '0.2em 0.6em',
                             'display': 'inline-block',
                             'white-space': 'nowrap',
                             'line-height': '1.2em',
                             'background-color': colors.duration.bg,
                             'color': colors.duration.text,
-                            'margin': '0.2em',
+                            //'margin': '0.2em',
                             'margin-right': '0.4em',
                             'margin-bottom': '0.2em'
                         });
@@ -710,7 +716,7 @@
                         var avgDuration = calculateAverageEpisodeDuration(movie);
                         if (avgDuration > 0) {
                             var durationText = 'Тривалість серії ≈ ' + formatDurationMinutes(avgDuration);
-                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.3em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
+                            var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
                             var $avgDurationBadge = $('<span>').text(durationText).css($.extend({}, baseStyle, { 'background-color': colors.duration.bg, 'color': colors.duration.text }));
                             secondRow.prepend($avgDurationBadge);
                         }
@@ -794,7 +800,7 @@
                     'color': textColor,
                     'border-radius': '0.3em',
                     'border': '0px',
-                    'font-size': '1.3em',
+                    'font-size': '1.0em',
                     'display': 'inline-block'
                 });
             }

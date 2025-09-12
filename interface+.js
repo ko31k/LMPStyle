@@ -785,6 +785,18 @@ genreElements.forEach(function(el) {
         function applyStatusColor(statusElement) {
             var statusText = $(statusElement).text().trim();
             var statusColors = {
+  		  	'completed': { bg: 'rgba(46, 204, 113, 0.8) !important', text: 'white !important' },
+    		'canceled': { bg: 'rgba(231, 76, 60, 0.8) !important', text: 'white !important' },
+    		'ongoing': { bg: 'rgba(243, 156, 18, 0.8) !important', text: 'black !important' },
+    		'production': { bg: 'rgba(52, 152, 219, 0.8) !important', text: 'white !important' },
+    		'planned': { bg: 'rgba(155, 89, 182, 0.8) !important', text: 'white !important' },
+    		'pilot': { bg: 'rgba(230, 126, 34, 0.8) !important', text: 'white !important' },
+    		'released': { bg: 'rgba(26, 188, 156, 0.8) !important', text: 'white !important' },
+    		'rumored': { bg: 'rgba(149, 165, 166, 0.8) !important', text: 'white !important' },
+    		'post': { bg: 'rgba(0, 188, 212, 0.8) !important', text: 'white !important' }
+			};
+			
+			/*var statusColors = {
                 'completed': { bg: 'rgba(46, 204, 113, 0.8)', text: 'white' },
                 'canceled': { bg: 'rgba(231, 76, 60, 0.8)', text: 'white' },
                 'ongoing': { bg: 'rgba(243, 156, 18, 0.8)', text: 'black' },
@@ -794,7 +806,7 @@ genreElements.forEach(function(el) {
                 'released': { bg: 'rgba(26, 188, 156, 0.8)', text: 'white' },
                 'rumored': { bg: 'rgba(149, 165, 166, 0.8)', text: 'white' },
                 'post': { bg: 'rgba(0, 188, 212, 0.8)', text: 'white' }
-            };
+            };*/
             var bgColor = '', textColor = '';
             if (statusText.includes('Заверш') || statusText.includes('Ended')) { bgColor = statusColors.completed.bg; textColor = statusColors.completed.text; }
             else if (statusText.includes('Отмен') || statusText.includes('Canceled')) { bgColor = statusColors.canceled.bg; textColor = statusColors.canceled.text; }
@@ -811,7 +823,7 @@ genreElements.forEach(function(el) {
                     'color': textColor,
                     'border-radius': '0.3em',
                     'border': '0px',
-                    'font-size': '1.0em',
+                    'font-size': '1.3em', //Змінено 1.0 на 1.3
                     'display': 'inline-block'
                 });
             }

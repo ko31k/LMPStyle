@@ -789,7 +789,7 @@ genreElements.forEach(function(el) {
             var statusColors = {
   		  	'completed': { bg: 'rgba(46, 204, 113, 0.8) !important', text: 'white !important' },
     		'canceled': { bg: 'rgba(231, 76, 60, 0.8) !important', text: 'white !important' },
-    		'ongoing': { bg: 'rgba(243, 156, 18, 0.8), text: 'black' },
+    		'ongoing': { bg: 'rgba(243, 156, 18, 0.8), text: 'black !important' },
     		'production': { bg: 'rgba(52, 152, 219, 0.8) !important', text: 'white !important' },
                 'planned': { bg: 'rgba(155, 89, 182, 0.8)', text: 'white' },
                 'pilot': { bg: 'rgba(230, 126, 34, 0.8)', text: 'white' },

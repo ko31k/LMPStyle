@@ -1,6 +1,7 @@
 !function() {
     "use strict";
 
+    // Масив елементів меню стрімингових сервісів
     const menuItems = [
         {
             id: 'netflix',
@@ -26,7 +27,7 @@
         },
         {
             id: 'prime',
-            title: 'Prime', //Prime Video
+            title: 'Prime Video',
             icon: `<svg width="30" height="30" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                      <path d="M19.54,15A9.23,9.23,0,0,0,21,10.28,8.05,8.05,0,0,0,17,9" fill="none" stroke="rgb(44,169,188)" stroke-width="2"/>
                      <path d="M17,12.51a15.19,15.19,0,0,1-7.37,1.43A14.62,14.62,0,0,1,3,11" stroke="currentColor" stroke-width="2"/>
@@ -36,7 +37,7 @@
         },
         {
             id: 'apple',
-            title: 'Apple', //Apple TV+
+            title: 'Apple TV+',
             icon: `<svg width="24px" height="24px" viewBox="0 0 24 24" fill="currentColor" role="img" xmlns="http://www.w3.org/2000/svg">
                      <title>Apple TV icon</title><path d="M20.57 17.735h-1.815l-3.34-9.203h1.633l2.02 5.987c.075.231.273.9.586 2.012l.297-.997.33-1.006 2.094-6.004H24zm-5.344-.066a5.76 5.76 0 0 1-1.55.207c-1.23 0-1.84-.693-1.84-2.087V9.646h-1.063V8.532h1.121V7.081l1.476-.602v2.062h1.707v1.113H13.38v5.805c0 .446.074.75.214.932.14.182.396.264.75.264.207 0 .495-.041.883-.115zm-7.29-5.343c.017 1.764 1.55 2.358 1.567 2.366-.017.042-.248.842-.808 1.658-.487.71-.99 1.418-1.79 1.435-.783.016-1.03-.462-1.93-.462-.89 0-1.17.445-1.913.478-.758.025-1.344-.775-1.838-1.484-.998-1.451-1.765-4.098-.734-5.88.51-.89 1.426-1.451 2.416-1.46.75-.016 1.468.512 1.93.512.461 0 1.327-.627 2.234-.536.38.016 1.452.157 2.136 1.154-.058.033-1.278.743-1.27 2.219M6.468 7.988c.404-.495.685-1.18.61-1.864-.585.025-1.294.388-1.723.883-.38.437-.71 1.138-.619 1.806.652.05 1.328-.338 1.732-.825Z"/>
                    </svg>`,
@@ -65,10 +66,11 @@
 
     const menuElements = {};
 
+    // Функція ініціалізації плагіну
     function initPlugin() {
         if (window.plugin_podbor_ready) return;
 
-        // Р”РѕРґР°С”РјРѕ РєРѕРјРїРѕРЅРµРЅС‚ РІ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ
+        // Додаємо компонент в налаштування з українською назвою
         Lampa.SettingsApi.addComponent({
             component: "porborki",
             icon: `<svg height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -77,40 +79,42 @@
                     <line x1="1.5" y1="-1.5" x2="9.31665" y2="-1.5" transform="matrix(-0.757816 0.652468 0.652468 0.757816 26.197 2)" stroke="white" stroke-width="3" stroke-linecap="round"/>
                     <line x1="9.5" y1="34.5" x2="29.5" y2="34.5" stroke="white" stroke-width="3" stroke-linecap="round"/>
                    </svg>`,
-            name: "РџС–РґР±С–СЂРєРё"
+            name: "Підбірки" // Українська назва для меню налаштувань
         });
 
-        // Р”РѕРґР°С”РјРѕ РїР°СЂР°РјРµС‚СЂРё РґР»СЏ РєРѕР¶РЅРѕРіРѕ РїСѓРЅРєС‚Сѓ РјРµРЅСЋ
+        // Додаємо параметри для кожного пункту меню з українськими значеннями
         menuItems.forEach(item => {
             Lampa.SettingsApi.addParam({
                 component: "porborki",
                 param: {
                     name: `porborki_${item.id}`,
                     type: "select",
-                    values: { 1: "РџРѕРєР°Р·Р°С‚Рё", 0: "РџСЂРёС…РѕРІР°С‚Рё" },
+                    values: { 1: "Показати", 0: "Приховати" }, // Українські варіанти
                     default: 0
                 },
                 field: { name: item.title }
             });
         });
 
-        // РЎР»С–РґРєСѓС”РјРѕ Р·Р° Р·РјС–РЅР°РјРё РЅР°Р»Р°С€С‚СѓРІР°РЅСЊ "porborki"
+        // Слідкуємо за змінами в налаштуваннях "porborki"
         Lampa.Listener.follow('settings', e => {
             if (e.type === 'change' && e.component === 'porborki') {
                 updateMenuItems();
             }
         });
 
-        // РЎС‚РІРѕСЂСЋС”РјРѕ РїСѓРЅРєС‚Рё РјРµРЅСЋ РІ DOM
+        // Створюємо пункти меню в DOM
         createMenuItems();
 
         window.plugin_podbor_ready = true;
     }
 
+    // Функція створення пунктів меню в DOM
     function createMenuItems() {
-        // РњРµРЅСЋ РІ DOM (РїРµСЂС€РёР№ .menu__list)
+        // Знаходимо перше меню в DOM
         const menuList = $(".menu .menu__list").eq(0);
 
+        // Створюємо кожен пункт меню
         menuItems.forEach(item => {
             const menuItem = $(`
                 <li class="menu__item selector" data-action="${item.id}" style="display: none;">
@@ -119,6 +123,7 @@
                 </li>
             `);
 
+            // Обробник кліку на пункт меню
             menuItem.on("hover:enter", () => {
                 Lampa.Activity.push({
                     url: item.url,
@@ -131,13 +136,16 @@
                 });
             });
 
+            // Додаємо пункт меню до списку
             menuList.append(menuItem);
             menuElements[item.id] = menuItem;
         });
 
+        // Оновлюємо видимість пунктів меню
         updateMenuItems();
     }
 
+    // Функція оновлення видимості пунктів меню
     function updateMenuItems() {
         menuItems.forEach(item => {
             const isVisible = parseInt(Lampa.Storage.get(`porborki_${item.id}`, 'porborki')) === 1;
@@ -153,7 +161,7 @@
         });
     }
 
-    // Р†РЅС–С†С–Р°Р»С–Р·Р°С†С–СЏ РїР»Р°РіС–РЅР° РїСЂРё РіРѕС‚РѕРІРЅРѕСЃС‚С– РґРѕРґР°С‚РєСѓ
+    // Ініціалізація плагіну при готовності додатку
     if (window.appready) {
         initPlugin();
     } else {

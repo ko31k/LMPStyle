@@ -311,7 +311,23 @@
             });
         }
         
-        function updateUI() {
+     
+     function updateUI() {
+    // Вставляем рейтинги RT и MC
+    insertRatings(ratingsData.rt, ratingsData.mc, ratingsData.oscars);
+    
+    // Обновляем скрытые элементы
+    updateHiddenElements(ratingsData);
+    
+    // Считаем и отображаем средний рейтинг
+    calculateAverageRating();
+
+    //Кнопка очищення кешу (додаємо тільки один раз)
+    if (!$('.rate--clearcache').length) {
+        insertClearCacheButton();
+         }
+    }
+        /* function updateUI() {
             // Вставляем рейтинги RT и MC
             insertRatings(ratingsData.rt, ratingsData.mc, ratingsData.oscars);
             
@@ -324,7 +340,7 @@
             //Кнопка очищення кешу 
             insertClearCacheButton();
 
-        }
+        }*/
     }
 
     // Функции работы с кешем
@@ -674,7 +690,7 @@ function insertRatings(rtRating, mcRating, oscars) {
         rateLine.css('visibility', 'visible');
     }
 //кнопка для очищення кешу на картці фільму/серіалу
-//додаємо кнопку очищення Кешу рейтингів
+//кнопка для очищення кешу на картці фільму/серіалу
 function insertClearCacheButton() {
     var render = Lampa.Activity.active().activity.render();
     if (!render) return;
@@ -682,22 +698,26 @@ function insertClearCacheButton() {
     var rateLine = $('.full-start-new__rate-line', render);
     if (!rateLine.length) return;
 
-    // якщо кнопка вже є – не дублюємо
-    if ($('.rate--clearcache', rateLine).length) return;
+    // Видаляємо стару кнопку, якщо вона є
+    $('.rate--clearcache', rateLine).remove();
 
     // SVG-іконка (дві стрілки по колу + корзина)
     var iconSvg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
-      <path fill="currentColor" d="M12 2a10 10 0 1 0 7.07 2.93L20 7h-6V1l2.1 2.1A8 8 0 1 1 4 12H2a10 10 0 0 0 10-10z"/>
-      <path fill="currentColor" d="M9 9h6v2H9V9zm0 4h6v2H9v-2z"/>
-      <path fill="currentColor" d="M15 11H9l1-4h4l1 4z"/>
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path fill="#4caf50" d="M8 9v2h8V9H8zm0 4v2h8v-2H8z"/>
+        <path fill="#4caf50" d="M15 11H9l1-4h4l1 4z"/>
+        <path fill="none" stroke="currentColor" stroke-width="2" d="M16 8l2-2m-6 6l4-4"/>
     </svg>`;
 
     var button = $(
         '<div class="full-start__rate rate--clearcache" ' +
-            'style="cursor:pointer;" title="Очистити кеш рейтингів">' +
-            '<div>' + iconSvg + '</div>' +
-            '<div class="source--name">Cache</div>' +
+            'style="cursor:pointer; opacity:0.7; transition:opacity 0.2s;" ' +
+            'title="Очистити кеш рейтингів" ' +
+            'onmouseover="this.style.opacity=\'1\'" ' +
+            'onmouseout="this.style.opacity=\'0.7\'">' +
+            '<div style="display:flex; align-items:center; justify-content:center;">' + iconSvg + '</div>' +
+            '<div class="source--name" style="font-size:11px; margin-top:2px;">Cache</div>' +
         '</div>'
     );
 
@@ -705,17 +725,30 @@ function insertClearCacheButton() {
         // очищаємо кеш у Lampa.Storage
         Lampa.Storage.set('maxsm_rating_omdb', {});
         Lampa.Storage.set('maxsm_rating_id_mapping', {});
+        
         // оновлюємо рейтинги для поточного фільму/серіалу
         var movie = Lampa.Activity.active().activity.data.movie;
-        if (movie) fetchAdditionalRatings(movie);
-        // можна ще показати нотифікацію
+        if (movie) {
+            // Ховаємо рейтинги і показуємо анімацію завантаження
+            var rateLine = $('.full-start-new__rate-line', render);
+            if (rateLine.length) {
+                rateLine.css('visibility', 'hidden');
+                addLoadingAnimation();
+            }
+            
+            // Запускаємо завантаження рейтингів заново
+            setTimeout(function() {
+                fetchAdditionalRatings(movie);
+            }, 100);
+        }
+        
+        // Показуємо сповіщення
         Lampa.Noty.show('Кеш рейтингів очищено');
     });
 
     // додаємо у рядок із рейтингами
     rateLine.append(button);
 }
-
 
     
     // Инициализация плагина

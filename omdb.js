@@ -673,22 +673,7 @@ function insertRatings(rtRating, mcRating, oscars) {
         removeLoadingAnimation();
         rateLine.css('visibility', 'visible');
     }
-    
-    // Инициализация плагина
-    function startPlugin() {
-        window.combined_ratings_plugin = true;
-        Lampa.Listener.follow('full', function(e) {
-            if (e.type === 'complite') {
-                setTimeout(function() {
-                    fetchAdditionalRatings(e.data.movie);
-                }, 500);
-            }
-        });
-    }
-    
-    if (!window.combined_ratings_plugin) startPlugin();
-})();
-
+//кнопка для очищення кешу на картці фільму/серіалу
 //додаємо кнопку очищення Кешу рейтингів
 function insertClearCacheButton() {
     var render = Lampa.Activity.active().activity.render();
@@ -731,4 +716,20 @@ function insertClearCacheButton() {
     rateLine.append(button);
 }
 
+
+    
+    // Инициализация плагина
+    function startPlugin() {
+        window.combined_ratings_plugin = true;
+        Lampa.Listener.follow('full', function(e) {
+            if (e.type === 'complite') {
+                setTimeout(function() {
+                    fetchAdditionalRatings(e.data.movie);
+                }, 500);
+            }
+        });
+    }
+    
+    if (!window.combined_ratings_plugin) startPlugin();
+})();
 

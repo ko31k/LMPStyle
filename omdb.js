@@ -417,7 +417,35 @@
         });
     }
 
-    function fetchOmdbRatings(card, cacheKey, callback) {
+function fetchOmdbRatings(card, cacheKey, callback) {
+    if (!card.imdb_id) {
+        callback(null);
+        return;
+    }
+
+    // Додаємо параметр type=series, якщо це серіал
+    var typeParam = (card.type === 'tv') ? '&type=series' : '';
+    var url = 'https://www.omdbapi.com/?apikey=' + OMDB_API_KEY + '&i=' + card.imdb_id + typeParam;
+
+    new Lampa.Reguest().silent(url, function (data) {
+        if (data && data.Response === 'True' && (data.Ratings || data.imdbRating)) {
+            callback({
+                rt: extractRating(data.Ratings, 'Rotten Tomatoes'),
+                mc: extractRating(data.Ratings, 'Metacritic'),
+                imdb: data.imdbRating || null,
+                ageRating: data.Rated || null,
+                oscars: parseOscars(data.Awards || '')
+            });
+        } else {
+            callback(null);
+        }
+    }, function () {
+        callback(null);
+    });
+}
+    
+   //Попередня версія коду
+   /* function fetchOmdbRatings(card, cacheKey, callback) {
         if (!card.imdb_id) {
             callback(null);
             return;
@@ -440,9 +468,52 @@
         }, function() {
             callback(null);
         });
+    }*/
+
+function updateHiddenElements(ratings) {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render || !render[0]) return;
+
+    // Оновлення вікового рейтингу
+    var pgElement = $('.full-start__pg.hide', render);
+    if (pgElement.length && ratings.ageRating) {
+        var invalidRatings = ['N/A', 'Not Rated', 'Unrated'];
+        var isValid = invalidRatings.indexOf(ratings.ageRating) === -1;
+        
+        if (isValid) {
+            var localizedRating = AGE_RATINGS[ratings.ageRating] || ratings.ageRating;
+            pgElement.removeClass('hide').text(localizedRating);
+        }
     }
+
+    // **Оновлення IMDB**
+    var imdbContainer = $('.rate--imdb', render);
+    if (imdbContainer.length) {
+        var imdbDivs = imdbContainer.children('div');
+
+        if (ratings.imdb && !isNaN(ratings.imdb)) {
+            // Є рейтинг – показуємо
+            imdbContainer.removeClass('hide');
+            if (imdbDivs.length >= 2) {
+                imdbDivs.eq(0).text(parseFloat(ratings.imdb).toFixed(1));
+                imdbDivs.eq(1).html(Lampa.Lang.translate('source_imdb'));
+            }
+        } else {
+            // Немає рейтингу – ховаємо іконку
+            imdbContainer.addClass('hide');
+        }
+    }
+
+    // **Оновлення TMDB** (як було)
+    var tmdbContainer = $('.rate--tmdb', render);
+    if (tmdbContainer.length) {
+        tmdbContainer.find('> div:nth-child(2)').html(Lampa.Lang.translate('source_tmdb'));
+    }
+}
+
     
-    function updateHiddenElements(ratings) {
+  // Попередня версія коду
+  /*  function updateHiddenElements(ratings) {
         var render = Lampa.Activity.active().activity.render();
         if (!render || !render[0]) return;
 
@@ -479,7 +550,7 @@
         if (tmdbContainer.length) {
             tmdbContainer.find('> div:nth-child(2)').html(Lampa.Lang.translate('source_tmdb'));
         }
-    }
+    }*/
     
     function extractRating(ratings, source) {
         if (!ratings || !Array.isArray(ratings)) return null;

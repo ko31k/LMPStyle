@@ -241,8 +241,12 @@
             if (window.location.href.indexOf('sisi') !== -1) {
                 isUnwantedContent = true;
             }
-            if ($card.find('.card__quality, .card__time').length) {
-                isUnwantedContent = true;
+            // Було 
+			/*if ($card.find('.card__quality, .card__time').length) {
+                isUnwantedContent = true;*/
+			// Стало (перевіряємо лише .card__time, а .card__quality ігноруємо):
+            if ($card.find('.card__time').length) {
+                 isUnwantedContent = true;
             }
             if (/(xxx|porn|эрот|секс|порно|для взрослых|sex|adult|erotica|ass|boobs|milf|teen|amateur|anal|webcam|private|18\+)/i.test(cardText)) {
                 isUnwantedContent = true;

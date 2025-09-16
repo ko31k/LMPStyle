@@ -186,10 +186,10 @@
             .content-label-new {
                 position: absolute!important;
                 left: 0.3em!important;
-                bottom: 0.3em!important;
+                top: 0.3em!important; /*змінено з bottom: 0.3em!important;*/
                 background: rgba(0,0,0,0.5)!important;
                 color: #fff!important;
-                font-size: 1.0em!important;
+                font-size: 1.3em!important;
                 padding: 0.2em 0.5em!important;
                 -webkit-border-radius: 1em!important;
                 -moz-border-radius: 1em!important;

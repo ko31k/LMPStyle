@@ -197,7 +197,8 @@
                 -moz-border-radius: 1em!important;
                 border-radius: 1em!important;
                 font-weight: 700;
-                z-index: 10!important;
+                z-index: 20!important; 
+				
             }
             .serial-label-new {
                 background: rgba(0,0,0,0.5)!important;

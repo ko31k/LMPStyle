@@ -206,7 +206,7 @@
             }
             .movie-label-new {
                 background: rgba(0,0,0,0.5)!important;
-                color: #2ecc71!important;
+                color: #3da18d!important;
             }
             /* Скрываем встроенный лейбл TV только при включенной функции */
             body[data-movie-labels-new="on"] .card--tv .card__type {

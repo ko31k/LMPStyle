@@ -55,7 +55,11 @@
 
 // КІНЕЦЬ: Конфігурація
 
+
 // ПОЧАТОК: Відповідність назв якості (як писано у торренті → як показати користувачу)
+   
+    
+    
     var QUALITY_DISPLAY_MAP = {
         "WEBRip 1080p | AVC @ звук с TS": "1080P WEBRip/TS",
         "TeleSynch 1080P": "TS",
@@ -384,8 +388,173 @@ var styleLQE = "<style id=\"lampa_quality_styles\">" +
 // КІНЕЦЬ: getCardType
 
 // ПОЧАТОК: Перетворення сирого ярлика якості у гарний вигляд
-    
+
 function translateQualityLabel(qualityCode, fullTorrentTitle) {
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Received qualityCode:", qualityCode, "fullTorrentTitle:", fullTorrentTitle);
+    var title = (fullTorrentTitle || '').toLowerCase();
+
+    // 1. СПОЧАТКУ знайти аудіо (НАВІТЬ якщо буде прямий збіг якості)
+    const AUDIO_MAP_UKR = [
+        // Основні формати з різними роздільниками
+        {regex:/(\d+)\s*[xх\*]\s*(ukr|ua|укр|уа)[\/\s\|]/i, label:m=>m[1]+"xUkr"},
+        {regex:/(\d+)\s*[xх\*]\s*(ukr|ua|укр|уа)$/i, label:m=>m[1]+"xUkr"},
+        
+        // Формати з різними мовами
+        {regex:/(ukr|ua|укр|уа)[\/\s\|](eng|анг|kor|кор|fre|фр|ger|гер|esp|исп)/i, label:()=>"Ukr"},
+        
+        // Формати з додатковими модифікаторами
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(dub|дубляж|дубль)/i, label:()=>"Dub"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(mvo|мво)/i, label:()=>"MVO"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(dvo|дво)/i, label:()=>"DVO"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(avo|аво)/i, label:()=>"AVO"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(svo|сво)/i, label:()=>"SVO"},
+        
+        // Спеціальні формати
+        {regex:/(line|лайн)/i, label:()=>"Line"},
+        {regex:/звук\s*[зс]\s*ts/i, label:()=>"TS"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(ts|тс)/i, label:()=>"TS"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(mic|мік)/i, label:()=>"Mic"},
+        
+        // Загальні позначення
+        {regex:/(^|[\s\|\/\[\(])(ukr|ua|укр|уа)([\s\|\/\]\)]|$)/i, label:()=>"Ukr"},
+        
+        // Українські субтитри
+        {regex:/(sub|суб|subtitle|субтитр)[^a-zA-Z0-9]{0,3}(ukr|ua|укр|уа)/i, label:()=>"Sub Ukr"},
+        
+        // Мультиаудіо
+        {regex:/multi[^a-zA-Z0-9]{0,3}(audio|аудіо)/i, label:()=>"Multi"},
+        {regex:/(\d+)\s*[xх\*]\s*(audio|аудіо)/i, label:m=>m[1]+"xAudio"}
+    ];
+
+    var audio = '';
+    for (var ai = 0; ai < AUDIO_MAP_UKR.length; ai++) {
+        var am = title.match(AUDIO_MAP_UKR[ai].regex);
+        if (am) {
+            audio = AUDIO_MAP_UKR[ai].label(am);
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Audio detected:", audio, "from pattern:", AUDIO_MAP_UKR[ai].regex.toString());
+            break;
+        }
+    }
+
+    // 2. ПОТІМ шукати прямі збіги з QUALITY_DISPLAY_MAP
+    var bestDirectMatchKey = '';
+    var maxDirectMatchLength = 0;
+    var simpleComponentKeywords = [
+        '2160p','4k','4к','1080p','1080','720p','480p',
+        'web-dl','webrip','bluray','bdrip','bdremux',
+        'hdrip','dvdrip','hdtv','dsrip','satrip','web',
+        'hdr10','dolby vision','dv','p8','h.265','hevc',
+        'h.264','avc','av1','ts','camrip','sdr','10-bit',
+        '8-bit','profile 5','profile 8.1','p5','p8.1','profile 7','p7','telecine'
+    ].map(function(k){ return k.toLowerCase(); });
+
+    for (var key in QUALITY_DISPLAY_MAP) {
+        if (!QUALITY_DISPLAY_MAP.hasOwnProperty(key)) continue;
+        var lowerKey = String(key).toLowerCase();
+        if (lowerKey.length <= 5) continue;
+        if (simpleComponentKeywords.indexOf(lowerKey) !== -1) continue;
+        if (title.indexOf(lowerKey) !== -1) {
+            if (lowerKey.length > maxDirectMatchLength) {
+                maxDirectMatchLength = lowerKey.length;
+                bestDirectMatchKey = key;
+            }
+        }
+    }
+
+    if (bestDirectMatchKey) {
+        var direct = QUALITY_DISPLAY_MAP[bestDirectMatchKey];
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Direct quality match:", bestDirectMatchKey, "=>", direct);
+        
+        // 3. ДОДАТИ аудіо до прямого збігу (якщо знайдено)
+        if (audio) {
+            direct = direct + ' (' + audio + ')';
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Added audio to direct match:", direct);
+        }
+        return direct;
+    }
+
+    // 4. Якщо прямого збігу немає - обробляти через компоненти
+    var RESOLUTION_MAP = {
+        "2160p":"4K","4k":"4K","4к":"4K",
+        "1440p":"1440p",
+        "1080p":"1080p","1080":"1080p","1080i":"1080i",
+        "720p":"720p",
+        "480p":"480p","480":"480p",
+        "sd":"SD"
+    };
+    var SOURCE_MAP = {
+        "blu-ray remux":"BDRemux",
+        "bdremux":"BDRemux",
+        "bdrip":"BDRip",
+        "uhd blu-ray":"UHD Blu-ray",
+        "blu-ray disc":"Blu-ray",
+        "web-dl":"WEB-DL",
+        "webdlrip":"WEB-DLRip",
+        "web-dlrip":"WEB-DLRip",
+        "webrip":"WEBRip",
+        "hdtvrip":"HDTVRip",
+        "hdrip":"HDRip",
+        "dvdrip":"DVDRip",
+        "telecine":"TC",
+        "tc":"TC",
+        "ts":"TS",
+        "telesynch":"TS",
+        "camrip":"CAMRip",
+        "cam":"CAMRip",
+        "hybrid":"Hybrid",
+        "upscale":"Upscale AI"
+    };
+
+    function findBestFromMap(map) {
+        var best = '';
+        var keys = Object.keys(map).sort(function(a,b){ return b.length - a.length; });
+        for (var i=0;i<keys.length;i++) {
+            var k = keys[i];
+            if (title.indexOf(k) !== -1) {
+                best = map[k] || (QUALITY_DISPLAY_MAP[k] || k.toUpperCase());
+                break;
+            }
+        }
+        return best;
+    }
+
+    var resolution = findBestFromMap(RESOLUTION_MAP);
+    var source = findBestFromMap(SOURCE_MAP);
+
+    if (!source) {
+        var srcSimpleMatch = title.match(/(web-dl|webrip|bluray|bdrip|bdremux|hdrip|dvdrip|hdtv|ts|camrip|telecine|hybrid)/);
+        if (srcSimpleMatch) source = (QUALITY_DISPLAY_MAP[srcSimpleMatch[1]] || srcSimpleMatch[1].toUpperCase());
+    }
+
+    var parts = [];
+    if (typeof QUALITY_PRIORITY_ORDER !== 'undefined' && Array.isArray(QUALITY_PRIORITY_ORDER)) {
+        QUALITY_PRIORITY_ORDER.forEach(function(comp){
+            if (comp === 'resolution' && resolution) parts.push(resolution);
+            if (comp === 'source' && source) parts.push(source);
+        });
+    } else {
+        if (resolution) parts.push(resolution);
+        if (source) parts.push(source);
+    }
+
+    var base = parts.join(' ').trim();
+    if (!base && qualityCode) {
+        var qc = String(qualityCode || '').toLowerCase();
+        base = QUALITY_DISPLAY_MAP[qc] || qualityCode || '';
+    }
+
+    var finalLabel = base;
+    if (audio) {
+        finalLabel = (finalLabel ? finalLabel + ' ' : '') + '(' + audio + ')';
+    }
+
+    if (!finalLabel && qualityCode) finalLabel = qualityCode;
+
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Final display label:", finalLabel);
+    return finalLabel;
+}
+    
+/*function translateQualityLabel(qualityCode, fullTorrentTitle) {
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Received qualityCode:", qualityCode, "fullTorrentTitle:", fullTorrentTitle);
     var title = (fullTorrentTitle || '').toLowerCase();
 
@@ -562,7 +731,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
 
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Final display label:", finalLabel);
     return finalLabel;
-}
+}*/
 
 
 // КІНЕЦЬ: translateQualityLabel

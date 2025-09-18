@@ -737,7 +737,238 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
 // КІНЕЦЬ: translateQualityLabel
 
 // ПОЧАТОК: Пошук найкращого релізу у JacRed API
+    
+// ПОЧАТОК: Пошук найкращого релізу у JacRed API
     function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
+        if (!LQE_CONFIG.JACRED_URL) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: JACRED_URL is not set.");
+            callback(null);
+            return;
+        }
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Search initiated.");
+        var year = '';
+        var dateStr = normalizedCard.release_date || '';
+        if (dateStr.length >= 4) {
+            year = dateStr.substring(0, 4);
+        }
+        if (!year || isNaN(year)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Missing/invalid year for normalizedCard:", normalizedCard);
+            callback(null);
+            return;
+        }
+
+        // Допоміжна функція для перевірки українського аудіо
+        function hasUkrainianAudio(title) {
+            var lowerTitle = (title || '').toLowerCase();
+            return /(ukr|ua|укр|уа)/i.test(lowerTitle);
+        }
+
+        function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
+            var userId = Lampa.Storage.get('lampac_unic_id', '');
+            var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
+                encodeURIComponent(searchTitle) +
+                '&year=' + searchYear +
+                (exactMatch ? '&exact=true' : '') +
+                '&uid=' + userId;
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " URL: " + apiUrl);
+            var controller = new AbortController();
+            var signal = controller.signal;
+            var timeoutId = setTimeout(() => {
+                controller.abort();
+                if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", `card: ${cardId}, JacRed: ${strategyName} request timed out.`);
+                apiCallback(null);
+            }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);    // Список проксі-серверів для обходу CORS блокувань
+            fetchWithProxy(apiUrl, cardId, function(error, responseText) {
+                clearTimeout(timeoutId);
+                if (error) {
+                    console.error("LQE-LOG", "card: " + cardId + ", JacRed: " + strategyName + " request failed:", error);
+                    apiCallback(null);
+                    return;
+                }
+                if (!responseText) {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " failed or empty response.");
+                    apiCallback(null);
+                    return;
+                }
+                try {
+                    var torrents = JSON.parse(responseText);
+                    if (!Array.isArray(torrents) || torrents.length === 0) {
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " received no torrents or invalid array.");
+                        apiCallback(null);
+                        return;
+                    }
+                    
+                    var bestUkrAudioTorrent = null;    // Найкраща якість З українським аудіо
+                    var bestUkrAudioQuality = -1;
+                    
+                    var bestAnyTorrent = null;         // Найкраща якість БЕЗ українського аудіо
+                    var bestAnyQuality = -1;
+
+                    var searchYearNum = parseInt(searchYear, 10);
+
+                    function extractNumericQualityFromTitle(title) {
+                        if (!title) return 0;
+                        var lower = title.toLowerCase();
+                        if (/2160p|4k/.test(lower)) return 2160;
+                        if (/1080P/.test(lower)) return 1080;
+                        if (/720p/.test(lower)) return 720;
+                        if (/480p/.test(lower)) return 480;
+                        if (/ts|telesync/.test(lower)) return 1;
+                        if (/camrip|камрип/.test(lower)) return 2;
+                        return 0;
+                    }
+
+                    function extractYearFromTitle(title) {
+                        if (!title) return 0;
+                        var regex = /(?:^|[^\d])(\d{4})(?:[^\d]|$)/g;
+                        var match;
+                        var lastYear = 0;
+                        var currentYear = new Date().getFullYear();
+                        while ((match = regex.exec(title)) !== null) {
+                            var extractedYear = parseInt(match[1], 10);
+                            if (extractedYear >= 1900 && extractedYear <= currentYear + 1) {
+                                lastYear = extractedYear;
+                            }
+                        }
+                        return lastYear;
+                    }
+                    
+                    for (var i = 0; i < torrents.length; i++) {
+                        var currentTorrent = torrents[i];
+                        var currentNumericQuality = currentTorrent.quality;
+                        var torrentYear = currentTorrent.relased;
+                        
+                        if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
+                            var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
+                            if (extractedQuality > 0) {
+                                currentNumericQuality = extractedQuality;
+                            } else {
+                                continue;
+                            }
+                        }
+                        
+                        var isYearValid = false;
+                        var parsedYear = 0;
+                        if (torrentYear && !isNaN(torrentYear) && torrentYear > 1900) {
+                            parsedYear = parseInt(torrentYear, 10);
+                            isYearValid = true;
+                        }
+                        if (!isYearValid) {
+                            parsedYear = extractYearFromTitle(currentTorrent.title);
+                            if (parsedYear > 0) {
+                                torrentYear = parsedYear;
+                                isYearValid = true;
+                            }
+                        }
+                        if (isYearValid && !isNaN(searchYearNum) && parsedYear !== searchYearNum) {
+                            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Torrent year mismatch, skipping. Torrent: " + currentTorrent.title + ", Searched: " + searchYearNum + ", Found: " + parsedYear);
+                            continue;
+                        }
+                        
+                        // Перевіряємо наявність українського аудіо
+                        var hasUkrAudio = hasUkrainianAudio(currentTorrent.title);
+                        
+                        if (LQE_CONFIG.LOGGING_QUALITY) {
+                            console.log(
+                                "LQE-QUALITY",
+                                "card: " + cardId +
+                                ", Torrent: " + currentTorrent.title +
+                                " | Quality: " + currentNumericQuality + "p" +
+                                " | UkrAudio: " + (hasUkrAudio ? "YES" : "NO") +
+                                " | Year: " + (isYearValid ? parsedYear : "unknown") +
+                                " | Strategy: " + strategyName
+                            );
+                        }
+                        
+                        if (hasUkrAudio) {
+                            // Шукаємо найкращу якість З українським аудіо
+                            if (currentNumericQuality > bestUkrAudioQuality) {
+                                bestUkrAudioQuality = currentNumericQuality;
+                                bestUkrAudioTorrent = currentTorrent;
+                            }
+                        } else {
+                            // Шукаємо найкращу якість БЕЗ українського аудіо
+                            if (currentNumericQuality > bestAnyQuality) {
+                                bestAnyQuality = currentNumericQuality;
+                                bestAnyTorrent = currentTorrent;
+                            }
+                        }
+                    }
+                    
+                    // СПОЧАТКУ намагаємося повернути якість З українським аудіо
+                    if (bestUkrAudioTorrent) {
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Found best torrent WITH Ukrainian audio in " + strategyName + ": \"" + bestUkrAudioTorrent.title + "\" with quality: " + (bestUkrAudioTorrent.quality || bestUkrAudioQuality) + "p");
+                        apiCallback({
+                            quality: bestUkrAudioTorrent.quality || bestUkrAudioQuality,
+                            full_label: bestUkrAudioTorrent.title
+                        });
+                    } 
+                    // Якщо немає з аудіо - повертаємо будь-яку найкращу якість
+                    else if (bestAnyTorrent) {
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: No Ukrainian audio found, using best available in " + strategyName + ": \"" + bestAnyTorrent.title + "\" with quality: " + (bestAnyTorrent.quality || bestAnyQuality) + "p");
+                        apiCallback({
+                            quality: bestAnyTorrent.quality || bestAnyQuality,
+                            full_label: bestAnyTorrent.title
+                        });
+                    } 
+                    // Якщо взагалі нічого не знайшли
+                    else {
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: No suitable torrents found in " + strategyName + ".");
+                        apiCallback(null);
+                    }
+                } catch (e) {
+                    console.error("LQE-LOG", "card: " + cardId + ", JacRed: " + strategyName + " error parsing response or processing torrents:", e);
+                    apiCallback(null);
+                }
+            });
+        }
+        
+        var searchStrategies = [];
+        if (normalizedCard.original_title && (/[a-zа-яё]/i.test(normalizedCard.original_title) || /^\d+$/.test(normalizedCard.original_title))) {
+            searchStrategies.push({
+                title: normalizedCard.original_title.trim(),
+                year: year,
+                exact: true,
+                name: "OriginalTitle Exact Year"
+            });
+        }
+        if (normalizedCard.title && (/[a-zа-яё]/i.test(normalizedCard.title) || /^\d+$/.test(normalizedCard.title))) {
+            searchStrategies.push({
+                title: normalizedCard.title.trim(),
+                year: year,
+                exact: true,
+                name: "Title Exact Year"
+            });
+        }
+
+        function executeNextStrategy(index) {
+            if (index >= searchStrategies.length) {
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: All strategies failed. No quality found.");
+                callback(null);
+                return;
+            }
+            var strategy = searchStrategies[index];
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Trying strategy: " + strategy.name);
+            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, function(result) {
+                if (result !== null) {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Successfully found quality using strategy " + strategy.name + ": " + result.quality + " (torrent: \"" + result.full_label + "\")");
+                    callback(result);
+                } else {
+                    executeNextStrategy(index + 1);
+                }
+            });
+        }
+        if (searchStrategies.length > 0) {
+            executeNextStrategy(0);
+        } else {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: No valid search titles or strategies defined.");
+            callback(null);
+        }
+    }
+
+// КІНЕЦЬ: getBestReleaseFromJacred
+    
+    /*function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         if (!LQE_CONFIG.JACRED_URL) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: JACRED_URL is not set.");
             callback(null);
@@ -922,7 +1153,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: No valid search titles or strategies defined.");
             callback(null);
         }
-    }
+    }*/
 
 // КІНЕЦЬ: getBestReleaseFromJacred
 

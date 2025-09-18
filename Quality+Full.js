@@ -453,20 +453,28 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
         "hybrid":"Hybrid",
         "upscale":"Upscale AI"
     };
-    var AUDIO_MAP_UKR = [
-        {regex:/(\d+)xukr/i, label:function(m){ return m[1] + "xUkr"; }},
-        {regex:/ukr\s*dub/i, label:function(){ return "Dub"; }},
-        {regex:/ukr\s*mvo/i, label:function(){ return "MVO"; }},
-        {regex:/ukr\s*dvo/i, label:function(){ return "DVO"; }},
-        {regex:/ukr\s*avo/i, label:function(){ return "AVO"; }},
-        {regex:/ukr\s*svo/i, label:function(){ return "AVO"; }}, // map SVO -> AVO
-        {regex:/ukr\s*line/i, label:function(){ return "Line"; }},
-        {regex:/ukr\s*ts/i, label:function(){ return "TS"; }},
-        {regex:/звук\s*с\s*ts/i, label:function(){ return "TS"; }},
-        {regex:/ukr\s*mic/i, label:function(){ return "Mic"; }},
-        {regex:/ukr(?!\w)/i, label:function(){ return "Ukr"; }}
-    ];
+  // регулярки для українського аудіо
+  const AUDIO_MAP_UKR = [
+  // 2xUkr, 3хUkr, 5xUkr/Eng, 3хUA
+  {regex:/(\d+)\s*[xх]\s*(ukr|ua)/i, label:m=>m[1]+"xUkr"},
 
+  // Ukr Dub, UA Dub
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}dub/i, label:()=>"Dub"},
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}mvo/i, label:()=>"MVO"},
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}dvo/i, label:()=>"DVO"},
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}avo/i, label:()=>"AVO"},
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}svo/i, label:()=>"AVO"},
+
+  // Ukr Line, Ukr TS, Ukr Mic
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}line/i, label:()=>"Line"},
+  {regex:/звук\s*з\s*ts/i, label:()=>"TS"},
+  {regex:/звук\s*с\s*ts/i, label:()=>"TS"},
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}ts/i, label:()=>"TS"},
+  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}mic/i, label:()=>"Mic"},
+
+  // просто Ukr, UA, Ukr/Eng, Ukr/Kor, UA/UkrEng
+  {regex:/(ukr|ua)(?![a-zA-Z])/i, label:()=>"Ukr"}
+  ];
     // helper: find best match from a map (keys sorted by length desc to prefer longer)
     function findBestFromMap(map) {
         var best = '';

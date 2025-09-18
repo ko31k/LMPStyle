@@ -113,34 +113,35 @@
 
 // ===================== RESOLUTION_MAP & SOURCE_MAP (нові мапи) =====================
     var RESOLUTION_MAP = {
-        "2160p":"4K", "4k":"4K", "4к":"4K", "uhd":"4K", "ultra hd":"4K", "ultrahd":"4K",
-        "1440p":"1440p", "2k":"1440p", "qhd":"1440p",
-        "1080p":"1080p", "1080":"1080p", "1080i":"1080i", "full hd":"1080p", "fhd":"1080p",
-        "720p":"720p", "720":"720p", "hd":"720p", "hd ready":"720p",
-        "576p":"576p", "576":"576p", "pal":"576p",
-        "480p":"480p", "480":"480p", "sd":"480p", "standard definition":"480p", "ntsc":"480p",
-        "360p":"360p", "360":"360p", "low":"360p"
+    "2160p":"4K", "4k":"4K", "4к":"4K", "uhd":"4K", "ultra hd":"4K", "ultrahd":"4K", "dci 4k":"4K",
+    "1440p":"1440p", "2k":"1440p", "qhd":"1440p",
+    "1080p":"1080p", "1080":"1080p", "1080i":"1080i", "full hd":"1080p", "fhd":"1080p",
+    "720p":"720p", "720":"720p", "hd":"720p", "hd ready":"720p",
+    "576p":"576p", "576":"576p", "pal":"576p",
+    "480p":"480p", "480":"480p", "sd":"480p", "standard definition":"480p", "ntsc":"480p",
+    "360p":"360p", "360":"360p", "low":"360p"
     };
 
     var SOURCE_MAP = {
-        "blu-ray remux":"BDRemux", "uhd bdremux":"4K BDRemux", "bdremux":"BDRemux", "remux":"BDRemux",
-        "blu-ray disc":"Blu-ray", "bluray":"Blu-ray", "bdrip":"BDRip", "brrip":"BDRip",
-        "uhd blu-ray":"UHD Blu-ray", "4k blu-ray":"4K Blu-ray",
-        "web-dl":"WEB-DL", "webdl":"WEB-DL", "web dl":"WEB-DL",
-        "web-dlrip":"WEB-DLRip", "webdlrip":"WEB-DLRip", "web dlrip":"WEB-DLRip",
-        "webrip":"WEBRip", "web rip":"WEBRip",
-        "hdtvrip":"HDTVRip", "hdtv":"HDTVRip", "hdrip":"HDRip", "hdrip (web-dlrip)":"WEB-DLRip",
-        "dvdrip":"DVDRip", "dvd rip":"DVDRip", "dvd":"DVD",
-        "dvdscr":"DVDSCR", "scr":"SCR", "bdscr":"BDSCR",
-        "r5":"R5",
-        "telecine":"TC", "tc":"TC", "hdtc":"TC",
-        "telesync":"TS", "ts":"TS", "hdts":"TS",
-        "camrip":"CAMRip", "cam":"CAMRip", "hdcam":"CAMRip",
-        "vhsrip":"VHSRip", "vcdrip":"VCDRip",
-        "hybrid":"Hybrid", "uhd hybrid":"4K Hybrid",
-        "upscale":"Upscale", "ai upscale":"AI Upscale",
-        "dcp":"4K DCP",
-        "bd3d":"3D Blu-ray", "3d blu-ray":"3D Blu-ray"
+    "blu-ray remux":"BDRemux", "uhd bdremux":"4K BDRemux", "bdremux":"BDRemux", "remux":"BDRemux",
+    "blu-ray disc":"Blu-ray", "bluray":"Blu-ray", "blu-ray":"Blu-ray", "bdrip":"BDRip", "brrip":"BDRip",
+    "uhd blu-ray":"4K Blu-ray", "4k blu-ray":"4K Blu-ray",
+    "web-dl":"WEB-DL", "webdl":"WEB-DL", "web dl":"WEB-DL",
+    "web-dlrip":"WEB-DLRip", "webdlrip":"WEB-DLRip", "web dlrip":"WEB-DLRip",
+    "webrip":"WEBRip", "web rip":"WEBRip",
+    "hdtvrip":"HDTVRip", "hdtv":"HDTVRip", "hdrip":"HDRip",
+    "dvdrip":"DVDRip", "dvd rip":"DVDRip", "dvd":"DVD",
+    "dvdscr":"DVDSCR", "scr":"SCR", "bdscr":"BDSCR",
+    "r5":"R5",
+    "telecine":"TC", "tc":"TC", "hdtc":"TC",
+    "telesync":"TS", "ts":"TS", "hdts":"TS",
+    "camrip":"CAMRip", "cam":"CAMRip", "hdcam":"CAMRip",
+    "vhsrip":"VHSRip", "vcdrip":"VCDRip",
+    "dcp":"DCP", "workprint":"Workprint", "preair":"Preair", "tv":"TVRip",
+    "line":"Line Audio",
+    "hybrid":"Hybrid", "uhd hybrid":"4K Hybrid",
+    "upscale":"Upscale", "ai upscale":"AI Upscale",
+    "bd3d":"3D Blu-ray", "3d blu-ray":"3D Blu-ray"
     };
 
 // ===================== СТИЛІ =====================
@@ -361,90 +362,88 @@ $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
     }
 
 // ===================== translateQualityLabel (новий парсер з mapами) =====================
-    function translateQualityLabel(qualityCode, fullTorrentTitle) {
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Received qualityCode:", qualityCode, "fullTorrentTitle:", fullTorrentTitle);
-        var title = sanitizeTitle(fullTorrentTitle || '');
 
-        // 1) direct explicit matches from original map (longest key match)
+function translateQualityLabel(qualityCode, fullTorrentTitle) {
+    // Новий підхід: resolution + source -> final label.
+    // DV/HDR/кодеки ігноруємо повністю, вони не впливають на ярлик.
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean):", qualityCode, fullTorrentTitle);
+
+    var title = sanitizeTitle(fullTorrentTitle || '');
+    var titleForSearch = ' ' + title + ' ';
+
+    // 1) знайти роздільність
+    var resolution = '';
+    var bestResKey = '';
+    var bestResLen = 0;
+    for (var rKey in RESOLUTION_MAP) {
+        if (!RESOLUTION_MAP.hasOwnProperty(rKey)) continue;
+        var lk = rKey.toString().toLowerCase();
+        if (titleForSearch.indexOf(' ' + lk + ' ') !== -1 || title.indexOf(lk) !== -1) {
+            if (lk.length > bestResLen) {
+                bestResLen = lk.length;
+                bestResKey = rKey;
+            }
+        }
+    }
+    if (bestResKey) resolution = RESOLUTION_MAP[bestResKey];
+
+    // 2) знайти джерело (source)
+    var source = '';
+    var bestSrcKey = '';
+    var bestSrcLen = 0;
+    for (var sKey in SOURCE_MAP) {
+        if (!SOURCE_MAP.hasOwnProperty(sKey)) continue;
+        var lk2 = sKey.toString().toLowerCase();
+        if (titleForSearch.indexOf(' ' + lk2 + ' ') !== -1 || title.indexOf(lk2) !== -1) {
+            if (lk2.length > bestSrcLen) {
+                bestSrcLen = lk2.length;
+                bestSrcKey = sKey;
+            }
+        }
+    }
+    if (bestSrcKey) source = SOURCE_MAP[bestSrcKey];
+
+    // 3) Формуємо фінальний лейбл: resolution + source
+    var finalLabel = '';
+    if (resolution && source) finalLabel = resolution + ' ' + source;
+    else if (resolution) finalLabel = resolution;
+    else if (source) finalLabel = source;
+
+    // 4) Якщо не знайшли ні resolution, ні source - fallback на QUALITY_DISPLAY_MAP
+    if (!finalLabel || finalLabel.trim() === '') {
         var bestDirectKey = '';
-        var maxLen = 0;
-        for (var key in QUALITY_DISPLAY_MAP) {
-            if (!QUALITY_DISPLAY_MAP.hasOwnProperty(key)) continue;
-            var lk = key.toString().toLowerCase();
-            if (lk.length <= 3) continue; // skip very short keys
-            if (title.indexOf(lk) !== -1) {
-                if (lk.length > maxLen) {
-                    maxLen = lk.length;
-                    bestDirectKey = key;
+        var maxDirectLen = 0;
+        for (var qk in QUALITY_DISPLAY_MAP) {
+            if (!QUALITY_DISPLAY_MAP.hasOwnProperty(qk)) continue;
+            var lkq = qk.toString().toLowerCase();
+            if (title.indexOf(lkq) !== -1) {
+                if (lkq.length > maxDirectLen) {
+                    maxDirectLen = lkq.length;
+                    bestDirectKey = qk;
                 }
             }
         }
         if (bestDirectKey) {
-            var res = QUALITY_DISPLAY_MAP[bestDirectKey];
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: direct map matched:", bestDirectKey, "->", res);
-            return res;
+            finalLabel = QUALITY_DISPLAY_MAP[bestDirectKey];
         }
-
-        // 2) try to find resolution and source using our maps (longest match preference)
-        var resolution = '';
-        var source = '';
-        var titleForSearch = ' ' + title + ' ';
-
-        // resolution
-        var bestResKey = '';
-        var bestResLen = 0;
-        for (var rKey in RESOLUTION_MAP) {
-            if (!RESOLUTION_MAP.hasOwnProperty(rKey)) continue;
-            var lk = rKey.toString().toLowerCase();
-            if (titleForSearch.indexOf(' ' + lk + ' ') !== -1 || title.indexOf(lk) !== -1) {
-                if (lk.length > bestResLen) {
-                    bestResLen = lk.length;
-                    bestResKey = rKey;
-                }
-            }
-        }
-        if (bestResKey) resolution = RESOLUTION_MAP[bestResKey];
-
-        // source
-        var bestSrcKey = '';
-        var bestSrcLen = 0;
-        for (var sKey in SOURCE_MAP) {
-            if (!SOURCE_MAP.hasOwnProperty(sKey)) continue;
-            var lk2 = sKey.toString().toLowerCase();
-            if (titleForSearch.indexOf(' ' + lk2 + ' ') !== -1 || title.indexOf(lk2) !== -1) {
-                if (lk2.length > bestSrcLen) {
-                    bestSrcLen = lk2.length;
-                    bestSrcKey = sKey;
-                }
-            }
-        }
-        if (bestSrcKey) source = SOURCE_MAP[bestSrcKey];
-
-        // assemble label depending on priority
-        var finalLabel = '';
-        var parts = [];
-        if (resolution) parts.push(resolution);
-        if (source) parts.push(source);
-        finalLabel = parts.join(' ');
-
-        // fallback to qualityCode mapping or raw code
-        if (!finalLabel || finalLabel.trim() === '') {
-            if (qualityCode) {
-                var qc = String(qualityCode).toLowerCase();
-                finalLabel = QUALITY_DISPLAY_MAP[qc] || qualityCode;
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: using qualityCode fallback:", finalLabel);
-            }
-        }
-
-        if (!finalLabel || finalLabel.trim() === '') {
-            finalLabel = fullTorrentTitle || '';
-        }
-
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Final display label:", finalLabel);
-        return finalLabel;
     }
 
-// ===================== Request queue (Lite-черга) =====================
+    // 5) Останній fallback — raw code або повна назва
+    if (!finalLabel || finalLabel.trim() === '') {
+        if (qualityCode) {
+            var qc = String(qualityCode).toLowerCase();
+            finalLabel = QUALITY_DISPLAY_MAP[qc] || qualityCode;
+        } else {
+            finalLabel = fullTorrentTitle || '';
+        }
+    }
+
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean): Final:", finalLabel);
+    return finalLabel;
+}
+
+
+// ============================== Request queue (Lite-черга) ===============================
     var requestQueue = [];
     var activeRequests = 0;
 

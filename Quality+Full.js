@@ -455,26 +455,51 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
     };
   // регулярки для українського аудіо
   const AUDIO_MAP_UKR = [
-  // 2xUkr, 3хUkr, 5xUkr/Eng, 3хUA
-  {regex:/(\d+)\s*[xх]\s*(ukr|ua)/i, label:m=>m[1]+"xUkr"},
+    // Формат: 2xUkr/Eng, 3хUkr/Eng, 5xUkr/Eng тощо
+    {regex:/(\d+)\s*[xх]\s*(ukr|ua)(?:\/|\s|$)/i, label:m=>m[1]+"xUkr"},
+    
+    // Формат: Ukr/Eng, Ukr/Kor, Ukr/Eng | Sub Eng
+    {regex:/(ukr|ua)\/(eng|kor|fre|ger|esp|jap|chi|rus)/i, label:()=>"Ukr"},
+    
+    // Формат: Ukr Dub, UA Dub, Ukr DUB
+    {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}dub/i, label:()=>"Dub"},
+    
+    // Формат: Ukr MVO, UA MVO
+    {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}mvo/i, label:()=>"MVO"},
+    
+    // Формат: Ukr DVO, UA DVO
+    {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}dvo/i, label:()=>"DVO"},
+    
+    // Формат: Ukr AVO, UA AVO
+    {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}avo/i, label:()=>"AVO"},
+    
+    // Формат: Ukr SVO, UA SVO
+    {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}svo/i, label:()=>"SVO"},
+    
+    // Формат: Line, [Line]
+    {regex:/(^|\s|\[)line(\]|\s|$)/i, label:()=>"Line"},
+    
+    // Формат: Звук з TS, звук с TS
+    {regex:/звук\s*[зс]\s*ts/i, label:()=>"TS"},
+    
+    // Формат: Ukr TS, UA TS
+    {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}ts/i, label:()=>"TS"},
+    
+    // Формат: Ukr Mic, UA Mic
+    {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}mic/i, label:()=>"Mic"},
+    
+    // Просто Ukr, UA в контексті аудіо
+    {regex:/(^|\s)(ukr|ua)(?:\/|\s|$)/i, label:()=>"Ukr"},
+    
+    // Українські варіанти: Укр, УА
+    {regex:/(\d+)\s*[xх]\s*(укр|уа)(?:\/|\s|$)/i, label:m=>m[1]+"xUkr"},
+    {regex:/(укр|уа)\/(eng|анг|кор|фр|гер|исп|яп|кит|рус)/i, label:()=>"Ukr"},
+    {regex:/(укр|уа)[^a-zA-Z0-9]{0,3}(dub|дубляж|дубль)/i, label:()=>"Dub"},
+    {regex:/(^|\s)(укр|уа)(?:\/|\s|$)/i, label:()=>"Ukr"}
+];
 
-  // Ukr Dub, UA Dub
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}dub/i, label:()=>"Dub"},
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}mvo/i, label:()=>"MVO"},
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}dvo/i, label:()=>"DVO"},
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}avo/i, label:()=>"AVO"},
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}svo/i, label:()=>"AVO"},
 
-  // Ukr Line, Ukr TS, Ukr Mic
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}line/i, label:()=>"Line"},
-  {regex:/звук\s*з\s*ts/i, label:()=>"TS"},
-  {regex:/звук\s*с\s*ts/i, label:()=>"TS"},
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}ts/i, label:()=>"TS"},
-  {regex:/(ukr|ua)[^a-zA-Z0-9]{0,3}mic/i, label:()=>"Mic"},
-
-  // просто Ukr, UA, Ukr/Eng, Ukr/Kor, UA/UkrEng
-  {regex:/(ukr|ua)(?![a-zA-Z])/i, label:()=>"Ukr"}
-  ];
+    
     // helper: find best match from a map (keys sorted by length desc to prefer longer)
     function findBestFromMap(map) {
         var best = '';

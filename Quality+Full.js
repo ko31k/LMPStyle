@@ -395,35 +395,35 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
 
     // 1. СПОЧАТКУ знайти аудіо (НАВІТЬ якщо буде прямий збіг якості)
     const AUDIO_MAP_UKR = [
-        // Основні формати з різними роздільниками
         {regex:/(\d+)\s*[xх\*]\s*(ukr|ua|укр|уа)[\/\s\|]/i, label:m=>m[1]+"xUkr"},
         {regex:/(\d+)\s*[xх\*]\s*(ukr|ua|укр|уа)$/i, label:m=>m[1]+"xUkr"},
-        
-        // Формати з різними мовами
-        {regex:/(ukr|ua|укр|уа)[\/\s\|](eng|анг|kor|кор|fre|фр|ger|гер|esp|исп)/i, label:()=>"Ukr"},
-        
-        // Формати з додатковими модифікаторами
+        {regex:/(ukr|ua|укр|уа)[\/\s\|](eng|анг|kor|кор|fre|фр|ger|гер|esp|исп|jap|яп|chi|кіт)/i, label:()=>"Ukr"},
+        {regex:/(eng|анг)[\/\s\|](ukr|ua|укр|уа)/i, label:()=>"Ukr"},
         {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(dub|дубляж|дубль)/i, label:()=>"Dub"},
         {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(mvo|мво)/i, label:()=>"MVO"},
         {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(dvo|дво)/i, label:()=>"DVO"},
         {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(avo|аво)/i, label:()=>"AVO"},
         {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(svo|сво)/i, label:()=>"SVO"},
-        
-        // Спеціальні формати
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(voice|войс|голос)/i, label:()=>"Voice"},
         {regex:/(line|лайн)/i, label:()=>"Line"},
+        {regex:/(mic|мік|microphone|мікрофон)/i, label:()=>"Mic"},
         {regex:/звук\s*[зс]\s*ts/i, label:()=>"TS"},
         {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(ts|тс)/i, label:()=>"TS"},
-        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(mic|мік)/i, label:()=>"Mic"},
-        
-        // Загальні позначення
         {regex:/(^|[\s\|\/\[\(])(ukr|ua|укр|уа)([\s\|\/\]\)]|$)/i, label:()=>"Ukr"},
-        
-        // Українські субтитри
+        {regex:/(українськ|украинск)(ая|ий|е|ий|ой)?\s*(аудіо|audio|озвучка|дубляж)/i, label:()=>"Ukr"},
+        {regex:/(україномовн|украиноязыч)/i, label:()=>"Ukr"},
+        {regex:/(ліцензія|лицензия)/i, label:()=>"Lic"},
+        {regex:/(nova|нова|новый)/i, label:()=>"Nova"},
+        {regex:/(baiba|байба)/i, label:()=>"Baiba"},
+        {regex:/(kino|кіно)/i, label:()=>"Kino"},
         {regex:/(sub|суб|subtitle|субтитр)[^a-zA-Z0-9]{0,3}(ukr|ua|укр|уа)/i, label:()=>"Sub Ukr"},
-        
-        // Мультиаудіо
+        {regex:/(укр|уа|ukr|ua)[^a-zA-Z0-9]{0,3}(sub|суб)/i, label:()=>"Sub Ukr"},
         {regex:/multi[^a-zA-Z0-9]{0,3}(audio|аудіо)/i, label:()=>"Multi"},
-        {regex:/(\d+)\s*[xх\*]\s*(audio|аудіо)/i, label:m=>m[1]+"xAudio"}
+        {regex:/(\d+)\s*[xх\*]\s*(audio|аудіо)/i, label:m=>m[1]+"xAudio"},
+        {regex:/(atmos|атмос)/i, label:()=>"Atmos"},
+        {regex:/(dolby\s*vision|dolbyvision)/i, label:()=>"DV"},
+        {regex:/(hdr10|hdr\s*10)/i, label:()=>"HDR10"},
+        {regex:/(ac3|aac|dts)/i, label:m=>m[1].toUpperCase()}
     ];
 
     var audio = '';
@@ -437,6 +437,120 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
     }
 
     // 2. ПОТІМ шукати прямі збіги з QUALITY_DISPLAY_MAP
+    var QUALITY_DISPLAY_MAP = {
+        "4K Web-DL 10bit HDR P81 HEVC": "4K WEB-DL",
+        "UHD Blu-ray disc 2160p": "4K Blu-ray",
+        "Blu-Ray Remux (2160p)": "4K BDRemux",
+        "4K, HEVC, HDR / Blu-Ray Remux (2160p)": "4K BDRemux",
+        "4K, HEVC, HDR / WEB-DLRip (2160p)": "4K WEB-DLRip",
+        "Blu-ray disc 1080P]": "1080P Blu-ray",
+        "Blu-Ray Remux (1080P)": "1080P BDRemux",
+        "WEB-DLRip @ Синема УС": "WEB-DLRip",
+        "TeleSynch 1080P": "TS",
+        "Telecine [H.264/1080P]": "Telecine",
+        "DVDRip [AV1/2160p]": "4K Upscale AI",
+        "Hybrid (2160p)": "4K Hybrid",
+        "звук с TS": "TS",
+        "звук з TS": "TS",
+        "український дубляж": "UkrDub",
+        "украинская озвучка": "UkrVoice",
+        "2160p": "4K", "4k": "4K", "4К": "4K", "uhd": "4K",
+        "1080p": "1080p", "1080": "1080p", "fhd": "1080p",
+        "720p": "720p", "720": "720p", "hd": "720p",
+        "480p": "SD", "480": "SD", "sd": "SD",
+        "web-dl": "WEB-DL", "webdl": "WEB-DL",
+        "webrip": "WEBRip", "web rip": "WEBRip",
+        "bluray": "BluRay", "bdrip": "BDRip",
+        "bdremux": "BDRemux", "remux": "BDRemux",
+        "hdtvrip": "HDTVRip", "hdrip": "HDRip",
+        "dvdrip": "DVDRip", "hdtv": "HDTV",
+        "ts": "TS", "tc": "TC", "camrip": "CAMRip",
+        "hdr10": "HDR", "dolby vision": "DV", "dv": "DV",
+        "hevc": "HEVC", "h.265": "H.265", "av1": "AV1",
+        "avc": "AVC", "h.264": "H.264"
+    };
+
+function translateQualityLabel(qualityCode, fullTorrentTitle) {
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Received qualityCode:", qualityCode, "fullTorrentTitle:", fullTorrentTitle);
+    var title = (fullTorrentTitle || '').toLowerCase();
+
+    // 1. СПОЧАТКУ знайти аудіо (НАВІТЬ якщо буде прямий збіг якості)
+    const AUDIO_MAP_UKR = [
+        {regex:/(\d+)\s*[xх\*]\s*(ukr|ua|укр|уа)[\/\s\|]/i, label:m=>m[1]+"xUkr"},
+        {regex:/(\d+)\s*[xх\*]\s*(ukr|ua|укр|уа)$/i, label:m=>m[1]+"xUkr"},
+        {regex:/(ukr|ua|укр|уа)[\/\s\|](eng|анг|kor|кор|fre|фр|ger|гер|esp|исп|jap|яп|chi|кіт)/i, label:()=>"Ukr"},
+        {regex:/(eng|анг)[\/\s\|](ukr|ua|укр|уа)/i, label:()=>"Ukr"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(dub|дубляж|дубль)/i, label:()=>"Dub"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(mvo|мво)/i, label:()=>"MVO"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(dvo|дво)/i, label:()=>"DVO"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(avo|аво)/i, label:()=>"AVO"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(svo|сво)/i, label:()=>"SVO"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(voice|войс|голос)/i, label:()=>"Voice"},
+        {regex:/(line|лайн)/i, label:()=>"Line"},
+        {regex:/(mic|мік|microphone|мікрофон)/i, label:()=>"Mic"},
+        {regex:/звук\s*[зс]\s*ts/i, label:()=>"TS"},
+        {regex:/(ukr|ua|укр|уа)[^a-zA-Z0-9]{0,3}(ts|тс)/i, label:()=>"TS"},
+        {regex:/(^|[\s\|\/\[\(])(ukr|ua|укр|уа)([\s\|\/\]\)]|$)/i, label:()=>"Ukr"},
+        {regex:/(українськ|украинск)(ая|ий|е|ий|ой)?\s*(аудіо|audio|озвучка|дубляж)/i, label:()=>"Ukr"},
+        {regex:/(україномовн|украиноязыч)/i, label:()=>"Ukr"},
+        {regex:/(ліцензія|лицензия)/i, label:()=>"Lic"},
+        {regex:/(nova|нова|новый)/i, label:()=>"Nova"},
+        {regex:/(baiba|байба)/i, label:()=>"Baiba"},
+        {regex:/(kino|кіно)/i, label:()=>"Kino"},
+        {regex:/(sub|суб|subtitle|субтитр)[^a-zA-Z0-9]{0,3}(ukr|ua|укр|уа)/i, label:()=>"Sub Ukr"},
+        {regex:/(укр|уа|ukr|ua)[^a-zA-Z0-9]{0,3}(sub|суб)/i, label:()=>"Sub Ukr"},
+        {regex:/multi[^a-zA-Z0-9]{0,3}(audio|аудіо)/i, label:()=>"Multi"},
+        {regex:/(\d+)\s*[xх\*]\s*(audio|аудіо)/i, label:m=>m[1]+"xAudio"},
+        {regex:/(atmos|атмос)/i, label:()=>"Atmos"},
+        {regex:/(dolby\s*vision|dolbyvision)/i, label:()=>"DV"},
+        {regex:/(hdr10|hdr\s*10)/i, label:()=>"HDR10"},
+        {regex:/(ac3|aac|dts)/i, label:m=>m[1].toUpperCase()}
+    ];
+
+    var audio = '';
+    for (var ai = 0; ai < AUDIO_MAP_UKR.length; ai++) {
+        var am = title.match(AUDIO_MAP_UKR[ai].regex);
+        if (am) {
+            audio = AUDIO_MAP_UKR[ai].label(am);
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Audio detected:", audio, "from pattern:", AUDIO_MAP_UKR[ai].regex.toString());
+            break;
+        }
+    }
+
+    // 2. ПОТІМ шукати прямі збіги з QUALITY_DISPLAY_MAP
+    var QUALITY_DISPLAY_MAP = {
+        "4K Web-DL 10bit HDR P81 HEVC": "4K WEB-DL",
+        "UHD Blu-ray disc 2160p": "4K Blu-ray",
+        "Blu-Ray Remux (2160p)": "4K BDRemux",
+        "4K, HEVC, HDR / Blu-Ray Remux (2160p)": "4K BDRemux",
+        "4K, HEVC, HDR / WEB-DLRip (2160p)": "4K WEB-DLRip",
+        "Blu-ray disc 1080P]": "1080P Blu-ray",
+        "Blu-Ray Remux (1080P)": "1080P BDRemux",
+        "WEB-DLRip @ Синема УС": "WEB-DLRip",
+        "TeleSynch 1080P": "TS",
+        "Telecine [H.264/1080P]": "Telecine",
+        "DVDRip [AV1/2160p]": "4K Upscale AI",
+        "Hybrid (2160p)": "4K Hybrid",
+        "звук с TS": "TS",
+        "звук з TS": "TS",
+        "український дубляж": "UkrDub",
+        "украинская озвучка": "UkrVoice",
+        "2160p": "4K", "4k": "4K", "4К": "4K", "uhd": "4K",
+        "1080p": "1080p", "1080": "1080p", "fhd": "1080p",
+        "720p": "720p", "720": "720p", "hd": "720p",
+        "480p": "SD", "480": "SD", "sd": "SD",
+        "web-dl": "WEB-DL", "webdl": "WEB-DL",
+        "webrip": "WEBRip", "web rip": "WEBRip",
+        "bluray": "BluRay", "bdrip": "BDRip",
+        "bdremux": "BDRemux", "remux": "BDRemux",
+        "hdtvrip": "HDTVRip", "hdrip": "HDRip",
+        "dvdrip": "DVDRip", "hdtv": "HDTV",
+        "ts": "TS", "tc": "TC", "camrip": "CAMRip",
+        "hdr10": "HDR", "dolby vision": "DV", "dv": "DV",
+        "hevc": "HEVC", "h.265": "H.265", "av1": "AV1",
+        "avc": "AVC", "h.264": "H.264"
+    };
+
     var bestDirectMatchKey = '';
     var maxDirectMatchLength = 0;
     var simpleComponentKeywords = [
@@ -475,35 +589,42 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
 
     // 4. Якщо прямого збігу немає - обробляти через компоненти
     var RESOLUTION_MAP = {
-        "2160p":"4K","4k":"4K","4к":"4K",
-        "1440p":"1440p",
-        "1080p":"1080p","1080":"1080p","1080i":"1080i",
-        "720p":"720p",
-        "480p":"480p","480":"480p",
-        "sd":"SD"
+        "2160p":"4K", "4k":"4K", "4к":"4K", "uhd":"4K", "ultra hd":"4K", "ultrahd":"4K",
+        "1440p":"1440p", "2k":"1440p", "qhd":"1440p",
+        "1080p":"1080p", "1080":"1080p", "1080i":"1080i", "full hd":"1080p", "fhd":"1080p",
+        "720p":"720p", "720":"720p", "hd":"720p", "hd ready":"720p",
+        "576p":"576p", "576":"576p", "pal":"576p",
+        "480p":"480p", "480":"480p", "sd":"480p", "ntsc":"480p",
+        "360p":"360p", "360":"360p", "low":"360p"
     };
+
     var SOURCE_MAP = {
-        "blu-ray remux":"BDRemux",
-        "bdremux":"BDRemux",
-        "bdrip":"BDRip",
-        "uhd blu-ray":"UHD Blu-ray",
-        "blu-ray disc":"Blu-ray",
-        "web-dl":"WEB-DL",
-        "webdlrip":"WEB-DLRip",
-        "web-dlrip":"WEB-DLRip",
-        "webrip":"WEBRip",
-        "hdtvrip":"HDTVRip",
-        "hdrip":"HDRip",
-        "dvdrip":"DVDRip",
-        "telecine":"TC",
-        "tc":"TC",
-        "ts":"TS",
-        "telesynch":"TS",
-        "camrip":"CAMRip",
-        "cam":"CAMRip",
-        "hybrid":"Hybrid",
-        "upscale":"Upscale AI"
+        "blu-ray remux":"BDRemux", "bdremux":"BDRemux", "remux":"BDRemux",
+        "blu-ray disc":"Blu-ray", "bluray":"Blu-ray", "bdrip":"BDRip", "brrip":"BDRip",
+        "uhd blu-ray":"UHD Blu-ray", "4k blu-ray":"4K Blu-ray",
+        "web-dl":"WEB-DL", "webdl":"WEB-DL", "web dl":"WEB-DL",
+        "web-dlrip":"WEB-DLRip", "webdlrip":"WEB-DLRip", "web dlrip":"WEB-DLRip",
+        "webrip":"WEBRip", "web rip":"WEBRip",
+        "hdtvrip":"HDTVRip", "hdtv":"HDTVRip", "hdrip":"HDRip",
+        "dvdrip":"DVDRip", "dvd rip":"DVDRip",
+        "telecine":"TC", "tc":"TC", "telesync":"TS", "ts":"TS",
+        "camrip":"CAMRip", "cam":"CAMRip", "scr":"SCR", "screener":"SCR",
+        "hybrid":"Hybrid", "uhd hybrid":"4K Hybrid",
+        "upscale":"Upscale", "ai upscale":"AI Upscale",
+        "bd3d":"3D Blu-ray", "3d blu-ray":"3D Blu-ray"
     };
+
+    // Додати визначення codec та hdr
+    var codec = '';
+    var hdr = '';
+    
+    if (title.includes('hevc') || title.includes('h.265')) codec = 'HEVC';
+    else if (title.includes('avc') || title.includes('h.264')) codec = 'AVC';
+    else if (title.includes('av1')) codec = 'AV1';
+    
+    if (title.includes('hdr10')) hdr = 'HDR10';
+    else if (title.includes('dolby vision') || title.includes('dolbyvision')) hdr = 'DV';
+    else if (title.includes('hdr')) hdr = 'HDR';
 
     function findBestFromMap(map) {
         var best = '';
@@ -526,15 +647,28 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
         if (srcSimpleMatch) source = (QUALITY_DISPLAY_MAP[srcSimpleMatch[1]] || srcSimpleMatch[1].toUpperCase());
     }
 
+    // assemble according to QUALITY_PRIORITY_ORDER
+    var QUALITY_PRIORITY_ORDER = [
+        'resolution',
+        'source',
+        'audio',
+        'codec',
+        'hdr'
+    ];
+
     var parts = [];
     if (typeof QUALITY_PRIORITY_ORDER !== 'undefined' && Array.isArray(QUALITY_PRIORITY_ORDER)) {
         QUALITY_PRIORITY_ORDER.forEach(function(comp){
             if (comp === 'resolution' && resolution) parts.push(resolution);
             if (comp === 'source' && source) parts.push(source);
+            if (comp === 'audio' && audio) parts.push('(' + audio + ')');
+            if (comp === 'codec' && codec) parts.push(codec);
+            if (comp === 'hdr' && hdr) parts.push(hdr);
         });
     } else {
         if (resolution) parts.push(resolution);
         if (source) parts.push(source);
+        if (audio) parts.push('(' + audio + ')');
     }
 
     var base = parts.join(' ').trim();
@@ -544,7 +678,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
     }
 
     var finalLabel = base;
-    if (audio) {
+    if (audio && !finalLabel.includes('(' + audio + ')')) {
         finalLabel = (finalLabel ? finalLabel + ' ' : '') + '(' + audio + ')';
     }
 
@@ -552,8 +686,8 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
 
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Final display label:", finalLabel);
     return finalLabel;
-}
-    
+            }
+
 /*function translateQualityLabel(qualityCode, fullTorrentTitle) {
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Received qualityCode:", qualityCode, "fullTorrentTitle:", fullTorrentTitle);
     var title = (fullTorrentTitle || '').toLowerCase();

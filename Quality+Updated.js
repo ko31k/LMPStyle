@@ -1238,8 +1238,8 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
                /* updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement);*/
                  // замінено на:
-                  updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement, false, cachedQualityData.has_ukr);
-
+                  updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement, false, cachedQualityData.has_ukr, cachedQualityData.ukr_tracks_count, isTvSeries);
+                
                 
                 if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
                     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
@@ -1258,7 +1258,8 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
                             }, cardId);
                            /*updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement*/
                            //замінено на:
-                             updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement, false, jrResult.has_ukr);
+                             updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement, false, jrResult.has_ukr, jrResult.ukr_tracks_count, isTvSeries);
+
                             
                             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed.");
                         }
@@ -1281,7 +1282,11 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
                             quality_code: qualityCode,
                             full_label: fullTorrentTitle
                         }, cardId);
-                        updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement);
+                        /*updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement);*/
+                        // Замінено на:
+                          updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, false, true, jrResult.ukr_tracks_count, isTvSeries);
+                    
+                    
                     } else {
                         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", 'card: ' + cardId + ', No quality found from JacRed or it was "NO". Clearing quality elements.');
                         clearFullCardQualityElements(cardId, renderElement);
@@ -1340,8 +1345,8 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
             if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Quality data found in cache for card list:', cachedQualityData);
             /*updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label);*/
             //замінено на:
-            updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label, false, cachedQualityData.has_ukr);
-            
+              updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label, false, cachedQualityData.has_ukr, cachedQualityData.ukr_tracks_count, normalizedCard.type === 'tv');
+
             if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh.");
                 getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
@@ -1350,18 +1355,21 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
                             quality_code: jrResult.quality,
                             full_label: jrResult.full_label
                         }, cardId);*/
-                       // І замініть на:
-                        saveQualityCache(cacheKey, {
+                       // замінено на
+                          saveQualityCache(cacheKey, {
                             quality_code: jrResult.quality,
                             full_label: jrResult.full_label,
-                            has_ukr: jrResult.has_ukr || false
+                            has_ukr: jrResult.has_ukr,
+                            ukr_tracks_count: jrResult.ukr_tracks_count
                         }, cardId);
+
+                        
                         
                         if (document.body.contains(cardElement)) {
                             /*updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label);*/
                             // І замініть на:
-                            updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label, false, jrResult.has_ukr);
-                            
+                              updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label, false, jrResult.has_ukr, jrResult.ukr_tracks_count, normalizedCard.type === 'tv');
+
                             
                             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed for list card.");
                         }
@@ -1387,7 +1395,10 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
                     quality_code: qualityCode,
                     full_label: fullTorrentTitle
                 }, cardId);
-                updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle);
+                /*updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle);*/
+               // На ЦЕ:
+                  updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, false, true, jrResult.ukr_tracks_count, normalizedCard.type === 'tv');
+                
                 if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Added new quality element to card list.');
             } else {
                 if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', No quality found from JacRed or it was "NO" for card list.');

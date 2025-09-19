@@ -403,11 +403,19 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
     }
     if (bestSrcKey) source = SOURCE_MAP[bestSrcKey];
 
-    // 3) Формуємо фінальний лейбл: resolution + source
+    // 3) Формуємо фінальний лейбл: resolution + source (без дубля)
     var finalLabel = '';
-    if (resolution && source) finalLabel = resolution + ' ' + source;
-    else if (resolution) finalLabel = resolution;
-    else if (source) finalLabel = source;
+    if (resolution && source) {
+        if (source.toLowerCase().includes(resolution.toLowerCase())) {
+            finalLabel = source;
+        } else {
+            finalLabel = resolution + ' ' + source;
+        }
+    } else if (resolution) {
+        finalLabel = resolution;
+    } else if (source) {
+        finalLabel = source;
+    }
 
     // 4) Якщо не знайшли ні resolution, ні source - fallback на QUALITY_DISPLAY_MAP
     if (!finalLabel || finalLabel.trim() === '') {
@@ -441,7 +449,6 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean): Final:", finalLabel);
     return finalLabel;
 }
-
 
 // ============================== Request queue (Lite-черга) ===============================
     var requestQueue = [];

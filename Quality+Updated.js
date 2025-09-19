@@ -363,32 +363,58 @@ $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
 
 //Нова функція для ukr
 // ===================== нові функції UKR =====================
-function checkHasUkrInAnyTorrent(torrents) {
+
+function checkHasUkrInAnyTorrent(torrents, isTvSeries = false) {
     if (!torrents || !Array.isArray(torrents)) return false;
+    
+    var maxUkrTracks = 0;
     
     for (var i = 0; i < torrents.length; i++) {
         var title = (torrents[i].title || '').toLowerCase();
         
-        // Універсальний пошук української доріжки
-        if (/(^|[^\w])ukr([^\w]|$)/i.test(title) || 
-            /(^|[^\w])укр([^\w]|$)/i.test(title) ||
-            /українськ/i.test(title) || 
-            /украинск/i.test(title) ||
-            // Спеціально для форматів: 2xUkr/, 5.1Ukr/, Ukr5.1, Ukr-AC3, тощо
-            /\b\d+(\.\d+)?x\s*ukr/i.test(title) ||
-            /\bukr\s*\d+(\.\d+)?\s*ch/i.test(title) ||
-            /\bukr[\s\-_]*[a-z0-9]+/i.test(title)) {
-            
-            if (LQE_CONFIG.LOGGING_QUALITY) {
-                console.log("LQE-QUALITY", "Ukrainian track found in title:", title);
+        // Для серіалів - тільки перевірка наявності Ukr, без підрахунку кількості
+        if (isTvSeries) {
+            if (/(^|[^\w])ukr([^\w]|$)/i.test(title) || 
+                /(^|[^\w])укр([^\w]|$)/i.test(title) ||
+                /українськ/i.test(title) || 
+                /украинск/i.test(title)) {
+                return 1; // Просто позначка, що є українська доріжка
             }
-            return true;
+        }
+        // Для фільмів - шукаємо кількість доріжок
+        else {
+            // Шукаємо ТІЛЬКИ формат "цифраxмова" для української
+            var ukrMatch = title.match(/(\d+)x\s*ukr/i);
+            
+            if (ukrMatch && ukrMatch[1]) {
+                var trackCount = parseInt(ukrMatch[1]);
+                if (trackCount > maxUkrTracks) {
+                    maxUkrTracks = trackCount;
+                }
+                if (LQE_CONFIG.LOGGING_QUALITY) {
+                    console.log("LQE-QUALITY", "Found Ukrainian tracks:", trackCount, "in title:", title);
+                }
+            }
+            // Також перевіряємо звичайні позначення без кількості
+            else if (/(^|[^\w])ukr([^\w]|$)/i.test(title) || 
+                    /(^|[^\w])укр([^\w]|$)/i.test(title) ||
+                    /українськ/i.test(title) || 
+                    /украинск/i.test(title)) {
+                if (maxUkrTracks === 0) {
+                    maxUkrTracks = 1; // Мінімум одна доріжка
+                }
+                if (LQE_CONFIG.LOGGING_QUALITY) {
+                    console.log("LQE-QUALITY", "Found Ukrainian track in title:", title);
+                }
+            }
         }
     }
-    return false;
+    
+    return isTvSeries ? 1 : maxUkrTracks;
 }
 
-function findBestTorrentWithUkrCheck(torrents, searchYearNum, cardId) {
+// ===================== Оновлена функція findBestTorrentWithUkrCheck =====================
+function findBestTorrentWithUkrCheck(torrents, searchYearNum, cardId, isTvSeries = false) {
     if (!Array.isArray(torrents) || torrents.length === 0) return null;
     
     var bestNumericQuality = -1;
@@ -472,18 +498,20 @@ function findBestTorrentWithUkrCheck(torrents, searchYearNum, cardId) {
         }
     }
     
-    // Перевіряємо наявність української доріжки в БУДЬ-ЯКОМУ торенті
-    var hasUkr = checkHasUkrInAnyTorrent(torrents);
+    // Перевіряємо кількість українських доріжок в БУДЬ-ЯКОМУ торенті
+    var ukrTracksCount = checkHasUkrInAnyTorrent(torrents, isTvSeries);
     
     if (LQE_CONFIG.LOGGING_QUALITY) {
-        console.log("LQE-QUALITY", "card: " + cardId + ", Ukrainian track found in any release:", hasUkr);
+        console.log("LQE-QUALITY", "card: " + cardId + ", Ukrainian tracks found:", ukrTracksCount, "isTvSeries:", isTvSeries);
     }
     
     if (bestFoundTorrent) {
         return {
             quality: bestFoundTorrent.quality || bestNumericQuality,
             full_label: bestFoundTorrent.title,
-            has_ukr: hasUkr
+            has_ukr: ukrTracksCount > 0,
+            ukr_tracks_count: ukrTracksCount,
+            is_tv_series: isTvSeries
         };
     }
     
@@ -493,9 +521,9 @@ function findBestTorrentWithUkrCheck(torrents, searchYearNum, cardId) {
     
 // ===================== translateQualityLabel (новий парсер з mapами) =====================
 
-// ===================== translateQualityLabel New =====================
-function translateQualityLabel(qualityCode, fullTorrentTitle, hasUkr) {
-    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean):", qualityCode, fullTorrentTitle, "hasUkr:", hasUkr);
+// ===================== Оновлена функція translateQualityLabel =====================
+function translateQualityLabel(qualityCode, fullTorrentTitle, ukrTracksCount, isTvSeries = false) {
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel:", qualityCode, fullTorrentTitle, "ukrTracksCount:", ukrTracksCount, "isTvSeries:", isTvSeries);
 
     var title = sanitizeTitle(fullTorrentTitle || '');
     var titleForSearch = ' ' + title + ' ';
@@ -575,14 +603,18 @@ function translateQualityLabel(qualityCode, fullTorrentTitle, hasUkr) {
         }
     }
 
-    // 6) Додаємо позначку про українську аудіодоріжку
-    if (hasUkr) {
-        finalLabel += " (Ukr)";
+    // 6) Додаємо позначку про українські аудіодоріжки
+    if (ukrTracksCount > 0) {
+        if (isTvSeries || ukrTracksCount === 1) {
+            finalLabel += " (Ukr)";
+        } else {
+            finalLabel += " (" + ukrTracksCount + "xUkr)";
+        }
     }
 
-    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean): Final:", finalLabel);
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel: Final:", finalLabel);
     return finalLabel;
-}
+}    
     
 /*function translateQualityLabel(qualityCode, fullTorrentTitle) {
     // Новий підхід: resolution + source -> final label.
@@ -749,7 +781,11 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                     var torrents = JSON.parse(responseText);
                     
                     // ✅ Використовуємо нову функцію для пошуку
-                    var result = findBestTorrentWithUkrCheck(torrents, parseInt(searchYear, 10), cardId);
+                    /*var result = findBestTorrentWithUkrCheck(torrents, parseInt(searchYear, 10), cardId);
+                    apiCallback(result);*/
+
+                    // І замініть на:
+                    var result = findBestTorrentWithUkrCheck(torrents, parseInt(searchYear, 10), cardId, normalizedCard.type === 'tv');
                     apiCallback(result);
                     
                 } catch (e) {
@@ -1083,14 +1119,15 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
     }
 
    //Нові версії Функцій
-    
-function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation, hasUkr) {
+
+   // ===================== Оновлені функції UI =====================
+function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation, hasUkr, ukrTracksCount, isTvSeries) {
     if (!renderElement) return;
     var element = $('.full-start__status.lqe-quality', renderElement);
     var rateLine = $('.full-start-new__rate-line', renderElement);
     if (!rateLine.length) return;
 
-    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle, hasUkr);
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle, ukrTracksCount, isTvSeries);
 
     if (element.length) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Updating existing element with quality "' + displayQuality + '" on full card.');
@@ -1105,8 +1142,8 @@ function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, ren
     }
 }
 
-function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation, hasUkr) {
-    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle, hasUkr);
+function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation, hasUkr, ukrTracksCount, isTvSeries) {
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle, ukrTracksCount, isTvSeries);
 
     var existingQualityElements = cardView.getElementsByClassName('card__quality');
     Array.from(existingQualityElements).forEach(el => el.parentNode.removeChild(el));

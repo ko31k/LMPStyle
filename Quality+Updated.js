@@ -361,9 +361,230 @@ $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
         return title.toString().toLowerCase().replace(/[\._\-\[\]\(\),]+/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
+//Нова функція для ukr
+// ===================== нові функції UKR =====================
+function checkHasUkrInAnyTorrent(torrents) {
+    if (!torrents || !Array.isArray(torrents)) return false;
+    
+    for (var i = 0; i < torrents.length; i++) {
+        var title = (torrents[i].title || '').toLowerCase();
+        
+        // Універсальний пошук української доріжки
+        if (/(^|[^\w])ukr([^\w]|$)/i.test(title) || 
+            /(^|[^\w])укр([^\w]|$)/i.test(title) ||
+            /українськ/i.test(title) || 
+            /украинск/i.test(title) ||
+            // Спеціально для форматів: 2xUkr/, 5.1Ukr/, Ukr5.1, Ukr-AC3, тощо
+            /\b\d+(\.\d+)?x\s*ukr/i.test(title) ||
+            /\bukr\s*\d+(\.\d+)?\s*ch/i.test(title) ||
+            /\bukr[\s\-_]*[a-z0-9]+/i.test(title)) {
+            
+            if (LQE_CONFIG.LOGGING_QUALITY) {
+                console.log("LQE-QUALITY", "Ukrainian track found in title:", title);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+function findBestTorrentWithUkrCheck(torrents, searchYearNum, cardId) {
+    if (!Array.isArray(torrents) || torrents.length === 0) return null;
+    
+    var bestNumericQuality = -1;
+    var bestFoundTorrent = null;
+    
+    function extractNumericQualityFromTitle(title) {
+        if (!title) return 0;
+        var lower = title.toLowerCase();
+        if (/2160p|4k/.test(lower)) return 2160;
+        if (/1080p/.test(lower)) return 1080;
+        if (/720p/.test(lower)) return 720;
+        if (/480p/.test(lower)) return 480;
+        if (/ts|telesync/.test(lower)) return 1;
+        if (/camrip|камрип/.test(lower)) return 2;
+        return 0;
+    }
+
+    function extractYearFromTitle(title) {
+        if (!title) return 0;
+        var regex = /(?:^|[^\d])(\d{4})(?:[^\d]|$)/g;
+        var match;
+        var lastYear = 0;
+        var currentYear = new Date().getFullYear();
+        while ((match = regex.exec(title)) !== null) {
+            var extractedYear = parseInt(match[1], 10);
+            if (extractedYear >= 1900 && extractedYear <= currentYear + 1) {
+                lastYear = extractedYear;
+            }
+        }
+        return lastYear;
+    }
+
+    for (var i = 0; i < torrents.length; i++) {
+        var currentTorrent = torrents[i];
+        var currentNumericQuality = currentTorrent.quality;
+        var torrentYear = currentTorrent.relased;
+        
+        if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
+            var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
+            if (extractedQuality > 0) {
+                currentNumericQuality = extractedQuality;
+            } else {
+                continue;
+            }
+        }
+        
+        var isYearValid = false;
+        var parsedYear = 0;
+        if (torrentYear && !isNaN(torrentYear) && torrentYear > 1900) {
+            parsedYear = parseInt(torrentYear, 10);
+            isYearValid = true;
+        }
+        if (!isYearValid) {
+            parsedYear = extractYearFromTitle(currentTorrent.title);
+            if (parsedYear > 0) {
+                torrentYear = parsedYear;
+                isYearValid = true;
+            }
+        }
+        
+        if (isYearValid && !isNaN(searchYearNum) && parsedYear !== searchYearNum) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Torrent year mismatch, skipping. Torrent: " + currentTorrent.title + ", Searched: " + searchYearNum + ", Found: " + parsedYear);
+            continue;
+        }
+        
+        if (LQE_CONFIG.LOGGING_QUALITY) {
+            console.log(
+                "LQE-QUALITY",
+                "card: " + cardId +
+                ", Torrent: " + currentTorrent.title +
+                " | Quality: " + currentNumericQuality + "p" +
+                " | Year: " + (isYearValid ? parsedYear : "unknown")
+            );
+        }
+        
+        if (currentNumericQuality > bestNumericQuality) {
+            bestNumericQuality = currentNumericQuality;
+            bestFoundTorrent = currentTorrent;
+        } else if (currentNumericQuality === bestNumericQuality && bestFoundTorrent && currentTorrent.title.length > bestFoundTorrent.title.length) {
+            bestFoundTorrent = currentTorrent;
+        }
+    }
+    
+    // Перевіряємо наявність української доріжки в БУДЬ-ЯКОМУ торенті
+    var hasUkr = checkHasUkrInAnyTorrent(torrents);
+    
+    if (LQE_CONFIG.LOGGING_QUALITY) {
+        console.log("LQE-QUALITY", "card: " + cardId + ", Ukrainian track found in any release:", hasUkr);
+    }
+    
+    if (bestFoundTorrent) {
+        return {
+            quality: bestFoundTorrent.quality || bestNumericQuality,
+            full_label: bestFoundTorrent.title,
+            has_ukr: hasUkr
+        };
+    }
+    
+    return null;
+}
+//кінець функції для ukr
+    
 // ===================== translateQualityLabel (новий парсер з mapами) =====================
 
-function translateQualityLabel(qualityCode, fullTorrentTitle) {
+// ===================== translateQualityLabel New =====================
+function translateQualityLabel(qualityCode, fullTorrentTitle, hasUkr) {
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean):", qualityCode, fullTorrentTitle, "hasUkr:", hasUkr);
+
+    var title = sanitizeTitle(fullTorrentTitle || '');
+    var titleForSearch = ' ' + title + ' ';
+
+    // 1) знайти роздільність
+    var resolution = '';
+    var bestResKey = '';
+    var bestResLen = 0;
+    for (var rKey in RESOLUTION_MAP) {
+        if (!RESOLUTION_MAP.hasOwnProperty(rKey)) continue;
+        var lk = rKey.toString().toLowerCase();
+        if (titleForSearch.indexOf(' ' + lk + ' ') !== -1 || title.indexOf(lk) !== -1) {
+            if (lk.length > bestResLen) {
+                bestResLen = lk.length;
+                bestResKey = rKey;
+            }
+        }
+    }
+    if (bestResKey) resolution = RESOLUTION_MAP[bestResKey];
+
+    // 2) знайти джерело (source)
+    var source = '';
+    var bestSrcKey = '';
+    var bestSrcLen = 0;
+    for (var sKey in SOURCE_MAP) {
+        if (!SOURCE_MAP.hasOwnProperty(sKey)) continue;
+        var lk2 = sKey.toString().toLowerCase();
+        if (titleForSearch.indexOf(' ' + lk2 + ' ') !== -1 || title.indexOf(lk2) !== -1) {
+            if (lk2.length > bestSrcLen) {
+                bestSrcLen = lk2.length;
+                bestSrcKey = sKey;
+            }
+        }
+    }
+    if (bestSrcKey) source = SOURCE_MAP[bestSrcKey];
+
+    // 3) Формуємо фінальний лейбл
+    var finalLabel = '';
+    if (resolution && source) {
+        if (source.toLowerCase().includes(resolution.toLowerCase())) {
+            finalLabel = source;
+        } else {
+            finalLabel = resolution + ' ' + source;
+        }
+    } else if (resolution) {
+        finalLabel = resolution;
+    } else if (source) {
+        finalLabel = source;
+    }
+
+    // 4) Fallback на QUALITY_DISPLAY_MAP
+    if (!finalLabel || finalLabel.trim() === '') {
+        var bestDirectKey = '';
+        var maxDirectLen = 0;
+        for (var qk in QUALITY_DISPLAY_MAP) {
+            if (!QUALITY_DISPLAY_MAP.hasOwnProperty(qk)) continue;
+            var lkq = qk.toString().toLowerCase();
+            if (title.indexOf(lkq) !== -1) {
+                if (lkq.length > maxDirectLen) {
+                    maxDirectLen = lkq.length;
+                    bestDirectKey = qk;
+                }
+            }
+        }
+        if (bestDirectKey) {
+            finalLabel = QUALITY_DISPLAY_MAP[bestDirectKey];
+        }
+    }
+
+    // 5) Останній fallback
+    if (!finalLabel || finalLabel.trim() === '') {
+        if (qualityCode) {
+            var qc = String(qualityCode).toLowerCase();
+            finalLabel = QUALITY_DISPLAY_MAP[qc] || qualityCode;
+        } else {
+            finalLabel = fullTorrentTitle || '';
+        }
+    }
+
+    // 6) Додаємо позначку про українську аудіодоріжку
+    if (hasUkr) {
+        finalLabel += " (Ukr)";
+    }
+
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean): Final:", finalLabel);
+    return finalLabel;
+}
+    
+/*function translateQualityLabel(qualityCode, fullTorrentTitle) {
     // Новий підхід: resolution + source -> final label.
     // DV/HDR/кодеки ігноруємо повністю, вони не впливають на ярлик.
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean):", qualityCode, fullTorrentTitle);
@@ -448,7 +669,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
 
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "translateQualityLabel (clean): Final:", finalLabel);
     return finalLabel;
-}
+}*/
 
 // ============================== Request queue (Lite-черга) ===============================
     var requestQueue = [];
@@ -477,7 +698,115 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
     }
 
 // ===================== getBestReleaseFromJacred (без змін логіки, але через чергу) =====================
-    function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
+
+function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
+    enqueueTask(function(done) {
+        if (!LQE_CONFIG.JACRED_URL) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: JACRED_URL is not set.");
+            callback(null);
+            done();
+            return;
+        }
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Search initiated.");
+        var year = '';
+        var dateStr = normalizedCard.release_date || '';
+        if (dateStr.length >= 4) {
+            year = dateStr.substring(0, 4);
+        }
+        if (!year || isNaN(year)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Missing/invalid year for normalizedCard:", normalizedCard);
+            callback(null);
+            done();
+            return;
+        }
+
+        function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
+            var userId = Lampa.Storage.get('lampac_unic_id', '');
+            var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
+                encodeURIComponent(searchTitle) +
+                '&year=' + searchYear +
+                (exactMatch ? '&exact=true' : '') +
+                '&uid=' + userId;
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " URL: " + apiUrl);
+
+            var timeoutId = setTimeout(function() {
+                if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", JacRed: " + strategyName + " request timed out.");
+                apiCallback(null);
+            }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);
+
+            fetchWithProxy(apiUrl, cardId, function(error, responseText) {
+                clearTimeout(timeoutId);
+                if (error) {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card:" + cardId + ", JacRed fetch error:", error);
+                    apiCallback(null);
+                    return;
+                }
+                if (!responseText) {
+                    apiCallback(null);
+                    return;
+                }
+                try {
+                    var torrents = JSON.parse(responseText);
+                    
+                    // ✅ Використовуємо нову функцію для пошуку
+                    var result = findBestTorrentWithUkrCheck(torrents, parseInt(searchYear, 10), cardId);
+                    apiCallback(result);
+                    
+                } catch (e) {
+                    console.error("LQE-LOG", "card: " + cardId + ", JacRed processing error:", e);
+                    apiCallback(null);
+                }
+            });
+        }
+
+        var searchStrategies = [];
+        if (normalizedCard.original_title && (/[a-zа-яё]/i.test(normalizedCard.original_title) || /^\d+$/.test(normalizedCard.original_title))) {
+            searchStrategies.push({
+                title: normalizedCard.original_title.trim(),
+                year: year,
+                exact: true,
+                name: "OriginalTitle Exact Year"
+            });
+        }
+        if (normalizedCard.title && (/[a-zа-яё]/i.test(normalizedCard.title) || /^\d+$/.test(normalizedCard.title))) {
+            searchStrategies.push({
+                title: normalizedCard.title.trim(),
+                year: year,
+                exact: true,
+                name: "Title Exact Year"
+            });
+        }
+
+        function executeNextStrategy(index) {
+            if (index >= searchStrategies.length) {
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: All strategies failed. No quality found.");
+                callback(null);
+                done();
+                return;
+            }
+            var strategy = searchStrategies[index];
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Trying strategy: " + strategy.name);
+            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, function(result) {
+                if (result !== null) {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Successfully found quality using strategy " + strategy.name + ": " + result.quality + " (torrent: \"" + result.full_label + "\")");
+                    callback(result);
+                    done();
+                } else {
+                    executeNextStrategy(index + 1);
+                }
+            });
+        }
+        if (searchStrategies.length > 0) {
+            executeNextStrategy(0);
+        } else {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: No valid search titles or strategies defined.");
+            callback(null);
+            done();
+        }
+    });
+}
+    
+   /* function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         // wrapper that runs the search in the queue
         enqueueTask(function(done) {
             // original function body implemented here (kept as inner function for queue)
@@ -668,7 +997,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
                 done();
             }
         });
-    }
+    }*/
 
 // ===================== CACHE HELPERS =====================
     function getQualityCache(key) {
@@ -681,7 +1010,20 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
         return isCacheValid ? item : null;
     }
 
+   //тут новий варіант функції 
     function saveQualityCache(key, data, cardId) {
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Cache: Saving quality cache for key:", key, "Data:", data);
+    var cache = Lampa.Storage.get(LQE_CONFIG.CACHE_KEY) || {};
+    cache[key] = {
+        quality_code: data.quality_code,
+        full_label: data.full_label,
+        has_ukr: data.has_ukr || false,  // ✅ Зберігаємо інформацію про українську аудіодоріжку
+        timestamp: Date.now()
+    };
+    Lampa.Storage.set(LQE_CONFIG.CACHE_KEY, cache);
+}
+    
+   /* function saveQualityCache(key, data, cardId) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Cache: Saving quality cache for key:", key, "Data:", data);
         var cache = Lampa.Storage.get(LQE_CONFIG.CACHE_KEY) || {};
         cache[key] = {
@@ -690,7 +1032,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
             timestamp: Date.now()
         };
         Lampa.Storage.set(LQE_CONFIG.CACHE_KEY, cache);
-    }
+    }*/
 
     function removeExpiredCacheEntries() {
         var cache = Lampa.Storage.get(LQE_CONFIG.CACHE_KEY) || {};
@@ -740,7 +1082,45 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
         }
     }
 
-    function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation) {
+   //Нові версії Функцій
+    
+function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation, hasUkr) {
+    if (!renderElement) return;
+    var element = $('.full-start__status.lqe-quality', renderElement);
+    var rateLine = $('.full-start-new__rate-line', renderElement);
+    if (!rateLine.length) return;
+
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle, hasUkr);
+
+    if (element.length) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Updating existing element with quality "' + displayQuality + '" on full card.');
+        element.text(displayQuality).css('opacity', '1').addClass('show');
+    } else {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Creating new element with quality '" + displayQuality + "' on full card.");
+        var div = document.createElement('div');
+        div.className = 'full-start__status lqe-quality';
+        div.textContent = displayQuality;
+        rateLine.append(div);
+        setTimeout(function(){ $('.full-start__status.lqe-quality', renderElement).addClass('show'); }, 20);
+    }
+}
+
+function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation, hasUkr) {
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle, hasUkr);
+
+    var existingQualityElements = cardView.getElementsByClassName('card__quality');
+    Array.from(existingQualityElements).forEach(el => el.parentNode.removeChild(el));
+
+    var qualityDiv = document.createElement('div');
+    qualityDiv.className = 'card__quality';
+    var innerElement = document.createElement('div');
+    innerElement.textContent = displayQuality;
+    qualityDiv.appendChild(innerElement);
+    cardView.appendChild(qualityDiv);
+    setTimeout(function(){ qualityDiv.classList.add('show'); }, 20);
+}
+    
+   /* function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation) {
         if (!renderElement) return;
         var element = $('.full-start__status.lqe-quality', renderElement);
         var rateLine = $('.full-start-new__rate-line', renderElement);
@@ -776,7 +1156,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
         cardView.appendChild(qualityDiv);
         // fade-in
         setTimeout(function(){ qualityDiv.classList.add('show'); }, 20);
-    }
+    }*/
 
 // ===================== processFullCardQuality (логіка повної картки) =====================
     function processFullCardQuality(cardData, renderElement) {

@@ -368,17 +368,27 @@ function checkHasUkrInAnyTorrent(torrents) {
     
     for (var i = 0; i < torrents.length; i++) {
         var title = (torrents[i].title || '').toLowerCase();
-        
-        // Універсальний пошук української доріжки
-        if (/(^|[^\w])ukr([^\w]|$)/i.test(title) || 
+
+        // 1. Виключаємо субтитри (щоб Sub Ukr не вважалось озвучкою)
+        if (/sub[^a-z]*ukr/i.test(title) || /subs[^a-z]*ukr/i.test(title)) {
+            continue;
+        }
+
+        // 2. Універсальний пошук української доріжки
+        if (
+            // окремо слово Ukr або Укр
+            /(^|[^\w])ukr([^\w]|$)/i.test(title) || 
             /(^|[^\w])укр([^\w]|$)/i.test(title) ||
+
+            // повні слова
             /українськ/i.test(title) || 
             /украинск/i.test(title) ||
-            // Спеціально для форматів: 2xUkr/, 5.1Ukr/, Ukr5.1, Ukr-AC3, тощо
+
+            // формати типу 2xUkr, 5.1Ukr, Ukr5.1, Ukr-AC3
             /\b\d+(\.\d+)?x\s*ukr/i.test(title) ||
             /\bukr\s*\d+(\.\d+)?\s*ch/i.test(title) ||
-            /\bukr[\s\-_]*[a-z0-9]+/i.test(title)) {
-            
+            /\bukr[\s\-_]*[a-z0-9]+/i.test(title)
+        ) {
             if (LQE_CONFIG.LOGGING_QUALITY) {
                 console.log("LQE-QUALITY", "Ukrainian track found in title:", title);
             }
@@ -387,6 +397,7 @@ function checkHasUkrInAnyTorrent(torrents) {
     }
     return false;
 }
+        
 
 function findBestTorrentWithUkrCheck(torrents, searchYearNum, cardId) {
     if (!Array.isArray(torrents) || torrents.length === 0) return null;

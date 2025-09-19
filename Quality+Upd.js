@@ -760,20 +760,22 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         }
 
         var searchStrategies = [];
-        if (normalizedCard.original_title && (/[a-zа-яё]/i.test(normalizedCard.original_title) || /^\d+$/.test(normalizedCard.original_title))) {
+        // Спочатку шукаємо за українською назвою (як основною)
+        if (normalizedCard.title && (/[a-zа-яёії]/i.test(normalizedCard.title) || /^\d+$/.test(normalizedCard.title))) {
             searchStrategies.push({
-                title: normalizedCard.original_title.trim(),
+                title: normalizedCard.title.trim(), // Українська назва
                 year: year,
                 exact: true,
-                name: "OriginalTitle Exact Year"
+                name: "Ukrainian Title Exact Year"
             });
         }
-        if (normalizedCard.title && (/[a-zа-яё]/i.test(normalizedCard.title) || /^\d+$/.test(normalizedCard.title))) {
+        // Потім шукаємо за англійською (оригінальною) назвою
+        if (normalizedCard.original_title && (/[a-zа-яёії]/i.test(normalizedCard.original_title) || /^\d+$/.test(normalizedCard.original_title))) {
             searchStrategies.push({
-                title: normalizedCard.title.trim(),
+                title: normalizedCard.original_title.trim(), // Англійська назва
                 year: year,
                 exact: true,
-                name: "Title Exact Year"
+                name: "Original Title Exact Year"
             });
         }
 

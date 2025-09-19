@@ -1199,17 +1199,30 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
             if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature enabled for this content, starting processing.');
             if (cachedQualityData) {
                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
-                updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement);
+               /* updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement);*/
+                 // замінено на:
+                  updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement, false, cachedQualityData.has_ukr);
 
+                
                 if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
                     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
                     getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
                         if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
-                            saveQualityCache(cacheKey, {
+                           
+                            /*saveQualityCache(cacheKey, {
                                 quality_code: jrResult.quality,
                                 full_label: jrResult.full_label
+                            }, cardId);*/
+                           // замінено на:
+                            saveQualityCache(cacheKey, {
+                              quality_code: jrResult.quality,
+                              full_label: jrResult.full_label,
+                              has_ukr: jrResult.has_ukr || false
                             }, cardId);
-                            updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement);
+                           /*updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement*/
+                           //замінено на:
+                             updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement, false, jrResult.has_ukr);
+                            
                             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed.");
                         }
                     });
@@ -1283,23 +1296,36 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override for card list:", manualOverrideData);
             updateCardListQualityElement(cardView, null, manualOverrideData.full_label, true);
             return;
-        }
+       }
 
         var cachedQualityData = getQualityCache(cacheKey);
         if (cachedQualityData) {
             if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Quality data found in cache for card list:', cachedQualityData);
-            updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label);
-
+            /*updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label);*/
+            //замінено на:
+            updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label, false, cachedQualityData.has_ukr);
+            
             if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh.");
                 getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
                     if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
-                        saveQualityCache(cacheKey, {
+                        /*saveQualityCache(cacheKey, {
                             quality_code: jrResult.quality,
                             full_label: jrResult.full_label
+                        }, cardId);*/
+                       // І замініть на:
+                        saveQualityCache(cacheKey, {
+                            quality_code: jrResult.quality,
+                            full_label: jrResult.full_label,
+                            has_ukr: jrResult.has_ukr || false
                         }, cardId);
+                        
                         if (document.body.contains(cardElement)) {
-                            updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label);
+                            /*updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label);*/
+                            // І замініть на:
+                            updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label, false, jrResult.has_ukr);
+                            
+                            
                             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed for list card.");
                         }
                     }

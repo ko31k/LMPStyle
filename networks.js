@@ -610,7 +610,7 @@
             '.tmdb-networks { margin-top: -3em; } ' +  // Відступ для контейнера платформ
             
             // РОЗМІРИ КНОПОК:
-            '.network-btn { height: 2.74em; } ' +       // Загальна висота кнопок (≈47px (2.94em))
+            '.network-btn { height: 2.54em; background-color: #fff !important; } ' +       // Загальна висота кнопок (≈47px (2.94em))
             '.network-btn.movie { height: 4em; } ' +    // Спеціальна висота для фільмів (≈64px)
             
             '.network-logo { background-color: #fff; position: relative; } ' +  // Білий фон для логотипів

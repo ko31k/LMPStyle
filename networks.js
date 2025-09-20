@@ -554,21 +554,21 @@
         }
         window.tmdb_networks = true;
 
-        $('<style>').prop('type', 'text/css').html(
-            '.tmdb-networks { margin-top: -3em; } ' +
-            '.network-btn { height: 2.94em; } ' +
-            '.network-btn.movie { height: 4em; } ' +
-            '.network-logo { background-color: #fff; position: relative; } ' +
-            '.network-logo.movie { background: none; padding: 0; } ' +
-            '.network-logo .overlay { ' +
-                'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
-                'background: rgba(0, 0, 0, 0); ' +
-            '} ' +
-            '.network-logo img { border-radius: 0.6em; height: 100%; } ' +
-            '.network-logo.full-start__button .overlay, .network-logo.full-start__button.movie * { border-radius: 1em }' + 
-            '.network-logo.focus .overlay { background: rgba(0, 0, 0, 0.3); } ' +
-            '.network-logo.focus { box-shadow: 0 0 0 0.2em rgb(255, 255, 255); }'
-        ).appendTo('head');
+$('<style>').prop('type', 'text/css').html(
+    '.tmdb-networks { margin-top: -3em; } ' +
+    '.network-btn { height: 2.94em; } ' +
+    '.network-btn.movie { height: 4em; } ' +
+    '.network-logo { background-color: #fff; position: relative; } ' +
+    '.network-logo.movie { background: none; padding: 0; } ' +
+    /* '.network-logo .overlay { ' +
+        'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
+        'background: rgba(0, 0, 0, 0); ' +
+    '} ' + */
+    '.network-logo img { border-radius: 0.6em; height: 100%; display: block; } ' +
+    /* '.network-logo.full-start__button .overlay, .network-logo.full-start__button.movie * { border-radius: 1em }' + */ 
+    /* '.network-logo.focus .overlay { background: rgba(0, 0, 0, 0.3); } ' + */
+    '.network-logo.focus { box-shadow: 0 0 0 0.2em rgb(255, 255, 255); }'
+).appendTo('head');
 
         initSettings();
         addLocalization();

@@ -1,6 +1,7 @@
 (function () {
     'use strict';
 
+    // Маніфест плагіна - інформація про версію, автора, документацію
     var pluginManifest = {
         version: '2.0.3',
         author: 'levende',
@@ -8,31 +9,36 @@
         contact: 'https://t.me/levende'
     };
 
+    // Режими відображення списку платформ
     var LIST_DISPLAY_MODE = Object.freeze({
-        HIDE: 0,
-        LOGO: 1,
-        TEXT: 2
+        HIDE: 0,     // Не показувати платформи
+        LOGO: 1,     // Показувати у вигляді логотипів
+        TEXT: 2      // Показувати текстові назви
     });
 
+    // Режими відображення додаткової кнопки
     var EXTRA_BTN_DISPLAY_MODE = Object.freeze({
-        HIDE: 0,
-        LOGO: 1,
-        TEXT: 2,
-        LIST_BTN: 3
+        HIDE: 0,      // Не показувати додаткову кнопку
+        LOGO: 1,      // Показувати як логотип першої платформи
+        TEXT: 2,      // Показувати як текст першої платформи
+        LIST_BTN: 3   // Показувати кнопку з вибором всіх платформ
     });
 
+    // Налаштування плагіна (будуть ініціалізовані пізніше)
     var settings = {
-        platfroms_tv_list_mode: -1,
-        platfroms_tv_list_max_visible: -1,
-        platfroms_tv_extra_btn_mode: -1,
+        platfroms_tv_list_mode: -1,              // Режим відображення для серіалів
+        platfroms_tv_list_max_visible: -1,       // Максимальна кількість видимих платформ для серіалів
+        platfroms_tv_extra_btn_mode: -1,         // Режим додаткової кнопки для серіалів
 
-        platfroms_movie_list_mode: -1,
-        platfroms_movie_list_max_visible: -1,
-        platfroms_movie_extra_btn_mode: -1
+        platfroms_movie_list_mode: -1,           // Режим відображення для фільмів
+        platfroms_movie_list_max_visible: -1,    // Максимальна кількість видимих платформ для фільмів
+        platfroms_movie_extra_btn_mode: -1       // Режим додаткової кнопки для фільмів
     };
 
+    // Об'єкт для виконання мережевих запитів до TMDB API
     var network = new Lampa.Reguest();
 
+    // Додавання локалізації (перекладів) для плагіна
     function addLocalization() {
         Lampa.Lang.add({
             tmdb_networks_open: {
@@ -113,27 +119,36 @@
         });
     }
 
+    // Створення кнопки платформи (логотип або текст)
     function createNetworkButton(network, index, type, mode, limit) {
+        // Створення основного контейнера для кнопки
         var networkBtn = $('<div class="tag-count selector network-btn"></div>');
 
+        // Перевірка чи є логотип і чи обраний режим логотипів
         if (network.logo_path && mode == LIST_DISPLAY_MODE.LOGO) {
             networkBtn.addClass('network-logo');
             networkBtn.addClass(type);
 
+            // Створення оверлею (прозорого шару) - ЦЕ ВИКЛИКАЄ ПРОБЛЕМУ З ПРОЗОРІСТЮ НА ПК
             networkBtn.append($('<div class="tag-count overlay"></div>'));
+            
+            // Створення зображення логотипу
             var logo = $('<img/>').attr({
                 src: Lampa.TMDB.image("t/p/w300" + network.logo_path),
                 alt: network.name
             });
             networkBtn.append(logo);
         } else {
+            // Створення текстової кнопки (якщо немає логотипу або обраний текстовий режим)
             networkBtn.append($('<div class="tag-count__name">' + network.name + '</div>'));
         }
 
+        // Приховання кнопок, які перевищують ліміт відображення
         if (index >= limit) {
             networkBtn.addClass('hide');
         }
 
+        // Додавання обробника кліку на кнопку
         networkBtn.on('hover:enter', function () {
             onNetworkButtonClick(network, this, type);
         });
@@ -141,6 +156,7 @@
         return networkBtn;
     }
 
+    // Створення кнопки "Більше" для відображення прихованих платформ
     function createMoreButton(hiddenCount, type, container) {
         var moreBtn = $(
             '<div class="tag-count selector network-btn network-more">' +
@@ -151,15 +167,18 @@
 
         var limit = settings['platfroms_' + type + '_list_max_visible'];
 
+        // Обробник кліку на кнопку "Більше"
         moreBtn.on('hover:enter', function () {
-            $('.network-btn.hide').removeClass('hide');
-            $(this).addClass('hide');
+            $('.network-btn.hide').removeClass('hide');  // Показати всі приховані кнопки
+            $(this).addClass('hide');                    // Приховати кнопку "Більше"
+            // Фокусування на першій новій кнопці
             Lampa.Controller.collectionFocus($('.network-btn', container).eq(limit + 1), Lampa.Activity.active().activity.render());
         });
 
         return moreBtn;
     }
 
+    // Створення кнопки "Приховати" для зворотнього приховання платформ
     function createHideButton(type) {
         var hideBtn = $(
             '<div class="tag-count selector network-btn hide">' +
@@ -168,22 +187,26 @@
             
         var limit = settings['platfroms_' + type + '_list_max_visible'];
 
+        // Обробник кліку на кнопку "Приховати"
         hideBtn.on('hover:enter', function () {
-            $(this).addClass('hide');
+            $(this).addClass('hide');  // Приховати кнопку "Приховати"
+            // Приховати всі кнопки починаючи з ліміту
             $('.network-btn:not(.button--plaftorms):gt(' + (limit - 1) + ')').addClass('hide');
 
             var moreBtn = $('.network-more');
-            moreBtn.removeClass('hide');
+            moreBtn.removeClass('hide');  // Показати кнопку "Більше"
+            // Фокусування на кнопці "Більше"
             Lampa.Controller.collectionFocus(moreBtn, Lampa.Activity.active().activity.render());
         });
 
         return hideBtn;
     }
 
+    // Отримання інформації про платформи перегляду для фільму
     function getMovieProviders(movie, callback) {
-        var allowedCountryCodes = ['US', 'UA'];
+        var allowedCountryCodes = ['US', 'UA'];  // Дозволені коди країн
         var excludeKeywords = ['Free', 'Ad', 'With Ads', 'Free with Ads', 'Plex', 'Tubi', 'Pluto TV', 'Google Play', 'Youtube', 'Max Amazon Channel'];
-        var maxDisplayPriority = 20;
+        var maxDisplayPriority = 20;  // Максимальний пріоритет відображення
 
         var url = Lampa.TMDB.api('movie/' + movie.id + '/watch/providers?api_key=' + Lampa.TMDB.key());
         network.silent(url, function (data) {
@@ -191,6 +214,7 @@
                 return [];
             }
 
+            // Фільтрація країн за дозволеними кодами
             var countryCodes = Object.keys(data.results).filter(function(countryCode) {
                 return allowedCountryCodes.includes(countryCode);
             });
@@ -198,6 +222,7 @@
             var providers = [];
             var uniqueProviders = [];
 
+            // Обробка даних для кожної дозволеної країни
             countryCodes.forEach(function(countryCode) {
                 var countryProviders = (data.results[countryCode].flatrate || [])
                     .concat(data.results[countryCode].rent || [])
@@ -207,6 +232,7 @@
                 providers = providers.concat(countryProviders);
             });
 
+            // Фільтрація та обробка провайдерів
             providers.forEach(function (provider) {
                 if (provider.display_priority > maxDisplayPriority) return;
 
@@ -234,10 +260,12 @@
         });
     }
 
+    // Отримання мереж/платформ для контенту (фільму або серіалу)
     function getNetworks(object, callback) {
         var movie = object.card;
         if (!movie || movie.source !== 'tmdb') return callback([]);
 
+        // Вибір функції для отримання даних (з кешу або API)
         var getFn = movie.networksList // cache
             ? function() { callback(movie.networksList); }
             : movie.networks 
@@ -245,13 +273,14 @@
                 : getMovieProviders;
         
         getFn(movie, function(networks) {
-            movie.networksList = networks;
+            movie.networksList = networks;  // Збереження в кеш
             callback(networks);
         });
     }
 
+    // Відображення додаткової кнопки платформ
     function renderExtraBtn(render, networks, type) {
-        $('.button--plaftorms', render).remove();
+        $('.button--plaftorms', render).remove();  // Видалення старих кнопок
 
         var displayMode = settings['platfroms_' + type + '_extra_btn_mode'];
         var container = $('.full-start-new__buttons', render);
@@ -260,12 +289,14 @@
         switch (displayMode) {
             case EXTRA_BTN_DISPLAY_MODE.LOGO:
             case EXTRA_BTN_DISPLAY_MODE.TEXT: {
+                // Створення кнопки з логотипом або текстом першої платформи
                 btn = createNetworkButton(networks[0], 0, type, displayMode, 1);
                 btn.removeClass('tag-count').addClass('full-start__button').addClass('button--plaftorms');
                 btn.css('height', $('.full-start__button', render).first().outerHeight() + 'px');
                 break;
             }
             case EXTRA_BTN_DISPLAY_MODE.LIST_BTN: {
+                // Створення кнопки з вибором всіх платформ
                 var title = Lampa.Lang.translate('tmdb_networks_plugin_platforms');
                 btn.html(
                     '<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="512.000000pt" height="512.000000pt" viewBox="0 0 512.000000 512.000000">' +
@@ -279,6 +310,7 @@
                     '</svg>' +
                     '<span>' + title + '</span>');
         
+                // Обробник кліку на кнопку з вибором платформ
                 btn.on('hover:enter', function () {
                     var controllerName = Lampa.Controller.enabled().name;
                     Lampa.Select.show({
@@ -302,22 +334,25 @@
         Lampa.Activity.active().activity.toggle();
     }
 
+    // Основна функція відображення платформ
     function renderNetworks() {
         var object = Lampa.Activity.active();
         var render = object.activity.render();
-        $('.tmdb-networks', render).remove();
+        $('.tmdb-networks', render).remove();  // Видалення старих платформ
 
         getNetworks(object, function(networks) {
-            if (networks.length == 0) return;
+            if (networks.length == 0) return;  // Якщо платформ немає - вийти
 
             var type = object.method;
 
-            renderExtraBtn(render, networks, type, object);
+            renderExtraBtn(render, networks, type, object);  // Відображення додаткової кнопки
 
             var displayMode = settings['platfroms_' + type + '_list_mode'];
 
-            if (displayMode == LIST_DISPLAY_MODE.HIDE) return;
+            if (displayMode == LIST_DISPLAY_MODE.HIDE) return;  // Якщо режим "не показувати" - вийти
             var displayLimit = settings['platfroms_' + type + '_list_max_visible'];
+            
+            // Створення контейнера для платформ
             var networksLine = $(
                 '<div class="tmdb-networks">' +
                     '<div class="items-line__body" style="margin-bottom:3em;">' +
@@ -333,15 +368,18 @@
             var container = $('.full-descr__tags', networksLine);
 
             var hasMoreBtn = false;
+            // Додавання кнопок для кожної платформи
             networks.forEach(function (network, index) {
                 container.append(createNetworkButton(network, index, type, displayMode, displayLimit));
 
+                // Додавання кнопки "Більше" після досягнення ліміту
                 if (networks.length > displayLimit && index === displayLimit - 1) {
                     container.append(createMoreButton(networks.length - displayLimit, type, container));
                     hasMoreBtn = true;
                 }
             });
 
+            // Додавання кнопки "Приховати" якщо є кнопка "Більше"
             if (hasMoreBtn) {
                 container.append(createHideButton(type));
             }
@@ -350,16 +388,18 @@
         });
     }
 
+    // Обробник кліку на кнопку платформи
     function onNetworkButtonClick(network, element, type, controller) {
         var isTv = type == 'tv';
         var controllerName = controller || Lampa.Controller.enabled().name;
         
-
+        // Визначення полів для дати релізу в залежності від типу контенту
         var releaseDateField = isTv ? 'first_air_date' : 'primary_release_date';
         var topFilter = { 'vote_count.gte': 10 };
         var newFilter = { 'vote_count.gte': 10 };
         newFilter[releaseDateField + '.lte'] = new Date().toISOString().split('T')[0];
 
+        // Створення меню вибору (Топ або Новинки)
         var menu = [
             {
                 title: Lampa.Lang.translate('tmdb_networks_open') + ' ' + Lampa.Lang.translate('tmdb_networks_top').toLowerCase(),
@@ -375,6 +415,7 @@
             }
         ];
 
+        // Додавання фільтрів для конкретної платформи та країни
         if (network.country_code) {
             menu.forEach(function(selectItem) {
                 selectItem.filter.watch_region = network.country_code;
@@ -384,6 +425,7 @@
 
         var categoryLangKey = isTv ? 'menu_tv' : 'menu_movies';
 
+        // Відображення меню вибору
         Lampa.Select.show({
             title: network.name + ' ' + Lampa.Lang.translate(categoryLangKey),
             items: menu,
@@ -392,6 +434,7 @@
                 Lampa.Controller.collectionFocus(element, Lampa.Activity.active().activity.render());
             },
             onSelect: function (action) {
+                // Відкриття обраної категорії контенту
                 Lampa.Activity.push({
                     url: 'discover/' + type,
                     title: network.name + ' ' + action.type + ' ' + Lampa.Lang.translate(categoryLangKey),
@@ -407,6 +450,7 @@
         });
     }
 
+    // Додавання налаштувань для конкретного типу контенту (фільми/серіали)
     function addSettingsByType(type) {
         Lampa.SettingsApi.addParam({
             component: 'platforms',
@@ -460,9 +504,11 @@
         });
     }
 
+    // Додавання всіх налаштувань плагіна
     function addSettings() {
         Lampa.Template.add('settings_platforms', '<div></div>');
 
+        // Додавання кнопки до головних налаштувань
         Lampa.SettingsApi.addParam({
             component: 'interface',
             param: { 
@@ -483,6 +529,7 @@
             }
         });
 
+        // Додавання кнопки "Про плагін"
         Lampa.SettingsApi.addParam({
             component: 'platforms',
             param: {
@@ -496,23 +543,26 @@
             onChange: showAbout
         });
 
+        // Додавання заголовка для серіалів
         Lampa.SettingsApi.addParam({
             component: 'platforms',
             param: { type: 'title' },
             field: { name: Lampa.Lang.translate('menu_tv') }
         });
 
-        addSettingsByType('tv');
+        addSettingsByType('tv');  // Додавання налаштувань для серіалів
 
+        // Додавання заголовка для фільмів
         Lampa.SettingsApi.addParam({
             component: 'platforms',
             param: { type: 'title' },
             field: { name: Lampa.Lang.translate('menu_movies') }
         });
 
-        addSettingsByType('movie');
+        addSettingsByType('movie');  // Додавання налаштувань для фільмів
     }
 
+    // Показати інформацію про плагін
     function showAbout() {
         var html =
             '<p>' + Lampa.Lang.translate('tmdb_networks_plugin_descr') + '</p>' +
@@ -537,6 +587,7 @@
         });
     }
 
+    // Ініціалізація налаштувань (завантаження з localStorage)
     function initSettings() {
         settings.platfroms_tv_list_mode = Lampa.Storage.get('platfroms_tv_list_mode', LIST_DISPLAY_MODE.LOGO);
         settings.platfroms_tv_list_max_visible = Lampa.Storage.get('platfroms_tv_list_max_visible', 3);
@@ -545,48 +596,60 @@
         settings.platfroms_movie_list_mode = Lampa.Storage.get('platfroms_movie_list_mode', LIST_DISPLAY_MODE.TEXT);
         settings.platfroms_movie_list_max_visible = Lampa.Storage.get('platfroms_movie_list_max_visible', 3);
         settings.platfroms_movie_extra_btn_mode = Lampa.Storage.get('platfroms_movie_extra_btn_mode', EXTRA_BTN_DISPLAY_MODE.LIST_BTN);
-
     }
 
+    // Запуск плагіна
     function startPlugin() {
         if (window.tmdb_networks) {
-            return;
+            return;  // Запобігання подвійній ініціалізації
         }
         window.tmdb_networks = true;
 
-$('<style>').prop('type', 'text/css').html(
-    '.tmdb-networks { margin-top: -3em; } ' +
-    '.network-btn { height: 2.94em; } ' +
-    '.network-btn.movie { height: 4em; } ' +
-    '.network-logo { background-color: #fff; position: relative; } ' +
-    '.network-logo.movie { background: none; padding: 0; } ' +
-    /* '.network-logo .overlay { ' +
-        'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
-        'background: rgba(0, 0, 0, 0); ' +
-    '} ' + */
-    '.network-logo img { border-radius: 0.6em; height: 100%; display: block; } ' +
-    /* '.network-logo.full-start__button .overlay, .network-logo.full-start__button.movie * { border-radius: 1em }' + */ 
-    /* '.network-logo.focus .overlay { background: rgba(0, 0, 0, 0.3); } ' + */
-    '.network-logo.focus { box-shadow: 0 0 0 0.2em rgb(255, 255, 255); }'
-).appendTo('head');
+        // Додавання CSS стилів для плагіна
+        $('<style>').prop('type', 'text/css').html(
+            '.tmdb-networks { margin-top: -3em; } ' +  // Відступ для контейнера платформ
+            
+            // РОЗМІРИ КНОПОК:
+            '.network-btn { height: 2.74em; } ' +       // Загальна висота кнопок (≈47px (2.94em))
+            '.network-btn.movie { height: 4em; } ' +    // Спеціальна висота для фільмів (≈64px)
+            
+            '.network-logo { background-color: #fff; position: relative; } ' +  // Білий фон для логотипів
+            '.network-logo.movie { background: none; padding: 0; } ' +          // Спеціальні стилі для фільмів
+            
+            /* ЗАКОМЕНТОВАНО - стилі оверлею що роблять кнопки прозорими на ПК */
+            /* '.network-logo .overlay { ' +
+                'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
+                'background: rgba(0, 0, 0, 0); ' +
+            '} ' + */
+            
+            '.network-logo img { border-radius: 0.6em; height: 100%; display: block; } ' +  // Стилі зображень логотипів
+            
+            /* ЗАКОМЕНТОВАНО - додаткові стилі оверлею */
+            /* '.network-logo.full-start__button .overlay, .network-logo.full-start__button.movie * { border-radius: 1em }' + */ 
+            /* '.network-logo.focus .overlay { background: rgba(0, 0, 0, 0.3); } ' + */
+            
+            '.network-logo.focus { box-shadow: 0 0 0 0.2em rgb(255, 255, 255); }'  // Ефект тіні при фокусі
+        ).appendTo('head');
 
-        initSettings();
-        addLocalization();
-        addSettings();
+        initSettings();      // Ініціалізація налаштувань
+        addLocalization();   // Додавання локалізації
+        addSettings();       // Додавання налаштувань
 
+        // Відстеження подій для автоматичного відображення платформ
         Lampa.Listener.follow('activity,full', function (e) {
             if (e.type === 'complite' || e.type === 'archive') {
-                renderNetworks();
+                renderNetworks();  // Відображення платформ при завершенні завантаження картки
             }
         });
     }
 
+    // Запуск плагіна після готовності додатка
     if (window.appready) {
-        startPlugin();
+        startPlugin();  // Якщо додаток вже готовий
     } else {
         Lampa.Listener.follow('app', function (event) {
             if (event.type === 'ready') {
-                startPlugin();
+                startPlugin();  // Якщо додаток ще не готовий - чекати події ready
             }
         });
     }

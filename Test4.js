@@ -8,7 +8,7 @@
     // === НАЛАШТУВАННЯ ===
     var CONFIG = {
         tmdbApiKey: 'ваш_tmdb_api_key_тут',
-        cacheTime: 7 * 24 * 60 * 60 * 1000,
+        cacheTime: 24 * 60 * 60 * 1000,
         enabled: true,
         language: 'uk'
     };

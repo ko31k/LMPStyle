@@ -8,8 +8,8 @@
 
     // === НАЛАШТУВАННЯ ===
     var CONFIG = {
-        tmdbApiKey: 'ваш_tmdb_api_key_тут',   // TMDB API ключ
-        cacheTime: 7 * 24 * 60 * 60 * 1000,   // час кешу (7 днів)
+        tmdbApiKey: '1ad1fd4b4938e876aa6c96d0cded9395',   // TMDB API ключ
+        cacheTime: 24 * 60 * 60 * 1000,   // час кешу (24 години)
         enabled: true,                        // вкл/викл плагін
         language: 'uk'                        // мова запитів до TMDB
     };
@@ -19,7 +19,7 @@
     style.textContent = `
     .card--season-complete {
         position: absolute;
-        bottom: calc(0.50em + 1.85em); /* вище мітки якості */
+        bottom: calc(0.50em + 2.82em); /* вище мітки якості */
         left: 0;
         background-color: rgba(61, 161, 141, 0.8);
         z-index: 12;

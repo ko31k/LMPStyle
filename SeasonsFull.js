@@ -56,12 +56,13 @@
         text-transform: uppercase;
         font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;  /* Той самий шрифт */
         font-weight: 700;                                                    /* Той самий жирний шрифт */
-        font-size: 1.15em;                                                   /* Той самий розмір */
-        padding: 0.3em 0.6em;                                                /* Той самий відступ */
+        font-size: 1.05em;                                                   /* Той самий розмір */
+        padding: 0.3em 0.4em;                                                /* Той самий відступ */
         white-space: nowrap;                                                 /* Той самий перенос */
         display: flex;                                                       /* Той самий flex */
         align-items: center;                                                 /* Той самий вирівнювання */
         gap: 4px;                                                            /* Той самий проміжок */
+        text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
     }
     
     /* Колір тексту для завершених сезонів (білий на зеленому) */

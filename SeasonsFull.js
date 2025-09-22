@@ -56,7 +56,7 @@
         text-transform: uppercase;
         font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;  /* Той самий шрифт */
         font-weight: 700;                                                    /* Той самий жирний шрифт */
-        font-size: 1.30em;                                                   /* Той самий розмір */
+        font-size: 1.15em;                                                   /* Той самий розмір */
         padding: 0.3em 0.6em;                                                /* Той самий відступ */
         white-space: nowrap;                                                 /* Той самий перенос */
         display: flex;                                                       /* Той самий flex */
@@ -84,7 +84,7 @@
     @media (max-width: 768px) {
         .card--season-complete div,
         .card--season-progress div {
-            font-size: 1.20em;  /* Трохи менший розмір шрифту на мобільних */
+            font-size: 1.05em;  /* Трохи менший розмір шрифту на мобільних */
             padding: 0.25em 0.5em; /* додано МЕНШІ ВІДСТУПИ НА МОБІЛЬНИХ */
         }
     }

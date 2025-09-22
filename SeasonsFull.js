@@ -245,6 +245,61 @@
         }
     }
 
+    // === ДОДАТКОВІ ФУНКЦІЇ ДЛЯ РОБОТИ З МІТКАМИ ЯКОСТІ ===
+    
+    /**
+     * Оновлює позиції всіх міток сезону при змінах в картці
+     * Використовується при додаванні/видаленні міток якості
+     * @param {HTMLElement} cardEl - елемент картки
+     */
+    function updateBadgePositions(cardEl) {
+        // Знаходимо всі мітки сезону в картці (обох типів)
+        var badges = cardEl.querySelectorAll('.card--season-complete, .card--season-progress');
+        
+        // Для кожної знайденої мітки оновлюємо позицію
+        badges.forEach(function(badge) {
+            adjustBadgePosition(cardEl, badge);
+        });
+    }
+
+    // === СПОСТЕРЕЖЕННЯ ЗА ЗМІНАМИ МІТОК ЯКОСТІ ===
+    // Створюємо спостерігач для відстеження додавання/видалення міток якості
+    var qualityObserver = new MutationObserver(function(mutations) {
+        // Перебираємо всі знайдені зміни
+        mutations.forEach(function(mutation) {
+            
+            // Перевіряємо додані вузли (нові мітки якості)
+            mutation.addedNodes?.forEach(function(node) {
+                // Перевіряємо, чи додано мітку якості
+                if (node.classList && node.classList.contains('card__quality')) {
+                    // Знаходимо батьківську картку для цієї мітки якості
+                    var cardEl = node.closest('.card');
+                    if (cardEl) {
+                        // Оновлюємо позицію мітки сезону при додаванні мітки якості
+                        // Використовуємо затримку для гарантії що DOM оновився
+                        setTimeout(() => {
+                            updateBadgePositions(cardEl);
+                        }, 100);
+                    }
+                }
+            });
+            
+            // Перевіряємо видалені вузли (видалені мітки якості)
+            mutation.removedNodes?.forEach(function(node) {
+                if (node.classList && node.classList.contains('card__quality')) {
+                    // Знаходимо батьківську картку для видаленої мітки якості
+                    var cardEl = node.closest('.card');
+                    if (cardEl) {
+                        // Оновлюємо позицію мітки сезону при видаленні мітки якості
+                        setTimeout(() => {
+                            updateBadgePositions(cardEl);
+                        }, 100);
+                    }
+                }
+            });
+        });
+    });
+
     /**
      * Додає мітку статусу сезону до картки серіалу
      * @param {HTMLElement} cardEl - елемент картки
@@ -284,6 +339,18 @@
         
         // ВИКЛИК 1: Перше вирівнювання одразу після додавання в DOM
         adjustBadgePosition(cardEl, badge);
+
+        // === СПОСТЕРЕЖЕННЯ ЗА МІТКОЮ ЯКОСТІ В ЦІЙ КАРТЦІ ===
+        // Підключаємо спостерігач для відстеження змін міток якості
+        try {
+            qualityObserver.observe(view, {
+                childList: true,    // Спостереження за додаванням/видаленням дочірніх елементів
+                subtree: true       // Спостереження за всіма вкладеними елементами
+            });
+        } catch (e) {
+            // Обробка можливих помилок при спостереженні
+            console.log('Помилка спостереження за мітками якості:', e);
+        }
 
         // Позначення картки як обробленої (статус: завантаження)
         cardEl.setAttribute('data-season-processed', 'loading');

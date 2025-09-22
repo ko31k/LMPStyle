@@ -158,7 +158,7 @@
                     if (isSeasonComplete(tmdbData)) {
                         var lastEpisode = tmdbData.last_episode_to_air;
                         badge.className = 'card--season-complete';
-                        badge.innerHTML = '<div>✅ S' + lastEpisode.season_number + ' ✓</div>';
+                        badge.innerHTML = '<div>S' + lastEpisode.season_number + ' ✓</div>';
                         
                         // Анімація появи
                         setTimeout(function() {

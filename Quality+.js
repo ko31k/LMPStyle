@@ -476,200 +476,301 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
         }
     }
 
-// ===================== getBestReleaseFromJacred (без змін логіки, але через чергу) =====================
-    function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
-        // wrapper that runs the search in the queue
-        enqueueTask(function(done) {
-            // original function body implemented here (kept as inner function for queue)
-            if (!LQE_CONFIG.JACRED_URL) {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: JACRED_URL is not set.");
-                callback(null);
-                done();
-                return;
-            }
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Search initiated.");
-            var year = '';
-            var dateStr = normalizedCard.release_date || '';
-            if (dateStr.length >= 4) {
-                year = dateStr.substring(0, 4);
-            }
-            if (!year || isNaN(year)) {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Missing/invalid year for normalizedCard:", normalizedCard);
-                callback(null);
-                done();
-                return;
-            }
+                     // getBestReleaseFromJacred (без змін логіки, але через чергу)     
+// ===================== FIXED: Безпечна логіка пошуку якості з обмеженням ±1 рік =====================
 
-            function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
-                var userId = Lampa.Storage.get('lampac_unic_id', '');
-                var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
-                    encodeURIComponent(searchTitle) +
-                    '&year=' + searchYear +
-                    (exactMatch ? '&exact=true' : '') +
-                    '&uid=' + userId;
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " URL: " + apiUrl);
+function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
+    // Додаємо запит в чергу для обмеження паралельних запитів
+    enqueueTask(function(done) {
+        // Перевірка налаштувань JacRed - чи вказано URL
+        if (!LQE_CONFIG.JACRED_URL) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: JACRED_URL не вказано.");
+            callback(null);
+            done();
+            return;
+        }
+        
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Запуск пошуку якості для:", normalizedCard.title);
+        
+        // Витягуємо рік з дати релізу (формат: YYYY-MM-DD)
+        var year = '';
+        var dateStr = normalizedCard.release_date || '';
+        if (dateStr.length >= 4) {
+            year = dateStr.substring(0, 4); // Беремо перші 4 символи - рік
+        }
+        
+        // Перевірка валідності року - має бути число в розумному діапазоні
+        if (!year || isNaN(year)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Неправильний рік для картки:", normalizedCard);
+            callback(null);
+            done();
+            return;
+        }
 
-                var timeoutId = setTimeout(function() {
-                    if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", JacRed: " + strategyName + " request timed out.");
+        // Основна функція пошуку через JacRed API
+        function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
+            // Формуємо URL запиту до JacRed API
+            var userId = Lampa.Storage.get('lampac_unic_id', '');
+            var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
+                encodeURIComponent(searchTitle) +          // Кодуємо назву для безпечного URL
+                '&year=' + searchYear +                    // Додаємо рік пошуку
+                (exactMatch ? '&exact=true' : '') +        // Прапорець точного пошуку (збіг всіх слів)
+                '&uid=' + userId;                          // Унікальний ID користувача
+            
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " URL: " + apiUrl);
+
+            // Встановлюємо таймаут для запиту (щоб уникнути зависання)
+            var timeoutId = setTimeout(function() {
+                if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", JacRed: " + strategyName + " таймаут.");
+                apiCallback(null);
+            }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);
+
+            // Виконуємо запит через проксі-сервер
+            fetchWithProxy(apiUrl, cardId, function(error, responseText) {
+                clearTimeout(timeoutId); // Очищаємо таймаут при отриманні відповіді
+                
+                // Обробка помилок мережі
+                if (error) {
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card:" + cardId + ", JacRed помилка:", error);
                     apiCallback(null);
-                }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);
-
-                fetchWithProxy(apiUrl, cardId, function(error, responseText) {
-                    clearTimeout(timeoutId);
-                    if (error) {
-                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card:" + cardId + ", JacRed fetch error:", error);
-                        apiCallback(null);
-                        return;
-                    }
-                    if (!responseText) {
-                        apiCallback(null);
-                        return;
-                    }
-                    try {
-                        var torrents = JSON.parse(responseText);
-                        if (!Array.isArray(torrents) || torrents.length === 0) {
-                            apiCallback(null);
-                            return;
-                        }
-                        var bestNumericQuality = -1;
-                        var bestFoundTorrent = null;
-                        var searchYearNum = parseInt(searchYear, 10);
-
-                        function extractNumericQualityFromTitle(title) {
-                            if (!title) return 0;
-                            var lower = title.toLowerCase();
-                            if (/2160p|4k/.test(lower)) return 2160;
-                            if (/1080p/.test(lower)) return 1080;
-                            if (/720p/.test(lower)) return 720;
-                            if (/480p/.test(lower)) return 480;
-                            if (/ts|telesync/.test(lower)) return 1;
-                            if (/camrip|камрип/.test(lower)) return 2;
-                            return 0;
-                        }
-
-                        function extractYearFromTitle(title) {
-                            if (!title) return 0;
-                            var regex = /(?:^|[^\d])(\d{4})(?:[^\d]|$)/g;
-                            var match;
-                            var lastYear = 0;
-                            var currentYear = new Date().getFullYear();
-                            while ((match = regex.exec(title)) !== null) {
-                                var extractedYear = parseInt(match[1], 10);
-                                if (extractedYear >= 1900 && extractedYear <= currentYear + 1) {
-                                    lastYear = extractedYear;
-                                }
-                            }
-                            return lastYear;
-                        }
-
-                        for (var i = 0; i < torrents.length; i++) {
-                            var currentTorrent = torrents[i];
-                            var currentNumericQuality = currentTorrent.quality;
-                            var torrentYear = currentTorrent.relased;
-                            if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
-                                var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
-                                if (extractedQuality > 0) {
-                                    currentNumericQuality = extractedQuality;
-                                } else {
-                                    continue;
-                                }
-                            }
-                            var isYearValid = false;
-                            var parsedYear = 0;
-                            if (torrentYear && !isNaN(torrentYear) && torrentYear > 1900) {
-                                parsedYear = parseInt(torrentYear, 10);
-                                isYearValid = true;
-                            }
-                            if (!isYearValid) {
-                                parsedYear = extractYearFromTitle(currentTorrent.title);
-                                if (parsedYear > 0) {
-                                    torrentYear = parsedYear;
-                                    isYearValid = true;
-                                }
-                            }
-                            if (isYearValid && !isNaN(searchYearNum) && parsedYear !== searchYearNum) {
-                                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Torrent year mismatch, skipping. Torrent: " + currentTorrent.title + ", Searched: " + searchYearNum + ", Found: " + parsedYear);
-                                continue;
-                            }
-                            if (LQE_CONFIG.LOGGING_QUALITY) {
-                                console.log(
-                                    "LQE-QUALITY",
-                                    "card: " + cardId +
-                                    ", Torrent: " + currentTorrent.title +
-                                    " | Quality: " + currentNumericQuality + "p" +
-                                    " | Year: " + (isYearValid ? parsedYear : "unknown") +
-                                    " | Strategy: " + strategyName
-                                );
-                            }
-                            if (currentNumericQuality > bestNumericQuality) {
-                                bestNumericQuality = currentNumericQuality;
-                                bestFoundTorrent = currentTorrent;
-                            } else if (currentNumericQuality === bestNumericQuality && bestFoundTorrent && currentTorrent.title.length > bestFoundTorrent.title.length) {
-                                bestFoundTorrent = currentTorrent;
-                            }
-                        }
-                        if (bestFoundTorrent) {
-                            apiCallback({
-                                quality: bestFoundTorrent.quality || bestNumericQuality,
-                                full_label: bestFoundTorrent.title
-                            });
-                        } else {
-                            apiCallback(null);
-                        }
-                    } catch (e) {
-                        console.error("LQE-LOG", "card: " + cardId + ", JacRed processing error:", e);
-                        apiCallback(null);
-                    }
-                });
-            }
-
-            var searchStrategies = [];
-            if (normalizedCard.original_title && (/[a-zа-яё]/i.test(normalizedCard.original_title) || /^\d+$/.test(normalizedCard.original_title))) {
-                searchStrategies.push({
-                    title: normalizedCard.original_title.trim(),
-                    year: year,
-                    exact: true,
-                    name: "OriginalTitle Exact Year"
-                });
-            }
-            if (normalizedCard.title && (/[a-zа-яё]/i.test(normalizedCard.title) || /^\d+$/.test(normalizedCard.title))) {
-                searchStrategies.push({
-                    title: normalizedCard.title.trim(),
-                    year: year,
-                    exact: true,
-                    name: "Title Exact Year"
-                });
-            }
-
-            function executeNextStrategy(index) {
-                if (index >= searchStrategies.length) {
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: All strategies failed. No quality found.");
-                    callback(null);
-                    done();
                     return;
                 }
-                var strategy = searchStrategies[index];
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Trying strategy: " + strategy.name);
-                searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, function(result) {
-                    if (result !== null) {
-                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Successfully found quality using strategy " + strategy.name + ": " + result.quality + " (torrent: \"" + result.full_label + "\")");
-                        callback(result);
-                        done();
-                    } else {
-                        executeNextStrategy(index + 1);
+                
+                // Перевірка наявності відповіді
+                if (!responseText) {
+                    apiCallback(null);
+                    return;
+                }
+                
+                try {
+                    // Парсимо JSON відповідь від JacRed
+                    var torrents = JSON.parse(responseText);
+                    
+                    // Перевіряємо, що отримали масив торентів
+                    if (!Array.isArray(torrents) || torrents.length === 0) {
+                        apiCallback(null);
+                        return;
                     }
-                });
-            }
-            if (searchStrategies.length > 0) {
-                executeNextStrategy(0);
-            } else {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: No valid search titles or strategies defined.");
+                    
+                    // Змінні для вибору найкращого торенту
+                    var bestNumericQuality = -1;           // Найкраща знайдена якість
+                    var bestFoundTorrent = null;           // Найкращий знайдений торент
+                    var searchYearNum = parseInt(searchYear, 10); // Числовий рік пошуку
+                    var currentYear = new Date().getFullYear();   // Поточний рік для валідації
+
+                    // Функція визначення якості з назви торенту (якщо не вказано в полі quality)
+                    function extractNumericQualityFromTitle(title) {
+                        if (!title) return 0;
+                        var lower = title.toLowerCase();
+                        // Визначаємо якість за ключовими словами в назві
+                        if (/2160p|4k/.test(lower)) return 2160;  // Ultra HD
+                        if (/1080p/.test(lower)) return 1080;     // Full HD
+                        if (/720p/.test(lower)) return 720;       // HD
+                        if (/480p/.test(lower)) return 480;       // SD
+                        if (/ts|telesync/.test(lower)) return 1;  // Телесинк (низька якість)
+                        if (/camrip|камрип/.test(lower)) return 2;// Кемріп (дуже низька якість)
+                        return 0; // Якість не визначена
+                    }
+
+                    // Функція витягування року з назви торенту
+                    function extractYearFromTitle(title) {
+                        if (!title) return 0;
+                        // Регулярний вираз для пошуку 4-цифрового року
+                        var regex = /(?:^|[^\d])(\d{4})(?:[^\d]|$)/g;
+                        var match;
+                        var lastYear = 0;
+                        while ((match = regex.exec(title)) !== null) {
+                            var extractedYear = parseInt(match[1], 10);
+                            // Перевіряємо валідність року (від 1900 до поточного+1)
+                            if (extractedYear >= 1900 && extractedYear <= currentYear + 1) {
+                                lastYear = extractedYear;
+                            }
+                        }
+                        return lastYear;
+                    }
+
+                    // ========== ОСНОВНА ЛОГІКА ОБРОБКИ ТОРЕНТІВ ==========
+                    for (var i = 0; i < torrents.length; i++) {
+                        var currentTorrent = torrents[i];
+                        var currentNumericQuality = currentTorrent.quality;
+                        
+                        // БЛОК 1: ВИЗНАЧЕННЯ ЯКОСТІ ТОРЕНТУ
+                        // Якщо якість не вказана в полі quality, визначаємо з назви
+                        if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
+                            var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
+                            if (extractedQuality > 0) {
+                                currentNumericQuality = extractedQuality;
+                            } else {
+                                continue; // Пропускаємо торенти без визначеної якості
+                            }
+                        }
+                        
+                        // БЛОК 2: ВИЗНАЧЕННЯ РОКУ ТОРЕНТУ
+                        var torrentYear = currentTorrent.relased; // Рік з API відповіді
+                        var parsedYear = 0;
+                        var isYearValid = false;
+                        
+                        // Спершу перевіряємо поле relased з відповіді API
+                        if (torrentYear && !isNaN(torrentYear) && torrentYear > 1900 && torrentYear <= currentYear + 1) {
+                            parsedYear = parseInt(torrentYear, 10);
+                            isYearValid = true;
+                        }
+                        
+                        // Якщо в relased немає, шукаємо рік в назві торенту
+                        if (!isYearValid) {
+                            parsedYear = extractYearFromTitle(currentTorrent.title);
+                            if (parsedYear > 0) {
+                                isYearValid = true;
+                            }
+                        }
+                        
+                        // БЛОК 3: КРИТИЧНО ВАЖЛИВА ПЕРЕВІРКА РОКУ (±1 РІК)
+                        var yearPriority = 0;
+                        if (isYearValid) {
+                            // Обчислюємо різницю між роком пошуку та роком торенту
+                            var yearDifference = Math.abs(parsedYear - searchYearNum);
+                            
+                            // ВІДКОРЕГОВАНО: Обмежуємо діапазон ±1 рік для безпеки
+                            if (yearDifference > 1) {
+                                // Торент занадто старий або новий - пропускаємо
+                                if (LQE_CONFIG.LOGGING_QUALITY) {
+                                    console.log("LQE-QUALITY", "card: " + cardId + 
+                                        ", Торент пропущено (різниця > 1 року). Торент: " + currentTorrent.title + 
+                                        ", Шукали: " + searchYearNum + ", Знайшли: " + parsedYear);
+                                }
+                                continue; // Критично важливий пропуск!
+                            }
+                            
+                            // СИСТЕМА ПРІОРИТЕТІВ РОКУ (обмежено ±1 рік):
+                            if (parsedYear === searchYearNum) {
+                                yearPriority = 1000; // Найвищий пріоритет - точний рік
+                            } else if (yearDifference === 1) {
+                                yearPriority = 300;  // Знижений пріоритет - ±1 рік
+                            }
+                        } else {
+                            // Якщо рік не визначений - дуже низький пріоритет
+                            yearPriority = 50;
+                        }
+                        
+                        // БЛОК 4: КОМБІНОВАНИЙ БАЛ ДЛЯ ВИБОРУ НАЙКРАЩОГО ТОРЕНТУ
+                        // Комбінуємо якість та пріоритет року для об'єктивного вибору
+                        var combinedScore = currentNumericQuality + yearPriority;
+                        
+                        // Детальне логування для налагодження
+                        if (LQE_CONFIG.LOGGING_QUALITY) {
+                            console.log(
+                                "LQE-QUALITY",
+                                "card: " + cardId +
+                                ", Торент: " + currentTorrent.title +
+                                " | Якість: " + currentNumericQuality + "p" +
+                                " | Рік: " + (isYearValid ? parsedYear : "невідомо") +
+                                " | ПріоритетРоку: " + yearPriority +
+                                " | ЗагальнийБал: " + combinedScore +
+                                " | Стратегія: " + strategyName
+                            );
+                        }
+                        
+                        // БЛОК 5: ВИБІР НАЙКРАЩОГО ТОРЕНТУ
+                        // Порівнюємо з поточним найкращим результатом
+                        var currentBestScore = bestNumericQuality + (bestFoundTorrent ? yearPriority : 0);
+                        
+                        if (combinedScore > currentBestScore) {
+                            // Новий торент кращий - оновлюємо найкращий результат
+                            bestNumericQuality = currentNumericQuality;
+                            bestFoundTorrent = currentTorrent;
+                        } else if (combinedScore === currentBestScore && bestFoundTorrent) {
+                            // При однаковому балі - вибираємо торент з довшою назвою (більше деталей)
+                            if (currentTorrent.title.length > bestFoundTorrent.title.length) {
+                                bestFoundTorrent = currentTorrent;
+                            }
+                        }
+                    } // Кінець циклу по торентам
+                    
+                    // БЛОК 6: ПОВЕРНЕННЯ РЕЗУЛЬТАТУ
+                    if (bestFoundTorrent) {
+                        // Знайшли підходящий торент - повертаємо результат
+                        apiCallback({
+                            quality: bestFoundTorrent.quality || bestNumericQuality,
+                            full_label: bestFoundTorrent.title
+                        });
+                    } else {
+                        // Не знайшли підходящих торентів
+                        apiCallback(null);
+                    }
+                    
+                } catch (e) {
+                    // Обробка помилок парсингу JSON
+                    console.error("LQE-LOG", "card: " + cardId + ", JacRed помилка обробки JSON:", e);
+                    apiCallback(null);
+                }
+            });
+        } // Кінець функції searchJacredApi
+
+        // БЛОК 7: СТРАТЕГІЇ ПОШУКУ (послідовність спроб)
+        var searchStrategies = [];
+        
+        // СТРАТЕГІЯ 1: Оригінальна назва + точний рік (найкращий варіант)
+        if (normalizedCard.original_title && (/[a-zа-яё]/i.test(normalizedCard.original_title) || /^\d+$/.test(normalizedCard.original_title))) {
+            searchStrategies.push({
+                title: normalizedCard.original_title.trim(),
+                year: year,
+                exact: true,
+                name: "Оригінальна назва + точний рік"
+            });
+        }
+        
+        // СТРАТЕГІЯ 2: Локалізована назва + точний рік (резервний варіант)
+        if (normalizedCard.title && (/[a-zа-яё]/i.test(normalizedCard.title) || /^\d+$/.test(normalizedCard.title))) {
+            searchStrategies.push({
+                title: normalizedCard.title.trim(),
+                year: year,
+                exact: true,
+                name: "Локалізована назва + точний рік"
+            });
+        }
+
+        // БЛОК 8: ВИКОНАННЯ СТРАТЕГІЙ ПОСЛІДОВНО (одна за одною)
+        function executeNextStrategy(index) {
+            // Якщо всі стратегії вичерпано - повертаємо null
+            if (index >= searchStrategies.length) {
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Усі стратегії пошуку не дали результату.");
                 callback(null);
                 done();
+                return;
             }
-        });
-    }
-
+            
+            // Беремо поточну стратегію з масиву
+            var strategy = searchStrategies[index];
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Виконується стратегія: " + strategy.name);
+            
+            // Виконуємо пошук по поточній стратегії
+            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, function(result) {
+                if (result !== null) {
+                    // Стратегія успішна - повертаємо результат
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Успіх стратегії " + strategy.name + 
+                        ". Якість: " + result.quality + " (торент: \"" + result.full_label + "\")");
+                    callback(result);
+                    done();
+                } else {
+                    // Стратегія не дала результату - пробуємо наступну
+                    executeNextStrategy(index + 1);
+                }
+            });
+        }
+        
+        // БЛОК 9: ЗАПУСК ПРОЦЕСУ ПОШУКУ
+        if (searchStrategies.length > 0) {
+            // Запускаємо першу стратегію (індекс 0)
+            executeNextStrategy(0);
+        } else {
+            // Немає доступних стратегій пошуку (немає назви)
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Немає валідних назв для пошуку.");
+            callback(null);
+            done();
+        }
+    }); // Кінець enqueueTask
+} // Кінець функції getBestReleaseFromJacred
+    
 // ===================== CACHE HELPERS =====================
     function getQualityCache(key) {
         var cache = Lampa.Storage.get(LQE_CONFIG.CACHE_KEY) || {};

@@ -476,166 +476,104 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
         }
     }
 
-                     // getBestReleaseFromJacred (без змін логіки, але через чергу)     
-// ===================== FIXED: Розумний пошук якості з аналізом назв роздач ±1 рік =====================
+// getBestReleaseFromJacred (без змін логіки, але через чергу)     
 
+// ===================== FIXED getBestReleaseFromJacred (оновлена) =====================
 function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
-    // Додаємо запит в чергу для обмеження паралельних запитів
-    enqueueTask(function(done) {
-        // Перевірка налаштувань JacRed - чи вказано URL
+    enqueueTask(function (done) {
+
+        // --- БЛОК 0: Перевірка дати релізу (майбутній реліз) ---
+        if (new Date(normalizedCard.release_date) > Date.now()) {
+            // Якщо реліз ще не вийшов – одразу показуємо «Очікується»
+            callback({
+                quality: null,
+                full_label: 'Очікується'
+            });
+            done();
+            return;
+        }
+
+        // --- БЛОК 1: Перевірка URL JacRed ---
         if (!LQE_CONFIG.JACRED_URL) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: JACRED_URL не вказано.");
             callback(null);
             done();
             return;
         }
-        
-        // Логуємо інформацію про картку для налагодження
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Пошук для картки:", {
-            original_title: normalizedCard.original_title,  // Оригінальна назва (найважливіша)
-            localized_title: normalizedCard.title,          // Локалізована назва (резерв)
-            type: normalizedCard.type,                      // Тип контенту (movie/tv)
-            year: normalizedCard.release_date               // Рік випуску
-        });
-        
-        // Витягуємо рік з дати релізу (формат: YYYY-MM-DD)
+
+        // --- БЛОК 2: Рік релізу ---
         var year = '';
         var dateStr = normalizedCard.release_date || '';
-        if (dateStr.length >= 4) {
-            year = dateStr.substring(0, 4); // Беремо перші 4 символи - рік
-        }
-        
-        // Перевірка валідності року - має бути число в розумному діапазоні
+        if (dateStr.length >= 4) year = dateStr.substring(0, 4);
+
         if (!year || isNaN(year)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Неправильний рік для картки.");
             callback(null);
             done();
             return;
         }
+        var searchYearNum = parseInt(year, 10);
 
-        // Функція для аналізу назви роздачі на наявність оригінальної та локалізованої назв
+        // --- БЛОК 3: Аналіз назви торента ---
         function analyzeReleaseTitle(title, originalTitle, localizedTitle) {
-            var analysis = {
-                containsOriginal: false,    // Чи містить оригінальну назву
-                containsLocalized: false,   // Чи містить локалізовану назву  
-                exactMatch: false          // Чи точний збіг з оригінальною назвою
-            };
-            
-            var lowerTitle = title.toLowerCase();
+            var lowerTitle = (title || '').toLowerCase();
             var lowerOriginal = (originalTitle || '').toLowerCase();
             var lowerLocalized = (localizedTitle || '').toLowerCase();
-            
-            // Перевіряємо наявність оригінальної назви в назві роздачі
-            if (lowerOriginal && lowerTitle.includes(lowerOriginal)) {
-                analysis.containsOriginal = true;
-            }
-            
-            // Перевіряємо наявність локалізованої назви в назві роздачі
-            if (lowerLocalized && lowerTitle.includes(lowerLocalized)) {
-                analysis.containsLocalized = true;
-            }
-            
-            // Перевіряємо точне співпадіння з оригінальною назвою
-            if (lowerOriginal && lowerTitle === lowerOriginal.toLowerCase()) {
-                analysis.exactMatch = true;
-            }
-            
-            return analysis;
+            return {
+                containsOriginal: lowerOriginal && lowerTitle.includes(lowerOriginal),
+                containsLocalized: lowerLocalized && lowerTitle.includes(lowerLocalized),
+                exactMatch: lowerOriginal && lowerTitle === lowerOriginal
+            };
         }
 
-        // Основна функція пошуку через JacRed API
+        // --- БЛОК 4: Виклик JacRed API ---
         function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, contentType, apiCallback) {
-            // Формуємо URL запиту до JacRed API
             var userId = Lampa.Storage.get('lampac_unic_id', '');
             var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
-                encodeURIComponent(searchTitle) +          // Кодуємо назву для безпечного URL
-                '&year=' + searchYear +                    // Додаємо рік пошуку
-                (exactMatch ? '&exact=true' : '');         // Прапорець точного пошуку
-            
-            // Додаємо фільтр по типу контенту з правильними значеннями JacRed
+                encodeURIComponent(searchTitle) +
+                '&year=' + searchYear +
+                (exactMatch ? '&exact=true' : '');
             if (contentType) {
-                // Конвертуємо наші типи в типи JacRed API
-                var jacredType = '';
-                if (contentType === 'movie') {
-                    jacredType = 'movie'; // movie → movie
-                } else if (contentType === 'tv') {
-                    jacredType = 'serial'; // tv → serial (відповідно до сайту jacred.xyz)
-                }
-                
-                if (jacredType) {
-                    apiUrl += '&type=' + jacredType; // Додаємо параметр типу
-                }
+                var jacredType = contentType === 'movie' ? 'movie' : 'serial';
+                apiUrl += '&type=' + jacredType;
             }
-            
-            apiUrl += '&uid=' + userId; // Унікальний ID користувача
-            
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " | Пошук: '" + searchTitle + "'");
+            apiUrl += '&uid=' + userId;
 
-            // Встановлюємо таймаут для запиту (щоб уникнути зависання)
-            var timeoutId = setTimeout(function() {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Таймаут запиту для стратегії: " + strategyName);
+            var timeoutId = setTimeout(function () {
                 apiCallback(null);
             }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);
 
-            // Виконуємо запит через проксі-сервер
-            fetchWithProxy(apiUrl, cardId, function(error, responseText) {
-                clearTimeout(timeoutId); // Очищаємо таймаут при отриманні відповіді
-                
-                // Обробка помилок мережі
-                if (error) {
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card:" + cardId + ", JacRed помилка мережі:", error);
+            fetchWithProxy(apiUrl, cardId, function (error, responseText) {
+                clearTimeout(timeoutId);
+                if (error || !responseText) {
                     apiCallback(null);
                     return;
                 }
-                
-                // Перевірка наявності відповіді
-                if (!responseText) {
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Порожня відповідь для стратегії: " + strategyName);
-                    apiCallback(null);
-                    return;
-                }
-                
                 try {
-                    // Парсимо JSON відповідь від JacRed
                     var torrents = JSON.parse(responseText);
-                    
-                    // Перевіряємо, що отримали масив торентів
                     if (!Array.isArray(torrents) || torrents.length === 0) {
-                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Не знайдено торентів для стратегії: " + strategyName);
                         apiCallback(null);
                         return;
                     }
-                    
-                    // Змінні для вибору найкращого торенту
-                    var bestNumericQuality = -1;           // Найкраща знайдена якість
-                    var bestFoundTorrent = null;           // Найкращий знайдений торент
-                    var searchYearNum = parseInt(searchYear, 10); // Числовий рік пошуку
-                    var currentYear = new Date().getFullYear();   // Поточний рік для валідації
 
-                    // Функція визначення якості з назви торенту (якщо не вказано в полі quality)
+                    var bestScore = -1;
+                    var bestTorrent = null;
+                    var currentYear = new Date().getFullYear();
+
                     function extractNumericQualityFromTitle(title) {
-                        if (!title) return 0;
-                        var lower = title.toLowerCase();
-                        // Визначаємо якість за ключовими словами в назві
-                        if (/2160p|4k/.test(lower)) return 2160;  // Ultra HD
-                        if (/1080p/.test(lower)) return 1080;     // Full HD
-                        if (/720p/.test(lower)) return 720;       // HD
-                        if (/480p/.test(lower)) return 480;       // SD
-                        if (/ts|telesync/.test(lower)) return 1;  // Телесинк (низька якість)
-                        if (/camrip|камрип/.test(lower)) return 2;// Кемріп (дуже низька якість)
-                        return 0; // Якість не визначена
+                        var lower = (title || '').toLowerCase();
+                        if (/2160p|4k/.test(lower)) return 2160;
+                        if (/1080p/.test(lower)) return 1080;
+                        if (/720p/.test(lower)) return 720;
+                        if (/480p/.test(lower)) return 480;
+                        if (/ts|telesync/.test(lower)) return 1;
+                        if (/camrip|камрип/.test(lower)) return 2;
+                        return 0;
                     }
 
-                    // Функція витягування року з назви торенту
                     function extractYearFromTitle(title) {
-                        if (!title) return 0;
-                        // Регулярний вираз для пошуку 4-цифрового року
                         var regex = /(?:^|[^\d])(\d{4})(?:[^\d]|$)/g;
-                        var match;
-                        var lastYear = 0;
+                        var match, lastYear = 0;
                         while ((match = regex.exec(title)) !== null) {
                             var extractedYear = parseInt(match[1], 10);
-                            // Перевіряємо валідність року (від 1900 до поточного+1)
                             if (extractedYear >= 1900 && extractedYear <= currentYear + 1) {
                                 lastYear = extractedYear;
                             }
@@ -643,165 +581,123 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                         return lastYear;
                     }
 
-                    // ========== ОСНОВНА ЛОГІКА ОБРОБКИ ТОРЕНТІВ ==========
                     for (var i = 0; i < torrents.length; i++) {
-                        var currentTorrent = torrents[i];
-                        var currentNumericQuality = currentTorrent.quality;
-                        
-                        // БЛОК 1: ВИЗНАЧЕННЯ ЯКОСТІ ТОРЕНТУ
-                        // Якщо якість не вказана в полі quality, визначаємо з назви
-                        if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
-                            var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
-                            if (extractedQuality > 0) {
-                                currentNumericQuality = extractedQuality;
-                            } else {
-                                continue; // Пропускаємо торенти без визначеної якості
-                            }
+                        var t = torrents[i];
+                        var qualityNum = t.quality;
+                        if (typeof qualityNum !== 'number' || qualityNum === 0) {
+                            var q = extractNumericQualityFromTitle(t.title);
+                            if (q > 0) qualityNum = q; else continue;
                         }
-                        
-                        // БЛОК 2: ФІЛЬТРАЦІЯ ПО ТИПУ КОНТЕНТУ
+
+                        // Фільтрація по типу
                         if (contentType) {
-                            var torrentType = String(currentTorrent.type || '').toLowerCase();
-                            var isCorrectType = false;
-                            
-                            // ВІДПОВІДНІСТЬ ТИПІВ МІЖ TMDB І JACRED
-                            if (contentType === 'movie') {
-                                // Для фільмів: movie, фільм, multfilm (мультфільми)
-                                isCorrectType = torrentType.includes('movie') || torrentType.includes('фільм') || torrentType.includes('multfilm');
-                            } else if (contentType === 'tv') {
-                                // Для серіалів: serial, серіал, series (відповідно до jacred.xyz)
-                                isCorrectType = torrentType.includes('serial') || torrentType.includes('серіал') || torrentType.includes('series');
-                            }
-                            
-                            if (!isCorrectType) {
-                                if (LQE_CONFIG.LOGGING_QUALITY) {
-                                    console.log("LQE-QUALITY", "card: " + cardId + 
-                                        ", Торент пропущено (невідповідність типу). Шукали: " + contentType + 
-                                        ", Знайшли: " + torrentType);
-                                }
-                                continue; // Пропускаємо торенти з неправильним типом
-                            }
+                            var torrentType = String(t.type || '').toLowerCase();
+                            var okType = contentType === 'movie'
+                                ? torrentType.includes('movie') || torrentType.includes('фільм')
+                                : torrentType.includes('serial') || torrentType.includes('серіал');
+                            if (!okType) continue;
                         }
-                        
-                        // БЛОК 3: АНАЛІЗ НАЗВИ РОЗДАЧІ НА ЗБІГ З ОРИГІНАЛЬНОЮ/ЛОКАЛІЗОВАНОЮ НАЗВОЮ
-                        var titleAnalysis = analyzeReleaseTitle(
-                            currentTorrent.title, 
-                            normalizedCard.original_title,
-                            normalizedCard.title
-                        );
-                        
-                        // Визначаємо бонус за збіг назв
-                        var titleMatchBonus = 0;
-                        if (titleAnalysis.exactMatch) {
-                            titleMatchBonus = 500; // Високий бал за точний збіг з оригінальною назвою
-                        } else if (titleAnalysis.containsOriginal) {
-                            titleMatchBonus = 300; // Бал за наявність оригінальної назви
-                        } else if (titleAnalysis.containsLocalized) {
-                            titleMatchBonus = 100; // Низький бал за локалізовану назву
+
+                        // Аналіз назв
+                        var a = analyzeReleaseTitle(t.title, normalizedCard.original_title, normalizedCard.title);
+                        var titleBonus = 0;
+                        if (a.exactMatch) titleBonus = 500;
+                        else if (a.containsOriginal) titleBonus = 300;
+                        else if (a.containsLocalized) titleBonus = 50; // менший бонус локалізованій
+
+                        // Перевірка року (жорстко)
+                        var parsedYear = parseInt(t.relased, 10);
+                        if (!parsedYear || isNaN(parsedYear)) parsedYear = extractYearFromTitle(t.title);
+                        if (parsedYear !== searchYearNum) continue; // лише точний рік
+
+                        var score = qualityNum + titleBonus;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestTorrent = t;
                         }
-                        
-                        // БЛОК 4: ВИЗНАЧЕННЯ РОКУ ТОРЕНТУ
-                        var torrentYear = currentTorrent.relased; // Рік з API відповіді
-                        var parsedYear = 0;
-                        var isYearValid = false;
-                        
-                        // Спершу перевіряємо поле relased з відповіді API
-                        if (torrentYear && !isNaN(torrentYear) && torrentYear > 1900 && torrentYear <= currentYear + 1) {
-                            parsedYear = parseInt(torrentYear, 10);
-                            isYearValid = true;
-                        }
-                        
-                        // Якщо в relased немає, шукаємо рік в назві торенту
-                        if (!isYearValid) {
-                            parsedYear = extractYearFromTitle(currentTorrent.title);
-                            if (parsedYear > 0) {
-                                isYearValid = true;
-                            }
-                        }
-                        
-                        // БЛОК 5: КРИТИЧНО ВАЖЛИВА ПЕРЕВІРКА РОКУ (±1 РІК)
-                        var yearPriority = 0;
-                        if (isYearValid) {
-                            // Обчислюємо різницю між роком пошуку та роком торенту
-                            var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            
-                            // ОБМЕЖУЄМО ДІАПАЗОН ±1 РІК ДЛЯ БЕЗПЕКИ
-                            if (yearDifference > 1) {
-                                // Торент занадто старий або новий - пропускаємо
-                                if (LQE_CONFIG.LOGGING_QUALITY) {
-                                    console.log("LQE-QUALITY", "card: " + cardId + 
-                                        ", Торент пропущено (різниця > 1 року). Торент: " + currentTorrent.title + 
-                                        ", Шукали: " + searchYearNum + ", Знайшли: " + parsedYear);
-                                }
-                                continue; // Критично важливий пропуск!
-                            }
-                            
-                            // СИСТЕМА ПРІОРИТЕТІВ РОКУ (обмежено ±1 рік):
-                            if (parsedYear === searchYearNum) {
-                                yearPriority = 1000; // Найвищий пріоритет - точний рік
-                            } else if (yearDifference === 1) {
-                                yearPriority = 300;  // Знижений пріоритет - ±1 рік
-                            }
-                        } else {
-                            // Якщо рік не визначений - дуже низький пріоритет
-                            yearPriority = 50;
-                        }
-                        
-                        // БЛОК 6: КОМБІНОВАНИЙ БАЛ ДЛЯ ВИБОРУ НАЙКРАЩОГО ТОРЕНТУ
-                        // Комбінуємо якість, пріоритет року та бонус за збіг назв
-                        var combinedScore = currentNumericQuality + yearPriority + titleMatchBonus;
-                        
-                        // Детальне логування для налагодження
-                        if (LQE_CONFIG.LOGGING_QUALITY) {
-                            console.log(
-                                "LQE-QUALITY",
-                                "card: " + cardId +
-                                ", Торент: " + currentTorrent.title +
-                                " | Якість: " + currentNumericQuality + "p" +
-                                " | Рік: " + (isYearValid ? parsedYear : "невідомо") +
-                                " | ПріоритетРоку: " + yearPriority +
-                                " | БонусНазви: " + titleMatchBonus +
-                                " | ЗагальнийБал: " + combinedScore
-                            );
-                        }
-                        
-                        // БЛОК 7: ВИБІР НАЙКРАЩОГО ТОРЕНТУ
-                        // Порівнюємо з поточним найкращим результатом
-                        var currentBestScore = bestNumericQuality + (bestFoundTorrent ? yearPriority : 0);
-                        
-                        if (combinedScore > currentBestScore) {
-                            // Новий торент кращий - оновлюємо найкращий результат
-                            bestNumericQuality = currentNumericQuality;
-                            bestFoundTorrent = currentTorrent;
-                        } else if (combinedScore === currentBestScore && bestFoundTorrent) {
-                            // При однаковому балі - вибираємо торент з довшою назвою (більше деталей)
-                            if (currentTorrent.title.length > bestFoundTorrent.title.length) {
-                                bestFoundTorrent = currentTorrent;
-                            }
-                        }
-                    } // Кінець циклу по торентам
-                    
-                    // БЛОК 8: ПОВЕРНЕННЯ РЕЗУЛЬТАТУ
-                    if (bestFoundTorrent) {
-                        // Знайшли підходящий торент - повертаємо результат
-                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Знайдено найкращий торент:", bestFoundTorrent.title);
+                    }
+
+                    if (bestTorrent) {
                         apiCallback({
-                            quality: bestFoundTorrent.quality || bestNumericQuality,
-                            full_label: bestFoundTorrent.title
+                            quality: bestTorrent.quality || extractNumericQualityFromTitle(bestTorrent.title),
+                            full_label: bestTorrent.title
                         });
                     } else {
-                        // Не знайшли підходящих торентів
-                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Не знайдено підходящих торентів для стратегії: " + strategyName);
                         apiCallback(null);
                     }
-                    
+
                 } catch (e) {
-                    // Обробка помилок парсингу JSON
-                    console.error("LQE-LOG", "card: " + cardId + ", JacRed помилка обробки JSON:", e);
                     apiCallback(null);
                 }
             });
-        } // Кінець функції searchJacredApi
+        }
+
+        // --- БЛОК 5: Формування стратегій ---
+        var searchStrategies = [];
+        var isTvSeries = (normalizedCard.type === 'tv');
+
+        // 1. Оригінальна назва + тип
+        if (normalizedCard.original_title && normalizedCard.original_title.trim()) {
+            searchStrategies.push({
+                title: normalizedCard.original_title.trim(),
+                year: year,
+                exact: true,
+                name: "Оригінальна назва + тип",
+                contentType: isTvSeries ? 'tv' : 'movie'
+            });
+        }
+
+        // 2. Оригінальна назва без типу (резерв)
+        if (normalizedCard.original_title && normalizedCard.original_title.trim()) {
+            searchStrategies.push({
+                title: normalizedCard.original_title.trim(),
+                year: year,
+                exact: true,
+                name: "Оригінальна назва без типу",
+                contentType: null
+            });
+        }
+
+        // 3. Локалізована назва + тип (тільки після невдачі)
+        if (normalizedCard.title && normalizedCard.title.trim() &&
+            normalizedCard.title !== normalizedCard.original_title) {
+            searchStrategies.push({
+                title: normalizedCard.title.trim(),
+                year: year,
+                exact: true,
+                name: "Локалізована назва + тип",
+                contentType: isTvSeries ? 'tv' : 'movie'
+            });
+        }
+
+        // --- БЛОК 6: Послідовне виконання ---
+        function executeNextStrategy(index) {
+            if (index >= searchStrategies.length) {
+                callback(null);
+                done();
+                return;
+            }
+            var s = searchStrategies[index];
+            searchJacredApi(s.title, s.year, s.exact, s.name, s.contentType, function (result) {
+                if (result !== null) {
+                    callback(result);
+                    done();
+                } else {
+                    executeNextStrategy(index + 1);
+                }
+            });
+        }
+
+        if (searchStrategies.length > 0) executeNextStrategy(0);
+        else {
+            callback(null);
+            done();
+        }
+    });
+}
+// ===================== /getBestReleaseFromJacred =====================
+    
+// Кінець функції searchJacredApi
 
         // БЛОК 9: СТРАТЕГІЇ ПОШУКУ З ПРІОРИТЕТОМ ОРИГІНАЛЬНОЇ НАЗВИ
         var searchStrategies = [];

@@ -477,8 +477,7 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
     }
 
                      // getBestReleaseFromJacred (без змін логіки, але через чергу)     
-// ===================== FIXED: Безпечна логіка пошуку якості з обмеженням ±1 рік =====================
-// ===================== FIXED: Правильна послідовність пошуку для уникання однойменних локалізацій =====================
+// ===================== FIXED: Пошук ВИКЛЮЧНО по оригінальній назві =====================
 
 function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
     enqueueTask(function(done) {
@@ -490,8 +489,8 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         }
         
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Пошук для:", {
-            title: normalizedCard.title,
-            original_title: normalizedCard.original_title, 
+            original_title: normalizedCard.original_title,
+            localized_title: normalizedCard.title,
             type: normalizedCard.type,
             year: normalizedCard.release_date
         });
@@ -530,7 +529,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
             
             apiUrl += '&uid=' + userId;
             
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName);
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " | Пошук: '" + searchTitle + "'");
 
             var timeoutId = setTimeout(function() {
                 apiCallback(null);
@@ -677,36 +676,23 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
             });
         }
 
-        // ========== КРИТИЧНО ВАЖЛИВО: ПРАВИЛЬНА ПОСЛІДОВНІСТЬ СТРАТЕГІЙ ==========
+        // ========== КРИТИЧНО ВАЖЛИВО: ТІЛЬКИ ОРИГІНАЛЬНА НАЗВА ==========
         var searchStrategies = [];
         var isTvSeries = (normalizedCard.type === 'tv');
 
-        // СТРАТЕГІЯ 1: Оригінальна назва + точний тип (НАЙВАЖЛИВІША)
-        // Для серіалу "Savant" шукаємо по оригінальній назві з типом "tv"
-        if (normalizedCard.original_title) {
+        // СТРАТЕГІЯ 1: ВИКЛЮЧНО оригінальна назва + точний тип
+        if (normalizedCard.original_title && normalizedCard.original_title.trim()) {
             searchStrategies.push({
                 title: normalizedCard.original_title.trim(),
                 year: year,
                 exact: true,
-                name: "ОРИГІНАЛЬНА назва + точний тип",
+                name: "ВИКЛЮЧНО оригінальна назва + тип",
                 contentType: isTvSeries ? 'tv' : 'movie'
             });
         }
 
-        // СТРАТЕГІЯ 2: Локалізована назва + точний тип (обережно!)
-        // Тільки якщо локалізована назва відрізняється від оригінальної
-        if (normalizedCard.title && normalizedCard.title !== normalizedCard.original_title) {
-            searchStrategies.push({
-                title: normalizedCard.title.trim(),
-                year: year,
-                exact: true,
-                name: "Локалізована назва + точний тип",
-                contentType: isTvSeries ? 'tv' : 'movie'
-            });
-        }
-
-        // СТРАТЕГІЯ 3: Оригінальна назва без типу (резерв)
-        if (normalizedCard.original_title) {
+        // СТРАТЕГІЯ 2: Оригінальна назва без типу (резерв)
+        if (normalizedCard.original_title && normalizedCard.original_title.trim()) {
             searchStrategies.push({
                 title: normalizedCard.original_title.trim(),
                 year: year,
@@ -716,20 +702,11 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
             });
         }
 
-        // СТРАТЕГІЯ 4: Локалізована назва без типу (останній варіант)
-        if (normalizedCard.title) {
-            searchStrategies.push({
-                title: normalizedCard.title.trim(),
-                year: year,
-                exact: true,
-                name: "Локалізована назва (останній варіант)",
-                contentType: null
-            });
-        }
+        // НЕ ВИКОРИСТОВУЄМО локалізовану назву ВЗАГАЛІ!
 
         function executeNextStrategy(index) {
             if (index >= searchStrategies.length) {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Усі стратегії не дали результату.");
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Не знайдено за оригінальною назвою: '" + normalizedCard.original_title + "'");
                 callback(null);
                 done();
                 return;
@@ -740,7 +717,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
             
             searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, strategy.contentType, function(result) {
                 if (result !== null) {
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: УСПІХ стратегії " + strategy.name);
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: УСПІХ по оригінальній назві!");
                     callback(result);
                     done();
                 } else {
@@ -752,11 +729,12 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         if (searchStrategies.length > 0) {
             executeNextStrategy(0);
         } else {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Немає оригінальної назви для пошуку.");
             callback(null);
             done();
         }
     });
-} 
+}
 
 // Кінець функції getBestReleaseFromJacred
 // ===================== CACHE HELPERS =====================

@@ -696,90 +696,9 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
     });
 }
 // ===================== /getBestReleaseFromJacred =====================
-    
-// Кінець функції searchJacredApi
-
-        // БЛОК 9: СТРАТЕГІЇ ПОШУКУ З ПРІОРИТЕТОМ ОРИГІНАЛЬНОЇ НАЗВИ
-        var searchStrategies = [];
-        var isTvSeries = (normalizedCard.type === 'tv');
-
-        // СТРАТЕГІЯ 1: Оригінальна назва + точний тип (НАЙВИЩИЙ ПРІОРИТЕТ)
-        if (normalizedCard.original_title && normalizedCard.original_title.trim()) {
-            searchStrategies.push({
-                title: normalizedCard.original_title.trim(),
-                year: year,
-                exact: true,
-                name: "Оригінальна назва + тип",
-                contentType: isTvSeries ? 'tv' : 'movie'
-            });
-        }
-
-        // СТРАТЕГІЯ 2: Локалізована назва + точний тип (РЕЗЕРВ - тільки якщо назви РІЗНІ)
-        if (normalizedCard.title && normalizedCard.title.trim() && 
-            normalizedCard.title !== normalizedCard.original_title) {
-            searchStrategies.push({
-                title: normalizedCard.title.trim(),
-                year: year,
-                exact: true,
-                name: "Локалізована назва + тип",
-                contentType: isTvSeries ? 'tv' : 'movie'
-            });
-        }
-
-        // СТРАТЕГІЯ 3: Оригінальна назва без типу (КРАЙНІЙ РЕЗЕРВ)
-        if (normalizedCard.original_title && normalizedCard.original_title.trim()) {
-            searchStrategies.push({
-                title: normalizedCard.original_title.trim(),
-                year: year,
-                exact: true,
-                name: "Оригінальна назва без типу",
-                contentType: null
-            });
-        }
-
-        // БЛОК 10: ВИКОНАННЯ СТРАТЕГІЙ ПОСЛІДОВНО
-        function executeNextStrategy(index) {
-            // Якщо всі стратегії вичерпано - повертаємо null
-            if (index >= searchStrategies.length) {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Усі " + searchStrategies.length + " стратегій не дали результату.");
-                callback(null);
-                done();
-                return;
-            }
-            
-            // Беремо поточну стратегію з масиву
-            var strategy = searchStrategies[index];
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Стратегія [" + (index + 1) + "/" + searchStrategies.length + "]: " + strategy.name);
-            
-            // Виконуємо пошук по поточній стратегії
-            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, strategy.contentType, function(result) {
-                if (result !== null) {
-                    // Стратегія успішна - повертаємо результат
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: УСПІХ стратегії " + strategy.name);
-                    callback(result);
-                    done();
-                } else {
-                    // Стратегія не дала результату - пробуємо наступну
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Стратегія " + strategy.name + " не дала результату, пробуємо наступну.");
-                    executeNextStrategy(index + 1);
-                }
-            });
-        }
-        
-        // БЛОК 11: ЗАПУСК ПРОЦЕСУ ПОШУКУ
-        if (searchStrategies.length > 0) {
-            // Запускаємо першу стратегію (індекс 0)
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Запуск пошуку з " + searchStrategies.length + " стратегіями.");
-            executeNextStrategy(0);
-        } else {
-            // Немає доступних стратегій пошуку (немає назви)
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Немає валідних назв для пошуку.");
-            callback(null);
-            done();
-        }
-    }); // Кінець enqueueTask
-} 
 // Кінець функції getBestReleaseFromJacred
+
+    
 // ===================== CACHE HELPERS =====================
     function getQualityCache(key) {
         var cache = Lampa.Storage.get(LQE_CONFIG.CACHE_KEY) || {};

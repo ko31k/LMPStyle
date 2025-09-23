@@ -479,6 +479,8 @@ function translateQualityLabel(qualityCode, fullTorrentTitle) {
                      // getBestReleaseFromJacred (без змін логіки, але через чергу)     
 // ===================== FIXED: Безпечна логіка пошуку якості з обмеженням ±1 рік =====================
 
+// ===================== FIXED: Пошук з правильними типами JacRed =====================
+
 function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
     // Додаємо запит в чергу для обмеження паралельних запитів
     enqueueTask(function(done) {
@@ -490,7 +492,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
             return;
         }
         
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Запуск пошуку якості для:", normalizedCard.title);
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Запуск пошуку якості для:", normalizedCard.title, "Тип:", normalizedCard.type);
         
         // Витягуємо рік з дати релізу (формат: YYYY-MM-DD)
         var year = '';
@@ -501,21 +503,38 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         
         // Перевірка валідності року - має бути число в розумному діапазоні
         if (!year || isNaN(year)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Неправильний рік для картки:", normalizedCard);
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Неправильний рік для картки.");
             callback(null);
             done();
             return;
         }
 
         // Основна функція пошуку через JacRed API
-        function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
+        function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, contentType, apiCallback) {
             // Формуємо URL запиту до JacRed API
             var userId = Lampa.Storage.get('lampac_unic_id', '');
             var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
                 encodeURIComponent(searchTitle) +          // Кодуємо назву для безпечного URL
                 '&year=' + searchYear +                    // Додаємо рік пошуку
-                (exactMatch ? '&exact=true' : '') +        // Прапорець точного пошуку (збіг всіх слів)
-                '&uid=' + userId;                          // Унікальний ID користувача
+                (exactMatch ? '&exact=true' : '');         // Прапорець точного пошуку
+            
+            // КРИТИЧНО ВАЖЛИВО: Додаємо фільтр по типу контенту з ВІРНИМИ значеннями JacRed
+            if (contentType) {
+                // Конвертуємо наші типи в типи JacRed API
+                var jacredType = '';
+                if (contentType === 'movie') {
+                    jacredType = 'movie'; // movie → movie
+                } else if (contentType === 'tv') {
+                    jacredType = 'serial'; // tv → serial (ВИПРАВЛЕНО!)
+                }
+                // multfilm не обробляємо, бо в TMDB це анімаційні фільми/серіали
+                
+                if (jacredType) {
+                    apiUrl += '&type=' + jacredType;
+                }
+            }
+            
+            apiUrl += '&uid=' + userId; // Унікальний ID користувача
             
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " URL: " + apiUrl);
 
@@ -548,6 +567,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                     
                     // Перевіряємо, що отримали масив торентів
                     if (!Array.isArray(torrents) || torrents.length === 0) {
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Не знайдено торентів для стратегії: " + strategyName);
                         apiCallback(null);
                         return;
                     }
@@ -605,7 +625,31 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                             }
                         }
                         
-                        // БЛОК 2: ВИЗНАЧЕННЯ РОКУ ТОРЕНТУ
+                        // БЛОК 2: ФІЛЬТРАЦІЯ ПО ТИПУ КОНТЕНТУ (З ВІРНИМИ ТИПАМИ JACRED)
+                        if (contentType) {
+                            var torrentType = String(currentTorrent.type || '').toLowerCase();
+                            var isCorrectType = false;
+                            
+                            // ВІДПОВІДНІСТЬ ТИПІВ МІЖ TMDB І JACRED (ВИПРАВЛЕНО!)
+                            if (contentType === 'movie') {
+                                // Для фільмів: movie або мультфільми (якщо це анімаційний фільм)
+                                isCorrectType = torrentType.includes('movie') || torrentType.includes('фільм') || torrentType.includes('multfilm');
+                            } else if (contentType === 'tv') {
+                                // Для серіалів: serial (ВИПРАВЛЕНО!), серіал, series
+                                isCorrectType = torrentType.includes('serial') || torrentType.includes('серіал') || torrentType.includes('series');
+                            }
+                            
+                            if (!isCorrectType) {
+                                if (LQE_CONFIG.LOGGING_QUALITY) {
+                                    console.log("LQE-QUALITY", "card: " + cardId + 
+                                        ", Торент пропущено (невідповідність типу). Шукали: " + contentType + 
+                                        ", Знайшли: " + torrentType + ", Торент: " + currentTorrent.title);
+                                }
+                                continue; // Пропускаємо торенти з неправильним типом
+                            }
+                        }
+                        
+                        // БЛОК 3: ВИЗНАЧЕННЯ РОКУ ТОРЕНТУ
                         var torrentYear = currentTorrent.relased; // Рік з API відповіді
                         var parsedYear = 0;
                         var isYearValid = false;
@@ -624,7 +668,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                             }
                         }
                         
-                        // БЛОК 3: КРИТИЧНО ВАЖЛИВА ПЕРЕВІРКА РОКУ (±1 РІК)
+                        // БЛОК 4: КРИТИЧНО ВАЖЛИВА ПЕРЕВІРКА РОКУ (±1 РІК)
                         var yearPriority = 0;
                         if (isYearValid) {
                             // Обчислюємо різницю між роком пошуку та роком торенту
@@ -652,7 +696,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                             yearPriority = 50;
                         }
                         
-                        // БЛОК 4: КОМБІНОВАНИЙ БАЛ ДЛЯ ВИБОРУ НАЙКРАЩОГО ТОРЕНТУ
+                        // БЛОК 5: КОМБІНОВАНИЙ БАЛ ДЛЯ ВИБОРУ НАЙКРАЩОГО ТОРЕНТУ
                         // Комбінуємо якість та пріоритет року для об'єктивного вибору
                         var combinedScore = currentNumericQuality + yearPriority;
                         
@@ -662,6 +706,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                                 "LQE-QUALITY",
                                 "card: " + cardId +
                                 ", Торент: " + currentTorrent.title +
+                                " | Тип: " + (currentTorrent.type || 'невідомо') +
                                 " | Якість: " + currentNumericQuality + "p" +
                                 " | Рік: " + (isYearValid ? parsedYear : "невідомо") +
                                 " | ПріоритетРоку: " + yearPriority +
@@ -670,7 +715,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                             );
                         }
                         
-                        // БЛОК 5: ВИБІР НАЙКРАЩОГО ТОРЕНТУ
+                        // БЛОК 6: ВИБІР НАЙКРАЩОГО ТОРЕНТУ
                         // Порівнюємо з поточним найкращим результатом
                         var currentBestScore = bestNumericQuality + (bestFoundTorrent ? yearPriority : 0);
                         
@@ -686,15 +731,17 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                         }
                     } // Кінець циклу по торентам
                     
-                    // БЛОК 6: ПОВЕРНЕННЯ РЕЗУЛЬТАТУ
+                    // БЛОК 7: ПОВЕРНЕННЯ РЕЗУЛЬТАТУ
                     if (bestFoundTorrent) {
                         // Знайшли підходящий торент - повертаємо результат
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Знайдено найкращий торент:", bestFoundTorrent.title);
                         apiCallback({
                             quality: bestFoundTorrent.quality || bestNumericQuality,
                             full_label: bestFoundTorrent.title
                         });
                     } else {
                         // Не знайшли підходящих торентів
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Не знайдено підходящих торентів для стратегії: " + strategyName);
                         apiCallback(null);
                     }
                     
@@ -706,34 +753,48 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
             });
         } // Кінець функції searchJacredApi
 
-        // БЛОК 7: СТРАТЕГІЇ ПОШУКУ (послідовність спроб)
+        // БЛОК 8: СТРАТЕГІЇ ПОШУКУ З УРАХУВАННЯМ ТИПУ КОНТЕНТУ
         var searchStrategies = [];
-        
-        // СТРАТЕГІЯ 1: Оригінальна назва + точний рік (найкращий варіант)
+        var isTvSeries = (normalizedCard.type === 'tv');
+
+        // СТРАТЕГІЯ 1: Оригінальна назва + точний рік + тип контенту (найкращий варіант)
         if (normalizedCard.original_title && (/[a-zа-яё]/i.test(normalizedCard.original_title) || /^\d+$/.test(normalizedCard.original_title))) {
             searchStrategies.push({
                 title: normalizedCard.original_title.trim(),
                 year: year,
                 exact: true,
-                name: "Оригінальна назва + точний рік"
+                name: "Оригінальна назва + точний рік + тип",
+                contentType: isTvSeries ? 'tv' : 'movie'
             });
         }
         
-        // СТРАТЕГІЯ 2: Локалізована назва + точний рік (резервний варіант)
+        // СТРАТЕГІЯ 2: Локалізована назва + точний рік + тип контенту (резервний варіант)
         if (normalizedCard.title && (/[a-zа-яё]/i.test(normalizedCard.title) || /^\d+$/.test(normalizedCard.title))) {
             searchStrategies.push({
                 title: normalizedCard.title.trim(),
                 year: year,
                 exact: true,
-                name: "Локалізована назва + точний рік"
+                name: "Локалізована назва + точний рік + тип",
+                contentType: isTvSeries ? 'tv' : 'movie'
             });
         }
 
-        // БЛОК 8: ВИКОНАННЯ СТРАТЕГІЙ ПОСЛІДОВНО (одна за одною)
+        // СТРАТЕГІЯ 3: Резервна - без типу контенту (для старих баз даних або невідомих типів)
+        if (normalizedCard.original_title) {
+            searchStrategies.push({
+                title: normalizedCard.original_title.trim(),
+                year: year,
+                exact: true,
+                name: "Оригінальна назва (резерв без типу)",
+                contentType: null
+            });
+        }
+
+        // БЛОК 9: ВИКОНАННЯ СТРАТЕГІЙ ПОСЛІДОВНО (одна за одною)
         function executeNextStrategy(index) {
             // Якщо всі стратегії вичерпано - повертаємо null
             if (index >= searchStrategies.length) {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Усі стратегії пошуку не дали результату.");
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Усі " + searchStrategies.length + " стратегій пошуку не дали результату.");
                 callback(null);
                 done();
                 return;
@@ -741,10 +802,10 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
             
             // Беремо поточну стратегію з масиву
             var strategy = searchStrategies[index];
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Виконується стратегія: " + strategy.name);
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Виконується стратегія [" + (index + 1) + "/" + searchStrategies.length + "]: " + strategy.name);
             
             // Виконуємо пошук по поточній стратегії
-            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, function(result) {
+            searchJacredApi(strategy.title, strategy.year, strategy.exact, strategy.name, strategy.contentType, function(result) {
                 if (result !== null) {
                     // Стратегія успішна - повертаємо результат
                     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Успіх стратегії " + strategy.name + 
@@ -753,14 +814,16 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
                     done();
                 } else {
                     // Стратегія не дала результату - пробуємо наступну
+                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Стратегія " + strategy.name + " не дала результату, пробуємо наступну.");
                     executeNextStrategy(index + 1);
                 }
             });
         }
         
-        // БЛОК 9: ЗАПУСК ПРОЦЕСУ ПОШУКУ
+        // БЛОК 10: ЗАПУСК ПРОЦЕСУ ПОШУКУ
         if (searchStrategies.length > 0) {
             // Запускаємо першу стратегію (індекс 0)
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: Запуск пошуку з " + searchStrategies.length + " стратегіями.");
             executeNextStrategy(0);
         } else {
             // Немає доступних стратегій пошуку (немає назви)

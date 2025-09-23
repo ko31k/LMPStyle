@@ -1,6 +1,16 @@
 (function() {    // Початок анонімної функції-обгортки
     'use strict';
 
+    // ===================== ВЕРСІЙНИЙ КОНТРОЛЬ =====================
+    window.lampaQualityPluginV2 = true;  // 🔄 Змінювати при кожному оновленні
+    
+    // Якщо ця версія вже завантажена - виходимо
+    if (window.lampaQualityPluginV2) {
+        console.log("LQE-LOG", "testGPT V2 вже завантажено, пропускаємо");
+        return;  // Виходимо з плагіну
+    }
+
+    
 // ===================== LQE_CONFIG =====================
     var LQE_CONFIG = {
         CACHE_VERSION: 2,
@@ -1029,7 +1039,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
 
 // ===================== Initialization =====================
     function initializeLampaQualityPlugin() {
-        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "Lampa Quality Enhancer: Plugin Initialization Started!");
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "Lampa Quality Enhancer V2: Plugin Initialization Started!");
         window.lampaQualityPlugin = true;
         attachObserver();
         if (LQE_CONFIG.LOGGING_GENERAL) console.log('LQE-LOG: Initial observer for card lists started.');
@@ -1043,8 +1053,9 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         });
     }
 
-    if (!window.lampaQualityPlugin) {
-        initializeLampaQualityPlugin();
-    }
 
+    // 🔄 ВИДАЛЯЄМО стару перевірку і просто запускаємо
+    initializeLampaQualityPlugin();
+
+    
 })();

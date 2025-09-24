@@ -372,22 +372,16 @@ var awards_svg = '<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/s
             });
         }
         
-function updateUI() {
-    // Вставляем рейтинги RT и MC
-    insertRatings(ratingsData.rt, ratingsData.mc, ratingsData.oscars, ratingsData.emmy, ratingsData.awards);
-    
-    // Обновляем скрытые элементы
-    updateHiddenElements(ratingsData);
-    
-    // Считаем и отображаем средний рейтинг
-    calculateAverageRating();
-    
-    // ДОДАЄМО: Замінюємо написи на іконки
-    insertIcons();
-    
-    removeLoadingAnimation();
-    rateLine.css('visibility', 'visible');
-}
+        function updateUI() {
+            // Вставляем рейтинги RT и MC
+            insertRatings(ratingsData.rt, ratingsData.mc, ratingsData.oscars, ratingsData.emmy, ratingsData.awards); // ОНОВЛЕНО
+            
+            // Обновляем скрытые элементы
+            updateHiddenElements(ratingsData);
+            
+            // Считаем и отображаем средний рейтинг
+            calculateAverageRating();
+        }
     }
 
     // Функции работы с кешем
@@ -579,73 +573,78 @@ function updateUI() {
     }
     
     // ЗАМІНЕНО: Функція вставки рейтингів на повну версію з підтримкою всіх нагород
-function insertRatings(rtRating, mcRating, oscars, emmy, awards) {
-    var render = Lampa.Activity.active().activity.render();
-    if (!render) return;
+    function insertRatings(rtRating, mcRating, oscars, emmy, awards) {
+        var render = Lampa.Activity.active().activity.render();
+        if (!render) return;
 
-    var rateLine = $('.full-start-new__rate-line', render);
-    if (!rateLine.length) return;
+        var rateLine = $('.full-start-new__rate-line', render);
+        if (!rateLine.length) return;
 
-    var lastRate = $('.full-start__rate:last', rateLine);
+        var lastRate = $('.full-start__rate:last', rateLine);
 
-    // Rotten Tomatoes
-    if (rtRating && !isNaN(rtRating) && !$('.rate--rt', rateLine).length) {
-        var rtValue = rtRating.toFixed(1);
-        var rtElement = $(
-            '<div class="full-start__rate rate--rt">' +
-                '<div>' + rtValue + '</div>' +
-                '<div class="source--name">' + Lampa.Lang.translate('source_rt') + '</div>' +
-            '</div>'
-        );
-        if (lastRate.length) rtElement.insertAfter(lastRate);
-        else rateLine.prepend(rtElement);
+        // Rotten Tomatoes
+        if (rtRating && !isNaN(rtRating) && !$('.rate--rt', rateLine).length) {
+            var rtValue = rtRating.toFixed(1);
+            var rtElement = $(
+                '<div class="full-start__rate rate--rt">' +
+                    '<div>' + rtValue + '</div>' +
+                    '<div class="source--name"></div>' +
+                '</div>'
+            );
+            rtElement.find('.source--name').html(Lampa.Lang.translate('source_rt'));
+            if (lastRate.length) rtElement.insertAfter(lastRate);
+            else rateLine.prepend(rtElement);
+        }
+
+        // Metacritic
+        if (mcRating && !isNaN(mcRating) && !$('.rate--mc', rateLine).length) {
+            var mcValue = mcRating.toFixed(1);
+            var insertAfter = $('.rate--rt', rateLine).length ? $('.rate--rt', rateLine) : lastRate;
+            var mcElement = $(
+                '<div class="full-start__rate rate--mc">' +
+                    '<div>' + mcValue + '</div>' +
+                    '<div class="source--name"></div>' +
+                '</div>'
+            );
+            mcElement.find('.source--name').html(Lampa.Lang.translate('source_mc'));
+            if (insertAfter.length) mcElement.insertAfter(insertAfter);
+            else rateLine.prepend(mcElement);
+        }
+
+        // Нагороди (в порядку: Awards, Emmy, Oscars - як в RT+)
+        if (awards && !isNaN(awards) && awards > 0 && !$('.rate--awards', rateLine).length) {
+            var awardsElement = $(
+                '<div class="full-start__rate rate--awards rate--gold">' +
+                    '<div>' + awards + '</div>' +
+                    '<div class="source--name"></div>' +
+                '</div>'
+            );
+            awardsElement.find('.source--name').html(Lampa.Lang.translate("maxsm_omdb_awards"));
+            rateLine.prepend(awardsElement);
+        }
+
+        if (emmy && !isNaN(emmy) && emmy > 0 && !$('.rate--emmy', rateLine).length) {
+            var emmyElement = $(
+                '<div class="full-start__rate rate--emmy rate--gold">' +
+                    '<div>' + emmy + '</div>' +
+                    '<div class="source--name"></div>' +
+                '</div>'
+            );
+            emmyElement.find('.source--name').html(Lampa.Lang.translate("maxsm_omdb_emmy"));
+            rateLine.prepend(emmyElement);
+        }
+
+        if (oscars && !isNaN(oscars) && oscars > 0 && !$('.rate--oscars', rateLine).length) {
+            var oscarsElement = $(
+                '<div class="full-start__rate rate--oscars rate--gold">' +
+                    '<div>' + oscars + '</div>' +
+                    '<div class="source--name"></div>' +
+                '</div>'
+            );
+            oscarsElement.find('.source--name').html(Lampa.Lang.translate("maxsm_omdb_oscars"));
+            rateLine.prepend(oscarsElement);
+        }
     }
-
-    // Metacritic
-    if (mcRating && !isNaN(mcRating) && !$('.rate--mc', rateLine).length) {
-        var mcValue = mcRating.toFixed(1);
-        var insertAfter = $('.rate--rt', rateLine).length ? $('.rate--rt', rateLine) : lastRate;
-        var mcElement = $(
-            '<div class="full-start__rate rate--mc">' +
-                '<div>' + mcValue + '</div>' +
-                '<div class="source--name">' + Lampa.Lang.translate('source_mc') + '</div>' +
-            '</div>'
-        );
-        if (insertAfter.length) mcElement.insertAfter(insertAfter);
-        else rateLine.prepend(mcElement);
-    }
-
-    // Нагороди (в порядку: Awards, Emmy, Oscars)
-    if (awards && !isNaN(awards) && awards > 0 && !$('.rate--awards', rateLine).length) {
-        var awardsElement = $(
-            '<div class="full-start__rate rate--awards rate--gold">' +
-                '<div>' + awards + '</div>' +
-                '<div class="source--name">' + Lampa.Lang.translate("maxsm_omdb_awards") + '</div>' +
-            '</div>'
-        );
-        rateLine.prepend(awardsElement);
-    }
-
-    if (emmy && !isNaN(emmy) && emmy > 0 && !$('.rate--emmy', rateLine).length) {
-        var emmyElement = $(
-            '<div class="full-start__rate rate--emmy rate--gold">' +
-                '<div>' + emmy + '</div>' +
-                '<div class="source--name">' + Lampa.Lang.translate("maxsm_omdb_emmy") + '</div>' +
-            '</div>'
-        );
-        rateLine.prepend(emmyElement);
-    }
-
-    if (oscars && !isNaN(oscars) && oscars > 0 && !$('.rate--oscars', rateLine).length) {
-        var oscarsElement = $(
-            '<div class="full-start__rate rate--oscars rate--gold">' +
-                '<div>' + oscars + '</div>' +
-                '<div class="source--name">' + Lampa.Lang.translate("maxsm_omdb_oscars") + '</div>' +
-            '</div>'
-        );
-        rateLine.prepend(oscarsElement);
-    }
-}
     
     function calculateAverageRating() {
         var render = Lampa.Activity.active().activity.render();
@@ -692,35 +691,6 @@ function insertRatings(rtRating, mcRating, oscars, emmy, awards) {
         removeLoadingAnimation();
         rateLine.css('visibility', 'visible');
     }
-  
-    //додаткова функція
-function insertIcons() {
-    var render = Lampa.Activity.active().activity.render();
-    if (!render) return;
-    
-    function replaceIcon(className, svg) {
-        var element = $('.' + className, render);
-        if (element.length) {
-            var sourceNameElement = element.find('.source--name');
-            if (sourceNameElement.length) {
-                sourceNameElement.html(svg);
-            } else {
-                // Якщо немає .source--name, шукаємо другий div
-                var childDivs = element.children('div');
-                if (childDivs.length >= 2) {
-                    $(childDivs[1]).html(svg);
-                }
-            }
-        }
-    }
-    
-    // Замінюємо текстові написи на іконки
-    replaceIcon('rate--oscars', oscars_svg);
-    replaceIcon('rate--emmy', emmy_svg);
-    replaceIcon('rate--awards', awards_svg);
-}
-
-    
     
     // Инициализация плагина
     function startPlugin() {

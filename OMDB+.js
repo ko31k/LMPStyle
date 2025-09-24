@@ -394,8 +394,6 @@ function updateUI() {
     // Считаем и отображаем средний рейтинг
     calculateAverageRating();
     
-    // ДОДАНО: Замінюємо текст на іконки
-    insertIcons();
 }
     }
 

@@ -384,16 +384,19 @@ var style = "<style id=\"maxsm_omdb_rating\">" +
             });
         }
         
-        function updateUI() {
-            // Вставляем рейтинги RT и MC
-            insertRatings(ratingsData.rt, ratingsData.mc, ratingsData.oscars, ratingsData.emmy, ratingsData.awards); // ОНОВЛЕНО
-            
-            // Обновляем скрытые элементы
-            updateHiddenElements(ratingsData);
-            
-            // Считаем и отображаем средний рейтинг
-            calculateAverageRating();
-        }
+function updateUI() {
+    // Вставляем рейтинги RT и MC
+    insertRatings(ratingsData.rt, ratingsData.mc, ratingsData.oscars, ratingsData.emmy, ratingsData.awards);
+    
+    // Обновляем скрытые элементы
+    updateHiddenElements(ratingsData);
+    
+    // Считаем и отображаем средний рейтинг
+    calculateAverageRating();
+    
+    // ДОДАНО: Замінюємо текст на іконки
+    insertIcons();
+}
     }
 
     // Функции работы с кешем
@@ -713,7 +716,7 @@ var style = "<style id=\"maxsm_omdb_rating\">" +
         removeLoadingAnimation();
         rateLine.css('visibility', 'visible');
     }
-    
+
     // Инициализация плагина
     function startPlugin() {
         window.combined_ratings_plugin = true;

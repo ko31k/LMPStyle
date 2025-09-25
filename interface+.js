@@ -150,8 +150,8 @@
             ru: 'Включает стильное оформление заголовков подборок с анимацией и спецэффектами',
             en: 'Enables stylish titles with animation and special effects',
             uk: 'Включає стильне оформлення заголовків підборівок з анімацією та спеціальними ефектами'
-        },
-        interface_mod_new_enhance_detailed_info: {
+        }
+        /*interface_mod_new_enhance_detailed_info: {
             ru: 'Увеличенная информация Beta',
             en: 'Enhanced detailed info Beta',
             uk: 'Збільшена інформація Beta'
@@ -160,7 +160,7 @@
             ru: 'Включить увеличенную информацию о фильме/сериале',
             en: 'Enable enhanced detailed info about movie/series',
             uk: 'Увімкнути збільшену інформацію про фільм/серіал'
-        }
+        }*/
     });
 
     // Настройки по умолчанию
@@ -170,8 +170,8 @@
         colored_ratings: Lampa.Storage.get('interface_mod_new_colored_ratings', true),
         buttons_style_mode: Lampa.Storage.get('interface_mod_new_buttons_style_mode', 'default'),
         theme: Lampa.Storage.get('interface_mod_new_theme_select', 'default'),
-        stylize_titles: Lampa.Storage.get('interface_mod_new_stylize_titles', false),
-        enhance_detailed_info: Lampa.Storage.get('interface_mod_new_enhance_detailed_info', false)
+        stylize_titles: Lampa.Storage.get('interface_mod_new_stylize_titles', false)
+        /*enhance_detailed_info: Lampa.Storage.get('interface_mod_new_enhance_detailed_info', false)*/
     };
     
     // Информация о плагине
@@ -2340,7 +2340,7 @@ const themes = {
     }
 
     // Функция для увеличенной информации
-    function enhanceDetailedInfo() {
+    /*function enhanceDetailedInfo() {
         if (!settings.enhance_detailed_info) return;
         
         // Если уже добавлен стиль, удаляем
@@ -2411,7 +2411,7 @@ const themes = {
                  line-height: 1.2em;
              }
              
-             /* Увеличиваем описание фильма */
+             // Увеличиваем описание фильма
              .full-start-new__title {
                  font-size: 2.2em !important;
              }
@@ -2425,12 +2425,12 @@ const themes = {
                  margin-top: 1em !important;
              }
              
-             /* Увеличиваем шрифт для информационной панели */
+             // Увеличиваем шрифт для информационной панели
              .full-start-new__info {
                  font-size: 1.4em !important;
              }
              
-             /* Адаптация под мобильные устройства */
+             // Адаптация под мобильные устройства
              @media (max-width: 768px) {
                  .full-start-new__title {
                      font-size: 1.8em !important;
@@ -2533,7 +2533,7 @@ const themes = {
                 }, 300);
             }
         });
-    }
+    }*/
 
     // Инициализация
     function startPlugin() {
@@ -2563,9 +2563,9 @@ const themes = {
         }
         
         // Применяем увеличенную информацию, если включено
-        if (settings.enhance_detailed_info) {
+        /*if (settings.enhance_detailed_info) {
             enhanceDetailedInfo();
-        }
+        }*/
     }
 
     // Запуск после готовности приложения

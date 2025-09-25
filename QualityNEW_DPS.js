@@ -217,7 +217,7 @@
         "    padding: 0.6em 1em;" +
         "    border-radius: 0.5em;" +
         "}" +
-        ".loading-dots__text {" + // Текст "Загрузка..."
+        ".loading-dots__text {" + // Текст "Пошук..."
         "    margin-right: 1em;" +
         "}" +
         ".loading-dots__dot {" + // Окремі точки
@@ -326,7 +326,7 @@
         rateLine.insertAdjacentHTML('beforeend',
             '<div class="loading-dots-container">' +
             '<div class="loading-dots">' +
-            '<span class="loading-dots__text">Загрузка...</span>' +
+            '<span class="loading-dots__text">Пошук...</span>' +
             '<span class="loading-dots__dot"></span>' +
             '<span class="loading-dots__dot"></span>' +
             '<span class="loading-dots__dot"></span>' +
@@ -897,7 +897,7 @@
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Adding quality placeholder");
             var placeholder = document.createElement('div');
             placeholder.className = 'full-start__status lqe-quality';
-            placeholder.textContent = 'Загрузка...';
+            placeholder.textContent = 'Пошук...';
             placeholder.style.opacity = '0.7';
             rateLine.appendChild(placeholder);
         }

@@ -45,16 +45,16 @@ var awards_svg = '<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/s
         // ДОДАНО: Переклади для нових типів нагород
         // Emmy
         maxsm_omdb_emmy: {
-        ru: '<span style="height:14px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + emmy_svg + '</span>',
-        en: '<span style="height:14px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + emmy_svg + '</span>',
-        uk: '<span style="height:14px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + emmy_svg + '</span>'
+        ru: '<span style="height:12px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + emmy_svg + '</span>',
+        en: '<span style="height:12px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + emmy_svg + '</span>',
+        uk: '<span style="height:12px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + emmy_svg + '</span>'
                         },
 
         // 🟢 Інші нагороди
         maxsm_omdb_awards_other: {
-        ru: '<span style="height:14px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + awards_svg + '</span>',
-        en: '<span style="height:14px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + awards_svg + '</span>',
-        uk: '<span style="height:14px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + awards_svg + '</span>'
+        ru: '<span style="height:12px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + awards_svg + '</span>',
+        en: '<span style="height:12px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + awards_svg + '</span>',
+        uk: '<span style="height:12px; width:auto; display:inline-block; vertical-align:middle; transform:scale(1.0);">' + awards_svg + '</span>'
                                 },
               
         /*maxsm_omdb_emmy: { 

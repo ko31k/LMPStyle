@@ -496,69 +496,57 @@ function removeLoadingAnimation(cardId, renderElement) {
         return finalLabel;
     }
 
-    // ===================== ЧЕРГА ЗАПИТІВ =====================
+// ===================== ЧЕРГА ЗАПИТІВ =====================
+
+/**
+ * Проста черга запитів з обмеженням паралельності (працююча версія)
+ * Використовує простий масив заміч складного класу для стабільності
+ */
+var requestQueue = []; // Масив для зберігання завдань у черзі
+var activeRequests = 0; // Лічильник активних запитів
+
+/**
+ * Додає завдання до черги та запускає обробку
+ * @param {function} fn - Функція завдання (приймає callback done)
+ */
+function enqueueTask(fn) {
+    // Додаємо завдання в кінець черги
+    requestQueue.push(fn);
+    // Запускаємо обробку черги
+    processQueue();
+}
+
+/**
+ * Обробляє чергу завдань з дотриманням обмеження паралельності
+ */
+function processQueue() {
+    // Перевіряємо, чи не перевищено ліміт паралельних запитів
+    if (activeRequests >= LQE_CONFIG.MAX_PARALLEL_REQUESTS) return;
     
-    /**
-     * Клас для управління чергою запитів з обмеженням паралельності
-     */
-    class RequestQueue {
-        constructor(maxParallel) {
-            this.queue = []; // Черга завдань
-            this.active = 0; // Кількість активних запитів
-            this.maxParallel = maxParallel || LQE_CONFIG.MAX_PARALLEL_REQUESTS;
-        }
-
-        /**
-         * Додає завдання до черги
-         * @param {function} fn - Функція завдання (приймає callback done)
-         * @returns {Promise} - Promise який виконується після завершення
-         */
-        add(fn) {
-            return new Promise((resolve) => {
-                this.queue.push({ fn: fn, resolve: resolve });
-                this._process(); // Запускаємо обробку
-            });
-        }
-
-        /**
-         * Обробляє чергу (внутрішній метод)
-         */
-        _process() {
-            // Перевіряємо обмеження паралельності
-            if (this.active >= this.maxParallel) return;
-            if (this.queue.length === 0) return;
-            
-            var item = this.queue.shift();
-            this.active++;
-
-            // Callback для завершення завдання
-            const doneCallback = () => {
-                this.active--;
-                item.resolve(); // Виконуємо Promise
-                // Запускаємо наступне завдання в наступному tick
-                setTimeout(() => this._process(), 0);
-            };
-
-            try {
-                // Виконуємо завдання з callback
-                item.fn(doneCallback);
-            } catch (e) {
-                console.error("LQE-LOG", "Queue task error:", e);
-                doneCallback(); // Все одно завершуємо при помилці
-            }
-        }
+    // Беремо перше завдання з черги
+    var task = requestQueue.shift();
+    // Якщо черга порожня - виходимо
+    if (!task) return;
+    
+    // Збільшуємо лічильник активних запитів
+    activeRequests++;
+    
+    try {
+        // Виконуємо завдання з callback-функцією завершення
+        task(function onTaskDone() {
+            // Зменшуємо лічильник активних запитів
+            activeRequests--;
+            // Запускаємо наступне завдання в наступному циклі подій
+            setTimeout(processQueue, 0);
+        });
+    } catch (e) {
+        // Обробляємо помилки виконання завдання
+        console.error("LQE-LOG", "Queue task error:", e);
+        // Все одно зменшуємо лічильник і продовжуємо обробку
+        activeRequests--;
+        setTimeout(processQueue, 0);
     }
-
-    // Створюємо глобальну чергу
-    var requestQueue = new RequestQueue(LQE_CONFIG.MAX_PARALLEL_REQUESTS);
-
-    /**
-     * Обгортка для зворотної сумісності
-     * @param {function} fn - Функція завдання
-     */
-    function enqueueTask(fn) {
-        return requestQueue.add(fn);
-    }
+}
 
     // ===================== ПОШУК В JACRED =====================
     

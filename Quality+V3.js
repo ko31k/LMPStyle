@@ -432,48 +432,88 @@
      * @param {string} originalTitle - Оригінальна назва торренту
      * @returns {string} - Спрощена назва
      */
-    function simplifyQualityLabel(fullLabel, originalTitle) {
-        if (!fullLabel) return '';
-        
-        var lowerLabel = fullLabel.toLowerCase();
-        var lowerTitle = (originalTitle || '').toLowerCase();
-        
-        // Пріоритет пошуку: погана якість → роздільність → якісні джерела
-        var detectedFormats = [];
-        
-        // Шукаємо всі збіги в назві
-        for (var key in QUALITY_SIMPLIFIER_MAP) {
-            if (lowerLabel.includes(key) || lowerTitle.includes(key)) {
-                var simpleFormat = QUALITY_SIMPLIFIER_MAP[key];
-                
-                // Додаємо тільки унікальні формати
-                if (detectedFormats.indexOf(simpleFormat) === -1) {
-                    detectedFormats.push(simpleFormat);
-                }
-            }
-        }
-        
-        // 1. Якщо знайшли погани якості - повертаємо їх (вони мають пріоритет)
-        var badQuality = detectedFormats.find(function(format) {
-            return ['CamRip', 'TS', 'TC', 'SCR'].includes(format);
-        });
-        
-        if (badQuality) {
-            return badQuality;
-        }
-        
-        // 2. Якщо поганих якостей немає - шукаємо роздільність (4K, FHD, HD, SD)
-        var resolution = detectedFormats.find(function(format) {
-            return ['4K', 'FHD', 'HD', 'SD', 'LQ'].includes(format);
-        });
-        
-        if (resolution) {
-            return resolution;
-        }
-        
-        // 3. Якщо не знайшли нічого - повертаємо перший знайдений формат або оригінал
-        return detectedFormats.length > 0 ? detectedFormats[0] : fullLabel;
+/**
+ * Спрощує повну назву якості до короткого формату
+ * Використовує пряме порівняння з регулярними виразами для точності
+ * @param {string} fullLabel - Повна назва якості (наприклад: "4K BDRemux HDR")
+ * @param {string} originalTitle - Оригінальна назва торренту для додаткового аналізу
+ * @returns {string} - Спрощена назва якості (наприклад: "4K")
+ */
+function simplifyQualityLabel(fullLabel, originalTitle) {
+    if (!fullLabel) return '';
+    
+    // Приводимо до нижнього регістру для порівняння
+    var lowerLabel = fullLabel.toLowerCase();
+    var lowerTitle = (originalTitle || '').toLowerCase();
+    
+    // 🔴 ВИСОКИЙ ПРІОРИТЕТ: спочатку шукаємо погани якості
+    // Вони мають пріоритет навіть якщо є висока роздільність
+    // Наприклад: "1080p TS" → "TS" (а не "FHD")
+    
+    // CamRip - найгірша якість (пріоритет 1)
+    if (/(camrip|камрип|cam\b)/.test(lowerLabel) || /(camrip|камрип|cam\b)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to CamRip");
+        return "CamRip";
     }
+    
+    // TS (Telesync) - пріоритет 2
+    if (/(telesync|телесинк|ts\b)/.test(lowerLabel) || /(telesync|телесинк|ts\b)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
+        return "TS";
+    }
+    
+    // TC (Telecine) - пріоритет 3
+    if (/(telecine|телесин|tc\b)/.test(lowerLabel) || /(telecine|телесин|tc\b)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
+        return "TC";
+    }
+    
+    // SCR (DVD Screener) - пріоритет 4
+    if (/(dvdscr|scr\b)/.test(lowerLabel) || /(dvdscr|scr\b)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SCR");
+        return "SCR";
+    }
+    
+    // 🟢 РОЗДІЛЬНІСТЬ: якщо поганих якостей не знайдено, шукаємо роздільність
+    
+    // 4K (Ultra HD) - найвища якість
+    if (/(2160p|4k|uhd|ultra hd)/.test(lowerLabel) || /(2160p|4k|uhd|ultra hd)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to 4K");
+        return "4K";
+    }
+    
+    // FHD (Full HD) - висока якість
+    if (/(1080p|1080|fullhd|fhd)/.test(lowerLabel) || /(1080p|1080|fullhd|fhd)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to FHD");
+        return "FHD";
+    }
+    
+    // HD (High Definition) - середня якість
+    if (/(720p|720|hd\b)/.test(lowerLabel) || /(720p|720|hd\b)/.test(lowerTitle)) {
+        // Перевіряємо що це не частина іншого слова (наприклад, "fullhd")
+        var hdRegex = /(720p|720|^hd$| hd |hd$)/;
+        if (hdRegex.test(lowerLabel) || hdRegex.test(lowerTitle)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to HD");
+            return "HD";
+        }
+    }
+    
+    // SD (Standard Definition) - базова якість
+    if (/(480p|480|sd\b)/.test(lowerLabel) || /(480p|480|sd\b)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SD");
+        return "SD";
+    }
+    
+    // LQ (Low Quality) - дуже низька якість
+    if (/(360p|360|low quality|lq\b)/.test(lowerLabel) || /(360p|360|low quality|lq\b)/.test(lowerTitle)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to LQ");
+        return "LQ";
+    }
+    
+    // 🔄 FALLBACK: якщо нічого не знайдено, повертаємо оригінальну назву
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "No simplification found, keeping original:", fullLabel);
+    return fullLabel;
+}
     
     /**
      * Перетворює технічну назву якості на читабельну (з автоматичним спрощенням)

@@ -1236,38 +1236,85 @@ function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, ren
 
     var observerDebounceTimer = null;
     
-    /**
-     * Дебаунс обробки нових карток
-     * @param {Array} cards - Масив карток
-     */
-    function debouncedProcessNewCards(cards) {
-        if (!Array.isArray(cards) || cards.length === 0) return;
+/**
+ * Дебаунс обробки нових карток з TV-оптимізацією
+ * @param {Array} cards - Масив карток
+ */
+function debouncedProcessNewCards(cards) {
+    if (!Array.isArray(cards) || cards.length === 0) return;
+    
+    clearTimeout(observerDebounceTimer);
+    observerDebounceTimer = setTimeout(function() {
+        // Видаляємо дублікати (оригінальна логіка)
+        var uniqueCards = [];
+        var seenIds = new Set();
         
-        clearTimeout(observerDebounceTimer);
-        observerDebounceTimer = setTimeout(function() {
-            // Видаляємо дублікати
-            var uniqueCards = [];
-            var seenIds = new Set();
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            if (!card) continue;
             
-            for (var i = 0; i < cards.length; i++) {
-                var card = cards[i];
-                if (!card) continue;
-                
-                var cardId = card.card_data?.id;
-                if (cardId && !seenIds.has(cardId)) {
-                    seenIds.add(cardId);
-                    uniqueCards.push(card);
+            var cardId = card.card_data?.id;
+            if (cardId && !seenIds.has(cardId)) {
+                seenIds.add(cardId);
+                uniqueCards.push(card);
+            }
+        }
+        
+        if (LQE_CONFIG.LOGGING_CARDLIST && uniqueCards.length < cards.length) {
+            console.log("LQE-CARDLIST", "Removed duplicates:", cards.length - uniqueCards.length);
+        }
+        
+        if (LQE_CONFIG.LOGGING_CARDLIST) {
+            console.log("LQE-CARDLIST", "Processing", uniqueCards.length, "unique cards with batching");
+        }
+        
+        // TV-ОПТИМІЗАЦІЯ: обробка порціями для уникнення фризів
+        var BATCH_SIZE = 8;     // Кількість карток за один раз
+        var DELAY_MS = 50;      // Затримка між порціями
+        
+        /**
+         * Рекурсивна функція обробки порцій
+         * @param {number} startIndex - Індекс початку поточної порції
+         */
+        function processBatch(startIndex) {
+            // Беремо поточну порцію карток
+            var batch = uniqueCards.slice(startIndex, startIndex + BATCH_SIZE);
+            
+            if (LQE_CONFIG.LOGGING_CARDLIST) {
+                console.log("LQE-CARDLIST", "Processing batch", (startIndex/BATCH_SIZE) + 1, 
+                           "with", batch.length, "cards");
+            }
+            
+            // Обробляємо поточну порцію
+            batch.forEach(function(card) {
+                // Перевіряємо, чи картка ще в DOM (можливо, користувач вже прокрутив)
+                if (card.isConnected) {
+                    updateCardListQuality(card);
+                }
+            });
+            
+            var nextIndex = startIndex + BATCH_SIZE;
+            
+            // Якщо залишилися картки - плануємо наступну порцію
+            if (nextIndex < uniqueCards.length) {
+                setTimeout(function() {
+                    processBatch(nextIndex);
+                }, DELAY_MS);
+            } else {
+                // Всі картки оброблено
+                if (LQE_CONFIG.LOGGING_CARDLIST) {
+                    console.log("LQE-CARDLIST", "All batches processed successfully");
                 }
             }
-            
-            if (LQE_CONFIG.LOGGING_CARDLIST && uniqueCards.length < cards.length) {
-                console.log("LQE-CARDLIST", "Removed duplicates:", cards.length - uniqueCards.length);
-            }
-            
-            // Обробляємо унікальні картки
-            uniqueCards.forEach(updateCardListQuality);
-        }, 60);
-    }
+        }
+        
+        // Запускаємо обробку з першої порції
+        if (uniqueCards.length > 0) {
+            processBatch(0);
+        }
+        
+    }, 60); // Оригінальний дебаунс
+}
 
     /**
      * Налаштовує Observer для відстеження нових карток

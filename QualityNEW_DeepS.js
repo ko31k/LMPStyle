@@ -914,32 +914,34 @@
      * @param {Element} renderElement - DOM елемент
      * @param {boolean} bypassTranslation - Пропустити переклад
      */
-    function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation = false) {
-        if (!renderElement) return;
+function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation) {
+    if (!renderElement) return;
+    
+    // Використовуємо jQuery для пошуку елементів
+    var element = $('.full-start__status.lqe-quality', renderElement);
+    var rateLine = $('.full-start-new__rate-line', renderElement);
+    if (!rateLine.length) return;
+
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
+
+    if (element.length) {
+        // Якщо елемент вже існує, оновлюємо його і додаємо клас .show
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Updating existing element with quality "' + displayQuality + '" on full card.');
+        element.text(displayQuality).css('opacity', '1').addClass('show');
+    } else {
+        // Якщо елемента немає, створюємо його
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Creating new element with quality '" + displayQuality + "' on full card.");
+        var div = document.createElement('div');
+        div.className = 'full-start__status lqe-quality';
+        div.textContent = displayQuality;
+        rateLine.append(div);
         
-        // Використовуємо jQuery пошук у контексті DOM елемента
-        var rateLine = $('.full-start-new__rate-line', renderElement);
-        if (!rateLine.length) return;
-        
-        // Визначаємо текст для відображення
-        var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
-        
-        // Шукаємо існуючий елемент якості
-        var element = $('.full-start__status.lqe-quality', rateLine);
-        
-        if (element.length) {
-            // Оновлюємо існуючий елемент
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Updating existing element with quality "' + displayQuality + '" on full card.');
-            element.text(displayQuality).css('opacity', '1');
-        } else {
-            // Створюємо новий елемент якості
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Creating new element with quality '" + displayQuality + "' on full card.");
-            var div = document.createElement('div');
-            div.className = 'full-start__status lqe-quality';
-            div.textContent = displayQuality;
-            rateLine.append(div);
-        }
+        // З невеликою затримкою додаємо клас .show, щоб спрацювала CSS-анімація
+        setTimeout(function(){ 
+            $('.full-start__status.lqe-quality', renderElement).addClass('show'); 
+        }, 20);
     }
+}
 
     /**
      * Оновлює елемент якості на списковій картці

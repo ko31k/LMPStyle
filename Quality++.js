@@ -56,12 +56,10 @@
     };
 
 
-    // Глобальна мапа: id → масив DOM-елементів карток
-    var LQE_CARD_INDEX = {};
+
 
     // Глобальна мапа: id → масив DOM-елементів карток
     var LQE_CARD_INDEX = {};
-
         function registerCardElement(cardId, cardElement) {
             if (!cardId) return;
             if (!LQE_CARD_INDEX[cardId]) LQE_CARD_INDEX[cardId] = [];

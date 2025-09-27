@@ -55,6 +55,21 @@
         }
     };
 
+
+    // Глобальна мапа: id → масив DOM-елементів карток
+    var LQE_CARD_INDEX = {};
+
+    // Глобальна мапа: id → масив DOM-елементів карток
+    var LQE_CARD_INDEX = {};
+
+        function registerCardElement(cardId, cardElement) {
+            if (!cardId) return;
+            if (!LQE_CARD_INDEX[cardId]) LQE_CARD_INDEX[cardId] = [];
+            if (!LQE_CARD_INDEX[cardId].includes(cardElement)) {
+            LQE_CARD_INDEX[cardId].push(cardElement);
+            }
+        }
+
     var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
 
     // ===================== МАПИ ДЛЯ ПАРСИНГУ ЯКОСТІ =====================
@@ -1048,39 +1063,78 @@
  * @param {string} fullTorrentTitle - Повна назва торренту
  * @param {boolean} bypassTranslation - true = показати як є, false = через translateQualityLabel()
  */
-function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
-    // Формуємо текст мітки: або напряму, або через функцію перекладу
-    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
+function updateCardListQuality(cardElement) {
+    if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Processing list card");
 
-    // === Перевіряємо чи вже є мітка на ЦІЙ КАРТЦІ ===
-    var existing = cardView.querySelector('.card__quality');
-    if (existing) {
-        var inner = existing.querySelector('div');
+    // НІЯКОГО return; – кожен DOM-елемент обробляється незалежно
 
-        // Якщо текст той самий — не чіпаємо, залишаємо як є
-        if (inner && inner.textContent === displayQuality) {
-            // return; // ❌ ЦЕ МІСЦЕ можна закоментувати, щоб у майбутньому можна було примусово оновити мітку
-        }
-
-        // Видаляємо старий елемент (щоб створити новий із правильним текстом)
-        existing.remove();
+    var cardView = cardElement.querySelector('.card__view');
+    var cardData = cardElement.card_data;
+    if (!cardData || !cardView) {
+        if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Invalid card data or view");
+        return;
     }
 
-    // === Створюємо новий елемент мітки ===
-    var qualityDiv = document.createElement('div');
-    qualityDiv.className = 'card__quality'; // Клас для стилів
+    var isTvSeries = (getCardType(cardData) === 'tv');
+    if (isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false) {
+        if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Skipping TV series");
+        return;
+    }
 
-    var innerElement = document.createElement('div');
-    innerElement.textContent = displayQuality; // Текст якості
+    var normalizedCard = {
+        id: cardData.id || '',
+        title: cardData.title || cardData.name || '',
+        original_title: cardData.original_title || cardData.original_name || '',
+        type: getCardType(cardData),
+        release_date: cardData.release_date || cardData.first_air_date || ''
+    };
 
-    qualityDiv.appendChild(innerElement);
-    cardView.appendChild(qualityDiv); // Додаємо до DOM
+    var cardId = normalizedCard.id;
+    var cacheKey = makeCacheKey(LQE_CONFIG.CACHE_VERSION, normalizedCard.type, cardId);
 
-    // === Плавне з’явлення (через клас .show) ===
-    requestAnimationFrame(function () {
-        qualityDiv.classList.add('show');
+    // Реєструємо цей DOM-елемент у глобальному реєстрі
+    registerCardElement(cardId, cardElement);
+
+    // Ставимо атрибут як індикатор, що саме цей DOM-елемент вже оброблено (щоб не малювати двічі)
+    cardElement.setAttribute('data-lqe-quality-processed', 'true');
+
+    var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+    if (manualOverrideData) {
+        updateCardListQualityElement(cardView, null, manualOverrideData.full_label, true);
+        return;
+    }
+
+    var cachedQualityData = getQualityCache(cacheKey);
+    if (cachedQualityData) {
+        updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label);
+        return;
+    }
+
+    getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
+        if (!document.body.contains(cardElement)) return;
+
+        var qualityCode = (jrResult && jrResult.quality) || null;
+        var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
+
+        if (qualityCode && qualityCode !== 'NO') {
+            saveQualityCache(cacheKey, {
+                quality_code: qualityCode,
+                full_label: fullTorrentTitle
+            }, cardId);
+
+            // Оновлюємо ВСІ картки з таким ID
+            if (LQE_CARD_INDEX[cardId]) {
+                LQE_CARD_INDEX[cardId].forEach(function(el) {
+                    var view = el.querySelector('.card__view');
+                    if (view && document.body.contains(el)) {
+                        updateCardListQualityElement(view, qualityCode, fullTorrentTitle);
+                    }
+                });
+            }
+        }
     });
 }
+
 
     // ===================== ОБРОБКА ПОВНОЇ КАРТКИ =====================
     
@@ -1349,84 +1403,57 @@ function updateCardListQuality(cardElement) {
     });
 
     var observerDebounceTimer = null;
-    
     /**
-     * Оптимізований дебаунс обробки нових карток з TV-оптимізацією
-     * @param {Array} cards - Масив карток
-     */
-    function debouncedProcessNewCards(cards) {
-        if (!Array.isArray(cards) || cards.length === 0) return;
-        
-        clearTimeout(observerDebounceTimer);
-        observerDebounceTimer = setTimeout(function() {
-            // Спрощена перевірка унікальності
-            var uniqueCards = [];
-            var seenIds = new Set();
-            
-            for (var i = 0; i < cards.length; i++) {
-                var card = cards[i];
-                if (!card) continue;
-                
-                var cardId = card.card_data?.id;
-                if (cardId && !seenIds.has(cardId)) {
-                    seenIds.add(cardId);
-                    uniqueCards.push(card);
+ * Дебаунс-обробник нових карток.
+ * Відмінність: унікалізуємо ТІЛЬКИ по DOM-елементу, а не по id.
+ */
+function debouncedProcessNewCards(cards) {
+    if (!Array.isArray(cards) || cards.length === 0) return;
+
+    clearTimeout(observerDebounceTimer);
+    observerDebounceTimer = setTimeout(function() {
+        var uniqueCards = [];
+        var seenElements = new Set();
+
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            if (!card) continue;
+
+            // Якщо ми вже бачили саме цей DOM-елемент у поточному наборі мутацій, пропускаємо
+            if (seenElements.has(card)) continue;
+
+            seenElements.add(card);
+            uniqueCards.push(card);
+        }
+
+        if (LQE_CONFIG.LOGGING_CARDLIST) {
+            console.log("LQE-CARDLIST", "Processing", uniqueCards.length, "unique DOM cards with batching");
+        }
+
+        var BATCH_SIZE = 10;   // Карток за один раз
+        var DELAY_MS = 50;    // Затримка між порціями
+
+        function processBatch(startIndex) {
+            var batch = uniqueCards.slice(startIndex, startIndex + BATCH_SIZE);
+
+            batch.forEach(function(card) {
+                if (card.isConnected) { // Перевіряємо, чи картка ще в DOM
+                    updateCardListQuality(card);
                 }
+            });
+
+            var nextIndex = startIndex + BATCH_SIZE;
+            if (nextIndex < uniqueCards.length) {
+                setTimeout(function() { processBatch(nextIndex); }, DELAY_MS);
             }
-            
-            if (LQE_CONFIG.LOGGING_CARDLIST && uniqueCards.length < cards.length) {
-                console.log("LQE-CARDLIST", "Removed duplicates:", cards.length - uniqueCards.length);
-            }
-            
-            if (LQE_CONFIG.LOGGING_CARDLIST) {
-                console.log("LQE-CARDLIST", "Processing", uniqueCards.length, "unique cards with batching");
-            }
-            
-            // TV-ОПТИМІЗАЦІЯ: обробка порціями для уникнення фризів
-            var BATCH_SIZE = 8;     // Кількість карток за один раз
-            var DELAY_MS = 50;      // Затримка між порціями
-            
-            /**
-             * Рекурсивна функція обробки порцій
-             * @param {number} startIndex - Індекс початку поточної порції
-             */
-            function processBatch(startIndex) {
-                var batch = uniqueCards.slice(startIndex, startIndex + BATCH_SIZE); // Поточна порція
-                
-                if (LQE_CONFIG.LOGGING_CARDLIST) {
-                    console.log("LQE-CARDLIST", "Processing batch", (startIndex/BATCH_SIZE) + 1, 
-                               "with", batch.length, "cards");
-                }
-                
-                // Обробляємо поточну порцію
-                batch.forEach(function(card) {
-                    if (card.isConnected) { // Перевіряємо, чи картка ще в DOM
-                        updateCardListQuality(card);
-                    }
-                });
-                
-                var nextIndex = startIndex + BATCH_SIZE;
-                
-                // Якщо залишилися картки - плануємо наступну порцію
-                if (nextIndex < uniqueCards.length) {
-                    setTimeout(function() {
-                        processBatch(nextIndex);
-                    }, DELAY_MS);
-                } else {
-                    // Всі картки оброблено
-                    if (LQE_CONFIG.LOGGING_CARDLIST) {
-                        console.log("LQE-CARDLIST", "All batches processed successfully");
-                    }
-                }
-            }
-            
-            // Запускаємо обробку з першої порції
-            if (uniqueCards.length > 0) {
-                processBatch(0);
-            }
-            
-        }, 15); // Дебаунсинг 15ms для швидшого відображення
-    }
+        }
+
+        if (uniqueCards.length > 0) {
+            processBatch(0);
+        }
+    }, 15);
+}
+
 
     /**
      * Налаштовує Observer для відстеження нових карток

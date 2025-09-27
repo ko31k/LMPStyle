@@ -1041,37 +1041,46 @@
         }
     }
 
-    /**
-     * Оновлює елемент якості на списковій картці
-     * @param {Element} cardView - DOM елемент картки
-     * @param {number} qualityCode - Код якості
-     * @param {string} fullTorrentTitle - Назва торренту
-     * @param {boolean} bypassTranslation - Пропустити переклад
-     */
-    function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
-        var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
+/**
+ * Оновлює або створює мітку якості на списковій картці
+ * @param {Element} cardView - DOM елемент .card__view
+ * @param {number|null} qualityCode - Код якості
+ * @param {string} fullTorrentTitle - Повна назва торренту
+ * @param {boolean} bypassTranslation - true = показати як є, false = через translateQualityLabel()
+ */
+function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
+    // Формуємо текст мітки: або напряму, або через функцію перекладу
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
 
-        // Перевіряємо наявність ідентичного елемента
-        var existing = cardView.querySelector('.card__quality');
-        if (existing) {
-            var inner = existing.querySelector('div');
-            if (inner && inner.textContent === displayQuality) {
-                return; // Не оновлюємо якщо текст не змінився
-            }
-            existing.remove(); // Видаляємо старий
+    // === Перевіряємо чи вже є мітка на ЦІЙ КАРТЦІ ===
+    var existing = cardView.querySelector('.card__quality');
+    if (existing) {
+        var inner = existing.querySelector('div');
+
+        // Якщо текст той самий — не чіпаємо, залишаємо як є
+        if (inner && inner.textContent === displayQuality) {
+            // return; // ❌ ЦЕ МІСЦЕ можна закоментувати, щоб у майбутньому можна було примусово оновити мітку
         }
 
-        // Створюємо новий елемент
-        var qualityDiv = document.createElement('div');
-        qualityDiv.className = 'card__quality';
-        var innerElement = document.createElement('div');
-        innerElement.textContent = displayQuality;
-        qualityDiv.appendChild(innerElement);
-        cardView.appendChild(qualityDiv);
-        
-        // Плавне з'явлення
-        requestAnimationFrame(function(){ qualityDiv.classList.add('show'); });
+        // Видаляємо старий елемент (щоб створити новий із правильним текстом)
+        existing.remove();
     }
+
+    // === Створюємо новий елемент мітки ===
+    var qualityDiv = document.createElement('div');
+    qualityDiv.className = 'card__quality'; // Клас для стилів
+
+    var innerElement = document.createElement('div');
+    innerElement.textContent = displayQuality; // Текст якості
+
+    qualityDiv.appendChild(innerElement);
+    cardView.appendChild(qualityDiv); // Додаємо до DOM
+
+    // === Плавне з’явлення (через клас .show) ===
+    requestAnimationFrame(function () {
+        qualityDiv.classList.add('show');
+    });
+}
 
     // ===================== ОБРОБКА ПОВНОЇ КАРТКИ =====================
     
@@ -1195,102 +1204,110 @@
 
     // ===================== ОБРОБКА СПИСКОВИХ КАРТОК =====================
     
-    /**
-     * Оновлює якість для спискової картки
-     * @param {Element} cardElement - DOM елемент картки
-     */
-    function updateCardListQuality(cardElement) {
-        if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Processing list card");
-        
-        // Перевіряємо чи вже обробляли цю картку
-        if (cardElement.hasAttribute('data-lqe-quality-processed')) {
-            if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Card already processed");
-            return;
-        }
-        
-        var cardView = cardElement.querySelector('.card__view');
-        var cardData = cardElement.card_data;
-        
-        if (!cardData || !cardView) {
-            if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Invalid card data or view");
-            return;
-        }
-        
-        var isTvSeries = (getCardType(cardData) === 'tv');
-        if (isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false) {
-            if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Skipping TV series");
-            return;
-        }
+/**
+ * Оновлює (додає) мітку якості на списковій картці.
+ * Викликається для кожного DOM-елемента картки (навіть якщо ID той самий).
+ */
+function updateCardListQuality(cardElement) {
+    if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Processing list card");
 
-        // Нормалізуємо дані
-        var normalizedCard = {
-            id: cardData.id || '',
-            title: cardData.title || cardData.name || '',
-            original_title: cardData.original_title || cardData.original_name || '',
-            type: getCardType(cardData),
-            release_date: cardData.release_date || cardData.first_air_date || ''
-        };
-        
-        var cardId = normalizedCard.id;
-        var cacheKey = makeCacheKey(LQE_CONFIG.CACHE_VERSION, normalizedCard.type, cardId);
-        cardElement.setAttribute('data-lqe-quality-processed', 'true'); // Позначаємо як оброблену
+    // === Раніше тут стояла перевірка, яка повністю блокувала обробку інших карток з тим самим ID ===
+    // if (cardElement.hasAttribute('data-lqe-quality-processed')) {
+    //     if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Card already processed");
+    //     return; // ❌ через це не малювалася якість у другому розділі
+    // }
 
-        // Перевіряємо ручні перевизначення
-        var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
-        if (manualOverrideData) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Manual override for list");
-            updateCardListQualityElement(cardView, null, manualOverrideData.full_label, true);
-            return;
-        }
+    // Знаходимо контейнер та дані
+    var cardView = cardElement.querySelector('.card__view');
+    var cardData = cardElement.card_data;
 
-        // Перевіряємо кеш
-        var cachedQualityData = getQualityCache(cacheKey);
-        if (cachedQualityData) {
-            if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Using cached quality');
-            updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label);
-
-            // Фонове оновлення застарілого кешу
-            if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background refresh for list");
-                getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
-                    if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
-                        saveQualityCache(cacheKey, {
-                            quality_code: jrResult.quality,
-                            full_label: jrResult.full_label
-                        }, cardId);
-                        if (document.body.contains(cardElement)) {
-                            updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label);
-                        }
-                    }
-                });
-            }
-            return;
-        }
-
-        // Завантажуємо нові дані
-        getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
-            if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', JacRed result for list');
-            
-            if (!document.body.contains(cardElement)) {
-                if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'Card removed from DOM');
-                return;
-            }
-            
-            var qualityCode = (jrResult && jrResult.quality) || null;
-            var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
-            
-            if (qualityCode && qualityCode !== 'NO') {
-                if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Quality found for list');
-                saveQualityCache(cacheKey, {
-                    quality_code: qualityCode,
-                    full_label: fullTorrentTitle
-                }, cardId);
-                updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle);
-            } else {
-                if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', No quality for list');
-            }
-        });
+    // Якщо картка порожня або не має view – виходимо
+    if (!cardData || !cardView) {
+        if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Invalid card data or view");
+        return;
     }
+
+    // Пропускаємо серіали, якщо вимкнено
+    var isTvSeries = (getCardType(cardData) === 'tv');
+    if (isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false) {
+        if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Skipping TV series");
+        return;
+    }
+
+    // === Нормалізуємо дані картки ===
+    var normalizedCard = {
+        id: cardData.id || '',
+        title: cardData.title || cardData.name || '',
+        original_title: cardData.original_title || cardData.original_name || '',
+        type: getCardType(cardData),
+        release_date: cardData.release_date || cardData.first_air_date || ''
+    };
+
+    var cardId = normalizedCard.id;
+    var cacheKey = makeCacheKey(LQE_CONFIG.CACHE_VERSION, normalizedCard.type, cardId);
+
+    // Ставимо атрибут як **індикатор**, що ми вже додавали мітку цій конкретній DOM-картці,
+    // але більше **не робимо return вище** – щоб однакові ID в різних розділах теж оброблялися
+    cardElement.setAttribute('data-lqe-quality-processed', 'true');
+
+    // === Ручні перевизначення (найвищий пріоритет) ===
+    var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+    if (manualOverrideData) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Manual override for list");
+        updateCardListQualityElement(cardView, null, manualOverrideData.full_label, true);
+        return;
+    }
+
+    // === Перевіряємо кеш ===
+    var cachedQualityData = getQualityCache(cacheKey);
+    if (cachedQualityData) {
+        if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Using cached quality');
+        updateCardListQualityElement(cardView, cachedQualityData.quality_code, cachedQualityData.full_label);
+
+        // Фонове оновлення застарілого кешу
+        if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background refresh for list");
+            getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
+                if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
+                    saveQualityCache(cacheKey, {
+                        quality_code: jrResult.quality,
+                        full_label: jrResult.full_label
+                    }, cardId);
+                    // Перевіряємо, що DOM-елемент ще є на сторінці
+                    if (document.body.contains(cardElement)) {
+                        updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label);
+                    }
+                }
+            });
+        }
+        return;
+    }
+
+    // === Якщо в кеші немає – завантажуємо дані з JacRed ===
+    getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
+        if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', JacRed result for list');
+
+        // Перевіряємо, що картка не видалена зі сторінки
+        if (!document.body.contains(cardElement)) {
+            if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'Card removed from DOM');
+            return;
+        }
+
+        var qualityCode = (jrResult && jrResult.quality) || null;
+        var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
+
+        if (qualityCode && qualityCode !== 'NO') {
+            if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', Quality found for list');
+            saveQualityCache(cacheKey, {
+                quality_code: qualityCode,
+                full_label: fullTorrentTitle
+            }, cardId);
+            updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle);
+        } else {
+            if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', No quality for list');
+        }
+    });
+}
 
     // ===================== OPTIMIZED MUTATION OBSERVER =====================
     

@@ -1342,8 +1342,13 @@
         
         clearTimeout(observerDebounceTimer);
         observerDebounceTimer = setTimeout(function() {
+            // Вимикаємо перевірку дублікатів - обробляємо всі картки
+            var uniqueCards = cards.filter(function(card) {
+                return card && card.isConnected;
+            });
+            
             // Спрощена перевірка унікальності
-            var uniqueCards = [];
+            /*var uniqueCards = [];
             var seenIds = new Set();
             
             for (var i = 0; i < cards.length; i++) {
@@ -1355,7 +1360,7 @@
                     seenIds.add(cardId);
                     uniqueCards.push(card);
                 }
-            }
+            }*/
             
             if (LQE_CONFIG.LOGGING_CARDLIST && uniqueCards.length < cards.length) {
                 console.log("LQE-CARDLIST", "Removed duplicates:", cards.length - uniqueCards.length);

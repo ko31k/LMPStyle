@@ -795,12 +795,12 @@
                             if (torrentYear && !isYearValid) {
                             // Додатково шукаємо рік у назві торренту
                                 var titleYear = extractYearFromTitle(currentTorrent.title);
-                                    if (titleYear > 0 && titleYear !== searchYearNum) {
-                                    // Якщо знайшли рік у назві і він не збігається - тоді пропускаємо
-                                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Torrent year mismatch, skipping. Torrent: " + currentTorrent.title + ", Searched: " + searchYearNum + ", Found: " + parsedYear);
+                                if (titleYear > 0 && titleYear !== searchYearNum) {
+                                // Якщо знайшли рік у назві і він не збігається - тоді пропускаємо
+                                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Torrent year mismatch, skipping. Torrent: " + currentTorrent.title + ", Searched: " + searchYearNum + ", Found: " + titleYear);
                                     continue;
                                     }
-                            // Якщо рік = 0, або не знайдений у назві - НЕ пропускаємо торрент!
+                                // Якщо рік = 0, або не знайдений у назві - НЕ пропускаємо торрент!
                             }
 
 

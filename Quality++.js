@@ -1338,6 +1338,55 @@
      * @param {Array} cards - Масив карток
      */
     function debouncedProcessNewCards(cards) {
+    if (!Array.isArray(cards) || cards.length === 0) return;
+    
+    clearTimeout(observerDebounceTimer);
+    observerDebounceTimer = setTimeout(function() {
+        // ✅ ПРАЦЮЄМО З УСІМА КАРТКАМИ, ЯКІ НАДІЙШЛИ
+        // Перейменовуємо 'cards' в 'uniqueCards', щоб решта коду функції працювала без змін.
+        var uniqueCards = cards;
+
+        if (LQE_CONFIG.LOGGING_CARDLIST && uniqueCards.length < cards.length) {
+            console.log("LQE-CARDLIST", "Removed duplicates:", cards.length - uniqueCards.length);
+        }
+        
+        if (LQE_CONFIG.LOGGING_CARDLIST) {
+            console.log("LQE-CARDLIST", "Processing", uniqueCards.length, "cards with batching");
+        }
+        
+        // Решта коду обробки пачками залишається без змін...
+        var BATCH_SIZE = 10;
+        var DELAY_MS = 50;
+        
+        function processBatch(startIndex) {
+            var batch = uniqueCards.slice(startIndex, startIndex + BATCH_SIZE);
+            
+            batch.forEach(function(card) {
+                if (card.isConnected) {
+                    // Ця функція все одно не дасть обробити картку двічі
+                    // завдяки перевірці на 'data-lqe-quality-processed' всередині неї.
+                    updateCardListQuality(card);
+                }
+            });
+            
+            var nextIndex = startIndex + BATCH_SIZE;
+            
+            if (nextIndex < uniqueCards.length) {
+                setTimeout(function() {
+                    processBatch(nextIndex);
+                }, DELAY_MS);
+            }
+        }
+        
+        if (uniqueCards.length > 0) {
+            processBatch(0);
+        }
+        
+    }, 15);
+}
+    
+    
+    /*function debouncedProcessNewCards(cards) {
         if (!Array.isArray(cards) || cards.length === 0) return;
         
         clearTimeout(observerDebounceTimer);
@@ -1409,7 +1458,7 @@
             }
             
         }, 15); // Дебаунсинг 15ms для швидшого відображення
-    }
+    }*/
 
     /**
      * Налаштовує Observer для відстеження нових карток

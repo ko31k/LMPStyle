@@ -742,7 +742,8 @@
                 return regex.test(haystack.toLowerCase());
             }
 
-            // Функція пошуку в JacRed API з правильними пріоритетами
+    // Функція пошуку в JacRed API з правильними пріоритетами
+
 function searchJacredApi(searchTitle, searchYear, exactMatch, contentType, apiCallback) {
     var userId = Lampa.Storage.get('lampac_unic_id', '');
     var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
@@ -914,9 +915,8 @@ if (searchStrategies.length > 0) {
     callback(null);
     done();
 }
-}
-}
-
+            
+    // Кінець JacRed API
     // ===================== КЕШУВАННЯ =====================
     
     /**

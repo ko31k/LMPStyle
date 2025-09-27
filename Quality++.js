@@ -1714,7 +1714,7 @@ function getBestReleaseFromJacred(normalizedCard, cardId, callback) {
         if (searchStrategies.length > 0) executeNextStrategy(0);
         else { callback(null); done(); }
     });
-}
+})();
 
 // =====================================================================
 // ================== END PATCHED IMPLEMENTATION V9 ====================

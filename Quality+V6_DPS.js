@@ -741,7 +741,8 @@
                 var regex = new RegExp("\\b" + needle.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "\\b", "i");
                 return regex.test(haystack.toLowerCase());
             }
-
+        }
+    }
     // Функція пошуку в JacRed API з правильними пріоритетами
 
 function searchJacredApi(searchTitle, searchYear, exactMatch, contentType, apiCallback) {

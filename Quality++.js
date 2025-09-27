@@ -1337,75 +1337,7 @@
      * Оптимізований дебаунс обробки нових карток з TV-оптимізацією
      * @param {Array} cards - Масив карток
      */
-
-function debouncedProcessNewCards(cards) {
-        if (!Array.isArray(cards) || cards.length === 0) return;
-        
-        clearTimeout(observerDebounceTimer);
-        observerDebounceTimer = setTimeout(function() {
-            // ✅ ПРАВИЛЬНА УНІКАЛІЗАЦІЯ: за самим DOM-елементом.
-            // new Set() автоматично прибирає дублікати посилань на один і той самий об'єкт (елемент).
-            // Це дозволяє обробляти різні картки з однаковим ID, але захищає від дублів від MutationObserver.
-            var uniqueCards = Array.from(new Set(cards));
-            
-            if (LQE_CONFIG.LOGGING_CARDLIST) {
-                if (uniqueCards.length < cards.length) {
-                    console.log("LQE-CARDLIST", "Removed duplicate DOM element references:", cards.length - uniqueCards.length);
-                }
-            }
-            
-            if (LQE_CONFIG.LOGGING_CARDLIST) {
-                console.log("LQE-CARDLIST", "Processing", uniqueCards.length, "unique cards with batching");
-            }
-            
-            // TV-ОПТИМІЗАЦІЯ: обробка порціями для уникнення фризів
-            var BATCH_SIZE = 10;     // Кількість карток за один раз
-            var DELAY_MS = 50;      // Затримка між порціями
-            
-            /**
-             * Рекурсивна функція обробки порцій
-             * @param {number} startIndex - Індекс початку поточної порції
-             */
-            function processBatch(startIndex) {
-                var batch = uniqueCards.slice(startIndex, startIndex + BATCH_SIZE); // Поточна порція
-                
-                if (LQE_CONFIG.LOGGING_CARDLIST) {
-                    console.log("LQE-CARDLIST", "Processing batch", (startIndex/BATCH_SIZE) + 1, 
-                               "with", batch.length, "cards");
-                }
-                
-                // Обробляємо поточну порцію
-                batch.forEach(function(card) {
-                    if (card.isConnected) { // Перевіряємо, чи картка ще в DOM
-                        updateCardListQuality(card);
-                    }
-                });
-                
-                var nextIndex = startIndex + BATCH_SIZE;
-                
-                // Якщо залишилися картки - плануємо наступну порцію
-                if (nextIndex < uniqueCards.length) {
-                    setTimeout(function() {
-                        processBatch(nextIndex);
-                    }, DELAY_MS);
-                } else {
-                    // Всі картки оброблено
-                    if (LQE_CONFIG.LOGGING_CARDLIST) {
-                        console.log("LQE-CARDLIST", "All batches processed successfully");
-                    }
-                }
-            }
-            
-            // Запускаємо обробку з першої порції
-            if (uniqueCards.length > 0) {
-                processBatch(0);
-            }
-            
-        }, 15); // Дебаунсинг 15ms для швидшого відображення
-    }
-    
-    
-    /*function debouncedProcessNewCards(cards) {
+    function debouncedProcessNewCards(cards) {
         if (!Array.isArray(cards) || cards.length === 0) return;
         
         clearTimeout(observerDebounceTimer);
@@ -1477,7 +1409,7 @@ function debouncedProcessNewCards(cards) {
             }
             
         }, 15); // Дебаунсинг 15ms для швидшого відображення
-    }*/
+    }
 
     /**
      * Налаштовує Observer для відстеження нових карток

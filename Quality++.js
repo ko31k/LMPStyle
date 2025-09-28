@@ -41,12 +41,12 @@
         
         // Ручні перевизначення якості для конкретних ID контенту
         MANUAL_OVERRIDES: {
-            '90802': { quality_code: 2160, full_label: '4K Web-DLRip' },
+             /*'90802': { quality_code: 2160, full_label: '4K WEB-DLRip' },*/
             '20873': { quality_code: 2160, full_label: '4K BDRip' },
             '1128655': { quality_code: 2160, full_label: '4K Web-DL' },
-            '46010': { quality_code: 1080, full_label: '1080p Web-DLRip' },
+             /*'46010': { quality_code: 1080, full_label: '1080p WEB-DLRip' },*/
             '9564': { quality_code: 1080, full_label: '1080p BDRemux' },
-            '32334': { quality_code: 1080, full_label: '1080p Web-DLRip' },
+             /*'32334': { quality_code: 1080, full_label: '1080p WEB-DLRip' },*/
             '21028': { quality_code: 1080, full_label: '1080p BDRemux' },
             '20932': { quality_code: 1080, full_label: '1080p HDTVRip' },
             '57778': { quality_code: 2160, full_label: '4K Web-DL' },

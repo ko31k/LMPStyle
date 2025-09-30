@@ -32,7 +32,7 @@
         
         // Стилі для відображення якості на спискових картках
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
-        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)',
+        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 1)', //Стандартна прозорість фону 0.8 (зараз 1 - фон не прозорий)
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF',
         LIST_CARD_LABEL_FONT_WEIGHT: '600',

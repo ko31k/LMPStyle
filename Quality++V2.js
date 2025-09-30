@@ -876,7 +876,8 @@
                     title: normalizedCard.original_title.trim(),
                     year: year,
                     exact: true,
-                    name: "OriginalTitle Exact Year"
+                    name: "OriginalTitle Exact Year",
+					contentType: isTvSeries ? 'tv' : 'movie'
                 });
             }
 
@@ -886,7 +887,8 @@
                     title: normalizedCard.title.trim(),
                     year: year,
                     exact: true,
-                    name: "Title Exact Year"
+                    name: "Title Exact Year",
+					contentType: isTvSeries ? 'tv' : 'movie'
                 });
             }
 

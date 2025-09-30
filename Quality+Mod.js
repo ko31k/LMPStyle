@@ -7,8 +7,8 @@
         LOGGING_GENERAL: false, // Загальне логування для налагодження
         LOGGING_QUALITY: true, // Логування процесу визначення якості
         LOGGING_CARDLIST: false, // Логування для спискових карток
-        CACHE_VALID_TIME_MS: 12 * 60 * 60 * 1000, // Час життя кешу (24 години)
-        CACHE_REFRESH_THRESHOLD_MS: 6 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
+        CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години)
+        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
         JACRED_PROTOCOL: 'http://', // Протокол для API JacRed
         JACRED_URL: 'jacred.xyz', // Домен API JacRed
@@ -97,7 +97,7 @@
         "HDTVRip (1080p)": "1080p FHDTVRip", "hdrip": "HDRip",
         "hdtvrip (720p)": "720p HDTVRip",
         "dvdrip": "DVDRip", "hdtv": "HDTV", "dsrip": "DSRip", "satrip": "SATRip",
-		    "telecine": "TC", "tc": "TC", "ts": "TS"
+		"telecine": "TC", "tc": "TC", "ts": "TS"
       
     };
 
@@ -133,7 +133,7 @@
     };
     // Мапа для спрощення повних назв якості до коротких форматів
     var QUALITY_SIMPLIFIER_MAP = {
-    // Висока якість (роздільність)
+    // Якість (роздільність)
     "2160p": "4K", "2160": "4K", "4k": "4K", "4к": "4K", "uhd": "4K", "ultra hd": "4K", "dci 4k": "4K", "ultrahd": "4K",
     "1440p": "QHD", "1440": "QHD", "2k": "QHD", "qhd": "QHD",
     "1080p": "FHD", "1080": "FHD", "1080i": "FHD", "full hd": "FHD", "fhd": "FHD",
@@ -194,6 +194,7 @@
         " position: absolute; " + // Абсолютне позиціонування
         " bottom: 0.50em; " + // Відступ від низу
         " left: 0; " + // Вирівнювання по лівому краю
+		" margin-left: -0.5em; " + //ВІДСТУП за лівий край 
         " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // Колір фону
         " z-index: 10;" + // Z-index для поверх інших елементів
         " width: fit-content; " + // Ширина по вмісту
@@ -731,7 +732,7 @@
                 return lastYear;
             }
 
-            // Функція пошуку в JacRed API з логікою Quality+
+            // Функція пошуку в JacRed API
             function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
                 var userId = Lampa.Storage.get('lampac_unic_id', '');
                 var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
@@ -767,7 +768,7 @@
                         var bestNumericQuality = -1; // Найкраща знайдена якість
                         var bestFoundTorrent = null; // Найкращий знайдений торрент
 
-                        // Аналізуємо кожен торрент з логікою Quality+
+                        // Аналізуємо кожен торрент
                         for (var i = 0; i < torrents.length; i++) {
                             var currentTorrent = torrents[i];
                             // Визначаємо якість (спочатку з поля, потім з назви)
@@ -1340,7 +1341,7 @@
             }
             
             // TV-ОПТИМІЗАЦІЯ: обробка порціями для уникнення фризів
-            var BATCH_SIZE = 8; // Кількість карток за один раз
+            var BATCH_SIZE = 10; // Кількість карток за один раз
             var DELAY_MS = 50; // Затримка між порціями
             
             /**

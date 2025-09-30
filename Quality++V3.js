@@ -759,7 +759,7 @@
                     encodeURIComponent(searchTitle) +
                     '&year=' + searchYear +
                     (exactMatch ? '&exact=true' : '');
-				if (contentType) {
+			    if (contentType) {
 					var jacredType = contentType === 'movie' ? 'movie' : 'serial';
 					apiUrl += '&type=' + jacredType;
 				}
@@ -909,7 +909,7 @@
                     title: normalizedCard.title.trim(),
                     year: year,
                     exact: true,
-                    name: "Title Exact Year"
+                    name: "Title Exact Year",
 					contentType: isTvSeries ? 'tv' : 'movie'
                 });
             }

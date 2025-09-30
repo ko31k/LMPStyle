@@ -24,7 +24,7 @@
     .card--season-complete {
         position: absolute;
         left: 0;
-        margin-left: -0.3em; //ВІДСТУП за лівий край 
+        margin-left: -0.25em; //ВІДСТУП за лівий край 
         bottom: 0.50em;
         background-color: rgba(61, 161, 141, 0.8);  /* Зелений колір */
         z-index: 12;
@@ -40,7 +40,7 @@
     .card--season-progress {
         position: absolute;
         left: 0;
-        margin-left: -0.3em; //ВІДСТУП за лівий край 
+        margin-left: -0.25em; //ВІДСТУП за лівий край 
         bottom: 0.50em;
         background-color: rgba(255, 193, 7, 0.8);   /* Жовтий колір */
         z-index: 12;

@@ -194,12 +194,12 @@
         " position: absolute; " + // Абсолютне позиціонування
         " bottom: 0.50em; " + // Відступ від низу
         " left: 0; " + // Вирівнювання по лівому краю
-		" margin-left: -0.5em; " + //ВІДСТУП за лівий край 
+		" margin-left: -0.3em; " + //ВІДСТУП за лівий край 
         " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // Колір фону
         " z-index: 10;" + // Z-index для поверх інших елементів
         " width: fit-content; " + // Ширина по вмісту
         " max-width: calc(100% - 1em); " + // Максимальна ширина
-        " border-radius: 0 0.8em 0.8em 0.3em; " + // Закруглення кутів
+        " border-radius: 0 0.8em 0.8em 0.0em; " + // Закруглення кутів
         " overflow: hidden;" + // Обрізання переповнення
         "}" +
         ".card__quality div {" + // Стилі для тексту всередині мітки якості

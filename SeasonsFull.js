@@ -24,7 +24,7 @@
     .card--season-complete {
         position: absolute;
         left: 0;
-        margin-left: -0.25em; //ВІДСТУП за лівий край 
+        margin-left: -0.28em; //ВІДСТУП за лівий край 
         bottom: 0.50em;
         background-color: rgba(61, 161, 141, 1);  /* Зелений колір, стандартна прозорість фону 0.8 (зараз 1 - фон не прозорий) */
         z-index: 12;

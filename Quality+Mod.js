@@ -3,7 +3,7 @@
 
     // ===================== КОНФІГУРАЦІЯ =====================
     var LQE_CONFIG = {
-        CACHE_VERSION: 2, // Версія кешу для інвалідації старих даних
+        CACHE_VERSION: 3, // Версія кешу для інвалідації старих даних
         LOGGING_GENERAL: false, // Загальне логування для налагодження
         LOGGING_QUALITY: true, // Логування процесу визначення якості
         LOGGING_CARDLIST: false, // Логування для спискових карток
@@ -194,7 +194,7 @@
         " position: absolute; " + // Абсолютне позиціонування
         " bottom: 0.50em; " + // Відступ від низу
         " left: 0; " + // Вирівнювання по лівому краю
-		" margin-left: -0.3em; " + //ВІДСТУП за лівий край 
+		" margin-left: -0.35em; " + //ВІДСТУП за лівий край 
         " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // Колір фону
         " z-index: 10;" + // Z-index для поверх інших елементів
         " width: fit-content; " + // Ширина по вмісту

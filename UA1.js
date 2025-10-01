@@ -30,7 +30,12 @@
         // --- Налаштування стилів мітки на картках у списку ---
         LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)', // Колір фону мітки.
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // Колір тексту мітки.
-    };
+        LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
+        LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
+        LIST_CARD_LABEL_FONT_WEIGHT: '600',
+        LIST_CARD_LABEL_FONT_SIZE: '1.3em',
+        LIST_CARD_LABEL_FONT_STYLE: 'normal',
+        };
 
     // ===================== СТИЛІ CSS =====================
     // Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.

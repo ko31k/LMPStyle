@@ -771,6 +771,25 @@
                         // Аналізуємо кожен торрент
                         for (var i = 0; i < torrents.length; i++) {
                             var currentTorrent = torrents[i];
+
+							
+							// Якщо картка - це серіал (tv)
+                            if (normalizedCard.type === 'tv') {
+                               var tTitle = currentTorrent.title.toLowerCase(); // назву приводимо до нижнього регістру
+                               // Перевірка: у назві має бути "сезон", "season", "s01", "s1", "серии" тощо
+                                   if (!/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(tTitle)) {
+                                      if (LQE_CONFIG.LOGGING_QUALITY) {
+                                         console.log(
+                                         "LQE-QUALITY",
+                                         "card: " + cardId + ", Пропускаємо торрент без ознаки сезону:", currentTorrent.title
+                                         );
+                                      }
+                                   continue; // пропускаємо реліз, якщо це серіал, але немає сезону в назві
+                                 }
+	                        }
+
+
+							
                             // Визначаємо якість (спочатку з поля, потім з назви)
                             var currentNumericQuality = currentTorrent.quality;
                             if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {

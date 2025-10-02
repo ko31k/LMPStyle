@@ -265,7 +265,7 @@
                 var currentYear = new Date().getFullYear();
                 while ((match = regex.exec(title)) !== null) {
                     var extractedYear = parseInt(match[1], 10);
-                    if (extractedYear >= 1900 && extractedYear <= currentYear + 0) {  /*відхилення в роках від дати релізу currentYear + 0 */
+                    if (extractedYear >= 1900 && extractedYear <= currentYear + 2) { 
                         lastYear = extractedYear;
                     }
                 }
@@ -316,7 +316,7 @@
                             // Гнучка перевірка року.
                             var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 3) {
+                            if (parsedYear > 1900 && yearDifference > 0) {  /* можна змінити перевірку року для більших результатів, але можлива менша точність yearDifference > 1*/
                                 continue;
                             }
                             

@@ -28,7 +28,7 @@
         SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів.
 
         // --- Налаштування стилів мітки на картках у списку ---
-        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.8)', // Колір фону мітки.
+        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(0, 0, 0, 0.6)', // Колір фону мітки.
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // Колір тексту мітки.
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
@@ -46,9 +46,11 @@
         // Стиль для нашої нової мітки з доріжками.
         ".card__tracks {" +
         " position: absolute; " + // Абсолютне позиціонування відносно .card__view.
-        " bottom: 0.50em; " + // Відступ від нижнього краю постера.
-        " right: 0; " + // Прив'язка до правого краю.
-        " margin-right: -0.4em; " + // Виступ за правий край для кращого візуального ефекту.
+        " top: 0.8em; " +
+        " bottom: auto; " + // Відступ від нижнього краю постера.
+        " right: 0.3em; " + // Прив'язка до правого краю.
+        " left: auto: " +
+        //" margin-right: -0.4em; " + // Виступ за правий край для кращого візуального ефекту.
         " background-color: " + LTF_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR + " !important;" + // Колір фону з конфігурації.
         " z-index: 10;" + // Відображати поверх інших елементів.
         " width: fit-content; " + // Ширина за вмістом.

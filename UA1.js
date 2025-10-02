@@ -67,9 +67,9 @@
         " color: " + LTF_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту з конфігурації.
         " padding: 0.3em 0.4em; " + // Внутрішні відступи.
         " white-space: nowrap;" + // Заборона переносу тексту.
-        "display: flex; +                                                 /* Той самий flex */
-        "align-items: center; +                                               /* Той самий вирівнювання */
-        "gap: 4px; +
+        " display: flex; " +                                                 /* Той самий flex */
+        "align-items: center; " +                                               /* Той самий вирівнювання */
+        "gap: 4px; " +
         " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); " + // Тінь для кращої читабельності.
         "}" +
 

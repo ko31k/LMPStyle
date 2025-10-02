@@ -46,9 +46,9 @@
         // Стиль для нашої нової мітки з доріжками.
         ".card__tracks {" +
         " position: absolute; " + // Абсолютне позиціонування відносно .card__view.
-        " top: 1.8em; " +
+        " top: 2.5em; " +
         " bottom: auto; " + // Відступ від нижнього краю постера.
-        " right: 0.3em; " + // Прив'язка до правого краю.
+        " right: 0.5em; " + // Прив'язка до правого краю.
         " left: auto: " +
         //" margin-right: -0.4em; " + // Виступ за правий край для кращого візуального ефекту.
         " background-color: " + LTF_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR + " !important;" + // Колір фону з конфігурації.

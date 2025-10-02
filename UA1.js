@@ -28,7 +28,7 @@
         SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів.
 
         // --- Налаштування стилів мітки на картках у списку ---
-        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(0, 0, 0, 0.8)', // Колір фону мітки.
+        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(0,0,0,0.5)', // Колір фону мітки.
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // Колір тексту мітки.
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,

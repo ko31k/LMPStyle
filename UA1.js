@@ -33,7 +33,7 @@
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
-        LIST_CARD_LABEL_FONT_SIZE: '1.3em',
+        LIST_CARD_LABEL_FONT_SIZE: '1.2em',
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
         };
 
@@ -56,14 +56,14 @@
         " border-radius: 0.8em 0 0.3em 0.8em; " + // Закруглені ліві кути та гострі праві.
         " overflow: hidden;" + // Приховувати все, що виходить за межі закруглених кутів.
         "}" +
-
+   
         // Стиль для тексту всередині мітки.
         ".card__tracks div {" +
-        " text-transform: uppercase; " + // Великі літери (Ukr, 2xUkr).
+        " text-transform: none; " + // Великі літери (Ukr, 2xUkr).
         " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " + // Шрифт.
         " font-weight: 700; " + // Жирність шрифту.
         " letter-spacing: 0.1px; " + // Міжлітерна відстань.
-        " font-size: 1.30em; " + // Розмір шрифту.
+        " font-size: 1.20em; " + // Розмір шрифту.
         " color: " + LTF_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту з конфігурації.
         " padding: 0.1em 0.3em 0.08em 0.3em; " + // Внутрішні відступи.
         " white-space: nowrap;" + // Заборона переносу тексту.

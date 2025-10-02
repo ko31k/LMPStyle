@@ -265,7 +265,7 @@
                 var currentYear = new Date().getFullYear();
                 while ((match = regex.exec(title)) !== null) {
                     var extractedYear = parseInt(match[1], 10);
-                    if (extractedYear >= 1900 && extractedYear <= currentYear + 2) {
+                    if (extractedYear >= 1900 && extractedYear <= currentYear + 0) {  /*відхилення в роках від дати релізу currentYear + 0 */
                         lastYear = extractedYear;
                     }
                 }

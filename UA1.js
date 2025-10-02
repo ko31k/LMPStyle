@@ -32,54 +32,58 @@
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF', // Колір тексту мітки.
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
-        LIST_CARD_LABEL_FONT_WEIGHT: '600',
+        LIST_CARD_LABEL_FONT_WEIGHT: '700',
         LIST_CARD_LABEL_FONT_SIZE: '1.3em',
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
         };
 
-    // ===================== СТИЛІ CSS =====================
-    // Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.
-    var styleTracks = "<style id=\"lampa_tracks_styles\">" +
-        // Встановлюємо контекст позиціонування для постера.
-        ".card__view { position: relative; }" +
+// ===================== СТИЛІ CSS =====================
+// Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.
+var styleTracks = "<style id=\"lampa_tracks_styles\">" +
+    // Встановлюємо контекст позиціонування для постера.
+    ".card__view { position: relative; }" +
 
-        // Стиль для нашої нової мітки з доріжками.
-        ".card__tracks {" +
-        " position: absolute; " + // Абсолютне позиціонування відносно .card__view.
-        " top: 2.5em; " +
-        " bottom: auto; " + // Відступ від нижнього краю постера.
-        " right: 0.5em; " + // Прив'язка до правого краю.
-        " left: auto: " +
-        //" margin-right: -0.4em; " + // Виступ за правий край для кращого візуального ефекту.
-        " background-color: " + LTF_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR + " !important;" + // Колір фону з конфігурації.
-        " z-index: 10;" + // Відображати поверх інших елементів.
-        " width: fit-content; " + // Ширина за вмістом.
-        " max-width: calc(100% - 1em); " + // Максимальна ширина, щоб не вилазити занадто сильно.
-        " border-radius: 0.8em 0 0 0.8em; " + // Закруглені ліві кути та гострі праві.
-        " overflow: hidden;" + // Приховувати все, що виходить за межі закруглених кутів.
-        "}" +
-   
-        // Стиль для тексту всередині мітки.
-        ".card__tracks div {" +
-        " text-transform: none; " + // Великі літери (Ukr, 2xUkr).
-        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " + // Шрифт.
-        " font-weight: 700; " + // Жирність шрифту.
-        " letter-spacing: 0.1px; " + // Міжлітерна відстань.
-        " font-size: 1.05em; " + // Розмір шрифту.
-        " color: " + LTF_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту з конфігурації.
-        " padding: 0.3em 0.4em; " + // Внутрішні відступи.
-        " white-space: nowrap;" + // Заборона переносу тексту.
-        " display: flex; " +                                                 /* Той самий flex */
-        "align-items: center; " +                                               /* Той самий вирівнювання */
-        "gap: 4px; " +
-        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); " + // Тінь для кращої читабельності.
-        "}" +
+    // Стиль для нашої нової мітки з доріжками (оновлено).
+    ".card__tracks {" +
+    " position: absolute !important; " + // Абсолютне позиціонування відносно .card__view.
+    " right: 0.3em !important; " + // Прив'язка до правого краю.
+    " left: auto !important; " +
+    " top: 0.3em !important; " + // Відступ зверху (як в Interface+).
+    " background: rgba(0,0,0,0.5) !important;" + // Напівпрозорий чорний фон (як в Interface+).
+    " color: #FFFFFF !important;" + // Білий колір тексту (як ви просили).
+    " font-size: 1.3em !important;" + // Розмір шрифту (як в Interface+).
+    " padding: 0.2em 0.5em !important;" + // Внутрішні відступи (як в Interface+).
+    " -webkit-border-radius: 1em !important;" + // Закруглення (як в Interface+).
+    " -moz-border-radius: 1em !important;" + // Закруглення (як в Interface+).
+    " border-radius: 1em !important;" + // Закруглення (як в Interface+).
+    " font-weight: 700 !important;" + // Жирність шрифту (як в Interface+).
+    " z-index: 20 !important;" + // Високий z-index (як в Interface+).
+    " width: fit-content !important; " + // Ширина за вмістом.
+    " max-width: calc(100% - 1em) !important; " + // Максимальна ширина.
+    " overflow: hidden !important;" + // Приховувати все, що виходить за межі.
+    "}" +
 
-        // Стилі для відображення мітки на повній картці (поруч з рейтингом).
-        ".full-start-new__rate-line > .ltf-tracks {" +
-        " border: 1px solid #FFFFFF !important; color: #FFFFFF !important; font-weight: normal !important; font-size: 1.2em !important; padding: 0.3em 0.5em; border-radius: 0.2em; margin-right: 0.5em; height: 1.72em; display: flex; align-items: center; justify-content: center; box-sizing: border-box;" +
-        "}" +
-        "</style>";
+    // Стиль для тексту всередині мітки (оновлено).
+    ".card__tracks div {" +
+    " text-transform: none !important; " + // Великі літери (Ukr, 2xUkr).
+    " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " + // Шрифт.
+    " font-weight: 700 !important; " + // Жирність шрифту.
+    " letter-spacing: 0.1px !important; " + // Міжлітерна відстань.
+    " font-size: 1.05em !important; " + // Розмір шрифту.
+    " color: #FFFFFF !important;" + // Білий колір тексту.
+    " padding: 0 !important; " + // Скидаємо внутрішні відступи, оскільки вони вже в батьківському елементі.
+    " white-space: nowrap !important;" + // Заборона переносу тексту.
+    " display: flex !important; " +
+    " align-items: center !important; " +
+    " gap: 4px !important; " +
+    " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " + // Тінь для кращої читабельності.
+    "}" +
+
+    // Стилі для відображення мітки на повній картці (поруч з рейтингом).
+    ".full-start-new__rate-line > .ltf-tracks {" +
+    " border: 1px solid #FFFFFF !important; color: #FFFFFF !important; font-weight: normal !important; font-size: 1.2em !important; padding: 0.3em 0.5em; border-radius: 0.2em; margin-right: 0.5em; height: 1.72em; display: flex; align-items: center; justify-content: center; box-sizing: border-box;" +
+    "}" +
+    "</style>";
     // Додаємо стилі в DOM.
     Lampa.Template.add('lampa_tracks_css', styleTracks);
     $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));

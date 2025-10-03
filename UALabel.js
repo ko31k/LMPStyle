@@ -314,7 +314,7 @@
                             }
 
                             // Якщо картка - це фільм (movie)
-                            if (normalizedCard.type === 'movie') {
+                            /*if (normalizedCard.type === 'movie') {
                                var tTitleMovie = currentTorrent.title.toLowerCase();
                             // Якщо в назві є ознаки серіалу – пропускаємо (щоб не брати якість від серіалів)
                                    if (/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(tTitleMovie)) {
@@ -327,7 +327,7 @@
                                       }
                                    continue; // пропускаємо цей торрент
                                    }
-	                          }
+	                          }*/
 
                             
                             

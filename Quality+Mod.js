@@ -3,7 +3,7 @@
 
     // ===================== КОНФІГУРАЦІЯ =====================
     var LQE_CONFIG = {
-        CACHE_VERSION: 4, // Версія кешу для інвалідації старих даних
+        CACHE_VERSION: 5, // Версія кешу для інвалідації старих даних
         LOGGING_GENERAL: false, // Загальне логування для налагодження
         LOGGING_QUALITY: true, // Логування процесу визначення якості
         LOGGING_CARDLIST: false, // Логування для спискових карток
@@ -787,6 +787,22 @@
                                    continue; // пропускаємо реліз, якщо це серіал, але немає сезону в назві
                                  }
 	                        }
+
+                            // Якщо картка - це фільм (movie)
+                            if (normalizedCard.type === 'movie') {
+                               var tTitleMovie = currentTorrent.title.toLowerCase();
+                            // Якщо в назві є ознаки серіалу – пропускаємо (щоб не брати якість від серіалів)
+                                   if (/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(tTitleMovie)) {
+                                      if (LQE_CONFIG.LOGGING_QUALITY) {
+                                         console.log(
+                                         "LQE-QUALITY",
+                                         "card: " + cardId + ", Пропускаємо реліз із ознаками серіалу для фільму:",
+                                         currentTorrent.title
+                                         );
+                                      }
+                                   continue; // пропускаємо цей торрент
+                                   }
+	                          }
 
 
 							

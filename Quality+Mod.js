@@ -194,7 +194,7 @@
         " position: absolute; " + // Абсолютне позиціонування
         " bottom: 0.50em; " + // Відступ від низу
         " left: 0; " + // Вирівнювання по лівому краю
-		" margin-left: -0.8em; " + //ВІДСТУП за лівий край 
+		" margin-left: -0.78em; " + //ВІДСТУП за лівий край 
         " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // Колір фону
         " z-index: 10;" + // Z-index для поверх інших елементів
         " width: fit-content; " + // Ширина по вмісту

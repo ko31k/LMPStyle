@@ -312,6 +312,24 @@
                                     continue; // Перейти до наступного торрента.
                                 }
                             }
+
+                            // Якщо картка - це фільм (movie)
+                            if (normalizedCard.type === 'movie') {
+                               var tTitleMovie = currentTorrent.title.toLowerCase();
+                            // Якщо в назві є ознаки серіалу – пропускаємо (щоб не брати якість від серіалів)
+                                   if (/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(tTitleMovie)) {
+                                      if (LQE_CONFIG.LOGGING_QUALITY) {
+                                         console.log(
+                                         "LQE-QUALITY",
+                                         "card: " + cardId + ", Пропускаємо реліз із ознаками серіалу для фільму:",
+                                         currentTorrent.title
+                                         );
+                                      }
+                                   continue; // пропускаємо цей торрент
+                                   }
+	                          }
+
+                            
                             
                             // Гнучка перевірка року.
                             var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);

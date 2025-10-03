@@ -1,59 +1,41 @@
 (function(){
-    /**
-     * Плагін "Auto Upcoming Episodes"
-     * --------------------------------
-     * Ідея: при кожному старті Lampa автоматично "проходить" по закладках серіалів
-     * і підтягує для них дані. Це імітує відкриття картки вручну.
-     * У результаті стандартний блок "Найближчі виходи епізодів" стає активним одразу.
-     */
-
-    // Основна функція ініціалізації
-    function init(){
-        // Отримуємо всі закладки з локального сховища
-        let favorites = Lampa.Storage.get('favorite','[]');
-
-        // Відбираємо тільки серіали (type === 'tv')
-        let serials = favorites.filter(f => f.type === 'tv');
-
-        console.log('[AutoUpcoming] Знайдено серіалів у закладках:', serials.length);
-
-        // Якщо серіалів немає – виходимо
-        if(!serials.length) return;
-
-        // Проходимо по кожному серіалу з невеликою затримкою,
-        // щоб не робити занадто багато запитів одночасно
-        serials.forEach((item, i) => {
-            setTimeout(() => {
-                try {
-                    // Викликаємо API Lampa для отримання даних серіалу з TMDB
-                    Lampa.TMDB.tv(item.id, (data) => {
-                        console.log('[AutoUpcoming] Оновлено серіал:', item.name || item.title);
-                        // Нічого не малюємо – цього достатньо, щоб Lampa
-                        // оновила кеш і підхопила інформацію для "Найближчих виходів"
-                    }, (error) => {
-                        console.warn('[AutoUpcoming] Помилка оновлення серіалу:', item.id, error);
-                    });
-                } catch(e){
-                    console.error('[AutoUpcoming] Виключення при оновленні серіалу:', e.message);
-                }
-            }, i * 800); // 800мс затримки між запитами (налаштовується)
-        });
-    }
-
-    // Підписуємося на подію старту додатку
-    Lampa.Listener.follow('app', (event) => {
-        if(event.type === 'ready'){
-            console.log('[AutoUpcoming] Старт плагіна');
-            init();
-        }
-    });
-
-    // Реєструємо плагін у меню "Мої налаштування" (щоб було видно, що він увімкнений)
-    Lampa.Plugin.create({
+    let plugin = {
         title: 'Auto Upcoming Episodes',
-        description: 'Автоматично оновлює закладки серіалів при старті, щоб з\'являвся розділ "Найближчі виходи епізодів".',
-        version: '1.0',
+        description: 'Автоматично оновлює закладки серіалів при старті, щоб працював розділ "Найближчі виходи епізодів".',
+        version: '1.1',
         author: 'GPT + User',
-        type: 'general'
-    });
+        type: 'general',
+
+        run(){
+            console.log('[AutoUpcoming] Запуск плагіна');
+
+            // Читаємо закладки
+            let favorites = Lampa.Storage.get('favorite','[]');
+            let serials = favorites.filter(f => f.type === 'tv');
+
+            if(!serials.length){
+                console.log('[AutoUpcoming] Серіалів у закладках немає');
+                return;
+            }
+
+            console.log('[AutoUpcoming] Серіалів у закладках:', serials.length);
+
+            serials.forEach((item, i) => {
+                setTimeout(() => {
+                    try {
+                        // Викликаємо details (те саме, що коли відкриваєш картку)
+                        Lampa.TMDB.details('tv', item.id, (data) => {
+                            console.log('[AutoUpcoming] Оновлено:', item.name || item.title);
+                        }, (err) => {
+                            console.warn('[AutoUpcoming] Помилка:', item.id, err);
+                        });
+                    } catch(e){
+                        console.error('[AutoUpcoming] Виключення:', e.message);
+                    }
+                }, i * 1000); // пауза між запитами
+            });
+        }
+    };
+
+    Lampa.Plugin.create(plugin);
 })();

@@ -21,7 +21,7 @@
         SHOW_QUALITY_FOR_TV_SERIES: true, // Показувати якість для серіалів
         MAX_PARALLEL_REQUESTS: 16, // Максимальна кількість паралельних запитів
         
-        USE_SIMPLE_QUALITY_LABELS: false, // Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
+        USE_SIMPLE_QUALITY_LABELS: true, // Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
         
         // Стилі для відображення якості на повній картці
         FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF',

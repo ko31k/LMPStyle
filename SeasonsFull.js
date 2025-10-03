@@ -58,7 +58,7 @@
         text-transform: uppercase;
         font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;  /* Той самий шрифт */
         font-weight: 700;                                                    /* Той самий жирний шрифт */
-        font-size: 1.05em;                                                   /* Той самий розмір */
+        font-size: 1.0 em;                                                   /* Той самий розмір */
         padding: 0.3em 0.4em;                                                /* Той самий відступ */
         white-space: nowrap;                                                 /* Той самий перенос */
         display: flex;                                                       /* Той самий flex */

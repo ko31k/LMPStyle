@@ -1,41 +1,51 @@
 (function(){
-    let plugin = {
-        title: 'Auto Upcoming Episodes',
-        description: 'Автоматично оновлює закладки серіалів при старті, щоб працював розділ "Найближчі виходи епізодів".',
-        version: '1.1',
-        author: 'GPT + User',
-        type: 'general',
+    /**
+     * Auto Upcoming Episodes (background version)
+     * ------------------------------------------
+     * При кожному старті Lampa проходить по всіх закладках (Подобається, Пізніше, Закладки)
+     * і підтягує дані серіалів. Це активує стандартний розділ "Найближчі виходи епізодів".
+     */
 
-        run(){
-            console.log('[AutoUpcoming] Запуск плагіна');
+    function updateSerials(){
+        let favorites = Lampa.Storage.get('favorite','{}');
+        let lists = Object.values(favorites || {});
+        let all = [];
 
-            // Читаємо закладки
-            let favorites = Lampa.Storage.get('favorite','[]');
-            let serials = favorites.filter(f => f.type === 'tv');
-
-            if(!serials.length){
-                console.log('[AutoUpcoming] Серіалів у закладках немає');
-                return;
-            }
-
-            console.log('[AutoUpcoming] Серіалів у закладках:', serials.length);
-
-            serials.forEach((item, i) => {
-                setTimeout(() => {
-                    try {
-                        // Викликаємо details (те саме, що коли відкриваєш картку)
-                        Lampa.TMDB.details('tv', item.id, (data) => {
-                            console.log('[AutoUpcoming] Оновлено:', item.name || item.title);
-                        }, (err) => {
-                            console.warn('[AutoUpcoming] Помилка:', item.id, err);
-                        });
-                    } catch(e){
-                        console.error('[AutoUpcoming] Виключення:', e.message);
-                    }
-                }, i * 1000); // пауза між запитами
+        // Об’єднуємо всі групи в один масив
+        lists.forEach(list => {
+            (list || []).forEach(item => {
+                if(item.type === 'tv') all.push(item);
             });
-        }
-    };
+        });
 
-    Lampa.Plugin.create(plugin);
+        if(!all.length){
+            console.log('[AutoUpcoming] Серіалів у закладках немає');
+            return;
+        }
+
+        console.log('[AutoUpcoming] Серіалів для оновлення:', all.length);
+
+        // Проходимо по кожному серіалу
+        all.forEach((item, i) => {
+            setTimeout(() => {
+                try {
+                    Lampa.TMDB.details('tv', item.id, (data) => {
+                        console.log('[AutoUpcoming] Оновлено:', item.name || item.title);
+                    }, (err) => {
+                        console.warn('[AutoUpcoming] Помилка оновлення:', item.id, err);
+                    });
+                } catch(e){
+                    console.error('[AutoUpcoming] Виключення:', e.message);
+                }
+            }, i * 1000); // затримка 1 секунда між запитами
+        });
+    }
+
+    // Коли додаток готовий – запускаємо перевірку
+    Lampa.Listener.follow('app', (event) => {
+        if(event.type === 'ready'){
+            console.log('[AutoUpcoming] Запуск у фоні');
+            updateSerials();
+        }
+    });
 })();

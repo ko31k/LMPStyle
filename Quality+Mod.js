@@ -36,7 +36,7 @@
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF',
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
-        LIST_CARD_LABEL_FONT_SIZE: '1.3em',
+        LIST_CARD_LABEL_FONT_SIZE: '1.1em',
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
         
         // Ручні перевизначення якості для конкретних ID контенту
@@ -207,7 +207,7 @@
         " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " + // Шрифт
         " font-weight: 700; " + // Жирний шрифт
         " letter-spacing: 0.1px; " + // Відстань між літерами
-        " font-size: 1.30em; " + // Розмір шрифту
+        " font-size: 1.10em; " + // Розмір шрифту
         " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту
         " padding: 0.1em 0.1em 0.08em 0.1em; " + // Внутрішні відступи
         " white-space: nowrap;" + // Заборонити перенос тексту

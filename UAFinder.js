@@ -338,7 +338,7 @@
                             // Сувора перевірка року (з вашого файлу).
                             var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 0) {
+                            if (parsedYear > 1900 && yearDifference > 1) {
                                 continue;
                             }
                             

@@ -9,7 +9,7 @@
     window.SeasonBadgePlugin = window.SeasonBadgePlugin || {};
     window.SeasonBadgePlugin.__initialized = true;
 
-    // === НАЛАШТУВАННЯ ПЛАГІНА ===
+    // ===================== КОНФІГУРАЦІЯ ПЛАГІНА =====================
     var CONFIG = {
         tmdbApiKey: '1ad1fd4b4938e876aa6c96d0cded9395',   // API ключ для доступу до TMDB
         cacheTime: 12 * 60 * 60 * 1000,                   // Час зберігання кешу (12 години)
@@ -17,90 +17,92 @@
         language: 'uk'                                    // Мова для запитів до TMDB
     };
 
-    // === СТИЛІ ДЛЯ МІТОК СЕЗОНУ ===
-var style = document.createElement('style');
-style.textContent = `
-/* Стиль для ЗАВЕРШЕНИХ сезонів (зелена мітка) */
-.card--season-complete {
-    position: absolute;
-    left: 0;
-    margin-left: -0.78em; /* ЗМІНЕНО: було -0.68em → стало -0.78em (як в Quality+Mod.js) */
-    bottom: 0.50em;
-    background-color: rgba(61, 161, 141, 1); /* ЗАЛИШЕНО: непрозорий фон */
-    z-index: 12;
-    width: fit-content;
-    max-width: calc(100% - 1em);
-    border-radius: 0.3em; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.22s ease-in-out; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
-}
-
-/* Стиль для НЕЗАВЕРШЕНИХ сезонів (жовта мітка з прогресом) */
-.card--season-progress {
-    position: absolute;
-    left: 0;
-    margin-left: -0.78em; /* ЗМІНЕНО: було -0.68em → стало -0.78em (як в Quality+Mod.js) */
-    bottom: 0.50em;
-    background-color: rgba(255, 193, 7, 1); /* ЗАЛИШЕНО: непрозорий фон */
-    z-index: 12;
-    width: fit-content;
-    max-width: calc(100% - 1em);
-    border-radius: 0.3em; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.22s ease-in-out; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
-}
-
-/* Стилі тексту - ВИРІВНЯНІ З QUALITY MOD */
-.card--season-complete div,
-.card--season-progress div {
-    text-transform: uppercase;
-    font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
-    font-weight: 700; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
-    letter-spacing: 0.1px; /* ДОДАНО: не було → стало (як в Quality+Mod.js) */
-    font-size: 1.10em; /* ЗМІНЕНО: було 1.0em → стало 1.10em (як в Quality+Mod.js) */
-    color: #ffffff !important; /* ДОДАНО: !important для узгодженості */
-    padding: 0.1em 0.1em 0.08em 0.1em; /* ЗМІНЕНО: було 0.3em 0.4em → стало (як в Quality+Mod.js) */
-    white-space: nowrap;
-    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
-    display: flex; /* ЗАЛИШЕНО: flex для вирівнювання */
-    align-items: center; /* ЗАЛИШЕНО: центрування */
-    gap: 4px; /* ЗАЛИШЕНО: проміжок між елементами */
-}
-
-/* Колір тексту для незавершених сезонів (чорний на жовтому) */
-.card--season-progress div {
-    color: #000000 !important; /* ДОДАНО: !important для узгодженості */
-}
-
-/* Клас для плавного показу мітки */
-.card--season-complete.show,
-.card--season-progress.show {
-    opacity: 1; /* ЗАЛИШЕНО: повна видимість */
-}
-
-/* Адаптація для мобільних пристроїв - ВИРІВНЯНА З QUALITY MOD */
-@media (max-width: 768px) {
-    .card--season-complete div,
-    .card--season-progress div {
-        font-size: 1.10em; /* ЗМІНЕНО: було 0.95em → стало 1.10em (залишити як на десктопі) */
-        padding: 0.1em 0.1em 0.08em 0.1em; /* ЗМІНЕНО: було 0.22em 0.5em → стало (як на десктопі) */
-    }
+    // ===================== СТИЛІ ДЛЯ МІТОК СЕЗОНУ ЧЕРЕЗ LAMPA.TEMPLATE =====================
     
-    /* ДОДАНО: медіа-запит для центрування як в Quality+Mod.js */
-    @media screen and (max-width: 480px) { 
-        .card--season-complete, 
-        .card--season-progress {
-            margin-left: -0.78em; /* ЗАЛИШИТИ однакове значення */
-        }
-    }
-}
-`;
-    // Додаємо стилі до головної частини документа
-    document.head.appendChild(style);
+    // Основні стилі для відображення міток сезонів (як в Quality+Mod.js)
+    var seasonStyles = "<style id=\"season_badge_styles\">" +
+        ".card--season-complete {" + // Стиль для ЗАВЕРШЕНИХ сезонів (зелена мітка)
+        " position: absolute; " +
+        " bottom: 0.50em; " +
+        " left: 0; " +
+        " margin-left: -0.78em; " + // ВІДСТУП за лівий край (як в Quality+Mod.js)
+        " background-color: rgba(61, 161, 141, 1); " + // Зелений колір
+        " z-index: 9;" + // Нижче за якість (z-index: 10 в Quality+Mod.js)
+        " width: fit-content; " +
+        " max-width: calc(100% - 1em); " +
+        " border-radius: 0.3em 0.3em 0.3em 0.3em; " +
+        " overflow: hidden;" +
+        " opacity: 0;" +
+        " transition: opacity 0.22s ease-in-out;" +
+        "}" +
+        ".card--season-progress {" + // Стиль для НЕЗАВЕРШЕНИХ сезонів (жовта мітка з прогресом)
+        " position: absolute; " +
+        " bottom: 0.50em; " +
+        " left: 0; " +
+        " margin-left: -0.78em; " + // ВІДСТУП за лівий край (як в Quality+Mod.js)
+        " background-color: rgba(255, 193, 7, 1); " + // Жовтий колір
+        " z-index: 9;" + // Нижче за якість (z-index: 10 в Quality+Mod.js)
+        " width: fit-content; " +
+        " max-width: calc(100% - 1em); " +
+        " border-radius: 0.3em 0.3em 0.3em 0.3em; " +
+        " overflow: hidden;" +
+        " opacity: 0;" +
+        " transition: opacity 0.22s ease-in-out;" +
+        "}" +
+        ".card--season-complete div," + // Стилі тексту для обох типів міток
+        ".card--season-progress div {" +
+        " text-transform: uppercase; " +
+        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " +
+        " font-weight: 700; " + // Жирний шрифт (як в Quality+Mod.js)
+        " letter-spacing: 0.1px; " + // Відстань між літерами (як в Quality+Mod.js)
+        " font-size: 1.10em; " + // Розмір шрифту (як в Quality+Mod.js)
+        " padding: 0.1em 0.1em 0.08em 0.1em; " + // Внутрішні відступи (як в Quality+Mod.js)
+        " white-space: nowrap;" +
+        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); " + // Тінь тексту (як в Quality+Mod.js)
+        " display: flex;" + // Flexbox для вирівнювання
+        " align-items: center;" + // Вертикальне центрування
+        " gap: 4px;" + // Проміжок між елементами
+        "}" +
+        ".card--season-complete div {" + // Білий текст для зелених міток
+        " color: #ffffff !important;" +
+        "}" +
+        ".card--season-progress div {" + // Чорний текст для жовтих міток
+        " color: #000000 !important;" +
+        "}" +
+        ".card--season-complete.show," + // Клас для плавного показу мітки
+        ".card--season-progress.show {" +
+        " opacity: 1;" + // Повна видимість при показі
+        "}" +
+        "</style>";
 
-    // === ДОПОМІЖНІ ФУНКЦІЇ ===
+    // Додаємо стилі через Lampa.Template (як в Quality+Mod.js)
+    if (window.Lampa && Lampa.Template) {
+        Lampa.Template.add('season_badge_css', seasonStyles);
+        $('body').append(Lampa.Template.get('season_badge_css', {}, true));
+    } else {
+        // Fallback якщо Lampa не завантажена
+        document.head.insertAdjacentHTML('beforeend', seasonStyles);
+    }
+
+    // Стилі для плавного з'явлення міток сезонів (як в Quality+Mod.js)
+    var seasonFadeStyles = "<style id='season_badge_fade'>" +
+        ".card--season-complete, .card--season-progress {" + // Елементи для анімації
+        "opacity: 0;" + // Початково прозорі
+        "transition: opacity 0.22s ease-in-out;" + // Плавна зміна прозорості
+        "}" +
+        ".card--season-complete.show, .card--season-progress.show {" + // Клас для показу
+        "opacity: 1;" + // Повністю видимі
+        "}" +
+        "</style>";
+    
+    if (window.Lampa && Lampa.Template) {
+        Lampa.Template.add('season_badge_fade_css', seasonFadeStyles);
+        $('body').append(Lampa.Template.get('season_badge_fade_css', {}, true));
+    } else {
+        document.head.insertAdjacentHTML('beforeend', seasonFadeStyles);
+    }
+
+    // ===================== ДОПОМІЖНІ ФУНКЦІЇ =====================
 
     /**
      * Визначає тип медіа на основі даних картки
@@ -121,6 +123,8 @@ style.textContent = `
         return 'unknown';
     }
 
+    // ===================== КЕШУВАННЯ ДАНИХ =====================
+    
     // Ініціалізація кешу з localStorage
     // Використовуємо localStorage для зберігання кешованих даних
     var cache = JSON.parse(localStorage.getItem('seasonBadgeCache') || '{}');
@@ -167,6 +171,8 @@ style.textContent = `
         });
     }
 
+    // ===================== ОБРОБКА ДАНИХ СЕЗОНІВ =====================
+
     /**
      * Перевіряє стан сезону та повертає інформацію про прогрес
      * @param {Object} tmdbData - дані серіалу з TMDB
@@ -201,6 +207,8 @@ style.textContent = `
             isComplete: airedEpisodes >= totalEpisodes  // Чи завершений сезон
         };
     }
+
+    // ===================== РОБОТА З DOM ЕЛЕМЕНТАМИ =====================
 
     /**
      * Створює DOM-елемент мітки сезону
@@ -252,7 +260,7 @@ style.textContent = `
         }
     }
 
-    // === ДОДАТКОВІ ФУНКЦІЇ ДЛЯ РОБОТИ З МІТКАМИ ЯКОСТІ ===
+    // ===================== ДОДАТКОВІ ФУНКЦІЇ ДЛЯ РОБОТИ З МІТКАМИ ЯКОСТІ =====================
     
     /**
      * Оновлює позиції всіх міток сезону при змінах в картці
@@ -269,7 +277,8 @@ style.textContent = `
         });
     }
 
-    // === СПОСТЕРЕЖЕННЯ ЗА ЗМІНАМИ МІТОК ЯКОСТІ ===
+    // ===================== СПОСТЕРЕЖЕННЯ ЗА ЗМІНАМИ МІТОК ЯКОСТІ =====================
+    
     // Створюємо спостерігач для відстеження додавання/видалення міток якості
     var qualityObserver = new MutationObserver(function(mutations) {
         // Перебираємо всі знайдені зміни
@@ -306,6 +315,8 @@ style.textContent = `
             });
         });
     });
+
+    // ===================== ОСНОВНА ФУНКЦІЯ ДОДАВАННЯ МІТОК =====================
 
     /**
      * Додає мітку статусу сезону до картки серіалу
@@ -374,7 +385,7 @@ style.textContent = `
                     var isComplete = progressInfo.isComplete;
                     
                     if (isComplete) {
-                        // ДЛЯ ЗАВЕРШЕНИХ СЕЗОНІВ: "S1 ✓" (зелена мітка)
+                        // ДЛЯ ЗАВЕРШЕНИХ СЕЗОНІВ: "S1" (зелена мітка)
                         content = `S${progressInfo.seasonNumber}`;
                     } else {
                         // ДЛЯ НЕЗАВЕРШЕНИХ СЕЗОНІВ: "S1 5/10" (жовта мітка з прогресом)
@@ -413,7 +424,8 @@ style.textContent = `
             });
     }
 
-    // === СИСТЕМА СПОСТЕРЕЖЕННЯ ЗА НОВИМИ КАРТКАМИ ===
+    // ===================== СИСТЕМА СПОСТЕРЕЖЕННЯ ЗА НОВИМИ КАРТКАМИ =====================
+    
     // Створюємо спостерігач за змінами в DOM
     var observer = new MutationObserver(function(mutations) {
         // Перебираємо всі знайдені зміни
@@ -436,7 +448,8 @@ style.textContent = `
         });
     });
 
-    // === ОБРОБНИК ЗМІНИ РОЗМІРУ ВІКНА ===
+    // ===================== ОБРОБНИК ЗМІНИ РОЗМІРУ ВІКНА =====================
+    
     // Додаємо обробник події зміни розміру вікна
     window.addEventListener('resize', function() {
         // Оновлюємо позиції всіх міток при зміні розміру вікна
@@ -448,6 +461,8 @@ style.textContent = `
             }
         });
     });
+
+    // ===================== ОСНОВНА ФУНКЦІЯ ІНІЦІАЛІЗАЦІЇ ПЛАГІНА =====================
 
     /**
      * Основна функція ініціалізації плагіна
@@ -486,7 +501,7 @@ style.textContent = `
         });
     }
 
-    // === СИСТЕМА ЗАПУСКУ ПЛАГІНА ===
+    // ===================== СИСТЕМА ЗАПУСКУ ПЛАГІНА =====================
 
     // ВАРІАНТ 1: Якщо додаток вже готовий (стандартний випадок)
     if (window.appready) {

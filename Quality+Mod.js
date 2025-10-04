@@ -429,10 +429,10 @@
     // ===================== ПАРСИНГ ЯКОСТІ =====================
     
 /**
- * Спрощує повну назву якості до короткого формату (ОНОВЛЕНА ВЕРСІЯ З ПРАВИЛЬНИМИ ПРІОРИТЕТАМИ)
- * @param {string} fullLabel - Повна назва якості (вибрана з найкращого релізу)
- * @param {string} originalTitle - Оригінальна назва торренту (❌ тепер не використовується!)
- * @returns {string} - Спрощена назва
+ * Спрощує повну назву якості до короткого формату (ФІНАЛЬНА ВЕРСІЯ)
+ * @param {string} fullLabel - Повна назва якості (вибрана з найкращого релізу JacRed)
+ * @param {string} originalTitle - Оригінальна назва торренту
+ * @returns {string} - Спрощена назва для відображення на мітці
  */
 function simplifyQualityLabel(fullLabel, originalTitle) {
     if (!fullLabel) return ''; // Перевірка на пусту назву
@@ -440,75 +440,78 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
     var lowerLabel = fullLabel.toLowerCase(); // Нижній регістр для порівняння
     // var lowerTitle = (originalTitle || '').toLowerCase(); // ❌ БІЛЬШЕ НЕ ВИКОРИСТОВУЄМО (бо перебиває якісний реліз)
 
-    // --- Крок 1: Шукаємо найвищу можливу роздільність (найвищий пріоритет) ---
+    // --- Крок 1: Погані якості (найвищий пріоритет) ---
+    // Якщо JacRed вибрав реліз з поганою якістю - показуємо тип якості
+    // Це означає що кращих варіантів немає
+    
+    // CamRip - найгірша якість (запис з кінотеатру камерою)
+    if (/(camrip|камрип|cam\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to CamRip");
+        return "CamRip";
+    }
+    
+    // TS (Telesync) - погана якість (запис з проектора)
+    if (/(telesync|телесинк|ts\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
+        return "TS";
+    }
+    
+    // TC (Telecine) - погана якість (запис з кіноплівки)
+    if (/(telecine|телесин|tc\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
+        return "TC";
+    }
+    
+    // SCR (DVD Screener) - погана якість (промо-копія)
+    if (/(dvdscr|scr\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SCR");
+        return "SCR";
+    }
 
-    // 4K (Ultra HD)
-    if (/(2160p|4k|uhd|ultra hd)/.test(lowerLabel)) { // || /(2160p|4k|uhd|ultra hd)/.test(lowerTitle)
+    // --- Крок 2: Якісні джерела (тільки якщо немає поганих якостей) ---
+    // Якщо JacRed вибрав якісний реліз - показуємо роздільність
+    
+    // 4K (Ultra HD) - найвища якість
+    if (/(2160p|4k|uhd|ultra hd)/.test(lowerLabel)) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to 4K");
         return "4K";
     }
 
-    // 2К (QHD)
-    if (/(1440p|1440|2k|qhd)/.test(lowerLabel)) { // || /(1440p|1440|2k|qhd)/.test(lowerTitle)
+    // 2К (QHD) - висока якість
+    if (/(1440p|1440|2k|qhd)/.test(lowerLabel)) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to QHD");
         return "QHD";
     }
   
-    // FHD (Full HD)
-    if (/(1080p|1080|fullhd|fhd)/.test(lowerLabel)) { // || /(1080p|1080|fullhd|fhd)/.test(lowerTitle)
+    // FHD (Full HD) - висока якість
+    if (/(1080p|1080|fullhd|fhd)/.test(lowerLabel)) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to FHD");
         return "FHD";
     }
     
-    // HD (High Definition)
-    if (/(720p|720|hd\b)/.test(lowerLabel)) { // || /(720p|720|hd\b)/.test(lowerTitle)
+    // HD (High Definition) - середня якість
+    if (/(720p|720|hd\b)/.test(lowerLabel)) {
         var hdRegex = /(720p|720|^hd$| hd |hd$)/;
-        if (hdRegex.test(lowerLabel)) { // || hdRegex.test(lowerTitle)
+        if (hdRegex.test(lowerLabel)) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to HD");
             return "HD";
         }
     }
     
-    // SD (Standard Definition)
-    if (/(480p|480|sd\b)/.test(lowerLabel)) { // || /(480p|480|sd\b)/.test(lowerTitle)
+    // SD (Standard Definition) - базова якість
+    if (/(480p|480|sd\b)/.test(lowerLabel)) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SD");
         return "SD";
     }
     
-    // LQ (Low Quality)
-    if (/(360p|360|low quality|lq\b)/.test(lowerLabel)) { // || /(360p|360|low quality|lq\b)/.test(lowerTitle)
+    // LQ (Low Quality) - дуже низька якість
+    if (/(360p|360|low quality|lq\b)/.test(lowerLabel)) {
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to LQ");
         return "LQ";
     }
 
-    // --- Крок 2: Якщо високу роздільність не знайдено, шукаємо ознаки поганої якості ---
-    
-    // CamRip - найгірша якість
-    if (/(camrip|камрип|cam\b)/.test(lowerLabel)) { // || /(camrip|камрип|cam\b)/.test(lowerTitle)
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to CamRip");
-        return "CamRip";
-    }
-    
-    // TS (Telesync)
-    if (/(telesync|телесинк|ts\b)/.test(lowerLabel)) { // || /(telesync|телесинк|ts\b)/.test(lowerTitle)
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
-        return "TS";
-    }
-    
-    // TC (Telecine)
-    if (/(telecine|телесин|tc\b)/.test(lowerLabel)) { // || /(telecine|телесин|tc\b)/.test(lowerTitle)
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
-        return "TC";
-    }
-    
-    // SCR (DVD Screener)
-    if (/(dvdscr|scr\b)/.test(lowerLabel)) { // || /(dvdscr|scr\b)/.test(lowerTitle)
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SCR");
-        return "SCR";
-    }
-
     // --- Крок 3: Fallback ---
-    // Якщо нічого з вищеперерахованого не знайдено, повертаємо оригінальну повну назву.
+    // Якщо нічого з вищеперерахованого не знайдено, повертаємо оригінальну повну назву
     if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "No simplification rules matched, keeping original:", fullLabel);
     return fullLabel;
 }

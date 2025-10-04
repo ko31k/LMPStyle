@@ -283,7 +283,8 @@
                 var currentYear = new Date().getFullYear();
                 while ((match = regex.exec(title)) !== null) {
                     var extractedYear = parseInt(match[1], 10);
-                    if (extractedYear >= 1900 && extractedYear <= currentYear + 1) { /*дозволяє знаходити роки на 1 рік більше поточного*/
+                    // Обмежуємо максимальний рік поточним + 1 для уникнення помилкових співпадінь
+                    if (extractedYear >= 1900 && extractedYear <= currentYear + 1) { 
                         lastYear = extractedYear;
                     }
                 }
@@ -331,6 +332,7 @@
                             }
 
                             // Рівень 2: Перевірка по ключових словах у назві (якщо тип в API не вказано).
+                            // ПОКРАЩЕНО: Додано більше ключових слів для кращої фільтрації серіалів
                             const isSeriesTorrent = /(сезон|season|s\d{1,2}|серии|серії|episodes|епізод|\d{1,2}\s*из\s*\d{1,2}|\d+×\d+)/.test(torrentTitle);
                             if (normalizedCard.type === 'tv' && !isSeriesTorrent) {
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (схожий на фільм для картки серіалу):`, currentTorrent.title);
@@ -358,7 +360,8 @@
                             // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
                             var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 1) { // <-- ЗМІНЕНО НА > 1рік
+                            if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в 1 рік*/
+                                if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
                                 continue;
                             }
                             
@@ -564,4 +567,18 @@
 
         var containers = document.querySelectorAll('.cards, .card-list, .content, .main, .cards-list, .preview__list');
         if (containers.length) {
-            containers.forEach(container
+            containers.forEach(container => observer.observe(container, { childList: true, subtree: true }));
+        } else {
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+
+        if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG: Плагін пошуку українських доріжок успішно ініціалізовано!");
+    }
+
+    // Запускаємо ініціалізацію, коли сторінка (DOM) буде готова.
+    if (document.body) {
+        initializeLampaTracksPlugin();
+    } else {
+        document.addEventListener('DOMContentLoaded', initializeLampaTracksPlugin);
+    }
+})();

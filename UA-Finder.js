@@ -283,7 +283,7 @@
                 var currentYear = new Date().getFullYear();
                 while ((match = regex.exec(title)) !== null) {
                     var extractedYear = parseInt(match[1], 10);
-                    if (extractedYear >= 1900 && extractedYear <= currentYear + 2) { 
+                    if (extractedYear >= 1900 && extractedYear <= currentYear + 1) { /*дозволяє знаходити роки на 1 рік більше поточного*/
                         lastYear = extractedYear;
                     }
                 }
@@ -331,7 +331,7 @@
                             }
 
                             // Рівень 2: Перевірка по ключових словах у назві (якщо тип в API не вказано).
-                            const isSeriesTorrent = /(сезон|season|s\d{1,2}|серии|\d{1,2}\s*из\s*\d{1,2})/.test(torrentTitle);
+                            const isSeriesTorrent = /(сезон|season|s\d{1,2}|серии|серії|episodes|епізод|\d{1,2}\s*из\s*\d{1,2}|\d+×\d+)/.test(torrentTitle);
                             if (normalizedCard.type === 'tv' && !isSeriesTorrent) {
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (схожий на фільм для картки серіалу):`, currentTorrent.title);
                                 continue; 
@@ -341,6 +341,16 @@
                                 continue;
                             }
                             
+                            // Рівень 3: Додаткова перевірка для уникнення співпадінь фільмів з серіалами
+                            // Якщо це фільм, а в назві торренту є чіткі ознаки серіалу - пропускати
+                            if (normalizedCard.type === 'movie') {
+                                const hasStrongSeriesIndicators = /(сезон|season|s\d|серії|episodes|епізод|\d+×\d+)/i.test(torrentTitle);
+                                if (hasStrongSeriesIndicators) {
+                                    if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (чіткі ознаки серіалу для картки фільму):`, currentTorrent.title);
+                                    continue;
+                                }
+                            }
+                            
                             // --- НАЛАШТУВАННЯ ГНУЧКОСТІ ПОШУКУ ЗА РОКОМ ---
                             // Тут можна змінити припустиму різницю у роках.
                             // > 0 : Тільки точний збіг року. Максимальна точність, але може пропускати релізи на межі років.
@@ -348,7 +358,7 @@
                             // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
                             var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 1) { // <-- ЗМІНЕНО НА > 1
+                            if (parsedYear > 1900 && yearDifference > 1) { // <-- ЗМІНЕНО НА > 1рік
                                 continue;
                             }
                             

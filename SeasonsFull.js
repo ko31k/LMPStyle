@@ -18,80 +18,85 @@
     };
 
     // === СТИЛІ ДЛЯ МІТОК СЕЗОНУ ===
-    var style = document.createElement('style');
-    style.textContent = `
-    /* Стиль для ЗАВЕРШЕНИХ сезонів (зелена мітка) */
-    .card--season-complete {
-        position: absolute;
-        left: 0;
-        margin-left: -0.68em; //ВІДСТУП за лівий край 
-        bottom: 0.50em;
-        background-color: rgba(61, 161, 141, 1);  /* Зелений колір, стандартна прозорість фону 0.8 (зараз 1 - фон не прозорий) */
-        z-index: 12;
-        width: fit-content;
-        max-width: calc(100% - 1em);
-        border-radius: 0.3em 0.3em 0.3em 0.3em;
-        overflow: hidden;
-        opacity: 0;
-        transition: opacity 0.22s ease-in-out;
-    }
-    
-    /* Стиль для НЕЗАВЕРШЕНИХ сезонів (жовта мітка з прогресом) */
-    .card--season-progress {
-        position: absolute;
-        left: 0;
-        margin-left: -0.68em; //ВІДСТУП за лівий край 
-        bottom: 0.50em;
-        background-color: rgba(255, 193, 7, 1);   /* Жовтий колір, стандартна прозорість фону 0.8 (зараз 1 - фон не прозорий)*/
-        z-index: 12;
-        width: fit-content;
-        max-width: calc(100% - 1em);
-        border-radius: 0.3em 0.3em 0.3em 0.3em;
-        overflow: hidden;
-        opacity: 0;
-        transition: opacity 0.22s ease-in-out;
-    }
-    
-    /* Загальні стилі для тексту в мітках - ОДИНАКОВІ ДЛЯ ОБОХ ТИПІВ */
+var style = document.createElement('style');
+style.textContent = `
+/* Стиль для ЗАВЕРШЕНИХ сезонів (зелена мітка) */
+.card--season-complete {
+    position: absolute;
+    left: 0;
+    margin-left: -0.78em; /* ЗМІНЕНО: було -0.68em → стало -0.78em (як в Quality+Mod.js) */
+    bottom: 0.50em;
+    background-color: rgba(61, 161, 141, 1); /* ЗАЛИШЕНО: непрозорий фон */
+    z-index: 12;
+    width: fit-content;
+    max-width: calc(100% - 1em);
+    border-radius: 0.3em; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.22s ease-in-out; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
+}
+
+/* Стиль для НЕЗАВЕРШЕНИХ сезонів (жовта мітка з прогресом) */
+.card--season-progress {
+    position: absolute;
+    left: 0;
+    margin-left: -0.78em; /* ЗМІНЕНО: було -0.68em → стало -0.78em (як в Quality+Mod.js) */
+    bottom: 0.50em;
+    background-color: rgba(255, 193, 7, 1); /* ЗАЛИШЕНО: непрозорий фон */
+    z-index: 12;
+    width: fit-content;
+    max-width: calc(100% - 1em);
+    border-radius: 0.3em; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.22s ease-in-out; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
+}
+
+/* Стилі тексту - ВИРІВНЯНІ З QUALITY MOD */
+.card--season-complete div,
+.card--season-progress div {
+    text-transform: uppercase;
+    font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
+    font-weight: 700; /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
+    letter-spacing: 0.1px; /* ДОДАНО: не було → стало (як в Quality+Mod.js) */
+    font-size: 1.10em; /* ЗМІНЕНО: було 1.0em → стало 1.10em (як в Quality+Mod.js) */
+    color: #ffffff !important; /* ДОДАНО: !important для узгодженості */
+    padding: 0.1em 0.1em 0.08em 0.1em; /* ЗМІНЕНО: було 0.3em 0.4em → стало (як в Quality+Mod.js) */
+    white-space: nowrap;
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* ЗАЛИШЕНО: однакове з Quality+Mod.js */
+    display: flex; /* ЗАЛИШЕНО: flex для вирівнювання */
+    align-items: center; /* ЗАЛИШЕНО: центрування */
+    gap: 4px; /* ЗАЛИШЕНО: проміжок між елементами */
+}
+
+/* Колір тексту для незавершених сезонів (чорний на жовтому) */
+.card--season-progress div {
+    color: #000000 !important; /* ДОДАНО: !important для узгодженості */
+}
+
+/* Клас для плавного показу мітки */
+.card--season-complete.show,
+.card--season-progress.show {
+    opacity: 1; /* ЗАЛИШЕНО: повна видимість */
+}
+
+/* Адаптація для мобільних пристроїв - ВИРІВНЯНА З QUALITY MOD */
+@media (max-width: 768px) {
     .card--season-complete div,
     .card--season-progress div {
-        text-transform: uppercase;
-        font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;  /* Той самий шрифт */
-        font-weight: 700;                                                    /* Той самий жирний шрифт */
-        font-size: 1.0 em;                                                   /* Той самий розмір */
-        padding: 0.3em 0.4em;                                                /* Той самий відступ */
-        white-space: nowrap;                                                 /* Той самий перенос */
-        display: flex;                                                       /* Той самий flex */
-        align-items: center;                                                 /* Той самий вирівнювання */
-        gap: 4px;                                                            /* Той самий проміжок */
-        text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
+        font-size: 1.10em; /* ЗМІНЕНО: було 0.95em → стало 1.10em (залишити як на десктопі) */
+        padding: 0.1em 0.1em 0.08em 0.1em; /* ЗМІНЕНО: було 0.22em 0.5em → стало (як на десктопі) */
     }
     
-    /* Колір тексту для завершених сезонів (білий на зеленому) */
-    .card--season-complete div {
-        color: #ffffff;  /* Білий текст для кращої видимості на зеленому фоні */
-    }
-    
-    /* Колір тексту для незавершених сезонів (чорний на жовтому) */
-    .card--season-progress div {
-        color: #000000;  /* Чорний текст для кращої видимості на жовтому фоні */
-    }
-    
-    /* Клас для плавного показу мітки */
-    .card--season-complete.show,
-    .card--season-progress.show {
-        opacity: 1;  /* Повна видимість при показі */
-    }
-    
-    /* Адаптація для мобільних пристроїв */
-    @media (max-width: 768px) {
-        .card--season-complete div,
-        .card--season-progress div {
-            font-size: 0.95em;  /* Трохи менший розмір шрифту на мобільних */
-            padding: 0.22em 0.5em; /* додано МЕНШІ ВІДСТУПИ НА МОБІЛЬНИХ */
+    /* ДОДАНО: медіа-запит для центрування як в Quality+Mod.js */
+    @media screen and (max-width: 480px) { 
+        .card--season-complete, 
+        .card--season-progress {
+            margin-left: -0.78em; /* ЗАЛИШИТИ однакове значення */
         }
     }
-    `;
+}
+`;
     // Додаємо стилі до головної частини документа
     document.head.appendChild(style);
 

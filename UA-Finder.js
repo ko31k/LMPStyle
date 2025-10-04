@@ -284,7 +284,7 @@
                 while ((match = regex.exec(title)) !== null) {
                     var extractedYear = parseInt(match[1], 10);
                     // Обмежуємо максимальний рік поточним + 1 для уникнення помилкових співпадінь
-                    if (extractedYear >= 1900 && extractedYear <= currentYear + 1) { 
+                    if (extractedYear >= 1900 && extractedYear <= currentYear + 2) { 
                         lastYear = extractedYear;
                     }
                 }
@@ -360,7 +360,7 @@
                             // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
                             var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в 1 рік*/
+                            if (parsedYear > 1900 && yearDifference > 0) {   /*Дозволяє різницю в 1 рік*/
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
                                 continue;
                             }

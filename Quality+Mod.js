@@ -428,8 +428,8 @@
 
     // ===================== ПАРСИНГ ЯКОСТІ =====================
     
-    /**
-     * Спрощує повну назву якості до короткого формату
+/**
+     * Спрощує повну назву якості до короткого формату (ОНОВЛЕНА ВЕРСІЯ З ПРАВИЛЬНИМИ ПРІОРИТЕТАМИ)
      * @param {string} fullLabel - Повна назва якості
      * @param {string} originalTitle - Оригінальна назва торренту
      * @returns {string} - Спрощена назва
@@ -440,33 +440,9 @@
         var lowerLabel = fullLabel.toLowerCase(); // Нижній регістр для порівняння
         var lowerTitle = (originalTitle || '').toLowerCase(); // Нижній регістр оригінальної назви
         
-        // Високий пріоритет: спочатку шукаємо погани якості (для попередження користувача)
-        // CamRip - найгірша якість (пріоритет 1)
-        if (/(camrip|камрип|cam\b)/.test(lowerLabel) || /(camrip|камрип|cam\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to CamRip");
-            return "CamRip";
-        }
-        
-        // TS (Telesync) - пріоритет 2
-        if (/(telesync|телесинк|ts\b)/.test(lowerLabel) || /(telesync|телесинк|ts\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
-            return "TS";
-        }
-        
-        // TC (Telecine) - пріоритет 3 
-        if (/(telecine|телесин|tc\b)/.test(lowerLabel) || /(telecine|телесин|tc\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
-            return "TC";
-        }
-        
-        // SCR (DVD Screener) - пріоритет 4
-        if (/(dvdscr|scr\b)/.test(lowerLabel) || /(dvdscr|scr\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SCR");
-            return "SCR";
-        }
-        
-        // Роздільність: якщо поганих якостей не знайдено
-        // 4K (Ultra HD) - найвища якість
+        // --- Крок 1: Шукаємо найвищу можливу роздільність (найвищий пріоритет) ---
+
+        // 4K (Ultra HD)
         if (/(2160p|4k|uhd|ultra hd)/.test(lowerLabel) || /(2160p|4k|uhd|ultra hd)/.test(lowerTitle)) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to 4K");
             return "4K";
@@ -478,15 +454,14 @@
             return "QHD";
         }
       
-        // FHD (Full HD) - висока якість
+        // FHD (Full HD)
         if (/(1080p|1080|fullhd|fhd)/.test(lowerLabel) || /(1080p|1080|fullhd|fhd)/.test(lowerTitle)) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to FHD");
             return "FHD";
         }
         
-        // HD (High Definition) - середня якість
+        // HD (High Definition)
         if (/(720p|720|hd\b)/.test(lowerLabel) || /(720p|720|hd\b)/.test(lowerTitle)) {
-            // Перевіряємо що це не частина іншого слова (наприклад, "fullhd")
             var hdRegex = /(720p|720|^hd$| hd |hd$)/;
             if (hdRegex.test(lowerLabel) || hdRegex.test(lowerTitle)) {
                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to HD");
@@ -494,20 +469,47 @@
             }
         }
         
-        // SD (Standard Definition) - базова якість
+        // SD (Standard Definition)
         if (/(480p|480|sd\b)/.test(lowerLabel) || /(480p|480|sd\b)/.test(lowerTitle)) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SD");
             return "SD";
         }
         
-        // LQ (Low Quality) - дуже низька якість
+        // LQ (Low Quality)
         if (/(360p|360|low quality|lq\b)/.test(lowerLabel) || /(360p|360|low quality|lq\b)/.test(lowerTitle)) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to LQ");
             return "LQ";
         }
+
+        // --- Крок 2: Якщо високу роздільність не знайдено, шукаємо ознаки поганої якості ---
         
-        // Fallback: якщо нічого не знайдено, повертаємо оригінальну назву
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "No simplification found, keeping original:", fullLabel);
+        // CamRip - найгірша якість
+        if (/(camrip|камрип|cam\b)/.test(lowerLabel) || /(camrip|камрип|cam\b)/.test(lowerTitle)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to CamRip");
+            return "CamRip";
+        }
+        
+        // TS (Telesync)
+        if (/(telesync|телесинк|ts\b)/.test(lowerLabel) || /(telesync|телесинк|ts\b)/.test(lowerTitle)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
+            return "TS";
+        }
+        
+        // TC (Telecine)
+        if (/(telecine|телесин|tc\b)/.test(lowerLabel) || /(telecine|телесин|tc\b)/.test(lowerTitle)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
+            return "TC";
+        }
+        
+        // SCR (DVD Screener)
+        if (/(dvdscr|scr\b)/.test(lowerLabel) || /(dvdscr|scr\b)/.test(lowerTitle)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SCR");
+            return "SCR";
+        }
+
+        // --- Крок 3: Fallback ---
+        // Якщо нічого з вищеперерахованого не знайдено, повертаємо оригінальну повну назву.
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "No simplification rules matched, keeping original:", fullLabel);
         return fullLabel;
     }
     

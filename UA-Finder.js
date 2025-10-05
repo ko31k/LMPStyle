@@ -22,7 +22,7 @@
     // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
     var LTF_CONFIG = {
         // --- Налаштування кешу ---
-        CACHE_VERSION: 1, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
+        CACHE_VERSION: 2, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 12 * 60 * 60 * 1000, // Час життя кешу (12 годин).
         CACHE_REFRESH_THRESHOLD_MS: 6 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (6 годин).
@@ -358,12 +358,21 @@
                             // > 0 : Тільки точний збіг року. Максимальна точність, але може пропускати релізи на межі років.
                             // > 1 : Дозволяє різницю в 1 рік. РЕКОМЕНДОВАНО для серіалів та фільмів на межі років.
                             // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
-                            var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
-                            var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в ±1 рік*/
+                            // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
+                            
+                            var parsedYear = extractYearFromTitle(currentTorrent.title) || parseInt(currentTorrent.relased, 10);
+                            var yearDifference = Math.abs(parsedYear - searchYearNum);
+                            if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в ±1 рік*/
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
                                 continue;
                             }
+                            
+                          /*var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
+                            var yearDifference = Math.abs(parsedYear - searchYearNum);
+                            if (parsedYear > 1900 && yearDifference > 1) {
+                                if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
+                                continue;
+                            }*/
                             
                             const currentTrackCount = countUkrainianTracks(currentTorrent.title);
                             

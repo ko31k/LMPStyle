@@ -39,7 +39,7 @@
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
-        PROXY_TIMEOUT_MS: 4000, // Максимальний час очікування відповіді від одного проксі (4 секунди).
+        PROXY_TIMEOUT_MS: 3000, // Максимальний час очікування відповіді від одного проксі (3 секунди).
         MAX_PARALLEL_REQUESTS: 16, // Максимальна кількість одночасних запитів до Jacred.
 
         // --- Налаштування функціоналу ---
@@ -345,13 +345,13 @@
                             
                             // Рівень 3: Додаткова перевірка для уникнення співпадінь фільмів з серіалами
                             // Якщо це фільм, а в назві торренту є чіткі ознаки серіалу - пропускати
-                            if (normalizedCard.type === 'movie') {
+                            /*if (normalizedCard.type === 'movie') {
                                 const hasStrongSeriesIndicators = /(сезон|season|s\d|серії|episodes|епізод|\d+×\d+)/i.test(torrentTitle);
                                 if (hasStrongSeriesIndicators) {
                                     if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (чіткі ознаки серіалу для картки фільму):`, currentTorrent.title);
                                     continue;
                                 }
-                            }
+                            }*/
                             
                             // --- НАЛАШТУВАННЯ ГНУЧКОСТІ ПОШУКУ ЗА РОКОМ ---
                             // Тут можна змінити припустиму різницю у роках.
@@ -360,7 +360,7 @@
                             // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
                             var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 0) {   /*Дозволяє різницю в 1 рік*/
+                            if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в ±1 рік*/
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
                                 continue;
                             }
@@ -435,6 +435,41 @@
     
     // ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ (UI) =====================
     function updateCardListTracksElement(cardView, trackCount) {
+    const displayLabel = formatTrackLabel(trackCount);
+    const existingElement = cardView.querySelector('.card__tracks');
+    if (existingElement) existingElement.remove();
+    if (!displayLabel) return;
+    
+    const trackDiv = document.createElement('div');
+    trackDiv.className = 'card__tracks';
+
+    // ВРАХОВУЄМО ОПИС: Рейтинг (.card__vote) є завжди, але RatingUp змінює його позицію.
+    // Перевіряємо, чи позиція рейтингу (якщо він є) зміщена у верхній правий кут.
+    const parentCard = cardView.closest('.card');
+    if (parentCard) {
+        // Ми перевіряємо, чи RatingUp активний на даній картці, по наявності/позиції .card__vote
+        const voteElement = parentCard.querySelector('.card__vote');
+        
+        // Згідно з вашим описом, RatingUp переміщує оцінку у верхній кут.
+        // Перевірка, чи не знаходиться елемент .card__vote у верхньому куті, вказує на активність RatingUp.
+        // Якщо .card__vote є, і його top менше певного значення (наприклад, 100px), ми вважаємо RatingUp активним.
+        if (voteElement) {
+             const topStyle = getComputedStyle(voteElement).top;
+             // Перевірка topStyle > 100px означатиме, що він у нижньому куті (RatingUp неактивний)
+             // Перевірка topStyle < 100px означатиме, що він у верхньому куті (RatingUp активний)
+             if (topStyle !== 'auto' && parseInt(topStyle) < 100) {
+                 trackDiv.classList.add('positioned-below-rating');
+             }
+        }
+    }
+    
+    const innerElement = document.createElement('div');
+    innerElement.textContent = displayLabel;
+    trackDiv.appendChild(innerElement);
+    cardView.appendChild(trackDiv);
+}
+  
+    /*function updateCardListTracksElement(cardView, trackCount) {
         const displayLabel = formatTrackLabel(trackCount);
         const existingElement = cardView.querySelector('.card__tracks');
         if (existingElement) existingElement.remove();
@@ -455,7 +490,7 @@
         innerElement.textContent = displayLabel;
         trackDiv.appendChild(innerElement);
         cardView.appendChild(trackDiv);
-    }
+    }*/
 
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
     function processListCard(cardElement) {

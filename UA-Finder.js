@@ -345,13 +345,13 @@
                             
                             // Рівень 3: Додаткова перевірка для уникнення співпадінь фільмів з серіалами
                             // Якщо це фільм, а в назві торренту є чіткі ознаки серіалу - пропускати
-                            /*if (normalizedCard.type === 'movie') {
+                            if (normalizedCard.type === 'movie') {
                                 const hasStrongSeriesIndicators = /(сезон|season|s\d|серії|episodes|епізод|\d+×\d+)/i.test(torrentTitle);
                                 if (hasStrongSeriesIndicators) {
                                     if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (чіткі ознаки серіалу для картки фільму):`, currentTorrent.title);
                                     continue;
                                 }
-                            }*/
+                            }
                             
                             // --- НАЛАШТУВАННЯ ГНУЧКОСТІ ПОШУКУ ЗА РОКОМ ---
                             // Тут можна змінити припустиму різницю у роках.

@@ -11,7 +11,7 @@
  * - Обирає реліз з найбільшою кількістю знайдених українських доріжок.
  * - Має надійний дворівневий фільтр для розрізнення фільмів та серіалів (по типу з API та по ключових словах).
  * - Оптимізована обробка карток (дебаунсинг) для уникнення пропусків та підвищення продуктивності.
- * - Відображає стильну мітку на постерах, яка динамічно адаптується до присутності плагіна RatingUp.
+ * - Відображає мітку на постерах (динамічно адаптується до присутності плагіна RatingUp).
  * - Має систему кешування для зменшення навантаження та пришвидшення роботи.
  * - Не виконує пошук для майбутніх релізів або релізів з невідомою датою.
  * --------------------------------------------------------------------------------
@@ -46,15 +46,15 @@
         SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів (true або false)
     };
 
-// ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ПРИ ОНОВЛЕННІ ========
-(function resetOldCache() {
-    var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
-    var hasOld = Object.keys(cache).some(k => !k.startsWith(LTF_CONFIG.CACHE_VERSION + '_'));
-    if (hasOld) {
-        console.log('UA-Finder: очищено старий кеш доріжок');
-        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
-    }
-})();
+    // ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ПРИ ОНОВЛЕННІ ========
+    (function resetOldCache() {
+        var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
+        var hasOld = Object.keys(cache).some(k => !k.startsWith(LTF_CONFIG.CACHE_VERSION + '_'));
+            if (hasOld) {
+            console.log('UA-Finder: очищено старий кеш доріжок');
+            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
+            }
+    })();
     
     // ===================== СТИЛІ CSS =====================
     // Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.
@@ -62,7 +62,7 @@
         // Встановлюємо контекст позиціонування для постера. Це необхідно для абсолютно позиціонованих дочірніх елементів.
         ".card__view { position: relative; }" +
 
-        // Стиль для нашої нової мітки з доріжками (з вашого файлу UALabel.js).
+        // Стиль для мітки з доріжками.
         ".card__tracks {" +
         " position: absolute !important; " + // Абсолютне позиціонування відносно .card__view.
         " right: 0.3em !important; " + // Відступ праворуч.
@@ -72,8 +72,6 @@
         " color: #FFFFFF !important;" + // Білий колір тексту.
         " font-size: 1.3em !important;" + // Розмір шрифту.
         " padding: 0.2em 0.5em !important;" + // Внутрішні відступи.
-        " -webkit-border-radius: 1em !important;" + // Закруглення для старих браузерів.
-        " -moz-border-radius: 1em !important;" + // Закруглення для старих браузерів.
         " border-radius: 1em !important;" + // Закруглення кутів.
         " font-weight: 700 !important;" + // Жирний шрифт.
         " z-index: 20 !important;" + // Високий z-index, щоб бути поверх інших елементів.
@@ -84,10 +82,10 @@
 
         // Додатковий клас, який застосовується динамічно, якщо плагін RatingUp активний.
         ".card__tracks.positioned-below-rating {" +
-        " top: 1.85em !important; " + // Ваша версія позиції, щоб зміститися нижче рейтингу.
+        " top: 1.85em !important; " + // Версія позиції, щоб зміститися нижче рейтингу.
         "}" +
         
-        // Стиль для тексту всередині мітки (з вашого файлу UALabel.js).
+        // Стиль для тексту всередині мітки.
         ".card__tracks div {" +
         " text-transform: none !important; " + // Без перетворення у великі літери.
         " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " + // Шрифт.
@@ -268,17 +266,12 @@
         enqueueTask(function(done) {
 
             // Якщо дата відсутня або некоректна — не запускаємо пошук
-            if (
-               !normalizedCard.release_date ||
-               normalizedCard.release_date.toLowerCase().includes('невідомо') ||
-               isNaN(new Date(normalizedCard.release_date).getTime())
-               ) {
-                 callback(null);
-                 done();
-                 return;
-                 }
+            if (!normalizedCard.release_date || normalizedCard.release_date.toLowerCase().includes('невідомо') || isNaN(new Date(normalizedCard.release_date).getTime())) {
+                callback(null);
+                done();
+                return;
+                }
             
-    
             // Перевірка, чи реліз ще не вийшов.
             var releaseDate = normalizedCard.release_date ? new Date(normalizedCard.release_date) : null;
             if (releaseDate && releaseDate.getTime() > Date.now()) {
@@ -355,7 +348,7 @@
                             }*/
 
                             // Рівень 2: Перевірка по ключових словах у назві (якщо тип в API не вказано).
-                            // ПОКРАЩЕНО: Додано більше ключових слів для кращої фільтрації серіалів
+                            // Додано більше ключових слів для кращої фільтрації серіалів
                             const isSeriesTorrent = /(сезон|season|s\d{1,2}|серии|серії|episodes|епізод|\d{1,2}\s*из\s*\d{1,2}|\d+×\d+)/.test(torrentTitle);
                             if (normalizedCard.type === 'tv' && !isSeriesTorrent) {
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (схожий на фільм для картки серіалу):`, currentTorrent.title);
@@ -383,15 +376,19 @@
                             // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись
 
                             //Шукаємо рік в назві релізу
+                            //Спочатку бере рік із назви релізу (extractYearFromTitle), 
+                            //а потім із поля relased, якщо в назві року немає.
                             var parsedYear = extractYearFromTitle(currentTorrent.title) || parseInt(currentTorrent.relased, 10);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
                             if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в ±1 рік*/
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
                                 continue;
                             }
-
-                          //Попередній пошук року
-                          /*var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
+                            
+                            //Попередній пошук року
+                            //Спочатку намагається взяти рік із поля currentTorrent.relased (з API Jacred),
+                            //а лише потім — із назви
+                            /*var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
                             if (parsedYear > 1900 && yearDifference > 1) {
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
@@ -501,7 +498,16 @@
     trackDiv.appendChild(innerElement);
     cardView.appendChild(trackDiv);
 }
-  
+
+
+    /*
+     СТАРИЙ ВАРІАНТ:
+     Робить перевірку позиції рейтингу (.card__vote) в одному рядку.
+     Працює так само, але двічі викликає getComputedStyle() 
+     і не має додаткової перевірки на існування елемента.
+     Може бути трохи менш ефективним при великій кількості карток.
+    */
+    
     /*function updateCardListTracksElement(cardView, trackCount) {
         const displayLabel = formatTrackLabel(trackCount);
         const existingElement = cardView.querySelector('.card__tracks');

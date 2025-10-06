@@ -22,7 +22,7 @@
     // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
     var LTF_CONFIG = {
         // --- Налаштування кешу ---
-        CACHE_VERSION: 3.5, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
+        CACHE_VERSION: 4, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 12 * 60 * 60 * 1000, // Час життя кешу (12 годин).
         CACHE_REFRESH_THRESHOLD_MS: 6 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (6 годин).
@@ -256,6 +256,19 @@
      */
     function getBestReleaseWithUkr(normalizedCard, cardId, callback) {
         enqueueTask(function(done) {
+
+            // Якщо дата відсутня або некоректна — не запускаємо пошук
+            if (
+               !normalizedCard.release_date ||
+               normalizedCard.release_date.toLowerCase().includes('невідомо') ||
+               isNaN(new Date(normalizedCard.release_date).getTime())
+               ) {
+                 callback(null);
+                 done();
+                 return;
+                 }
+            
+    
             // Перевірка, чи реліз ще не вийшов.
             var releaseDate = normalizedCard.release_date ? new Date(normalizedCard.release_date) : null;
             if (releaseDate && releaseDate.getTime() > Date.now()) {

@@ -5,7 +5,7 @@
     var LQE_CONFIG = {
         CACHE_VERSION: 2, // Версія кешу для інвалідації старих даних
         LOGGING_GENERAL: false, // Загальне логування для налагодження
-        LOGGING_QUALITY: true, // Логування процесу визначення якості
+        LOGGING_QUALITY: false, // Логування процесу визначення якості
         LOGGING_CARDLIST: false, // Логування для спискових карток
         CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години)
         CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
@@ -19,7 +19,7 @@
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
-        MAX_PARALLEL_REQUESTS: 16, // Максимальна кількість паралельних запитів
+        MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
         
         USE_SIMPLE_QUALITY_LABELS: true, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
         
@@ -218,15 +218,19 @@
     Lampa.Template.add('lampa_quality_css', styleLQE);
     $('body').append(Lampa.Template.get('lampa_quality_css', {}, true));
     // Стилі для плавного з'явлення міток якості
-    var fadeStyles = "<style id='lampa_quality_fade'>" +
-        ".card__quality, .full-start__status.lqe-quality {" + // Елементи для анімації
+	var fadeStyles = "<style id='lampa_quality_fade'>" +
+   		".card__quality, .full-start__status.lqe-quality {" + // Елементи для анімації
         "opacity: 0;" + // Початково прозорі
         "transition: opacity 0.22s ease-in-out;" + // Плавна зміна прозорості
-        "}" +
-        ".card__quality.show, .full-start__status.lqe-quality.show {" + // Клас для показу
+    	"}" +
+    	".card__quality.show, .full-start__status.lqe-quality.show {" + // Клас для показу
         "opacity: 1;" + // Повністю видимі
-        "}" +
-        "</style>";
+    	"}" +
+    	".card__quality.show.fast, .full-start__status.lqe-quality.show.fast {" + // Вимкнення переходу
+        "transition: none !important;" +
+    	"}" +
+		"</style>";
+
     Lampa.Template.add('lampa_quality_fade', fadeStyles);
     $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
 

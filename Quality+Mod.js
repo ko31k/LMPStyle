@@ -18,10 +18,10 @@
             'http://cors.bwa.workers.dev/'
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
-        SHOW_QUALITY_FOR_TV_SERIES: true, // Показувати якість для серіалів
+        SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
         MAX_PARALLEL_REQUESTS: 16, // Максимальна кількість паралельних запитів
         
-        USE_SIMPLE_QUALITY_LABELS: true, // Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
+        USE_SIMPLE_QUALITY_LABELS: true, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
         
         // Стилі для відображення якості на повній картці
         FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF',
@@ -429,7 +429,7 @@
     // ===================== ПАРСИНГ ЯКОСТІ =====================
     
 /**
- * Спрощує повну назву якості до короткого формату (ФІНАЛЬНА ВЕРСІЯ)
+ * Спрощує повну назву якості до короткого формату (Фінальна версія)
  * @param {string} fullLabel - Повна назва якості (вибрана з найкращого релізу JacRed)
  * @param {string} originalTitle - Оригінальна назва торренту
  * @returns {string} - Спрощена назва для відображення на мітці
@@ -662,7 +662,7 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
     /**
      * Визначає якість з назви торренту
      * @param {string} title - Назва торренту
-     * @returns {number} - Числовий код якості (2160, 1080, 720, 480, 3, 2, 1)
+     * @returns {number} - Числовий код якості (2160, 1440, 1080, 720, 480, 3, 2, 1)
      */
     function extractNumericQualityFromTitle(title) {
         if (!title) return 0; // Перевірка на пусту назву
@@ -670,6 +670,7 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
         
         // ✅ ПРАВИЛЬНІ ПРІОРИТЕТИ:
         if (/2160p|4k/.test(lower)) return 2160; // Найвищий пріоритет - 4K
+		if (/1440p|qhd|2k/.test(lower)) return 1440; // QHD
         if (/1080p/.test(lower)) return 1080; // Full HD
         if (/720p/.test(lower)) return 720; // HD
         if (/480p/.test(lower)) return 480; // SD
@@ -682,7 +683,7 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
     }
 
     /**
-     * Знаходить найкращий реліз в JacRed API з логікою Quality+
+     * Знаходить найкращий реліз в JacRed API
      * @param {object} normalizedCard - Нормалізовані дані картки
      * @param {string} cardId - ID картки
      * @param {function} callback - Callback функція

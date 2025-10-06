@@ -26,7 +26,7 @@
         left: 0;
         margin-left: -0.68em; //ВІДСТУП за лівий край 
         bottom: 0.50em;
-        background-color: rgba(61, 161, 141, 0.9);  /* Зелений колір, стандартна прозорість фону 0.8 (зараз 1 - фон не прозорий) */
+        background-color: rgba(61, 161, 141, 0.9);  /* Зелений колір, стандартна прозорість фону 0.8 (1 - фон не прозорий) */
         z-index: 12;
         width: fit-content;
         max-width: calc(100% - 1em);
@@ -42,7 +42,7 @@
         left: 0;
         margin-left: -0.68em; //ВІДСТУП за лівий край 
         bottom: 0.50em;
-        background-color: rgba(255, 193, 7, 0.9);   /* Жовтий колір, стандартна прозорість фону 0.8 (зараз 1 - фон не прозорий)*/
+        background-color: rgba(255, 193, 7, 0.9);   /* Жовтий колір, стандартна прозорість фону 0.8 (1 - фон не прозорий)*/
         z-index: 12;
         width: fit-content;
         max-width: calc(100% - 1em);
@@ -56,14 +56,14 @@
     .card--season-complete div,
     .card--season-progress div {
         text-transform: uppercase;
-        font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;  /* Той самий шрифт */
-        font-weight: 700;                                                    /* Той самий жирний шрифт */
-        font-size: 1.0 em;                                                   /* Той самий розмір */
-        padding: 0.3em 0.4em;                                                /* Той самий відступ */
-        white-space: nowrap;                                                 /* Той самий перенос */
-        display: flex;                                                       /* Той самий flex */
-        align-items: center;                                                 /* Той самий вирівнювання */
-        gap: 4px;                                                            /* Той самий проміжок */
+        font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;  
+        font-weight: 700;                                                    /* жирний шрифт */
+        font-size: 1.0 em;                                                   /* розмір */
+        padding: 0.3em 0.4em;                                                /* відступ */
+        white-space: nowrap;                                                 /* перенос */
+        display: flex;                                                       /* flex */
+        align-items: center;                                                 /* вирівнювання */
+        gap: 4px;                                                            /* проміжок */
         text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
     }
     

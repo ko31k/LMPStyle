@@ -39,7 +39,7 @@
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
-        PROXY_TIMEOUT_MS: 3000, // Максимальний час очікування відповіді від одного проксі (3 секунди).
+        PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
         MAX_PARALLEL_REQUESTS: 16, // Максимальна кількість одночасних запитів до Jacred.
 
         // --- Налаштування функціоналу ---
@@ -283,7 +283,7 @@
                 var currentYear = new Date().getFullYear();
                 while ((match = regex.exec(title)) !== null) {
                     var extractedYear = parseInt(match[1], 10);
-                    // Обмежуємо максимальний рік поточним + 1 для уникнення помилкових співпадінь
+                    // Обмежуємо максимальний рік поточним + 2 для уникнення помилкових співпадінь
                     if (extractedYear >= 1900 && extractedYear <= currentYear + 2) { 
                         lastYear = extractedYear;
                     }
@@ -322,14 +322,14 @@
                             // --- ДВОРІВНЕВИЙ ФІЛЬТР "ФІЛЬМ/СЕРІАЛ" ---
                             
                             // Рівень 1: Перевірка по типу з API Jacred (найнадійніший).
-                            if (normalizedCard.type === 'tv' && torrentTypeFromApi.includes('movie')) {
+                            /*if (normalizedCard.type === 'tv' && torrentTypeFromApi.includes('movie')) {
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (API тип 'movie' для картки серіалу):`, currentTorrent.title);
                                 continue;
                             }
                             if (normalizedCard.type === 'movie' && torrentTypeFromApi.includes('serial')) {
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (API тип 'serial' для картки фільму):`, currentTorrent.title);
                                 continue;
-                            }
+                            }*/
 
                             // Рівень 2: Перевірка по ключових словах у назві (якщо тип в API не вказано).
                             // ПОКРАЩЕНО: Додано більше ключових слів для кращої фільтрації серіалів
@@ -357,16 +357,17 @@
                             // Тут можна змінити припустиму різницю у роках.
                             // > 0 : Тільки точний збіг року. Максимальна точність, але може пропускати релізи на межі років.
                             // > 1 : Дозволяє різницю в 1 рік. РЕКОМЕНДОВАНО для серіалів та фільмів на межі років.
-                            // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
-                            // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись.
-                            
+                            // > 3 : Дозволяє різницю в 3 роки. Добре для трилогій, але може іноді помилятись
+
+                            //Шукаємо рік в назві релізу
                             var parsedYear = extractYearFromTitle(currentTorrent.title) || parseInt(currentTorrent.relased, 10);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
                             if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в ±1 рік*/
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
                                 continue;
                             }
-                            
+
+                          //Попередній пошук року
                           /*var parsedYear = parseInt(currentTorrent.relased, 10) || extractYearFromTitle(currentTorrent.title);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
                             if (parsedYear > 1900 && yearDifference > 1) {
@@ -459,7 +460,7 @@
         // Ми перевіряємо, чи RatingUp активний на даній картці, по наявності/позиції .card__vote
         const voteElement = parentCard.querySelector('.card__vote');
         
-        // Згідно з вашим описом, RatingUp переміщує оцінку у верхній кут.
+        // RatingUp переміщує оцінку у верхній кут.
         // Перевірка, чи не знаходиться елемент .card__vote у верхньому куті, вказує на активність RatingUp.
         // Якщо .card__vote є, і його top менше певного значення (наприклад, 100px), ми вважаємо RatingUp активним.
         if (voteElement) {

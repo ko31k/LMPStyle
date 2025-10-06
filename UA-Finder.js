@@ -22,7 +22,7 @@
     // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
     var LTF_CONFIG = {
         // --- Налаштування кешу ---
-        CACHE_VERSION: 4, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
+        CACHE_VERSION: 5, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 12 * 60 * 60 * 1000, // Час життя кешу (12 годин).
         CACHE_REFRESH_THRESHOLD_MS: 6 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (6 годин).
@@ -46,6 +46,16 @@
         SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів (true або false)
     };
 
+// ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ПРИ ОНОВЛЕННІ ========
+(function resetOldCache() {
+    var cache = Lampa.Storage.get(LTF_CONFIG.CACHE_KEY) || {};
+    var hasOld = Object.keys(cache).some(k => !k.startsWith(LTF_CONFIG.CACHE_VERSION + '_'));
+    if (hasOld) {
+        console.log('UA-Finder: очищено старий кеш доріжок');
+        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
+    }
+})();
+    
     // ===================== СТИЛІ CSS =====================
     // Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.
     var styleTracks = "<style id=\"lampa_tracks_styles\">" +

@@ -24,8 +24,8 @@
         // --- Налаштування кешу ---
         CACHE_VERSION: 5, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
-        CACHE_VALID_TIME_MS: 12 * 60 * 60 * 1000, // Час життя кешу (12 годин).
-        CACHE_REFRESH_THRESHOLD_MS: 6 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (6 годин).
+        CACHE_VALID_TIME_MS: 2 * 60 * 60 * 1000, // Час життя кешу (12 годин).
+        CACHE_REFRESH_THRESHOLD_MS: 1 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (6 годин).
 
         // --- Налаштування логування для налагодження ---
         LOGGING_GENERAL: false, // Загальні логі роботи плагіна.
@@ -380,7 +380,7 @@
                             //а потім із поля relased, якщо в назві року немає.
                             var parsedYear = extractYearFromTitle(currentTorrent.title) || parseInt(currentTorrent.relased, 10);
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
-                            if (parsedYear > 1900 && yearDifference > 1) {   /*Дозволяє різницю в ±1 рік*/
+                            if (parsedYear > 1900 && yearDifference > 0) {   /*Дозволяє різницю в ±1 рік*/
                                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Пропускаємо (рік не співпадає: ${parsedYear} vs ${searchYearNum}):`, currentTorrent.title);
                                 continue;
                             }

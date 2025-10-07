@@ -557,7 +557,7 @@
         $('<style>').prop('type', 'text/css').html(
             '.tmdb-networks { margin-top: -3em; } ' +
             '.network-btn { height: 2.05em; } ' +
-            '.network-btn.movie { height: 1.95em; } ' +
+            '.network-btn.movie { height: 2.05em; } ' +
             '.network-logo { background-color: #fff; position: relative; } ' +
             '.network-logo.tv { background-color: #fff; position: relative; } ' +
             '.network-logo.movie { background: none; padding: 0; } ' +

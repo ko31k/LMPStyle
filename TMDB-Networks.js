@@ -556,9 +556,10 @@
         //ЗМІНЕНІ СТИЛІ
         $('<style>').prop('type', 'text/css').html(
             '.tmdb-networks { margin-top: -3em; } ' +
-            '.network-btn { height: 2.04em; } ' +
-            '.network-btn.movie { height: 1.80em; } ' +
+            '.network-btn { height: 2.05em; } ' +
+            '.network-btn.movie { height: 1.95em; } ' +
             '.network-logo { background-color: #fff; position: relative; } ' +
+            '.network-logo.tv { background-color: #fff; position: relative; } ' +
             '.network-logo.movie { background: none; padding: 0; } ' +
             '.network-logo .overlay { ' +
                 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +

@@ -556,7 +556,7 @@
         //ЗМІНЕНІ СТИЛІ
         $('<style>').prop('type', 'text/css').html(
             '.tmdb-networks { margin-top: -3em; } ' +
-            '.network-btn { height: 2.04em; background-color: #fff !important; } ' +
+            '.network-btn { height: 2.04em; } ' +
             '.network-btn.movie { height: 1.80em; } ' +
             '.network-logo { background-color: #fff; position: relative; } ' +
             '.network-logo.movie { background: none; padding: 0; } ' +

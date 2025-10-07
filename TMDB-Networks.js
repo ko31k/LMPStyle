@@ -562,7 +562,7 @@
             '.network-logo.movie { background: none; padding: 0; } ' +
             '.network-logo .overlay { ' +
                 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
-                'background: rgba(255, 255, 255, 0.8); ' +
+                'background: rgba(255, 255, 255, 1); ' +
             '} ' +
             '.network-logo img { border-radius: 0.6em; height: 100%; } ' +
             '.network-logo.full-start__button .overlay, .network-logo.full-start__button.movie * { border-radius: 1em }' + 

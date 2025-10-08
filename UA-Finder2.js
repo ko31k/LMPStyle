@@ -46,6 +46,16 @@
 
         // --- Налаштування функціоналу ---
         SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів (true або false)
+
+        //ДОДАНО: Ручні перевизначення доріжок для конкретних ID контенту ===
+        MANUAL_OVERRIDES: {
+            '207703': { track_count: 1 },   //✅Примусово показувати Ukr для цього ID
+            '1195518': { track_count: 2 }   //✅Примусово показувати 2xUkr для цього ID
+            /*'Тут ID фільму': { track_count: 0 },*/   //✅Примусово приховувати мітку для цього ID
+            /*'Тут ID фільму': { track_count: 3 }*/    //✅Примусово показувати 3xUkr для цього ID
+        }
+        // КІНЕЦЬ перевизначень
+    
     };
 
     // ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ПРИ ОНОВЛЕННІ ========
@@ -551,6 +561,15 @@
         var cardId = normalizedCard.id;
         var cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${normalizedCard.type}_${cardId}`;
         cardElement.setAttribute('data-ltf-tracks-processed', 'true');
+
+        //ДОДАНО: ✅ Перевірка ручних перевизначень
+        var manualOverrideData = LTF_CONFIG.MANUAL_OVERRIDES[cardId];
+            if (manualOverrideData) {
+                if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Використовується ручне перевизначення:`, manualOverrideData);
+                updateCardListTracksElement(cardView, manualOverrideData.track_count);
+                return; // Не продовжуємо стандартну обробку
+            }
+        // КІНЕЦЬ ДОДАНОГО КОДУ
 
         var cachedData = getTracksCache(cacheKey);
         if (cachedData) {

@@ -59,7 +59,7 @@
         font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;  
         font-weight: 700;                                                    /* жирний шрифт */
         font-size: 1.0 em;                                                   /* розмір */
-        padding: 0.4em 0.4em;                                                /* відступ */
+        padding: 0.39em 0.39em;                                              /* відступ */
         white-space: nowrap;                                                 /* перенос */
         display: flex;                                                       /* flex */
         align-items: center;                                                 /* вирівнювання */

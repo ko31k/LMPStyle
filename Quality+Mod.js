@@ -40,11 +40,18 @@
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
         
         // Ручні перевизначення якості для конкретних ID контенту
-        MANUAL_OVERRIDES: {
-            '338969': { quality_code: 2160, full_label: '4K WEB-DL' }
-            /*'Тут ID фільму': { quality_code: 1080, full_label: '1080p WEB-DLRip' },*/
-            /*'Тут ID фільму': { quality_code: 720, full_label: '720p HDTVRip' }*/
-        }
+		MANUAL_OVERRIDES: {
+    		'338969': { 
+        		quality_code: 2160, 
+        		full_label: '4K WEB-DL', ✅ Повна мітка
+        		simple_label: '4K'  //   ✅ Спрощена мітка
+    		}
+    		/*'Тут ID фільму': { 
+        		quality_code: 1080, 
+        		full_label: '1080p WEB-DLRip', ✅ Повна мітка
+        		simple_label: 'FHD'  //        ✅ Спрощена мітка
+    		},*/
+		}
     };
     var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
 
@@ -1054,14 +1061,22 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
      * @param {Element} renderElement - DOM елемент
      * @param {boolean} bypassTranslation - Пропустити переклад
      */
-    function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation) {
+	function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation) {
         if (!renderElement) return;
         var element = $('.full-start__status.lqe-quality', renderElement);
         var rateLine = $('.full-start-new__rate-line', renderElement);
         if (!rateLine.length) return;
 
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
-
+  
+    	// ✅ Якщо це ручне перевизначення І увімкнено спрощення - беремо спрощену мітку
+    	if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
+        	var manualData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+        		if (manualData && manualData.simple_label) {
+            	displayQuality = manualData.simple_label;
+        	}	
+    	}
+		
         if (element.length) {
             // Оновлюємо існуючий елемент
             if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Updating existing element with quality "' + displayQuality + '" on full card.');

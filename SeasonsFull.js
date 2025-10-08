@@ -87,7 +87,7 @@
     @media (max-width: 768px) {
         .card--season-complete div,
         .card--season-progress div {
-            font-size: 1.0em;  /* Трохи менший розмір шрифту на мобільних */
+            font-size: 0.95em;  /* Трохи менший розмір шрифту на мобільних */
             padding: 0.35em 0.38em; /* додано МЕНШІ ВІДСТУПИ НА МОБІЛЬНИХ */
         }
     }

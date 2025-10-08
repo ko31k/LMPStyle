@@ -88,7 +88,7 @@
         .card--season-complete div,
         .card--season-progress div {
             font-size: 0.95em;  /* Трохи менший розмір шрифту на мобільних */
-            padding: 0.35em 0.38em; /* додано МЕНШІ ВІДСТУПИ НА МОБІЛЬНИХ */
+            padding: 0.35em 0.40em; /* додано МЕНШІ ВІДСТУПИ НА МОБІЛЬНИХ */
         }
     }
     `;

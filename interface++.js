@@ -1091,15 +1091,18 @@
             }
         });
     }
-    // === КОНЕЦ ЦВЕТНЫХ ФУНКЦИЙ ===
+// === КІНЕЦЬ КОЛЬОРОВИХ ФУНКЦІЙ ===
 
-    // Функція для генерації унікального, але стабільного кольору з рядка (наприклад, назви провайдера).
+    // Функція для генерації унікального кольору на основі текстового рядка
+    // Використовується для створення кольорових іконок для провайдерів
     function stringToColor(str) {
         var hash = 0;
+        // Створюємо хеш з рядка
         for (var i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
         var color = '#';
+        // Перетворюємо хеш у HEX-колір
         for (var i = 0; i < 3; i++) {
             var value = (hash >> (i * 8)) & 0xFF;
             color += ('00' + value.toString(16)).substr(-2);
@@ -1107,46 +1110,46 @@
         return color;
     }
     
-  // Функція для вилучення іконки з елемента.
+    // Функція для вилучення іконки з кнопки провайдера
     function extractProviderIcon(btn) {
         var iconHtml = '';
         
-        // Перевіряємо, чи є всередині SVG-іконка.
+        // Спершу шукаємо SVG-іконки
         if (btn.find('svg').length) {
             var icon = btn.find('svg').clone();
-            // Сохраняем оригинальный viewBox, если он есть
+            // Зберігаємо оригінальний viewBox якщо він є
             var originalViewBox = icon.attr('viewBox');
-            // Удаляем все атрибуты, кроме xmlns и viewBox
+            // Видаляємо всі атрибути крім xmlns і viewBox
             icon.removeAttr('width height style x y class version xml:space');
             if (!originalViewBox) {
-                // Устанавливаем viewBox только если его нет
+                // Встановлюємо viewBox тільки якщо його немає
                 icon.attr('viewBox', '0 0 512 512');
             }
-            // Устанавливаем фиксированный размер для отображения
+            // Встановлюємо фіксований розмір для відображення
             icon.attr({
                 width: 32,
                 height: 32,
                 style: 'width:32px;height:32px;display:block;'
             });
             
-            // Проверяем, чтобы внутри были path элементы
+            // Перевіряємо чи є всередині елементи path
             if (icon.find('path').length === 0 && icon.find('g').length === 0) {
-                // Если внутри нет path, возможно это просто контейнер, достаём весь HTML
+                // Якщо всередині немає path, можливо це просто контейнер - беремо весь HTML
                 iconHtml = '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">' + 
                     btn.find('svg').parent().html() + '</div>';
             } else {
                 iconHtml = icon[0].outerHTML;
             }
         }
-        // Проверяем изображения
+        // Перевіряємо зображення
         else if (btn.find('img').length) {
             var imgSrc = btn.find('img').attr('src');
             iconHtml = '<img src="' + imgSrc + '" style="width:32px;height:32px;display:block;object-fit:contain;" />';
         }
-        // Проверяем элементы с классом ico
+        // Перевіряємо елементи з класом ico
         else if (btn.find('.ico').length) {
             var icoElement = btn.find('.ico').clone();
-            // Если в ico содержится svg, сохраняем его целиком
+            // Якщо в ico міститься svg, зберігаємо його цілком
             if (icoElement.find('svg').length) {
                 iconHtml = '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">' + 
                     icoElement.html() + '</div>';
@@ -1155,10 +1158,10 @@
                 iconHtml = icoElement[0].outerHTML;
             }
         }
-        // Проверяем элементы с классом button__ico
+        // Перевіряємо елементи з класом button__ico
         else if (btn.find('.button__ico').length) {
             var buttonIco = btn.find('.button__ico').clone();
-            // Если в button__ico содержится svg, сохраняем его целиком
+            // Якщо в button__ico міститься svg, зберігаємо його цілком
             if (buttonIco.find('svg').length) {
                 iconHtml = '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">' + 
                     buttonIco.html() + '</div>';
@@ -1167,7 +1170,7 @@
                 iconHtml = buttonIco[0].outerHTML;
             }
         }
-        // Проверяем элементы с фоновым изображением
+        // Перевіряємо елементи з фоновим зображенням
         else {
             var elemWithBg = btn.find('[style*="background-image"]');
             if (elemWithBg.length) {
@@ -1176,11 +1179,11 @@
                     iconHtml = '<div style="width:32px;height:32px;display:block;background-image:' + bgStyle + ';background-size:contain;background-position:center;background-repeat:no-repeat;"></div>';
                 }
             }
-            // Ищем другие возможные иконки
+            // Шукаємо інші можливі іконки
             else {
                 var possibleIcons = btn.find('.icon, .logo, [class*="icon"], [class*="logo"]').first();
                 if (possibleIcons.length) {
-                    // Если в иконке есть svg, сохраняем весь внутренний HTML
+                    // Якщо в іконці є svg, зберігаємо весь внутрішній HTML
                     if (possibleIcons.find('svg').length) {
                         iconHtml = '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">' + 
                             possibleIcons.html() + '</div>';
@@ -1190,7 +1193,7 @@
                         iconHtml = possibleIcon[0].outerHTML;
                     }
                 }
-                // Проверяем data-атрибуты
+                // Перевіряємо data-атрибути
                 else {
                     var dataIcon = btn.attr('data-icon') || btn.attr('data-logo');
                     if (dataIcon) {
@@ -1200,7 +1203,7 @@
                             iconHtml = '<img src="' + dataIcon + '" style="width:32px;height:32px;display:block;object-fit:contain;" />';
                         }
                     }
-                    // Если ничего не найдено, используем первую букву
+                    // Якщо нічого не знайдено, використовуємо першу букву
                     else {
                         var providerName = btn.text().trim();
                         if (providerName) {
@@ -1215,7 +1218,7 @@
         return iconHtml;
     }
 
-    // Функция для создания меню кнопки "Ещё"
+    // Функція для створення меню кнопки "Ще"
     function createMoreButtonMenu(otherButtons) {
         return function() {
             var items = [];
@@ -1232,8 +1235,9 @@
                 });
             });
             
+            // Показуємо меню вибору
             Lampa.Select.show({
-                title: 'Дополнительные опции',
+                title: 'Додаткові опції',
                 items: items,
                 onSelect: function(selected) {
                     if (selected && selected.btn) {
@@ -1243,6 +1247,7 @@
                 onBack: function() {}
             });
             
+            // Додаємо іконки до пунктів меню
             setTimeout(function() {
                 $('.selectbox-item').each(function(i) {
                     if (items[i]) {
@@ -1256,7 +1261,7 @@
                             'padding-left': items[i].icon ? '56px' : '16px'
                         }).prepend(iconHtml);
                         
-                        // Исправим размер иконок для лучшей видимости
+                        // Коригуємо розмір іконок для кращої видимості
                         $(this).find('.menu__ico svg').css({
                             'width': '100%',
                             'height': '100%',
@@ -1264,12 +1269,12 @@
                             'max-height': '32px'
                         });
                         
-                        // Подгоняем размер SVG внутри контейнера
+                        // Підганяємо розмір SVG всередині контейнера
                         $(this).find('.menu__ico svg > *').each(function() {
-                            // Если viewBox не задан или некорректен, устанавливаем его
+                            // Якщо viewBox не заданий або некоректний, встановлюємо його
                             var svg = $(this).closest('svg');
                             if (!svg.attr('viewBox') || svg.attr('viewBox') === '0 0 24 24') {
-                                // Пробуем определить правильный viewBox по содержимому
+                                // Намагаємося визначити правильний viewBox за вмістом
                                 var paths = svg.find('path');
                                 if (paths.length) {
                                     svg.attr('viewBox', '0 0 512 512');
@@ -1278,7 +1283,7 @@
                             }
                         });
                         
-                        // Добавим анимацию при наведении
+                        // Додаємо анімацію при наведенні
                         $(this).on('hover:focus hover:hover', function(){
                             $(this).find('.menu__ico').css({
                                 'transform': 'translateY(-50%) scale(1.1)',
@@ -1296,13 +1301,9 @@
         };
     }
 
-    // === ОТОБРАЖЕНИЕ ВСЕХ КНОПОК ===
+    // === ВІДОБРАЖЕННЯ ВСІХ КНОПОК ===
     function showAllButtons() {
-        // УБИРАЕМ глобальное добавление стиля normalize_svg_icons_style
-        // (Больше не добавляем document.head.appendChild(normalizeIconsStyle))
-        // ... остальной код ...
-
-        // --- кастомные кнопки для режима main2 ---
+        // --- кастомні кнопки для режиму main2 ---
         if (!document.getElementById('interface_mod_new_buttons_style')) {
             var buttonStyle = document.createElement('style');
             buttonStyle.id = 'interface_mod_new_buttons_style';
@@ -1367,6 +1368,7 @@
                     });
                     if (allButtons.length === 0) return;
 
+                    // Сортуємо кнопки за категоріями
                     var categories = {
                         online: [],
                         torrent: [],
@@ -1404,9 +1406,9 @@
                             targetContainer.append(button);
                         });
                     });
-                    // --- кастомные кнопки для режима main2 ---
+                    // --- кастомні кнопки для режиму main2 ---
                     if (settings.buttons_style_mode === 'main2') {
-                        // Сохраняем все оригинальные онлайн-кнопки до их скрытия/перемещения (только уникальные)
+                        // Зберігаємо всі оригінальні онлайн-кнопки до їх приховання/переміщення (тільки унікальні)
                         var allOnlineButtons = [];
                         var seenOnlineTexts = {};
                         $(allButtons).each(function() {
@@ -1425,17 +1427,17 @@
                         origOnline.hide();
                         origTorrent.hide();
                         targetContainer.find('.custom-online-btn, .custom-torrent-btn, .main2-more-btn, .main2-menu').remove();
-                        // Кнопка Онлайн (большая) - БЕЗ инлайн-стилей
+                        // Кнопка Онлайн (велика)
                         var onlineBtn = $('<div class="full-start__button selector custom-online-btn main2-big-btn" tabindex="0"></div>')
                             .text('Онлайн')
                             .attr('data-subtitle', 'Lampac v1.4.8')
                             .on('hover:focus', function(){ $(this).addClass('focus'); })
                             .on('hover:blur', function(){ $(this).removeClass('focus'); });
-                        // Меню выбора онлайн-провайдера
+                        // Меню вибору онлайн-провайдера
                         var onlineMenu = $('<div class="main2-menu main2-online-menu" style="display:none;"></div>');
                         function showOnlineMenu() {
                             if (allOnlineButtons.length === 0) {
-                                Lampa.Noty.show('Нет онлайн-провайдера');
+                                Lampa.Noty.show('Немає онлайн-провайдера');
                                 return;
                             }
                             if (allOnlineButtons.length === 1) {
@@ -1455,7 +1457,7 @@
                                 });
                             }
                             Lampa.Select.show({
-                                title: 'Выберите онлайн-провайдера',
+                                title: 'Виберіть онлайн-провайдера',
                                 items: items,
                                 onSelect: function(selected) {
                                     if (selected && typeof selected.idx !== 'undefined') {
@@ -1477,7 +1479,7 @@
                                             'padding-left': items[i].icon ? '56px' : '16px'
                                         }).prepend(iconHtml);
                                         
-                                        // Исправим размер иконок для лучшей видимости
+                                        // Коригуємо розмір іконок для кращої видимості
                                         $(this).find('.menu__ico svg').css({
                                             'width': '100%',
                                             'height': '100%',
@@ -1485,12 +1487,12 @@
                                             'max-height': '32px'
                                         });
                                         
-                                        // Подгоняем размер SVG внутри контейнера
+                                        // Підганяємо розмір SVG всередині контейнера
                                         $(this).find('.menu__ico svg > *').each(function() {
-                                            // Если viewBox не задан или некорректен, устанавливаем его
+                                            // Якщо viewBox не заданий або некоректний, встановлюємо його
                                             var svg = $(this).closest('svg');
                                             if (!svg.attr('viewBox') || svg.attr('viewBox') === '0 0 24 24') {
-                                                // Пробуем определить правильный viewBox по содержимому
+                                                // Намагаємося визначити правильний viewBox за вмістом
                                                 var paths = svg.find('path');
                                                 if (paths.length) {
                                                     svg.attr('viewBox', '0 0 512 512');
@@ -1499,7 +1501,7 @@
                                             }
                                         });
                                         
-                                        // Добавим анимацию при наведении
+                                        // Додаємо анімацію при наведенні
                                         $(this).on('hover:focus hover:hover', function(){
                                             $(this).find('.menu__ico').css({
                                                 'transform': 'translateY(-50%) scale(1.1)',
@@ -1517,7 +1519,7 @@
                         }
                         onlineBtn.on('hover:enter', function() {
                             if (allOnlineButtons.length === 0) {
-                                Lampa.Noty.show('Нет онлайн-провайдера');
+                                Lampa.Noty.show('Немає онлайн-провайдера');
                                 return;
                             }
                             if (allOnlineButtons.length === 1) {
@@ -1537,7 +1539,7 @@
                                 });
                             }
                             Lampa.Select.show({
-                                title: 'Выберите онлайн-провайдера',
+                                title: 'Виберіть онлайн-провайдера',
                                 items: items,
                                 onSelect: function(selected) {
                                     if (selected && typeof selected.idx !== 'undefined') {
@@ -1559,7 +1561,7 @@
                                             'padding-left': items[i].icon ? '56px' : '16px'
                                         }).prepend(iconHtml);
                                         
-                                        // Исправим размер иконок для лучшей видимости
+                                        // Коригуємо розмір іконок для кращої видимості
                                         $(this).find('.menu__ico svg').css({
                                             'width': '100%',
                                             'height': '100%',
@@ -1567,12 +1569,12 @@
                                             'max-height': '32px'
                                         });
                                         
-                                        // Подгоняем размер SVG внутри контейнера
+                                        // Підганяємо розмір SVG всередині контейнера
                                         $(this).find('.menu__ico svg > *').each(function() {
-                                            // Если viewBox не задан или некорректен, устанавливаем его
+                                            // Якщо viewBox не заданий або некоректний, встановлюємо його
                                             var svg = $(this).closest('svg');
                                             if (!svg.attr('viewBox') || svg.attr('viewBox') === '0 0 24 24') {
-                                                // Пробуем определить правильный viewBox по содержимому
+                                                // Намагаємося визначити правильний viewBox за вмістом
                                                 var paths = svg.find('path');
                                                 if (paths.length) {
                                                     svg.attr('viewBox', '0 0 512 512');
@@ -1581,7 +1583,7 @@
                                             }
                                         });
                                         
-                                        // Добавим анимацию при наведении
+                                        // Додаємо анімацію при наведенні
                                         $(this).on('hover:focus hover:hover', function(){
                                             $(this).find('.menu__ico').css({
                                                 'transform': 'translateY(-50%) scale(1.1)',
@@ -1597,7 +1599,7 @@
                                 });
                             }, 50);
                         });
-                        // Навигация по меню с пульта
+                        // Навігація по меню з пульта
                         onlineMenu.on('keydown', function(e) {
                             if (e.key === 'Back' || e.key === 'Escape') {
                                 onlineMenu.hide();
@@ -1609,7 +1611,7 @@
                                 if (!onlineMenu.find('.focus').length) onlineMenu.hide();
                             }, 100);
                         });
-                        // Кнопка Торрент (большая) - БЕЗ инлайн-стилей
+                        // Кнопка Торрент (велика)
                         var torrentBtn = $('<div class="full-start__button selector custom-torrent-btn main2-big-btn" tabindex="0"></div>')
                             .text('Торрент')
                             .attr('data-subtitle', 'Торрент')
@@ -1617,11 +1619,11 @@
                             .on('hover:blur', function(){ $(this).removeClass('focus'); })
                             .on('hover:enter', function() {
                                 if (origTorrent.length) origTorrent.first().trigger('hover:enter');
-                                else Lampa.Noty.show('Нет торрент-провайдера');
+                                else Lampa.Noty.show('Немає торрент-провайдера');
                             });
-                        // Собираем остальные кнопки
+                        // Збираємо решту кнопок
                         var otherButtons = [];
-                        // Сохраняем тексты онлайн-кнопок, чтобы избежать дублирования
+                        // Зберігаємо тексти онлайн-кнопок, щоб уникнути дублювання
                         var onlineButtonTexts = {};
                         allOnlineButtons.forEach(function(btn) {
                             var text = $(btn).text().trim();
@@ -1630,48 +1632,48 @@
                             }
                         });
                         
-                        // Список элементов, которые нужно скрыть из меню "Ещё"
+                        // Список елементів, які потрібно приховати з меню "Ще"
                         var hideButtonTexts = {
-                            'Смотреть': true,
-                            'Подписаться': true
+                            'Дивитися': true,
+                            'Підписатися': true
                         };
                         
                         $(allButtons).each(function() {
                             var btn = $(this);
                             var btnText = btn.text().trim();
-                            // Проверяем, что кнопка не является онлайн или торрент, не дублирует онлайн-кнопки и не в списке скрытых
+                            // Перевіряємо, що кнопка не є онлайн або торрент, не дублює онлайн-кнопки і не в списку прихованих
                             if (!btn.hasClass('view--online') && !btn.hasClass('view--torrent') && 
                                 !onlineButtonTexts[btnText] && !hideButtonTexts[btnText]) {
                                 otherButtons.push(btn.clone(true, true).removeClass('focus'));
                             }
                         });
-                        // Кнопка "Ещё" (большая) - БЕЗ инлайн-стилей
+                        // Кнопка "Ще" (велика)
                         var moreBtn = $('<div class="full-start__button selector main2-more-btn" tabindex="0">⋯</div>')
                             .on('hover:focus', function(){ $(this).addClass('focus'); })
                             .on('hover:blur', function(){ $(this).removeClass('focus'); });
                         
-                        // Открытие меню по нажатию кнопки "Ещё"
+                        // Відкриття меню по натисканню кнопки "Ще"
                         moreBtn.on('hover:enter', createMoreButtonMenu(otherButtons));
                         
-                        // Вставляем элементы
+                        // Вставляємо елементи
                         targetContainer.prepend(moreBtn);
                         targetContainer.prepend(torrentBtn);
                         targetContainer.prepend(onlineBtn);
                         targetContainer.prepend(onlineMenu);
-                        // Сброс инлайн-стилей для кастомных кнопок (на всякий случай)
+                        // Скидання інлайн-стилів для кастомних кнопок (про всяк випадок)
                         setTimeout(function() {
                             targetContainer.find('.custom-online-btn, .custom-torrent-btn, .main2-more-btn').each(function(){
                                 this.removeAttribute('style');
                             });
                         }, 10);
-                        // Контейнер как controller
+                        // Контейнер як controller
                         targetContainer.addClass('controller');
                         Lampa.Controller.enable('full_start');
                         setTimeout(function() {
                             onlineBtn.addClass('focus');
                         }, 100);
                     }
-                    // --- конец блока кастомных кнопок main2 ---
+                    // --- кінець блоку кастомних кнопок main2 ---
                     if (needToggle) {
                         setTimeout(function() {
                             Lampa.Controller.toggle('full_start');
@@ -1697,11 +1699,7 @@
                         if (!targetContainer.length) targetContainer = fullContainer.find('.full-start__buttons');
                         if (!targetContainer.length) targetContainer = fullContainer.find('.buttons-container');
                         if (!targetContainer.length) return;
-                        targetContainer.css({
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.7em'
-                        });
+
                         var allButtons = [];
                         var buttonSelectors = [
                             '.buttons--container .full-start__button',
@@ -1717,6 +1715,7 @@
                             });
                         });
                         if (allButtons.length === 0) return;
+
                         var categories = {
                             online: [],
                             torrent: [],
@@ -1749,9 +1748,9 @@
                                 targetContainer.append(button);
                             });
                         });
-                        // --- кастомные кнопки для режима main2 ---
+                        // --- кастомні кнопки для режиму main2 ---
                         if (settings.buttons_style_mode === 'main2') {
-                            // Сохраняем все оригинальные онлайн-кнопки до их скрытия/перемещения (только уникальные)
+                            // Зберігаємо всі оригінальні онлайн-кнопки до їх приховання/переміщення (тільки унікальні)
                             var allOnlineButtons = [];
                             var seenOnlineTexts = {};
                             $(allButtons).each(function() {
@@ -1770,17 +1769,17 @@
                             origOnline.hide();
                             origTorrent.hide();
                             targetContainer.find('.custom-online-btn, .custom-torrent-btn, .main2-more-btn, .main2-menu').remove();
-                            // Кнопка Онлайн (большая) - БЕЗ инлайн-стилей
+                            // Кнопка Онлайн (велика)
                             var onlineBtn = $('<div class="full-start__button selector custom-online-btn main2-big-btn" tabindex="0"></div>')
                                 .text('Онлайн')
                                 .attr('data-subtitle', 'Lampac v1.4.8')
                                 .on('hover:focus', function(){ $(this).addClass('focus'); })
                                 .on('hover:blur', function(){ $(this).removeClass('focus'); });
-                            // Меню выбора онлайн-провайдера
+                            // Меню вибору онлайн-провайдера
                             var onlineMenu = $('<div class="main2-menu main2-online-menu" style="display:none;"></div>');
                             function showOnlineMenu() {
                                 if (allOnlineButtons.length === 0) {
-                                    Lampa.Noty.show('Нет онлайн-провайдера');
+                                    Lampa.Noty.show('Немає онлайн-провайдера');
                                     return;
                                 }
                                 if (allOnlineButtons.length === 1) {
@@ -1800,7 +1799,7 @@
                                     });
                                 }
                                 Lampa.Select.show({
-                                    title: 'Выберите онлайн-провайдера',
+                                    title: 'Виберіть онлайн-провайдера',
                                     items: items,
                                     onSelect: function(selected) {
                                         if (selected && typeof selected.idx !== 'undefined') {
@@ -1822,7 +1821,7 @@
                                                 'padding-left': items[i].icon ? '56px' : '16px'
                                             }).prepend(iconHtml);
                                             
-                                            // Исправим размер иконок для лучшей видимости
+                                            // Коригуємо розмір іконок для кращої видимості
                                             $(this).find('.menu__ico svg').css({
                                                 'width': '100%',
                                                 'height': '100%',
@@ -1830,12 +1829,12 @@
                                                 'max-height': '32px'
                                             });
                                             
-                                            // Подгоняем размер SVG внутри контейнера
+                                            // Підганяємо розмір SVG всередині контейнера
                                             $(this).find('.menu__ico svg > *').each(function() {
-                                                // Если viewBox не задан или некорректен, устанавливаем его
+                                                // Якщо viewBox не заданий або некоректний, встановлюємо його
                                                 var svg = $(this).closest('svg');
                                                 if (!svg.attr('viewBox') || svg.attr('viewBox') === '0 0 24 24') {
-                                                    // Пробуем определить правильный viewBox по содержимому
+                                                    // Намагаємося визначити правильний viewBox за вмістом
                                                     var paths = svg.find('path');
                                                     if (paths.length) {
                                                         svg.attr('viewBox', '0 0 512 512');
@@ -1844,7 +1843,7 @@
                                                 }
                                             });
                                             
-                                            // Добавим анимацию при наведении
+                                            // Додаємо анімацію при наведенні
                                             $(this).on('hover:focus hover:hover', function(){
                                                 $(this).find('.menu__ico').css({
                                                     'transform': 'translateY(-50%) scale(1.1)',
@@ -1862,7 +1861,7 @@
                             }
                             onlineBtn.on('hover:enter', function() {
                                 if (allOnlineButtons.length === 0) {
-                                    Lampa.Noty.show('Нет онлайн-провайдера');
+                                    Lampa.Noty.show('Немає онлайн-провайдера');
                                     return;
                                 }
                                 if (allOnlineButtons.length === 1) {
@@ -1879,10 +1878,10 @@
                                         icon: iconHtml,
                                         subtitle: subtitle,
                                         idx: idx
-                                });
+                                    });
                                 }
                                 Lampa.Select.show({
-                                    title: 'Выберите онлайн-провайдера',
+                                    title: 'Виберіть онлайн-провайдера',
                                     items: items,
                                     onSelect: function(selected) {
                                         if (selected && typeof selected.idx !== 'undefined') {
@@ -1904,7 +1903,7 @@
                                                 'padding-left': items[i].icon ? '56px' : '16px'
                                             }).prepend(iconHtml);
                                             
-                                            // Исправим размер иконок для лучшей видимости
+                                            // Коригуємо розмір іконок для кращої видимості
                                             $(this).find('.menu__ico svg').css({
                                                 'width': '100%',
                                                 'height': '100%',
@@ -1912,12 +1911,12 @@
                                                 'max-height': '32px'
                                             });
                                             
-                                            // Подгоняем размер SVG внутри контейнера
+                                            // Підганяємо розмір SVG всередині контейнера
                                             $(this).find('.menu__ico svg > *').each(function() {
-                                                // Если viewBox не задан или некорректен, устанавливаем его
+                                                // Якщо viewBox не заданий або некоректний, встановлюємо його
                                                 var svg = $(this).closest('svg');
                                                 if (!svg.attr('viewBox') || svg.attr('viewBox') === '0 0 24 24') {
-                                                    // Пробуем определить правильный viewBox по содержимому
+                                                    // Намагаємося визначити правильний viewBox за вмістом
                                                     var paths = svg.find('path');
                                                     if (paths.length) {
                                                         svg.attr('viewBox', '0 0 512 512');
@@ -1926,7 +1925,7 @@
                                                 }
                                             });
                                             
-                                            // Добавим анимацию при наведении
+                                            // Додаємо анімацію при наведенні
                                             $(this).on('hover:focus hover:hover', function(){
                                                 $(this).find('.menu__ico').css({
                                                     'transform': 'translateY(-50%) scale(1.1)',
@@ -1942,7 +1941,7 @@
                                     });
                                 }, 50);
                             });
-                            // Навигация по меню с пульта
+                            // Навігація по меню з пульта
                             onlineMenu.on('keydown', function(e) {
                                 if (e.key === 'Back' || e.key === 'Escape') {
                                     onlineMenu.hide();
@@ -1954,7 +1953,7 @@
                                     if (!onlineMenu.find('.focus').length) onlineMenu.hide();
                                 }, 100);
                             });
-                            // Кнопка Торрент (большая) - БЕЗ инлайн-стилей
+                            // Кнопка Торрент (велика)
                             var torrentBtn = $('<div class="full-start__button selector custom-torrent-btn main2-big-btn" tabindex="0"></div>')
                                 .text('Торрент')
                                 .attr('data-subtitle', 'Торрент')
@@ -1962,11 +1961,11 @@
                                 .on('hover:blur', function(){ $(this).removeClass('focus'); })
                                 .on('hover:enter', function() {
                                     if (origTorrent.length) origTorrent.first().trigger('hover:enter');
-                                    else Lampa.Noty.show('Нет торрент-провайдера');
+                                    else Lampa.Noty.show('Немає торрент-провайдера');
                                 });
-                            // Собираем остальные кнопки
+                            // Збираємо решту кнопок
                             var otherButtons = [];
-                            // Сохраняем тексты онлайн-кнопок, чтобы избежать дублирования
+                            // Зберігаємо тексти онлайн-кнопок, щоб уникнути дублювання
                             var onlineButtonTexts = {};
                             allOnlineButtons.forEach(function(btn) {
                                 var text = $(btn).text().trim();
@@ -1975,68 +1974,58 @@
                                 }
                             });
                             
-                            // Список элементов, которые нужно скрыть из меню "Ещё"
+                            // Список елементів, які потрібно приховати з меню "Ще"
                             var hideButtonTexts = {
-                                'Смотреть': true,
-                                'Подписаться': true
+                                'Дивитися': true,
+                                'Підписатися': true
                             };
                             
                             $(allButtons).each(function() {
                                 var btn = $(this);
                                 var btnText = btn.text().trim();
-                                // Проверяем, что кнопка не является онлайн или торрент, не дублирует онлайн-кнопки и не в списке скрытых
+                                // Перевіряємо, що кнопка не є онлайн або торрент, не дублює онлайн-кнопки і не в списку прихованих
                                 if (!btn.hasClass('view--online') && !btn.hasClass('view--torrent') && 
                                     !onlineButtonTexts[btnText] && !hideButtonTexts[btnText]) {
                                     otherButtons.push(btn.clone(true, true).removeClass('focus'));
                                 }
                             });
-                            // Кнопка "Ещё" (большая) - БЕЗ инлайн-стилей
+                            // Кнопка "Ще" (велика)
                             var moreBtn = $('<div class="full-start__button selector main2-more-btn" tabindex="0">⋯</div>')
                                 .on('hover:focus', function(){ $(this).addClass('focus'); })
                                 .on('hover:blur', function(){ $(this).removeClass('focus'); });
                             
-                            // Открытие меню по нажатию кнопки "Ещё"
+                            // Відкриття меню по натисканню кнопки "Ще"
                             moreBtn.on('hover:enter', createMoreButtonMenu(otherButtons));
                             
-                            // Вставляем элементы
+                            // Вставляємо елементи
                             targetContainer.prepend(moreBtn);
                             targetContainer.prepend(torrentBtn);
                             targetContainer.prepend(onlineBtn);
                             targetContainer.prepend(onlineMenu);
-                            // Сброс инлайн-стилей для кастомных кнопок (на всякий случай)
+                            // Скидання інлайн-стилів для кастомних кнопок (про всяк випадок)
                             setTimeout(function() {
                                 targetContainer.find('.custom-online-btn, .custom-torrent-btn, .main2-more-btn').each(function(){
                                     this.removeAttribute('style');
                                 });
                             }, 10);
-                            // Контейнер как controller
+                            // Контейнер як controller
                             targetContainer.addClass('controller');
                             Lampa.Controller.enable('full_start');
                             setTimeout(function() {
                                 onlineBtn.addClass('focus');
                             }, 100);
                         }
-                        // --- конец блока кастомных кнопок main2 ---
-                        //Нова функція
-						if (needToggle) {
-    					setTimeout(function() {
-        					// перевіряємо, що ще активний контролер full_start
-        					if (Lampa.Controller.enabled() === 'full_start') {
-            				Lampa.Controller.toggle('full_start');
-        					}
-    					}, 100);
-						}
-
-						//Оригінальна функція
-						/*if (needToggle) {
+                        // --- кінець блоку кастомних кнопок main2 ---
+                        if (needToggle) {
                             setTimeout(function() {
                                 Lampa.Controller.toggle('full_start');
                             }, 100);
-                        }*/
+                        }
                     }, 300);
                 }
             }
         });
+        // Спостерігач за змінами в DOM для реорганізації кнопок
         var buttonObserver = new MutationObserver(function(mutations) {
             if (settings.buttons_style_mode !== 'all' && settings.buttons_style_mode !== 'main2') return;
             var needReorganize = false;
@@ -2064,40 +2053,41 @@
         });
     }
 
-    // Функция для применения тем
+    // Функція для застосування тем
     function applyTheme(theme) {
-        // Удаляем предыдущие стили темы
+        // Видаляємо попередні стилі теми
         const oldStyle = document.querySelector('#interface_mod_theme');
         if (oldStyle) oldStyle.remove();
 
-        // Если выбрано "По умолчанию", просто удаляем стили
+        // Якщо обрано "За замовчуванням", просто видаляємо стилі
         if (theme === 'default') {
-            // Деактивируем все внешние темы
+            // Деактивуємо всі зовнішні теми
             document.querySelectorAll('[id^="theme-style-"]').forEach(function(el) {
                 el.disabled = true;
             });
             return;
         }
 
-        // Проверяем, есть ли внешняя тема
+        // Перевіряємо, чи є зовнішня тема
         var externalThemeStyle = document.querySelector('#theme-style-' + theme);
         if (externalThemeStyle) {
-            // Деактивируем все внешние темы
+            // Деактивуємо всі зовнішні теми
             document.querySelectorAll('[id^="theme-style-"]').forEach(function(el) {
                 el.disabled = true;
             });
-            // Активируем нужную тему
+            // Активуємо потрібну тему
             externalThemeStyle.disabled = false;
             return;
         }
 
-        // Создаем новый стиль для встроенных тем
+        // Створюємо новий стиль для вбудованих тем
         const style = document.createElement('style');
         style.id = 'interface_mod_theme';
 
-// Определяем стили для разных тем
+// Визначаємо стилі для різних тем
 const themes = {
     neon: `
+        /* Неонова тема - яскраві кольори, градієнти та світіння */
         body { background: linear-gradient(135deg, #0d0221 0%, #150734 50%, #1f0c47 100%) !important; color: #ffffff !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
@@ -2125,6 +2115,7 @@ const themes = {
         }
     `,
     sunset: `
+        /* Тема заходу сонця - теплі оранжево-фіолетові тони */
         body { background: linear-gradient(135deg, #2d1f3d 0%, #614385 50%, #516395 100%) !important; color: #ffffff !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
@@ -2147,6 +2138,7 @@ const themes = {
         }
     `,
     emerald: `
+        /* Смарагдова тема - зелені та блакитні тони природи */
         body { background: linear-gradient(135deg, #1a2a3a 0%, #2C5364 50%, #203A43 100%) !important; color: #ffffff !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
@@ -2172,6 +2164,7 @@ const themes = {
         }
     `,
     aurora: `
+        /* Тема північного сяйва - багатокольоровий градієнт */
         body { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%) !important; color: #ffffff !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
@@ -2195,6 +2188,7 @@ const themes = {
         }
     `,
     bywolf_mod: `
+        /* Модифікація ByWolf - космічна тема з пульсуючими ефектами */
         body { background: linear-gradient(135deg, #090227 0%, #170b34 50%, #261447 100%) !important; color: #ffffff !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
@@ -2227,6 +2221,7 @@ const themes = {
         }
     `,
     minimalist: `
+        /* Мінімалістична тема - чорно-біла з акцентами на сірих тонах */
         body { background: #121212 !important; color: #e0e0e0 !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
@@ -2259,6 +2254,7 @@ const themes = {
         }
     `,
     glow_outline: `
+        /* Тема з світляним контуром - лише обведення елементів */
         body { background: #0a0a0a !important; color: #f5f5f5 !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover, .settings-folder.focus, .settings-param.focus, .selectbox-item.focus, .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus, .simple-button.focus, .menu__version.focus {
@@ -2307,6 +2303,7 @@ const themes = {
         }
     `,
     menu_lines: `
+        /* Тема з лініями меню - роздільники між пунктами меню */
         body { background: #121212 !important; color: #f5f5f5 !important; }
         .menu__item {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -2349,6 +2346,7 @@ const themes = {
         }
     `,
     dark_emerald: `
+        /* Темна смарагдова тема - темні зелені тони з округлими кутами */
         body { 
             background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18323a 100%) !important; 
             color: #dfdfdf !important; 
@@ -2394,7 +2392,7 @@ const themes = {
         document.head.appendChild(style);
     }
 
-    // Функция для загрузки внешних тем
+    // Функція для завантаження зовнішніх тем
     function loadExternalThemes(callback) {
         var themeUrl = 'https://bywolf88.github.io/lampa-plugins/theme.json';
         var xhr = new XMLHttpRequest();
@@ -2425,19 +2423,19 @@ const themes = {
         xhr.send();
     }
 
-    // Функция для стилизации заголовков подборок
+    // Функція для стилізації заголовків підбірок
     function stylizeCollectionTitles() {
         if (!settings.stylize_titles) return;
         
-        // Удаляем предыдущие стили, если они были
+        // Видаляємо попередні стилі, якщо вони були
         var oldStyle = document.getElementById('stylized-titles-css');
         if (oldStyle) oldStyle.remove();
         
-        // Создаем новый стиль
+        // Створюємо новий стиль
         var styleElement = document.createElement('style');
         styleElement.id = 'stylized-titles-css';
         
-        // CSS для стилизации заголовков
+        // CSS для стилізації заголовків
         var css = `
             .items-line__title {
                 font-size: 2.4em;
@@ -2509,15 +2507,15 @@ const themes = {
         styleElement.textContent = css;
         document.head.appendChild(styleElement);
         
-        // Добавляем наблюдатель за появлением новых заголовков
+        // Додаємо спостерігач за появою нових заголовків
         var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.addedNodes.length) {
                     mutation.addedNodes.forEach(function(node) {
-                        if (node.nodeType === 1) { // только элементы
+                        if (node.nodeType === 1) { // тільки елементи
                             var titles = node.querySelectorAll('.items-line__title');
                             if (titles.length) {
-                                // Можно добавить дополнительные манипуляции с заголовками, если нужно
+                                // Можна додати додаткові маніпуляції з заголовками, якщо потрібно
                             }
                         }
                     });
@@ -2531,19 +2529,19 @@ const themes = {
         });
     }
 
-    // Функция для увеличенной информации
+    // Функція для збільшеної інформації
     function enhanceDetailedInfo() {
         if (!settings.enhance_detailed_info) return;
         
-        // Если уже добавлен стиль, удаляем
+        // Якщо вже доданий стиль, видаляємо
         var oldStyle = document.getElementById('enhanced-info-css');
         if (oldStyle) oldStyle.remove();
         
-        // Добавляем CSS для увеличенной информации
+        // Додаємо CSS для збільшеної інформації
         var enhancedInfoStyle = document.createElement('style');
         enhancedInfoStyle.id = 'enhanced-info-css';
         enhancedInfoStyle.textContent = `
-             // CSS для увеличения информации
+             /* CSS для збільшення інформації */
              .full-start-new__details {
                  font-size: 1.9em;
              }
@@ -2603,7 +2601,7 @@ const themes = {
                  line-height: 1.2em;
              }
              
-             /* Увеличиваем описание фильма */
+             /* Збільшуємо опис фільму */
              .full-start-new__title {
                  font-size: 2.2em !important;
              }
@@ -2617,12 +2615,12 @@ const themes = {
                  margin-top: 1em !important;
              }
              
-             /* Увеличиваем шрифт для информационной панели */
+             /* Збільшуємо шрифт для інформаційної панелі */
              .full-start-new__info {
                  font-size: 1.4em !important;
              }
              
-             /* Адаптация под мобильные устройства */
+             /* Адаптація під мобільні пристрої */
              @media (max-width: 768px) {
                  .full-start-new__title {
                      font-size: 1.8em !important;
@@ -2648,19 +2646,19 @@ const themes = {
         `;
         document.head.appendChild(enhancedInfoStyle);
         
-        // Добавляем обработчик для объединения информации в одну строку
+        // Додаємо обробник для об'єднання інформації в один рядок
         Lampa.Listener.follow('full', function(data) {
             if (data.type === 'complite' && settings.enhance_detailed_info) {
                 setTimeout(function() {
                     var details = $('.full-start-new__details');
                     if (!details.length) return;
                     
-                    // Ищем информацию о сезонах, сериях и длительности
+                    // Шукаємо інформацію про сезони, серії та тривалість
                     var seasonText = '';
                     var episodeText = '';
                     var durationText = '';
                     
-                    // Собираем данные из существующих элементов
+                    // Збираємо дані з існуючих елементів
                     details.find('span').each(function() {
                         var text = $(this).text().trim();
                         
@@ -2673,12 +2671,12 @@ const themes = {
                         }
                     });
                     
-                    // Если нашли хотя бы два элемента информации, объединяем их
+                    // Якщо знайшли хоча б два елементи інформації, об'єднуємо їх
                     if ((seasonText && episodeText) || (seasonText && durationText) || (episodeText && durationText)) {
-                        // Создаем новый контейнер для объединенной строки
+                        // Створюємо новий контейнер для об'єднаного рядка
                         var unifiedLine = $('<div class="info-unified-line"></div>');
                         
-                        // Добавляем информацию о сезонах, если есть
+                        // Додаємо інформацію про сезони, якщо є
                         if (seasonText) {
                             var seasonItem = $('<span class="info-unified-item"></span>')
                                 .text(seasonText)
@@ -2689,7 +2687,7 @@ const themes = {
                             unifiedLine.append(seasonItem);
                         }
                         
-                        // Добавляем информацию о сериях, если есть
+                        // Додаємо інформацію про серії, якщо є
                         if (episodeText) {
                             var episodeItem = $('<span class="info-unified-item"></span>')
                                 .text(episodeText)
@@ -2700,7 +2698,7 @@ const themes = {
                             unifiedLine.append(episodeItem);
                         }
                         
-                        // Добавляем информацию о длительности, если есть
+                        // Додаємо інформацію про тривалість, якщо є
                         if (durationText) {
                             var durationItem = $('<span class="info-unified-item"></span>')
                                 .text(durationText)
@@ -2711,7 +2709,7 @@ const themes = {
                             unifiedLine.append(durationItem);
                         }
                         
-                        // Удаляем старые элементы с этой информацией
+                        // Видаляємо старі елементи з цією інформацією
                         details.find('span').each(function() {
                             var text = $(this).text().trim();
                             if (text === seasonText || text === episodeText || text === durationText) {
@@ -2719,7 +2717,7 @@ const themes = {
                             }
                         });
                         
-                        // Добавляем объединенную строку в начало деталей
+                        // Додаємо об'єднаний рядок на початок деталей
                         details.prepend(unifiedLine);
                     }
                 }, 300);
@@ -2727,9 +2725,9 @@ const themes = {
         });
     }
 
-    // Инициализация
+    // Ініціалізація
     function startPlugin() {
-        // Загружаем темы и добавляем настройки
+        // Завантажуємо теми та додаємо налаштування
         addSettings();
         changeMovieTypeLabels();
         newInfoPanel();
@@ -2744,23 +2742,23 @@ const themes = {
             showAllButtons();
         }
         
-        // Применяем выбранную тему
+        // Застосовуємо вибрану тему
         if (settings.theme) {
             applyTheme(settings.theme);
         }
         
-        // Применяем стилизацию заголовков, если включено
+        // Застосовуємо стилізацію заголовків, якщо увімкнено
         if (settings.stylize_titles) {
             stylizeCollectionTitles();
         }
         
-        // Применяем увеличенную информацию, если включено
+        // Застосовуємо збільшену інформацію, якщо увімкнено
         if (settings.enhance_detailed_info) {
             enhanceDetailedInfo();
         }
     }
 
-    // Запуск после готовности приложения
+    // Запуск після готовності додатка
     if (window.appready) {
         startPlugin();
     } else {

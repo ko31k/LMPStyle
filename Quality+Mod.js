@@ -1105,6 +1105,14 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
     function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
 
+		//✅ Якщо це ручне перевизначення І увімкнено спрощені мітки — беремо simple_label
+		if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
+    		var manualData = LQE_CONFIG.MANUAL_OVERRIDES[cardView?.card_data?.id];
+    			if (manualData && manualData.simple_label) {
+        		displayQuality = manualData.simple_label;
+    			}
+		}
+		
         // Перевіряємо наявність ідентичного елемента
         var existing = cardView.querySelector('.card__quality');
         if (existing) {

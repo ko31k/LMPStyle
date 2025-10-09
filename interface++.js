@@ -44,77 +44,77 @@
     // Це дозволяє плагіну відображати налаштування та елементи інтерфейсу мовою, обраною користувачем.
     Lampa.Lang.add({
         interface_mod_new_plugin_name: {
-            ru: 'Интерфейс +',
+            ru: 'Інтерфейс +',
             en: 'Interface +',
             uk: 'Інтерфейс +'
         },
         interface_mod_new_about_plugin: {
-            ru: 'О плагине',
+            ru: 'Про плагін',
             en: 'About plugin',
             uk: 'Про плагін'
         },
         interface_mod_new_show_movie_type: {
-            ru: 'Показывать лейблы типа',
+            ru: 'Показувати мітки типу',
             en: 'Show type labels',
             uk: 'Показувати мітки типу'
         },
         interface_mod_new_show_movie_type_desc: {
-            ru: 'Показывать лейблы "Фильм" и "Сериал" на постере',
+            ru: 'Показувати мітки "Фільм" і "Серіал" на постері',
             en: 'Show "Movie" and "Series" labels on poster',
             uk: 'Показувати мітки "Фільм" і "Серіал" на постері'
         },
         interface_mod_new_label_serial: {
-            ru: 'Сериал',
+            ru: 'Серіал',
             en: 'Series',
             uk: 'Серіал'
         },
         interface_mod_new_label_movie: {
-            ru: 'Фильм',
+            ru: 'Фільм',
             en: 'Movie',
             uk: 'Фільм'
         },
         interface_mod_new_info_panel: {
-            ru: 'Новая инфо-панель',
+            ru: 'Нова інфо-панель',
             en: 'New info panel',
             uk: 'Нова інфо-панель'
         },
         interface_mod_new_info_panel_desc: {
-            ru: 'Цветная и перефразированная строка информации о фильме/сериале',
+            ru: 'Кольорова та перефразована інформаційна панель',
             en: 'Colored and rephrased info line about movie/series',
             uk: 'Кольорова та перефразована інформаційна панель'
         },
         interface_mod_new_colored_ratings: {
-            ru: 'Цветной рейтинг',
+            ru: 'Кольоровий рейтинг',
             en: 'Colored rating',
             uk: 'Кольоровий рейтинг'
         },
         interface_mod_new_colored_ratings_desc: {
-            ru: 'Включить цветовое выделение рейтинга',
+            ru: 'Увімкнути кольове виділення рейтингу',
             en: 'Enable colored rating highlight',
             uk: 'Увімкнути кольове виділення рейтингу'
         },
         interface_mod_new_colored_status: {
-            ru: 'Цветные статусы',
+            ru: 'Кольорові статуси',
             en: 'Colored statuses',
             uk: 'Кольорові статуси'
         },
         interface_mod_new_colored_status_desc: {
-            ru: 'Включить цветовое выделение статуса сериала',
+            ru: 'Увімкнути кольоровий статус серіалу',
             en: 'Enable colored series status',
             uk: 'Увімкнути кольоровий статус серіалу'
         },
         interface_mod_new_colored_age: {
-            ru: 'Цветные возрастные ограничения',
+            ru: 'Кольорові вікові обмеження',
             en: 'Colored age ratings',
             uk: 'Кольорові вікові обмеження'
         },
         interface_mod_new_colored_age_desc: {
-            ru: 'Включить цветовое выделение возрастных ограничений',
+            ru: 'Увімкнути кольорове виділення вікових обмежень',
             en: 'Enable colored age rating highlight',
             uk: 'Увімкнути кольорове виділення вікових обмежень'
         },
         interface_mod_new_show_all_buttons: {
-            ru: 'Показывать все кнопки',
+            ru: 'Показувати всі кнопки',
             en: 'Show all buttons',
             uk: 'Показувати всі кнопки'
         },
@@ -124,72 +124,72 @@
             uk: 'Стиль кнопок'
         },
         interface_mod_new_buttons_style_mode_default: {
-            ru: 'По умолчанию',
+            ru: 'За замовчуванням',
             en: 'Default',
             uk: 'За замовчуванням'
         },
         interface_mod_new_buttons_style_mode_all: {
-            ru: 'Показывать все кнопки',
+            ru: 'Показувати всі кнопки',
             en: 'Show all buttons',
             uk: 'Показувати всі кнопки'
         },
         interface_mod_new_buttons_style_mode_custom: {
-            ru: 'Пользовательский',
+            ru: 'Користувацький',
             en: 'Custom',
             uk: 'Користувацький'
         },
         interface_mod_new_theme_select: {
-            ru: 'Тема интерфейса',
+            ru: 'Тема інтерфейсу',
             en: 'Interface theme',
             uk: 'Тема інтерфейсу'
         },
         interface_mod_new_theme_select_desc: {
-            ru: 'Выберите тему оформления интерфейса',
+            ru: 'Виберіть тему оформлення інтерфейсу',
             en: 'Choose interface theme',
             uk: 'Виберіть тему оформлення інтерфейсу'
         },
         interface_mod_new_theme_default: {
-            ru: 'По умолчанию',
+            ru: 'За замовчуванням',
             en: 'Default',
             uk: 'За замовчуванням'
         },
         interface_mod_new_theme_minimalist: {
-            ru: 'Минималистичная',
+            ru: 'Мінімалістична',
             en: 'Minimalist',
             uk: 'Мінімалістична'
         },
         interface_mod_new_theme_glow_outline: {
-            ru: 'Светящийся контур',
+            ru: 'Світловий контур',
             en: 'Glowing outline',
             uk: 'Світловий контур'
         },
         interface_mod_new_theme_menu_lines: {
-            ru: 'Меню с линиями',
+            ru: 'Меню з лініями',
             en: 'Menu with lines',
             uk: 'Меню з лініями'
         },
         interface_mod_new_theme_dark_emerald: {
-            ru: 'Тёмный Emerald',
+            ru: 'Темний Emerald',
             en: 'Dark Emerald',
             uk: 'Темний Emerald'
         },
         interface_mod_new_stylize_titles: {
-            ru: 'Новый стиль заголовков',
+            ru: 'Новий стиль заголовків',
             en: 'New titles style',
             uk: 'Новий стиль заголовків'
         },
         interface_mod_new_stylize_titles_desc: {
-            ru: 'Включает стильное оформление заголовков подборок с анимацией и спецэффектами',
+            ru: 'Включає стильне оформлення заголовків підборівок з анімацією та спеціальними ефектами',
             en: 'Enables stylish titles with animation and special effects',
             uk: 'Включає стильне оформлення заголовків підборівок з анімацією та спеціальними ефектами'
         },
         interface_mod_new_enhance_detailed_info: {
-            ru: 'Увеличенная информация Beta',
+            ru: 'Збільшена інформація Beta',
             en: 'Enhanced detailed info Beta',
             uk: 'Збільшена інформація Beta'
         },
         interface_mod_new_enhance_detailed_info_desc: {
-            ru: 'Включить увеличенную информацию о фильме/сериале',
+            ru: 'Увімкнути збільшену інформацію про фільм/серіал',
             en: 'Enable enhanced detailed info about movie/series',
             uk: 'Увімкнути збільшену інформацію про фільм/серіал'
         }

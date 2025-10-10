@@ -595,7 +595,7 @@
                         if ($span.hasClass('full-start-new__split')) return;
                         var baseStyle = { 'border-radius': '0.3em', 'border': '0px', 'font-size': '1.0em', 'padding': '0.2em 0.6em', 'display': 'inline-block', 'white-space': 'nowrap', 'line-height': '1.2em', 'margin-right': '0.4em', 'margin-bottom': '0.2em' };
                         // Перефразування сезонів: шукаємо текст "Сезон" з числом
-                        var matchSeasons = text.match(/Сезон(?:и)?:?\s*(\d+)/i);
+                        var matchSeasons = text.match(/Сезон(?:ы)?:?\s*(\d+)/i);
                         if (matchSeasons) {
                             var n = parseInt(matchSeasons[1], 10);
                             $span.text(n + ' ' + plural(n, 'Сезон', 'Сезону', 'Сезонів'));

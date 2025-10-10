@@ -769,7 +769,6 @@
                         if (min > 0) text += (hours > 0 ? ' ' : '') + min + ' хв.';
                         // Створюємо бейдж з тривалістю
 						var $badge = $('<span>').text(text).css({
-                		var $badge = $('<span>').text(text).css({
                     		'border-radius': '0.3em', // Закруглення кутів
                     		'border': '0px', // Без рамки
                     		'font-size': '1.0em', // Розмір шрифту

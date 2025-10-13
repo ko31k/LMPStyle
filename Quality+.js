@@ -1,11 +1,38 @@
+/**
+ * Quality+Mod - Enhanced Quality Plugin for Lampa
+ * --------------------------------------------------------------------------------
+ * Розширений плагін для автоматичного визначення та відображення якості відео
+ * Інтегрується з JacRed API для пошуку найкращих доступних релізів.
+ * --------------------------------------------------------------------------------
+ * Основні можливості:
+ * - Автоматичне визначення якості відео (4K, FHD, HD, SD) з торрент-трекера JacRed
+ * - Розширена система парсингу якості з розпізнаванням роздільності та джерела
+ * - Підтримка спрощених міток якості (4K, FHD, TS, TC тощо) з можливістю налаштування
+ * - Відображення міток якості на повних картках та спискових картках з кастомними стилями
+ * - Ручні перевизначення якості для конкретних ID контенту
+ * - Розумна система кешування з фоновим оновленням (24 години валідності)
+ * - Оптимізована черга запитів з обмеженням паралельності (до 12 одночасних запитів)
+ * - Підтримка проксі для обходу CORS обмежень
+ * - Можливість відключення якості для серіалів
+ * - Детальне логування для налагодження
+ * --------------------------------------------------------------------------------
+ * Конфігурація:
+ * - Налаштування кольорів, шрифтів та розмірів міток
+ * - Включення/виключення якості для серіалів
+ * - Використання спрощених міток якості
+ * - Налаштування проксі та таймаутів
+ * - Ручні перевизначення для конкретних ID
+ * - Детальне логування різних компонентів
+ */
+
 (function() {
     'use strict'; // Використання суворого режиму для запобігання помилок
 
     // ===================== КОНФІГУРАЦІЯ =====================
     var LQE_CONFIG = {
-        CACHE_VERSION: 5, // Версія кешу для інвалідації старих даних
+        CACHE_VERSION: 2, // Версія кешу для інвалідації старих даних
         LOGGING_GENERAL: false, // Загальне логування для налагодження
-        LOGGING_QUALITY: true, // Логування процесу визначення якості
+        LOGGING_QUALITY: false, // Логування процесу визначення якості
         LOGGING_CARDLIST: false, // Логування для спискових карток
         CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години)
         CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
@@ -18,10 +45,10 @@
             'http://cors.bwa.workers.dev/'
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
-        SHOW_QUALITY_FOR_TV_SERIES: true, // Показувати якість для серіалів
-        MAX_PARALLEL_REQUESTS: 16, // Максимальна кількість паралельних запитів
+        SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
+        MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
         
-        USE_SIMPLE_QUALITY_LABELS: false, // Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
+        USE_SIMPLE_QUALITY_LABELS: false, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
         
         // Стилі для відображення якості на повній картці
         FULL_CARD_LABEL_BORDER_COLOR: '#FFFFFF',
@@ -32,7 +59,7 @@
         
         // Стилі для відображення якості на спискових картках
         LIST_CARD_LABEL_BORDER_COLOR: '#3DA18D',
-        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 1)', //Стандартна прозорість фону 0.8 (зараз 1 - фон не прозорий)
+        LIST_CARD_LABEL_BACKGROUND_COLOR: 'rgba(61, 161, 141, 0.9)', //Стандартна прозорість фону 0.8 (1 - фон не прозорий)
         LIST_CARD_LABEL_BACKGROUND_TRANSPARENT: false,
         LIST_CARD_LABEL_TEXT_COLOR: '#FFFFFF',
         LIST_CARD_LABEL_FONT_WEIGHT: '600',
@@ -40,19 +67,18 @@
         LIST_CARD_LABEL_FONT_STYLE: 'normal',
         
         // Ручні перевизначення якості для конкретних ID контенту
-        MANUAL_OVERRIDES: {
-            /*'90802': { quality_code: 2160, full_label: '4K WEB-DLRip' },*/
-            /*'20873': { quality_code: 2160, full_label: '4K BDRip' },*/
-            /*'1128655': { quality_code: 2160, full_label: '4K Web-DL' },*/
-            /*'46010': { quality_code: 1080, full_label: '1080p WEB-DLRip' },*/
-            /*'9564': { quality_code: 1080, full_label: '1080p BDRemux' },*/
-            /*'32334': { quality_code: 1080, full_label: '1080p WEB-DLRip' },*/
-            /*'21028': { quality_code: 1080, full_label: '1080p BDRemux' },*/
-            /*'20932': { quality_code: 1080, full_label: '1080p HDTVRip' },*/
-            /*'57778': { quality_code: 2160, full_label: '4K Web-DL' },*/
-            /*'20977': { quality_code: 1080, full_label: 'HDTVRip-AVC' },*/
-            /*'33645': { quality_code: 720, full_label: '720p HDTVRip' }*/
-        }
+		MANUAL_OVERRIDES: {
+    		'338969': { 
+        		quality_code: 2160, 
+        		full_label: '4K WEB-DL', //✅ Повна мітка
+        		simple_label: '4K'  	 //✅ Спрощена мітка
+    		}
+    		/*'Тут ID фільму': { 
+        		quality_code: 1080, 
+        		full_label: '1080p WEB-DLRip',  //✅ Повна мітка
+        		simple_label: 'FHD'  		    //✅ Спрощена мітка
+    		},*/
+		}
     };
     var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
 
@@ -218,15 +244,19 @@
     Lampa.Template.add('lampa_quality_css', styleLQE);
     $('body').append(Lampa.Template.get('lampa_quality_css', {}, true));
     // Стилі для плавного з'явлення міток якості
-    var fadeStyles = "<style id='lampa_quality_fade'>" +
-        ".card__quality, .full-start__status.lqe-quality {" + // Елементи для анімації
+	var fadeStyles = "<style id='lampa_quality_fade'>" +
+   		".card__quality, .full-start__status.lqe-quality {" + // Елементи для анімації
         "opacity: 0;" + // Початково прозорі
         "transition: opacity 0.22s ease-in-out;" + // Плавна зміна прозорості
-        "}" +
-        ".card__quality.show, .full-start__status.lqe-quality.show {" + // Клас для показу
+    	"}" +
+    	".card__quality.show, .full-start__status.lqe-quality.show {" + // Клас для показу
         "opacity: 1;" + // Повністю видимі
-        "}" +
-        "</style>";
+    	"}" +
+    	".card__quality.show.fast, .full-start__status.lqe-quality.show.fast {" + // Вимкнення переходу
+        "transition: none !important;" +
+    	"}" +
+		"</style>";
+
     Lampa.Template.add('lampa_quality_fade', fadeStyles);
     $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
 
@@ -428,88 +458,100 @@
 
     // ===================== ПАРСИНГ ЯКОСТІ =====================
     
-    /**
-     * Спрощує повну назву якості до короткого формату
-     * @param {string} fullLabel - Повна назва якості
-     * @param {string} originalTitle - Оригінальна назва торренту
-     * @returns {string} - Спрощена назва
-     */
-    function simplifyQualityLabel(fullLabel, originalTitle) {
-        if (!fullLabel) return ''; // Перевірка на пусту назву
-        
-        var lowerLabel = fullLabel.toLowerCase(); // Нижній регістр для порівняння
-        var lowerTitle = (originalTitle || '').toLowerCase(); // Нижній регістр оригінальної назви
-        
-        // Високий пріоритет: спочатку шукаємо погани якості (для попередження користувача)
-        // CamRip - найгірша якість (пріоритет 1)
-        if (/(camrip|камрип|cam\b)/.test(lowerLabel) || /(camrip|камрип|cam\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to CamRip");
-            return "CamRip";
-        }
-        
-        // TS (Telesync) - пріоритет 2
-        if (/(telesync|телесинк|ts\b)/.test(lowerLabel) || /(telesync|телесинк|ts\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
-            return "TS";
-        }
-        
-        // TC (Telecine) - пріоритет 3 
-        if (/(telecine|телесин|tc\b)/.test(lowerLabel) || /(telecine|телесин|tc\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
-            return "TC";
-        }
-        
-        // SCR (DVD Screener) - пріоритет 4
-        if (/(dvdscr|scr\b)/.test(lowerLabel) || /(dvdscr|scr\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SCR");
-            return "SCR";
-        }
-        
-        // Роздільність: якщо поганих якостей не знайдено
-        // 4K (Ultra HD) - найвища якість
-        if (/(2160p|4k|uhd|ultra hd)/.test(lowerLabel) || /(2160p|4k|uhd|ultra hd)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to 4K");
-            return "4K";
-        }
+/**
+ * Спрощує повну назву якості до короткого формату (Фінальна версія)
+ * @param {string} fullLabel - Повна назва якості (вибрана з найкращого релізу JacRed)
+ * @param {string} originalTitle - Оригінальна назва торренту
+ * @returns {string} - Спрощена назва для відображення на мітці
+ */
+function simplifyQualityLabel(fullLabel, originalTitle) {
+    if (!fullLabel) return ''; // Перевірка на пусту назву
+    
+    var lowerLabel = fullLabel.toLowerCase(); // Нижній регістр для порівняння
+    // var lowerTitle = (originalTitle || '').toLowerCase(); // ❌ БІЛЬШЕ НЕ ВИКОРИСТОВУЄМО (бо перебиває якісний реліз)
 
-        // 2К (QHD)
-        if (/(1440p|1440|2k|qhd)/.test(lowerLabel) || /(1440p|1440|2k|qhd)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to QHD");
-            return "QHD";
-        }
-      
-        // FHD (Full HD) - висока якість
-        if (/(1080p|1080|fullhd|fhd)/.test(lowerLabel) || /(1080p|1080|fullhd|fhd)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to FHD");
-            return "FHD";
-        }
-        
-        // HD (High Definition) - середня якість
-        if (/(720p|720|hd\b)/.test(lowerLabel) || /(720p|720|hd\b)/.test(lowerTitle)) {
-            // Перевіряємо що це не частина іншого слова (наприклад, "fullhd")
-            var hdRegex = /(720p|720|^hd$| hd |hd$)/;
-            if (hdRegex.test(lowerLabel) || hdRegex.test(lowerTitle)) {
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to HD");
-                return "HD";
-            }
-        }
-        
-        // SD (Standard Definition) - базова якість
-        if (/(480p|480|sd\b)/.test(lowerLabel) || /(480p|480|sd\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SD");
-            return "SD";
-        }
-        
-        // LQ (Low Quality) - дуже низька якість
-        if (/(360p|360|low quality|lq\b)/.test(lowerLabel) || /(360p|360|low quality|lq\b)/.test(lowerTitle)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to LQ");
-            return "LQ";
-        }
-        
-        // Fallback: якщо нічого не знайдено, повертаємо оригінальну назву
-        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "No simplification found, keeping original:", fullLabel);
-        return fullLabel;
+    // --- Крок 1: Погані якості (найвищий пріоритет) ---
+    // Якщо JacRed вибрав реліз з поганою якістю - показуємо тип якості
+    // Це означає що кращих варіантів немає
+    
+    // CamRip - найгірша якість (запис з кінотеатру камерою)
+    if (/(camrip|камрип|cam\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to CamRip");
+        return "CamRip";
     }
+    
+    // TS (Telesync) - погана якість (запис з проектора)
+    if (/(telesync|телесинк|ts\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
+        return "TS";
+    }
+    
+    // TC (Telecine) - погана якість (запис з кіноплівки)
+    if (/(telecine|телесин|tc\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
+        return "TC";
+    }
+    
+    // SCR (DVD Screener) - погана якість (промо-копія)
+    if (/(dvdscr|scr\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SCR");
+        return "SCR";
+    }
+
+    // --- Крок 2: Якісні джерела (тільки якщо немає поганих якостей) ---
+    // Якщо JacRed вибрав якісний реліз - показуємо роздільність
+    
+    // 4K (Ultra HD) - найвища якість
+    if (/(2160p|4k|uhd|ultra hd)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to 4K");
+        return "4K";
+    }
+
+    // 2К (QHD) - висока якість
+    if (/(1440p|1440|2k|qhd)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to QHD");
+        return "QHD";
+    }
+  
+    // FHD (Full HD) - висока якість
+    if (/(1080p|1080|fullhd|fhd)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to FHD");
+        return "FHD";
+    }
+    
+    // HD (High Definition) - середня якість
+    if (/(720p|720|hd\b)/.test(lowerLabel)) {
+        var hdRegex = /(720p|720|^hd$| hd |hd$)/;
+        if (hdRegex.test(lowerLabel)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to HD");
+            return "HD";
+        }
+    }
+
+	// Крок WEB-DLRip без роздільності → HD (ДОДАНО)
+	if (/(web-dlrip|webdlrip)\b/.test(lowerLabel)) {
+    	if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to HD");
+    	return "HD";
+	}
+	
+    // SD (Standard Definition) - базова якість
+    if (/(480p|480|sd\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to SD");
+        return "SD";
+    }
+    
+    // LQ (Low Quality) - дуже низька якість
+    if (/(360p|360|low quality|lq\b)/.test(lowerLabel)) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to LQ");
+        return "LQ";
+    }
+
+    // --- Крок 3: Fallback ---
+    // Якщо нічого з вищеперерахованого не знайдено, повертаємо оригінальну повну назву
+    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "No simplification rules matched, keeping original:", fullLabel);
+    return fullLabel;
+}
+
     
     /**
      * Перетворює технічну назву якості на читабельну
@@ -656,7 +698,7 @@
     /**
      * Визначає якість з назви торренту
      * @param {string} title - Назва торренту
-     * @returns {number} - Числовий код якості (2160, 1080, 720, 480, 3, 2, 1)
+     * @returns {number} - Числовий код якості (2160, 1440, 1080, 720, 480, 3, 2, 1)
      */
     function extractNumericQualityFromTitle(title) {
         if (!title) return 0; // Перевірка на пусту назву
@@ -664,6 +706,7 @@
         
         // ✅ ПРАВИЛЬНІ ПРІОРИТЕТИ:
         if (/2160p|4k/.test(lower)) return 2160; // Найвищий пріоритет - 4K
+		if (/1440p|qhd|2k/.test(lower)) return 1440; // QHD
         if (/1080p/.test(lower)) return 1080; // Full HD
         if (/720p/.test(lower)) return 720; // HD
         if (/480p/.test(lower)) return 480; // SD
@@ -676,7 +719,7 @@
     }
 
     /**
-     * Знаходить найкращий реліз в JacRed API з логікою Quality+
+     * Знаходить найкращий реліз в JacRed API
      * @param {object} normalizedCard - Нормалізовані дані картки
      * @param {string} cardId - ID картки
      * @param {function} callback - Callback функція
@@ -1045,14 +1088,22 @@
      * @param {Element} renderElement - DOM елемент
      * @param {boolean} bypassTranslation - Пропустити переклад
      */
-    function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation) {
+	function updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement, bypassTranslation) {
         if (!renderElement) return;
         var element = $('.full-start__status.lqe-quality', renderElement);
         var rateLine = $('.full-start-new__rate-line', renderElement);
         if (!rateLine.length) return;
 
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
-
+  
+    	// ✅ Якщо це ручне перевизначення І увімкнено спрощення - беремо спрощену мітку
+    	if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
+        	var manualData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+        		if (manualData && manualData.simple_label) {
+            	displayQuality = manualData.simple_label;
+        	}	
+    	}
+		
         if (element.length) {
             // Оновлюємо існуючий елемент
             if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Updating existing element with quality "' + displayQuality + '" on full card.');
@@ -1081,6 +1132,15 @@
     function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
 
+	// ✅ Якщо це ручне перевизначення І увімкнено спрощені мітки — беремо simple_label
+	if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
+    	var cardId = cardView?.card_data?.id || cardView?.closest('.card')?.card_data?.id;
+    	var manualData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+    	if (manualData && manualData.simple_label) {
+        displayQuality = manualData.simple_label;
+    	}
+	}
+		
         // Перевіряємо наявність ідентичного елемента
         var existing = cardView.querySelector('.card__quality');
         if (existing) {

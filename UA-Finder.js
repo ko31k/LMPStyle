@@ -23,7 +23,7 @@
     // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
     var LTF_CONFIG = {
         // --- Налаштування кешу ---
-        CACHE_VERSION: 8.1, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
+        CACHE_VERSION: 8.2, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 12 * 60 * 60 * 1000, // Час життя кешу (12 годин).
         CACHE_REFRESH_THRESHOLD_MS: 6 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (6 годин).
@@ -542,35 +542,6 @@
         var cardView = cardElement.querySelector('.card__view');
         if (!cardData || !cardView) return;
 
-
-    // [UA-Finder PATCH]
-    // Якщо картка вже мала мітку 'processed', але DOM перемалювався і мітка зникла —
-    // відновлюємо її з кешу, не виконуючи повторний запит.
-    if (cardElement.hasAttribute('data-ltf-tracks-processed')) {
-        try {
-            const cardType = getCardType(cardData);
-            const cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${cardType}_${cardData.id}`;
-            const cached = getTracksCache(cacheKey);
-            const hasBadge = cardElement.querySelector('.ltf-badge');
-
-            if (cached && cached.track_count > 0 && !hasBadge) {
-                const view = cardElement.querySelector('.card__view');
-                if (view) {
-                    updateCardListTracksElement(view, cached.track_count);
-                    if (LTF_CONFIG.LOGGING_GENERAL)
-                        console.log('[UA-Finder] Відновлено мітку з кешу:', cacheKey);
-                }
-            }
-        } catch (e) {
-            if (LTF_CONFIG.LOGGING_GENERAL)
-                console.warn('[UA-Finder] Помилка при перевірці кешу для картки', e);
-        }
-        // Не продовжуємо стандартну обробку, щоб уникнути дублю
-        return;
-    }
-    //[END PATCH]
-
-        
         // ✅ ОПТИМІЗОВАНО: Retry-механізм - перевіряємо кількість спроб
         var retryCount = parseInt(cardElement.getAttribute('data-ltf-retry') || '0');
         if (retryCount >= LTF_CONFIG.MAX_RETRY_ATTEMPTS) {

@@ -542,6 +542,35 @@
         var cardView = cardElement.querySelector('.card__view');
         if (!cardData || !cardView) return;
 
+
+    // [UA-Finder PATCH]
+    // Якщо картка вже мала мітку 'processed', але DOM перемалювався і мітка зникла —
+    // відновлюємо її з кешу, не виконуючи повторний запит.
+    if (cardElement.hasAttribute('data-ltf-tracks-processed')) {
+        try {
+            const cardType = getCardType(cardData);
+            const cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${cardType}_${cardData.id}`;
+            const cached = getTracksCache(cacheKey);
+            const hasBadge = cardElement.querySelector('.ltf-badge');
+
+            if (cached && cached.track_count > 0 && !hasBadge) {
+                const view = cardElement.querySelector('.card__view');
+                if (view) {
+                    updateCardListTracksElement(view, cached.track_count);
+                    if (LTF_CONFIG.LOGGING_GENERAL)
+                        console.log('[UA-Finder] Відновлено мітку з кешу:', cacheKey);
+                }
+            }
+        } catch (e) {
+            if (LTF_CONFIG.LOGGING_GENERAL)
+                console.warn('[UA-Finder] Помилка при перевірці кешу для картки', e);
+        }
+        // Не продовжуємо стандартну обробку, щоб уникнути дублю
+        return;
+    }
+    //[END PATCH]
+
+        
         // ✅ ОПТИМІЗОВАНО: Retry-механізм - перевіряємо кількість спроб
         var retryCount = parseInt(cardElement.getAttribute('data-ltf-retry') || '0');
         if (retryCount >= LTF_CONFIG.MAX_RETRY_ATTEMPTS) {
@@ -726,4 +755,36 @@
     } else {
         document.addEventListener('DOMContentLoaded', initializeLampaTracksPlugin);
     }
+
+    // [UA-Finder PATCH]
+    // Періодично перевіряємо DOM на наявність карток без мітки, але з кешем.
+    // Це дозволяє автоматично відновлювати позначки після скролу, перемикання або оновлення списку.
+    setInterval(() => {
+        try {
+            document.querySelectorAll('.card').forEach(card => {
+                const data = card.card_data;
+                if (!data) return;
+
+                const type = getCardType(data);
+                const cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${type}_${data.id}`;
+                const cached = getTracksCache(cacheKey);
+                const hasBadge = card.querySelector('.ltf-badge');
+
+                if (cached && cached.track_count > 0 && !hasBadge) {
+                    const view = card.querySelector('.card__view');
+                    if (view) {
+                        updateCardListTracksElement(view, cached.track_count);
+                        if (LTF_CONFIG.LOGGING_GENERAL)
+                            console.log('[UA-Finder] Автоматично відновлено мітку з кешу:', cacheKey);
+                    }
+                }
+            });
+        } catch (err) {
+            if (LTF_CONFIG.LOGGING_GENERAL)
+                console.warn('[UA-Finder] Автооновлення DOM-карток помилка:', err);
+        }
+    }, 5000); // інтервал 5 секунд, можна змінити на 7000–10000
+    //[END PATCH]
+
+    
 })();

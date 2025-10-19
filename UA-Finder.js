@@ -726,5 +726,4 @@
     } else {
         document.addEventListener('DOMContentLoaded', initializeLampaTracksPlugin);
     }
-    
 })();

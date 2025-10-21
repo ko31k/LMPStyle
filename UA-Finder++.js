@@ -463,48 +463,46 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
         Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
     }
     
-    // ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ (UI) =====================
-    function updateCardListTracksElement(cardView, trackCount) {
-        const displayLabel = formatTrackLabel(trackCount); // Отримає '2xUkr' або '2x🇺🇦'
-        const existingElement = cardView.querySelector('.card__tracks');
-        
-        // Якщо мітки не має бути, а вона є - видаляємо.
-        if (!displayLabel) {
-            if (existingElement) existingElement.remove();
-            return;
-        }
-        
-        // Якщо мітка вже є і текст той самий - нічого не робимо.
-        if (existingElement && existingElement.textContent === displayLabel) {
-            return;
-        }
-        
-        // В інших випадках - видаляємо стару (якщо є) і малюємо нову.
+// ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ (UI) =====================
+function updateCardListTracksElement(cardView, trackCount) {
+    const displayLabel = formatTrackLabel(trackCount); // Отримає '2xUkr' або SVG код
+    const existingElement = cardView.querySelector('.card__tracks');
+    
+    // Якщо мітки не має бути, а вона є - видаляємо.
+    if (!displayLabel) {
         if (existingElement) existingElement.remove();
-        
-        const trackDiv = document.createElement('div');
-        trackDiv.className = 'card__tracks';
-
-        const parentCard = cardView.closest('.card');
-        if (parentCard) {
-            const voteElement = parentCard.querySelector('.card__vote');
-            if (voteElement) {
-                 const topStyle = getComputedStyle(voteElement).top;
-                 if (topStyle !== 'auto' && parseInt(topStyle) < 100) {
-                     trackDiv.classList.add('positioned-below-rating');
-                 }
-            }
-        }
-        
-        // Ця логіка залишається простою. 'textContent' коректно
-        // відобразить і текст, і емодзі.
-        const innerElement = document.createElement('div');
-        innerElement.textContent = displayLabel;
-        trackDiv.appendChild(innerElement);
-        cardView.appendChild(trackDiv);
+        return;
     }
+    
+    // Якщо мітка вже є і вміст той самий - нічого не робимо.
+    if (existingElement && existingElement.innerHTML === displayLabel) {
+        return;
+    }
+    
+    // В інших випадках - видаляємо стару (якщо є) і малюємо нову.
+    if (existingElement) existingElement.remove();
+    
+    const trackDiv = document.createElement('div');
+    trackDiv.className = 'card__tracks';
 
-    // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК (v3.1) =====================
+    const parentCard = cardView.closest('.card');
+    if (parentCard) {
+        const voteElement = parentCard.querySelector('.card__vote');
+        if (voteElement) {
+             const topStyle = getComputedStyle(voteElement).top;
+             if (topStyle !== 'auto' && parseInt(topStyle) < 100) {
+                 trackDiv.classList.add('positioned-below-rating');
+             }
+        }
+    }
+    
+    // ЗМІНА: використовуємо innerHTML замість textContent для коректного відображення SVG
+    const innerElement = document.createElement('div');
+    innerElement.innerHTML = displayLabel; //ЗМІНА!
+    trackDiv.appendChild(innerElement);
+    cardView.appendChild(trackDiv);
+}
+    // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
     /**
      * 🟩 НОВА ЛОГІКА (ІДЕМПОТЕНТНА)
      * Ця функція може викликатись для однієї картки багато разів.

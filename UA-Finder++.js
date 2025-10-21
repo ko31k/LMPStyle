@@ -135,8 +135,8 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     ".card__tracks .flag-svg {" +
     " display: inline-block;" + // Блочний елемент в потоці
     " vertical-align: middle;" + // Вертикальне вирівнювання по центру
-    " width: 1.6em;" + // Ширина прапора = ширині тексту "Ukr"
-    " height: 1.2em;" + // Висота прапора = висоті тексту "Ukr"
+    " width: 1.5em;" + // Ширина прапора 
+    " height: 1.0em;" + // Висота прапора
     "}" +
     "</style>";
 // Додаємо стилі в DOM один раз при завантаженні плагіна.

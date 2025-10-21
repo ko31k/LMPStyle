@@ -131,13 +131,14 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " + // Тінь для тексту
     "}" +
     
-    // Стилі для прапора - точне вирівнювання по центру
+    // Стилі для прапора - точне вирівнювання
     ".card__tracks .flag-svg {" +
-    " display: inline-block;" + // Блочний елемент в потоці
-    " vertical-align: text-bottom;" + // Вирівнювання по низу тексту
-    " transform: translateY(-0.1em);" + // Додаткова корекція
-    " width: 1.5em;" + // Ширина прапора 
-    " height: 1.0em;" + // Висота прапора
+    " display: inline-block;" +
+    " vertical-align: middle;" +
+    " width: 1.5em;" +
+    " height: 1.0em;" +
+    " margin-right: -1px;" + // Ваші значення з браузера
+    " margin-top: 2px;" + // Ваші значення з браузера
     "}" +
     "</style>";
 // Додаємо стилі в DOM один раз при завантаженні плагіна.

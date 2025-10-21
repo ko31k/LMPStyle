@@ -71,60 +71,51 @@
             }
     })();
     
-// ===================== СТИЛІ CSS =====================
-// Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.
+    // ===================== СТИЛІ CSS =====================
+    // Цей блок створює та додає на сторінку всі необхідні стилі для відображення міток.
+    var styleTracks = "<style id=\"lampa_tracks_styles\">" +
+        // Встановлюємо контекст позиціонування для постера. Це необхідно для абсолютно позиціонованих дочірніх елементів.
+        ".card__view { position: relative; }" +
 
-var styleTracks = "<style id=\"lampa_tracks_styles\">" +
-    // Встановлюємо контекст позиціонування для постера
-    ".card__view { position: relative; }" +
+        // Стиль для мітки з доріжками.
+        ".card__tracks {" +
+        " position: absolute !important; " + // Абсолютне позиціонування відносно .card__view.
+        " right: 0.3em !important; " + // Відступ праворуч.
+        " left: auto !important; " + // Скидаємо позиціонування зліва.
+        " top: 0.3em !important; " + // Позиція за замовчуванням (коли RatingUp неактивний).
+        " background: rgba(0,0,0,0.5) !important;" + // Напівпрозорий чорний фон.
+        " color: #FFFFFF !important;" + // Білий колір тексту.
+        " font-size: 1.3em !important;" + // Розмір шрифту.
+        " padding: 0.2em 0.5em !important;" + // Внутрішні відступи.
+        " border-radius: 1em !important;" + // Закруглення кутів.
+        " font-weight: 700 !important;" + // Жирний шрифт.
+        " z-index: 20 !important;" + // Високий z-index, щоб бути поверх інших елементів.
+        " width: fit-content !important; " + // Ширина за вмістом.
+        " max-width: calc(100% - 1em) !important; " + // Максимальна ширина.
+        " overflow: hidden !important;" + // Приховувати все, що виходить за межі.
+        "}" +
 
-    // Стиль для мітки з доріжками
-    ".card__tracks {" +
-    " position: absolute !important; " + // Абсолютне позиціонування відносно .card__view
-    " right: 0.3em !important; " + // Відступ праворуч
-    " left: auto !important; " + // Скидаємо позиціонування зліва
-    " top: 0.3em !important; " + // Позиція за замовчуванням (коли RatingUp неактивний)
-    " background: rgba(0,0,0,0.5) !important;" + // Напівпрозорий чорний фон
-    " color: #FFFFFF !important;" + // Білий колір тексту
-    " font-size: 1.3em !important;" + // Розмір шрифту
-    " padding: 0.2em 0.5em !important;" + // Внутрішні відступи
-    " border-radius: 1em !important;" + // Закруглення кутів
-    " font-weight: 700 !important;" + // Жирний шрифт
-    " z-index: 20 !important;" + // Високий z-index, щоб бути поверх інших елементів
-    " width: fit-content !important; " + // Ширина за вмістом
-    " max-width: calc(100% - 1em) !important; " + // Максимальна ширина
-    " overflow: hidden !important;" + // Приховувати все, що виходить за межі
-    "}" +
-
-    // Додатковий клас, який застосовується динамічно, якщо плагін RatingUp активний
-    ".card__tracks.positioned-below-rating {" +
-    " top: 1.85em !important; " + // Версія позиції, щоб зміститися нижче рейтингу
-    "}" +
-    
-    // Стиль для тексту всередині мітки
-    ".card__tracks div {" +
-    " text-transform: none !important; " + // Без перетворення у великі літери
-    " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " + // Шрифт
-    " font-weight: 700 !important; " + // Жирність
-    " letter-spacing: 0.1px !important; " + // Міжлітерна відстань
-    " font-size: 1.05em !important; " + // Розмір шрифту
-    " color: #FFFFFF !important;" + // Колір тексту
-    " padding: 0 !important; " + // Скидання відступів (вони в батьківському елементі)
-    " white-space: nowrap !important;" + // Заборона переносу рядка
-    " display: flex !important; " + // Flex-контейнер
-    " align-items: center !important; " + // Вертикальне вирівнювання
-    " gap: 4px !important; " + // Відстань між елементами
-    " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " + // Тінь для тексту
-    "}" +
-    
-    // Стилі для прапора - зберігаємо оригінальні розміри як у тексту
-    ".card__tracks .flag-svg {" +
-    " display: inline-block;" + // Блочний елемент в потоці
-    " vertical-align: middle;" + // Вертикальне вирівнювання по центру
-    " width: 1.6em;" + // Ширина прапора = ширині тексту "Ukr"
-    " height: 1.2em;" + // Висота прапора = висоті тексту "Ukr"
-    "}" +
-    "</style>";
+        // Додатковий клас, який застосовується динамічно, якщо плагін RatingUp активний.
+        ".card__tracks.positioned-below-rating {" +
+        " top: 1.85em !important; " + // Версія позиції, щоб зміститися нижче рейтингу.
+        "}" +
+        
+        // Стиль для тексту всередині мітки.
+        ".card__tracks div {" +
+        " text-transform: none !important; " + // Без перетворення у великі літери.
+        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " + // Шрифт.
+        " font-weight: 700 !important; " + // Жирність.
+        " letter-spacing: 0.1px !important; " + // Міжлітерна відстань.
+        " font-size: 1.05em !important; " + // Розмір шрифту.
+        " color: #FFFFFF !important;" + // Колір тексту.
+        " padding: 0 !important; " + // Скидання відступів (вони в батьківському елементі).
+        " white-space: nowrap !important;" + // Заборона переносу рядка.
+        " display: flex !important; " + // Flex-контейнер.
+        " align-items: center !important; " + // Вертикальне вирівнювання.
+        " gap: 4px !important; " + // Відстань між елементами (якщо їх буде декілька).
+        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " + // Тінь для тексту.
+        "}" +
+        "</style>";
     // Додаємо стилі в DOM один раз при завантаженні плагіна.
     Lampa.Template.add('lampa_tracks_css', styleTracks);
     $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));

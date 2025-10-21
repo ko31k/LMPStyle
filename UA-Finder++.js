@@ -29,6 +29,10 @@
     'use strict'; // Використовуємо суворий режим для кращої якості коду та запобігання помилок.
 
     // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
+    
+    // SVG прапор України замість емодзі
+    var ukraineFlagSVG = '<svg class="flag-svg" viewBox="0 0 20 15"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';
+    
     var LTF_CONFIG = {
         // --- Налаштування кешу ---
         CACHE_VERSION: 3, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
@@ -82,45 +86,73 @@
             }
     })();
     
-    // ===================== СТИЛІ CSS =====================
-    var styleTracks = "<style id=\"lampa_tracks_styles\">" +
-        ".card__view { position: relative; }" +
-        ".card__tracks {" +
-        " position: absolute !important; " +
-        " right: 0.3em !important; " +
-        " left: auto !important; " +
-        " top: 0.3em !important; " +
-        " background: rgba(0,0,0,0.5) !important;" +
-        " color: #FFFFFF !important;" +
-        " font-size: 1.3em !important;" +
-        " padding: 0.2em 0.5em !important;" +
-        " border-radius: 1em !important;" +
-        " font-weight: 700 !important;" +
-        " z-index: 20 !important;" +
-        " width: fit-content !important; " +
-        " max-width: calc(100% - 1em) !important; " +
-        " overflow: hidden !important;" +
-        "}" +
-        ".card__tracks.positioned-below-rating {" +
-        " top: 1.85em !important; " +
-        "}" +
-        ".card__tracks div {" +
-        " text-transform: none !important; " +
-        " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " +
-        " font-weight: 700 !important; " +
-        " letter-spacing: 0.1px !important; " +
-        " font-size: 1.05em !important; " +
-        " color: #FFFFFF !important;" +
-        " padding: 0 !important; " +
-        " white-space: nowrap !important;" +
-        " display: flex !important; " +
-        " align-items: center !important; " +
-        " gap: 4px !important; " +
-        " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " +
-        "}" +
-        "</style>";
-    Lampa.Template.add('lampa_tracks_css', styleTracks);
-    $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
+// ===================== СТИЛІ CSS =====================
+var styleTracks = "<style id=\"lampa_tracks_styles\">" +
+    ".card__view { position: relative; }" +
+    ".card__tracks {" +
+    " position: absolute !important; " +
+    " right: 0.3em !important; " +
+    " left: auto !important; " +
+    " top: 0.3em !important; " +
+    " background: rgba(0,0,0,0.5) !important;" +
+    " color: #FFFFFF !important;" +
+    " font-size: 1.3em !important;" +
+    " padding: 0.2em 0.5em !important;" +
+    " border-radius: 1em !important;" +
+    " font-weight: 700 !important;" +
+    " z-index: 20 !important;" +
+    " width: fit-content !important; " +
+    " max-width: calc(100% - 1em) !important; " +
+    " overflow: hidden !important;" +
+    "}" +
+    ".card__tracks.positioned-below-rating {" +
+    " top: 1.85em !important; " +
+    "}" +
+    ".card__tracks div {" +
+    " text-transform: none !important; " +
+    " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif !important; " +
+    " font-weight: 700 !important; " +
+    " letter-spacing: 0.1px !important; " +
+    " font-size: 1.05em !important; " +
+    " color: #FFFFFF !important;" +
+    " padding: 0 !important; " +
+    " white-space: nowrap !important;" +
+    " display: flex !important; " +
+    " align-items: center !important; " +
+    " gap: 4px !important; " +
+    " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; " +
+    "}" +
+    
+    /* Адаптивні стилі для прапора в картках UA-Finder */
+    ".card__tracks .flag-svg {" +
+    " display: inline-block;" +
+    " vertical-align: middle;" +
+    " border-radius: 3px;" +
+    " box-shadow: 0 1px 3px rgba(0,0,0,0.2);" +
+    " border: 1px solid rgba(0,0,0,0.15);" +
+    " width: 20px;" +
+    " height: 15px;" +
+    "}" +
+
+    /* Адаптація для мобільних пристроїв */
+    "@media (max-width: 767px) {" +
+    ".card__tracks .flag-svg {" +
+    " width: 16px;" +
+    " height: 12px;" +
+    "}" +
+    "}" +
+
+    /* Для дуже маленьких екранів */
+    "@media (max-width: 480px) {" +
+    ".card__tracks .flag-svg {" +
+    " width: 14px;" +
+    " height: 10.5px;" +
+    "}" +
+    "}" +
+    "</style>";
+
+Lampa.Template.add('lampa_tracks_css', styleTracks);
+$('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
 
     // ===================== УПРАВЛІННЯ ЧЕРГОЮ ЗАПИТІВ =====================
     var requestQueue = [];
@@ -246,12 +278,17 @@
      */
     function formatTrackLabel(count) {
         if (!count || count === 0) return null; // Не показувати мітку, якщо доріжок 0.
-        
+    
         // Вибираємо мітку згідно конфігурації
-        var displayLabel = (LTF_CONFIG.DISPLAY_MODE === 'flag') ? '🇺🇦' : 'Ukr';
-        
-        if (count === 1) return displayLabel; // Поверне 'Ukr' або '🇺🇦'
-        return `${count}x${displayLabel}`; // Поверне '2xUkr' або '2x🇺🇦'
+        if (LTF_CONFIG.DISPLAY_MODE === 'flag') {
+            // Режим прапора - використовуємо SVG
+            if (count === 1) return ukraineFlagSVG; // Поверне SVG прапор
+            return `${count}x${ukraineFlagSVG}`; // Поверне '2x[SVG прапор]'
+        } else {
+            // Режим тексту - використовуємо текст "Ukr"
+            if (count === 1) return 'Ukr'; // Поверне 'Ukr'
+            return `${count}xUkr`; // Поверне '2xUkr'
+        }
     }
 
     // ===================== ПОШУК НА JACRED =====================

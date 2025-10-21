@@ -1,5 +1,5 @@
 /**
- * Lampa Track Finder v2.7 - OPTIMIZED
+ * Lampa Track Finder v2
  * --------------------------------------------------------------------------------
  * Цей плагін призначений для пошуку та відображення інформації про наявність
  * українських аудіодоріжок у релізах, доступних через Jacred API.
@@ -15,7 +15,7 @@
  * - Має систему кешування для зменшення навантаження та пришвидшення роботи.
  * - Не виконує пошук для майбутніх релізів або релізів з невідомою датою.
  * --------------------------------------------------------------------------------
- * v2.7: Покращена стабільність, retry-механізм, адаптивна черга, додано ручні перевизначення доріжок
+ * - Покращена стабільність, retry-механізм, адаптивна черга, додано ручні перевизначення доріжок
  */
 (function() {
     'use strict'; // Використовуємо суворий режим для кращої якості коду та запобігання помилок.
@@ -23,7 +23,7 @@
     // ===================== КОНФІГУРАЦІЯ ПЛАГІНА (LTF - Lampa Track Finder) =====================
     var LTF_CONFIG = {
         // --- Налаштування кешу ---
-        CACHE_VERSION: 8.3, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
+        CACHE_VERSION: 2, // Версія кешу. Змініть, якщо хочете скинути старі збережені дані.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 12 * 60 * 60 * 1000, // Час життя кешу (12 годин).
         CACHE_REFRESH_THRESHOLD_MS: 6 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (6 годин).
@@ -121,10 +121,10 @@
     $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
 
     // ===================== УПРАВЛІННЯ ЧЕРГОЮ ЗАПИТІВ =====================
-    // ✅ ОПТИМІЗОВАНО: Адаптивна черга з динамічним лімітом
+    // ✅ Адаптивна черга з динамічним лімітом
     var requestQueue = []; // Масив, де зберігаються завдання на пошук.
     var activeRequests = 0; // Лічильник активних запитів.
-    var networkHealth = 1.0; // ✅ НОВЕ: Показник здоров'я мережі (0.0 - 1.0)
+    var networkHealth = 1.0; // ✅ Показник здоров'я мережі (0.0 - 1.0)
 
     /**
      * Додає завдання (функцію пошуку) до черги.
@@ -139,7 +139,7 @@
      * Обробляє чергу, запускаючи завдання по одному, з урахуванням ліміту.
      */
     function processQueue() {
-        // ✅ ОПТИМІЗОВАНО: Адаптивний ліміт на основі здоров'я мережі
+        // ✅ Адаптивний ліміт на основі здоров'я мережі
         var adaptiveLimit = Math.max(3, Math.min(LTF_CONFIG.MAX_PARALLEL_REQUESTS, Math.floor(LTF_CONFIG.MAX_PARALLEL_REQUESTS * networkHealth)));
         
         if (activeRequests >= adaptiveLimit) return; // Не перевищувати адаптивний ліміт.
@@ -160,7 +160,7 @@
         }
     }
 
-    // ✅ НОВЕ: Функція оновлення здоров'я мережі
+    // ✅ Функція оновлення здоров'я мережі
     function updateNetworkHealth(success) {
         if (success) {
             networkHealth = Math.min(1.0, networkHealth + 0.1); // Покращити здоров'я при успіху
@@ -186,7 +186,7 @@
             if (currentProxyIndex >= LTF_CONFIG.PROXY_LIST.length) {
                 if (!callbackCalled) {
                     callbackCalled = true;
-                    updateNetworkHealth(false); // ✅ ОНОВЛЕННЯ: Погіршити здоров'я мережі
+                    updateNetworkHealth(false); // ✅ Погіршити здоров'я мережі
                     callback(new Error('Всі проксі не відповіли для ' + url));
                 }
                 return;
@@ -212,7 +212,7 @@
                 .then(function(data) {
                     if (!callbackCalled) {
                         callbackCalled = true;
-                        updateNetworkHealth(true); // ✅ ОНОВЛЕННЯ: Покращити здоров'я мережі
+                        updateNetworkHealth(true); // ✅ Покращити здоров'я мережі
                         callback(null, data); // Успіх, повертаємо дані.
                     }
                 })
@@ -531,7 +531,7 @@
 }
 
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
-    // ✅ ОПТИМІЗОВАНО: Retry-механізм для пропущених карток
+    // ✅ Retry-механізм для пропущених карток
     function processListCard(cardElement) {
         // ✅ ПОКРАЩЕНА ПЕРЕВІРКА: Перевіряємо чи картка ще існує в DOM
         if (!cardElement || !cardElement.isConnected || !document.body.contains(cardElement)) {
@@ -542,7 +542,7 @@
         var cardView = cardElement.querySelector('.card__view');
         if (!cardData || !cardView) return;
 
-        // ✅ ОПТИМІЗОВАНО: Retry-механізм - перевіряємо кількість спроб
+        // ✅ Retry-механізм - перевіряємо кількість спроб
         var retryCount = parseInt(cardElement.getAttribute('data-ltf-retry') || '0');
         if (retryCount >= LTF_CONFIG.MAX_RETRY_ATTEMPTS) {
             if (LTF_CONFIG.LOGGING_CARDLIST) console.log("LTF-LOG", "Досягнуто максимум спроб для картки:", cardData.id);
@@ -565,14 +565,14 @@
         var cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${normalizedCard.type}_${cardId}`;
         cardElement.setAttribute('data-ltf-tracks-processed', 'true');
 
-        //ДОДАНО: ✅ Перевірка ручних перевизначень
+        //✅ Додано перевірку ручних перевизначень
         var manualOverrideData = LTF_CONFIG.MANUAL_OVERRIDES[cardId];
             if (manualOverrideData) {
                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Використовується ручне перевизначення:`, manualOverrideData);
                 updateCardListTracksElement(cardView, manualOverrideData.track_count);
                 return; // Не продовжуємо стандартну обробку
             }
-        // КІНЕЦЬ ДОДАНОГО КОДУ
+        // Кінець перевірки
 
         var cachedData = getTracksCache(cacheKey);
         if (cachedData) {
@@ -602,7 +602,7 @@
     }
     
     // ===================== ІНІЦІАЛІЗАЦІЯ ПЛАГІНА =====================
-    // ✅ ОПТИМІЗОВАНО: Покращений дебаунсинг з пакетною обробкою
+    // ✅ Покращений дебаунсинг з пакетною обробкою
     var observerDebounceTimer = null; // Таймер для затримки.
     var cardsToProcess = []; // Масив для накопичення нових карток.
 
@@ -619,7 +619,7 @@
             
             if (LTF_CONFIG.LOGGING_CARDLIST) console.log("LTF-LOG: Обробка пачки з", batch.length, "карток.");
 
-            // ✅ ОПТИМІЗОВАНО: Пакетна обробка карток для плавності
+            // ✅ Пакетна обробка карток для плавності
             var BATCH_SIZE = 12; // Обробляти по 12 карток за раз
             var DELAY_MS = 30;   // Затримка 30ms між пакетами
 
@@ -699,7 +699,7 @@
             observer.observe(document.body, { childList: true, subtree: true });
         }
 
-        // ✅ НОВЕ: Retry-механізм для карток, які могли бути пропущені
+        // ✅ Retry-механізм для карток, які могли бути пропущені
         setTimeout(function() {
             const allCards = document.querySelectorAll('.card:not([data-ltf-tracks-processed])');
             if (allCards.length > 0 && LTF_CONFIG.LOGGING_GENERAL) {
@@ -715,7 +715,7 @@
                     processListCard(card);
                 }
             });
-        }, 3000); // Перший retry через 3 секунди
+        }, 2000); // Перший retry через 3 чи 2 секунди
 
         if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG: Плагін пошуку українських доріжок успішно ініціалізовано!");
     }

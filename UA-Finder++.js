@@ -137,8 +137,8 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     " vertical-align: middle;" +
     " width: 1.5em;" +
     " height: 1.0em;" +
-    " margin-right: -1px;" + // Ваші значення з браузера
-    " margin-top: 2px;" + // Ваші значення з браузера
+    " margin-right: 0px;" + // Ваші значення з браузера
+    " margin-top: 1px;" + // Ваші значення з браузера
     "}" +
     "</style>";
 // Додаємо стилі в DOM один раз при завантаженні плагіна.

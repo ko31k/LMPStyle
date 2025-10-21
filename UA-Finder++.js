@@ -135,10 +135,11 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     ".card__tracks .flag-svg {" +
     " display: inline-block;" +
     " vertical-align: middle;" +
-    " width: 1.4em;" +
-    " height: 0.8em;" +
-    " margin-right: 0px;" + // Ваші значення з браузера
-    " margin-top: 0px;" + // Ваші значення з браузера
+    " border-radius: 1em;" + // ← Змінено з 5px на 3px
+    " width: 1.6em;" +
+    " height: 0.9em;" +
+    " margin-right: 0em;" + // Ваші значення з браузера
+    " margin-top: 0em;" + // Ваші значення з браузера
     "}" +
     "</style>";
 // Додаємо стилі в DOM один раз при завантаженні плагіна.

@@ -137,7 +137,6 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     ".card__tracks .flag-svg {" +
     " display: inline-block;" +
     " vertical-align: middle;" +
-    " border-radius: 1.8em;" + // заокруглення кутів прапора
     " width: 1.6em;" +
     " height: 0.9em;" +
     " margin-right: -0.1em;" + // Зменшуємо відступ справа

@@ -34,13 +34,13 @@
     // оскільки деякі старі прошивки можуть не підтримувати емодзі 🇺🇦.
     /*var ukraineFlagSVG = '<svg class="flag-svg" viewBox="0 0 20 15"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';*/
     var ukraineFlagSVG = `
-        <svg class="flag-svg" viewBox="0 0 20 15" xmlns="http://www.w3.org/2000/svg">
+        <svg class="flag-svg" viewBox="0 0 26.67 15" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <!-- Скруглені кути -->
             <clipPath id="flagClip">
-              <rect width="20" height="15" rx="1.8" ry="1.8" />
+              <rect width="26.67" height="15" rx="1.8" ry="1.8" />
             </clipPath>
-
+            
             <!-- Легкий верхній відблиск -->
             <linearGradient id="flagGloss" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="rgba(255,255,255,0.45)" />
@@ -48,17 +48,15 @@
               <stop offset="100%" stop-color="rgba(255,255,255,0)" />
             </linearGradient>
           </defs>
-
+          
           <!-- Основні кольори прапора -->
           <g clip-path="url(#flagClip)">
-            <rect width="20" height="7.5" y="0" fill="#0057B7" />
-            <rect width="20" height="7.5" y="7.5" fill="#FFD700" />
-            <!-- Відблиск -->
-            <rect width="20" height="15" fill="url(#flagGloss)" />
+            <rect width="26.67" height="7.5" y="0" fill="#0057B7" />
+            <rect width="26.67" height="7.5" y="7.5" fill="#FFD700" />
+            <rect width="26.67" height="15" fill="url(#flagGloss)" />
           </g>
         </svg>`;
-
-    
+   
     // Головний об'єкт конфігурації
     var LTF_CONFIG = {
         // --- Налаштування кешу ---
@@ -143,19 +141,6 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     " width: fit-content !important; " + // Ширина за вмістом
     " max-width: calc(100% - 1em) !important; " + // Максимальна ширина
     " overflow: hidden !important;" + // Приховувати все, що виходить за межі
-    " position: relative !important;" + // потрібно для ::after
-    // 🟩 Заповнення внутрішньої рамки тим самим кольором (щоб зникла темна обводка)
-    ".card__tracks::after {" +
-    " content: '';" +
-    " position: absolute;" +
-    " top: 0;" +
-    " left: 0;" +
-    " right: 0;" +
-    " bottom: 0;" +
-    " border-radius: inherit;" +
-    " background: rgba(0,0,0,0.5);" + // Той самий колір, що й у фону
-    " z-index: -1;" + // Підмітка, щоб не перекривати прапор
-    "}" +
     "}" +
     
     // Додатковий клас, який застосовується динамічно,

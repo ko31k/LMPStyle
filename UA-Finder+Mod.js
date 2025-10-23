@@ -34,11 +34,11 @@
     // оскільки деякі старі прошивки можуть не підтримувати емодзі 🇺🇦.
     /*var ukraineFlagSVG = '<svg class="flag-svg" viewBox="0 0 20 15"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';*/
     var ukraineFlagSVG = `
-        <svg class="flag-svg" viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
+        <svg class="flag-svg" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <!-- Скруглені кути -->
             <clipPath id="flagClip">
-              <rect width="18" height="14" rx="1.8" ry="1.8" />
+              <rect width="22" height="15" rx="1.8" ry="1.8" />
             </clipPath>
             
             <!-- Легкий верхній відблиск -->
@@ -51,9 +51,9 @@
           
           <!-- Основні кольори прапора -->
           <g clip-path="url(#flagClip)">
-            <rect width="18" height="7.5" y="0" fill="#0057B7" />
-            <rect width="18" height="7.5" y="7.5" fill="#FFD700" />
-            <rect width="18" height="15" fill="url(#flagGloss)" />
+            <rect width="22" height="7.5" y="0" fill="#0057B7" />
+            <rect width="22" height="7.5" y="7.5" fill="#FFD700" />
+            <rect width="22" height="15" fill="url(#flagGloss)" />
           </g>
         </svg>`;
    
@@ -169,8 +169,8 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     ".card__tracks .flag-svg {" +
     " display: inline-block;" + // Дозволяє бути в одному рядку з текстом
     " vertical-align: middle;" + // Вирівнювання по центру
-    " width: 1.6em;" + // Ширина відносно розміру шрифту
-    " height: 0.9em;" + // Висота (пропорційно)
+    " width: 1.5em;" + // Ширина відносно розміру шрифту
+    " height: 0.8em;" + // Висота (пропорційно)
     " margin-right: -0.1em;" + // Зменшуємо відступ справа
     " margin-left: -0.1em;" +  // Зменшуємо відступ справа
     " margin-top: 0em;" +      // Вертикальний відступ 

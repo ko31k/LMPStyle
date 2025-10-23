@@ -138,6 +138,8 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     " font-size: 1.3em !important;" + // Розмір шрифту
     " padding: 0.2em 0.5em !important;" + // Внутрішні відступи
     " border-radius: 1em !important;" + // Закруглення кутів
+    " background-clip: padding-box !important;" + // 🟩 прибирає внутрішню "тіньову рамку"
+    " border: none !important;" +  
     " font-weight: 700 !important;" + // Жирний шрифт
     " z-index: 20 !important;" + // Високий z-index, щоб бути поверх інших елементів
     " width: fit-content !important; " + // Ширина за вмістом

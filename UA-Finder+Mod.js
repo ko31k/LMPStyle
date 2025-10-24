@@ -34,28 +34,20 @@
     // оскільки деякі старі прошивки можуть не підтримувати емодзі 🇺🇦.
     /*var ukraineFlagSVG = '<svg class="flag-svg" viewBox="0 0 20 15"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';*/
     var ukraineFlagSVG = `
-        <svg class="flag-svg" viewBox="0 0 26.67 15" xmlns="http://www.w3.org/2000/svg">
+        <svg class="flag-svg" viewBox="0 0 28.125 15" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <!-- Скруглені кути -->
             <clipPath id="flagClip">
-              <rect width="26.67" height="15" rx="1.8" ry="1.8" />
+              <rect width="28.125" height="15" rx="1.8" ry="1.8" />
             </clipPath>
             
-            <!-- Легкий верхній відблиск -->
-            <linearGradient id="flagGloss" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="rgba(255,255,255,0.45)" />
-              <stop offset="40%" stop-color="rgba(255,255,255,0.15)" />
-              <stop offset="100%" stop-color="rgba(255,255,255,0)" />
-            </linearGradient>
-          </defs>
+            </defs>
           
-          <!-- Основні кольори прапора -->
           <g clip-path="url(#flagClip)">
-            <rect width="26.67" height="7.5" y="0" fill="#0057B7" />
-            <rect width="26.67" height="7.5" y="7.5" fill="#FFD700" />
-            <rect width="26.67" height="15" fill="url(#flagGloss)" />
-          </g>
+            <rect width="28.125" height="7.5" y="0" fill="#0057B7" />
+            <rect width="28.125" height="7.5" y="7.5" fill="#FFD700" />
+            </g>
         </svg>`;
+
    
     // Головний об'єкт конфігурації
     var LTF_CONFIG = {

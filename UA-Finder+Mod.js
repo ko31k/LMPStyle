@@ -173,7 +173,32 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     " margin-top: 0em;" +      // Вертикальний відступ 
     "}" +*/
 
+
     /*Стилі для прапора*/
+    ".card__tracks .flag-css {" +
+    " display: inline-block;" +
+    " width: 1.5em;" +
+    " height: 0.8em;" +
+    " vertical-align: middle;" +
+    
+    // 1. Прапор (базові кольори)
+    " background: linear-gradient(to bottom, #0057B7 0%, #0057B7 50%, #FFD700 50%, #FFD700 100%);" +
+    
+    // 2. Заокруглення
+    " border-radius: 2px;" + 
+    " border: none !important;" + // Гарантуємо відсутність зовнішньої рамки
+    
+    // 3. Створення "об'єму" (3D Highlight)
+    " box-shadow: " +
+        // Внутрішня тінь 1: Світло-синій для верхнього блиску
+        "inset 0px 1px 0px 0px #4088C5, " + 
+        // Внутрішня тінь 2: Світло-жовтий для нижнього блиску
+        "inset 0px -1px 0px 0px #FFF9C4;" +
+    
+    "}" +
+
+
+    /*
     ".card__tracks .flag-css {" +
     " display: inline-block;" +
     " width: 1.5em;" +
@@ -187,7 +212,7 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     " border: 1px solid rgba(255, 255, 255, 0.2);" +
     // 3. Додаємо "втиснутий" 3D-ефект
     " box-shadow: inset 0px 0px 2px 1px rgba(0,0,0,0.25);" +
-    
+    */
     "}" +
 
     "</style>";

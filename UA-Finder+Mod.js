@@ -34,17 +34,17 @@
     // оскільки деякі старі прошивки можуть не підтримувати емодзі 🇺🇦.
     /*var ukraineFlagSVG = '<svg class="flag-svg" viewBox="0 0 20 15"><rect width="20" height="7.5" y="0" fill="#0057B7"/><rect width="20" height="7.5" y="7.5" fill="#FFD700"/></svg>';*/
     var ukraineFlagSVG = `
-        <svg class="flag-svg" viewBox="0 0 29.125 15" xmlns="http://www.w3.org/2000/svg">
+        <svg class="flag-svg" viewBox="0 0 30.125 15" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <clipPath id="flagClip">
-              <rect width="29.125" height="15" rx="1.8" ry="1.8" />
+              <rect width="30.125" height="15" rx="1.8" ry="1.8" />
             </clipPath>
             
             </defs>
           
           <g clip-path="url(#flagClip)">
-            <rect width="29.125" height="7.5" y="0" fill="#0057B7" />
-            <rect width="29.125" height="7.5" y="7.5" fill="#FFD700" />
+            <rect width="30.125" height="7.5" y="0" fill="#0057B7" />
+            <rect width="30.125" height="7.5" y="7.5" fill="#FFD700" />
             </g>
         </svg>`;
 

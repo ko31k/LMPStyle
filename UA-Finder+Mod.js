@@ -163,8 +163,8 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     " vertical-align: middle;" + // Вирівнювання по центру
     " width: 1.5em;" + // Ширина відносно розміру шрифту
     " height: 0.8em;" + // Висота (пропорційно)
-    " margin-right: -0.1em;" + // Зменшуємо відступ справа
-    " margin-left: -0.1em;" +  // Зменшуємо відступ справа
+    " margin-right: 0em;" +    // Зменшуємо відступ справа
+    " margin-left: 0em;" +     // Зменшуємо відступ справа
     " margin-top: 0em;" +      // Вертикальний відступ 
     "}" +
     "</style>";

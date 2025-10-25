@@ -8,13 +8,13 @@
      */
     var LMP_ENH_CONFIG = {
         apiKeys: {
-            mdblist: 'm8po461k1zq14sroj2ez5d7um', // ключ до MDBList
-            omdb:    '12c9249c'     // ключ до OMDb
+            mdblist: 'm8po461k1zq14sroj2ez5d7um', // ✅ ключ до MDBList
+            omdb:    '12c9249c'     // ✅ ключ до OMDb
         },
 
         // true  -> іконки стають монохромні через filter: grayscale(100%)
         // false -> кольорові логотипи як є
-        monochromeIcons: true
+        monochromeIcons: false   /*✅ Вкл./Викл. Ч/Б рейтинги */
     };
 
 

@@ -154,7 +154,7 @@ var pluginStyles = "<style>" +
 
     /* ущільнюємо відстань між бейджами рейтингів */
     ".full-start-new__rate-line .full-start__rate {" +
-    "    margin-right: 0.7em !important;" +
+    "    margin-right: 0.5em !important;" +
     "}" +
     ".full-start-new__rate-line .full-start__rate:last-child {" +
     "    margin-right: 0 !important;" +

@@ -93,43 +93,67 @@
      * =========================
      * Тут і анімація завантаження, і золотий колір, і т.п.
      */
-    var pluginStyles = "<style>" +
-        ".loading-dots-container {" +
-        "    display: flex;" +
-        "    align-items: center;" +
-        "    font-size: 0.85em;" +
-        "    color: #ccc;" +
-        "    padding: 0.6em 1em;" +
-        "    border-radius: 0.5em;" +
-        "}" +
-        ".loading-dots__text {" +
-        "    margin-right: 1em;" +
-        "}" +
-        ".loading-dots__dot {" +
-        "    width: 0.5em;" +
-        "    height: 0.5em;" +
-        "    border-radius: 50%;" +
-        "    background-color: currentColor;" +
-        "    animation: loading-dots-bounce 1.4s infinite ease-in-out both;" +
-        "}" +
-        ".loading-dots__dot:nth-child(1) {" +
-        "    animation-delay: -0.32s;" +
-        "}" +
-        ".loading-dots__dot:nth-child(2) {" +
-        "    animation-delay: -0.16s;" +
-        "}" +
-        "@keyframes loading-dots-bounce {" +
-        "    0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }" +
-        "    40% { transform: translateY(-0.5em); opacity: 1; }" +
-        "}" +
+var pluginStyles = "<style>" +
+    ".loading-dots-container {" +
+    "    display: flex;" +
+    "    align-items: center;" +
+    "    font-size: 0.85em;" +
+    "    color: #ccc;" +
+    "    padding: 0.6em 1em;" +
+    "    border-radius: 0.5em;" +
+    "}" +
+    ".loading-dots__text {" +
+    "    margin-right: 1em;" +
+    "}" +
+    ".loading-dots__dot {" +
+    "    width: 0.5em;" +
+    "    height: 0.5em;" +
+    "    border-radius: 50%;" +
+    "    background-color: currentColor;" +
+    "    animation: loading-dots-bounce 1.4s infinite ease-in-out both;" +
+    "}" +
+    ".loading-dots__dot:nth-child(1) {" +
+    "    animation-delay: -0.32s;" +
+    "}" +
+    ".loading-dots__dot:nth-child(2) {" +
+    "    animation-delay: -0.16s;" +
+    "}" +
+    "@keyframes loading-dots-bounce {" +
+    "    0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }" +
+    "    40% { transform: translateY(-0.5em); opacity: 1; }" +
+    "}" +
 
-        /* золоте забарвлення тексту нагород */
-        ".rate--oscars { color: gold; }" +
-        ".rate--emmy   { color: gold; }" +
-        ".rate--awards { color: gold; }" +
-        ".rate--gold   { color: gold; }" +
+    /* КОЛЬОРОВИЙ РЕЖИМ (за замовчуванням):
+       нагороди мають бути золоті.
+       У не-монорежимі це працює як і раніше.
+    */
+    ".rate--oscars, .rate--emmy, .rate--awards, .rate--gold {" +
+    "    color: gold;" +
+    "}" +
 
-        "</style>";
+    /* МОНОХРОМ РЕЖИМ:
+       1. Прибираємо золото в нагородах.
+       2. Глушимо зелений/лаймовий/помаранчевий/червоний текст оцінок.
+       3. Взагалі нормалізуємо колір цифр .full-start__rate.
+       
+       Важливо: ставимо !important, щоб перебити стилі самої Lampa.
+    */
+    "body.lmp-enh--mono .rate--oscars," +
+    "body.lmp-enh--mono .rate--emmy," +
+    "body.lmp-enh--mono .rate--awards," +
+    "body.lmp-enh--mono .rate--gold," +
+
+    "body.lmp-enh--mono .rating--green," +
+    "body.lmp-enh--mono .rating--lime," +
+    "body.lmp-enh--mono .rating--orange," +
+    "body.lmp-enh--mono .rating--red," +
+
+    "body.lmp-enh--mono .full-start__rate {" +
+    "    color: inherit !important;" +
+    "}" +
+
+    "</style>";
+
 
     Lampa.Template.add('lmp_enh_styles', pluginStyles);
     $('body').append(Lampa.Template.get('lmp_enh_styles', {}, true));
@@ -654,7 +678,7 @@
                 imdbContainer.removeClass('hide');
                 var imdbDivs = imdbContainer.find('> div');
                 if (imdbDivs.length >= 2) {
-            imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
+                    imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
                     // IMDb logo 22px
                     imdbDivs.eq(1).html(iconImg(ICONS.imdb, 'IMDb', 22));
                 }
@@ -1007,7 +1031,6 @@ function insertRatings(data) {
         }
     }
 
-
     /**
      * Ініціалізація
      */
@@ -1022,6 +1045,9 @@ function insertRatings(data) {
         });
     }
 
+    if (LMP_ENH_CONFIG.monochromeIcons) {
+        $('body').addClass('lmp-enh--mono');
+    }
     if (!window.combined_ratings_plugin) startPlugin();
 
 })();

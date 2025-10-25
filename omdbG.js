@@ -701,23 +701,24 @@ function insertRatings(data) {
      * - Тобто тут у нас уже ГОТОВЕ фінальне значення.
      * - Нам треба тільки красиво показати дробову частину (5.9, 7.8, 8.2 і т.д.).
      */
-    if (data.mc_display && !$('.rate--mc', rateLine).length) {
+     if (data.mc_display && !$('.rate--mc', rateLine).length) {
 
-        // нормалізуємо число перед виводом
+        // Нормалізуємо число, щоб завжди було X.Y
         var mcVal = null;
 
         if (data.mc_for_avg && !isNaN(data.mc_for_avg)) {
-            // найбільш надійне джерело — числове поле для середнього
+            // найнадійніше поле, те що реально йде в середній рейтинг
             mcVal = parseFloat(data.mc_for_avg);
         } else if (!isNaN(parseFloat(data.mc_display))) {
-            // fallback: взяти текст і зробити parseFloat
+            // fallback: парсимо те, що прийшло як рядок
             mcVal = parseFloat(data.mc_display);
         }
 
-        // якщо змогли отримати нормальне число - формат X.Y
+        // якщо маємо число -> формат "X.Y" (включно з ".0")
+        // якщо ні (дуже крайній випадок) -> показуємо як прийшло
         var mcText = (mcVal !== null && !isNaN(mcVal))
-            ? mcVal.toFixed(1)
-            : data.mc_display; // крайній випадок: показати як є
+            ? mcVal.toFixed(1)   // 6 -> "6.0", 7.8 -> "7.8"
+            : data.mc_display;   // наприклад щось типу "N/A"
 
         var mcElement = $(
             '<div class="full-start__rate rate--mc">' +
@@ -726,7 +727,7 @@ function insertRatings(data) {
             '</div>'
         );
 
-        // логотип Metacritic (памʼятаємо: +2px від базового → 22px)
+        // логотип Metacritic (22px)
         mcElement.find('.source--name').html(
             iconImg(ICONS.metacritic, 'Metacritic', 22)
         );
@@ -739,6 +740,7 @@ function insertRatings(data) {
             rateLine.append(mcElement);
         }
     }
+
 
     /**
      * Rotten Tomatoes (після Metacritic)

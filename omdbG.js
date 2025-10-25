@@ -412,6 +412,25 @@
             popcorn_for_avg: null
         };
 
+        function parseRawScore(rawVal) {
+            if (rawVal === null || rawVal === undefined) return null;
+            if (typeof rawVal === 'number') return rawVal;
+
+            if (typeof rawVal === 'string') {
+                // "73%" -> 73
+                if (rawVal.indexOf('%') !== -1) {
+                    return parseFloat(rawVal.replace('%',''));
+                }
+                // "7.8/10" -> 7.8
+                if (rawVal.indexOf('/') !== -1) {
+                    return parseFloat(rawVal.split('/')[0]);
+                }
+                // "5.9" -> 5.9
+                return parseFloat(rawVal);
+            }
+            return null;
+        }
+          
         function isUserSource(src) {
             return (
                 src.indexOf('user') !== -1 ||

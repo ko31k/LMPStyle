@@ -14,7 +14,7 @@
 
         // true  -> іконки стають монохромні через filter: grayscale(100%)
         // false -> кольорові логотипи як є
-        monochromeIcons: false
+        monochromeIcons: true
     };
 
 

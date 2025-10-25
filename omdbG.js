@@ -182,39 +182,39 @@
      * =========================
      */
 
-    // універсальна картинка-сервіс (TMDB, IMDb, Metacritic, тощо)
-    // extraStyle — наприклад border-radius для свіжого томата
-    function iconImg(url, alt, extraStyle) {
+    // універсальна картинка-сервіс (TMDB, IMDb, Metacritic, RT, Popcorn, Star, Awards)
+    // sizePx — висота в px
+    // extraStyle — додаткові стилі типу border-radius
+    function iconImg(url, alt, sizePx, extraStyle) {
         var filter = LMP_ENH_CONFIG.monochromeIcons ? 'filter:grayscale(100%);' : '';
         return '<img style="' +
-            'height:20px; width:auto; display:inline-block; vertical-align:middle; ' +
+            'height:' + sizePx + 'px; width:auto; display:inline-block; vertical-align:middle; ' +
             'object-fit:contain; ' +
             (extraStyle || '') + ' ' +
             filter + '" ' +
             'src="' + url + '" alt="' + (alt || '') + '">';
     }
 
-    // Emmy статуетка, тепер збільшена:
+    // Emmy статуетка
     function emmyIconInline() {
         var filter = LMP_ENH_CONFIG.monochromeIcons ? 'filter:grayscale(100%);' : '';
         return '<span style="' +
-            'height:20px; width:auto; display:inline-block; vertical-align:middle; ' +
-            'transform:scale(1.6); transform-origin:center; ' +
+            'height:16px; width:auto; display:inline-block; vertical-align:middle; ' +
+            'transform:scale(1.2); transform-origin:center; ' +  // трохи піддмухати, але в межах 16px
             filter + '">' +
             emmy_svg +
             '</span>';
     }
 
-    // Oscar статуетка (твоя base64-картинка зі старого плагіна).
-    // Я підкрутив висоту до 20px і ті ж правила grayscale.
+    // Oscar статуетка
     function oscarIconInline() {
         var filter = LMP_ENH_CONFIG.monochromeIcons ? 'filter:grayscale(100%);' : '';
         return '<span style="' +
-            'height:20px; width:auto; display:inline-block; vertical-align:middle; ' +
+            'height:18px; width:auto; display:inline-block; vertical-align:middle; ' +
             'object-fit:contain; transform:scale(1.2); transform-origin:center; ' +
             filter + '">' +
             '<img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnMiIKICAgdmlld0JveD0iMCAwIDM4LjE4NTc0NCAxMDEuNzY1IgogICBoZWlnaHQ9IjEzNS42Njk0NSIKICAgd2lkdGg9IjUwLjkwODIwMyI+CiAgPG1ldGFkYXRhCiAgICAgaWQ9Im1ldGFkYXRhMTYiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPjwvZGM6dGl0bGU+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxkZWZzCiAgICAgaWQ9ImRlZnMxNCIgLz4KICA8ZwogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04LjQwNjE3NDUsMC42OTMpIgogICAgIGlkPSJnNCIKICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7ZmlsbDojZmZjYzAwIj4KICAgIDxwYXRoCiAgICAgICBpZD0icGF0aDYiCiAgICAgICBkPSJtIDI3LjM3MSwtMC42OTMgYyAtMy45MjcsMC4zNjYgLTUuMjI5LDMuNTM4IC00Ljk2Myw2Ljc3OCAwLjI2NiwzLjIzOSAzLjY4NSw2Ljk3MiAwLjEzNSw4Ljk1NiAtMS41NzcsMS40MTMgLTMuMTU0LDMuMDczIC01LjIwNywzLjU0IC0yLjY3OSwwLjYwNyAtNC4yODcsMy4wNTQgLTQuNjA3LDYuNDE5IDEuMzg4LDQuODI0IDAuMzY1LDkuMjg1IDEuNzczLDEyLjgyNCAxLjQwNywzLjUzOSAzLjY5NiwzLjgzMSAzLjk4Niw1LjA3NiAwLjMxNyw3LjYzNyAyLjM0MSwxNy41MzUgMC44NTYsMjQuOTMgMS4xNzIsMC4xODQgMC45MywwLjQ0NCAwLjg5NCwwLjcyOSAtMC4wMzYsMC4yODQgLTAuNDgsMC4zODEgLTEuMDg4LDAuNTI3IDAuODQ3LDcuNjg0IC0wLjI3OCwxMi4xMzYgMS45ODMsMTguNzcxIGwgMCwzLjU5MiAtMS4wNywwIDAsMS41MjQgYyAwLDAgLTcuMzEsLTAuMDA1IC04LjU2NSwwIDAsMCAwLjY4LDIuMTU5IC0xLjUyMywzLjAyNyAwLjAwOCwxLjEgMCwyLjcxOSAwLDIuNzE5IGwgLTEuNTY5LDAgMCwyLjM1MyBjIDEzLjIyMTcwMywwIDI2LjgzNzkwNywwIDM4LjE4NiwwIGwgMCwtMi4zNTIgLTEuNTcsMCBjIDAsMCAtMC4wMDcsLTEuNjE5IDAuMDAxLC0yLjcxOSBDIDQyLjgyLDk1LjEzMyA0My41LDkyLjk3NCA0My41LDkyLjk3NCBjIC0xLjI1NSwtMC4wMDUgLTguNTY0LDAgLTguNTY0LDAgbCAwLC0xLjUyNCAtMS4wNzMsMCAwLC0zLjU5MiBjIDIuMjYxLC02LjYzNSAxLjEzOCwtMTEuMDg3IDEuOTg1LC0xOC43NzEgLTAuNjA4LC0wLjE0NiAtMS4wNTQsLTAuMjQzIC0xLjA5LC0wLjUyNyAtMC4wMzYsLTAuMjg1IC0wLjI3OCwtMC41NDUgMC44OTQsLTAuNzI5IC0wLjg0NSwtOC4wNTggMC45MDIsLTE3LjQ5MyAwLjg1OCwtMjQuOTMgMC4yOSwtMS4yNDUgMi41NzksLTEuNTM3IDMuOTg2LC01LjA3NiAxLjQwOCwtMy41MzkgMC4zODUsLTggMS43NzQsLTEyLjgyNCAtMC4zMiwtMy4zNjUgLTEuOTMxLC01LjgxMiAtNC42MSwtNi40MiAtMi4wNTMsLTAuNDY2IC0zLjQ2OSwtMi42IC01LjM2OSwtMy44ODQgLTMuMTE4LC0yLjQ3MiAtMC42MSwtNS4zNjQgMC4zNzMsLTguNTc4IDAsLTUuMDEgLTIuMTU0LC02LjQ4MyAtNS4yOTMsLTYuODExIHoiCiAgICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7b3BhY2l0eToxO2ZpbGw6I2ZmY2MwMCIgLz4KICA8L2c+Cjwvc3ZnPgo="' +
-            '" style="height:20px; width:auto; display:inline-block; vertical-align:middle; object-fit:contain;">' +
+            '" style="height:18px; width:auto; display:inline-block; vertical-align:middle; object-fit:contain;">' +
             '</span>';
     }
 
@@ -606,8 +606,9 @@
                 imdbContainer.removeClass('hide');
                 var imdbDivs = imdbContainer.find('> div');
                 if (imdbDivs.length >= 2) {
-                    imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
-                    imdbDivs.eq(1).html(iconImg(ICONS.imdb,'IMDb'));
+            imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
+                    // IMDb logo 22px
+                    imdbDivs.eq(1).html(iconImg(ICONS.imdb, 'IMDb', 22));
                 }
             } else {
                 imdbContainer.addClass('hide');
@@ -621,7 +622,8 @@
                 var tmdbDivs = tmdbContainer.find('> div');
                 if (tmdbDivs.length >= 2) {
                     tmdbDivs.eq(0).text(parseFloat(data.tmdb_display).toFixed(1));
-                    tmdbDivs.eq(1).html(iconImg(ICONS.tmdb,'TMDB'));
+                    // TMDB logo 24px
+                    tmdbDivs.eq(1).html(iconImg(ICONS.tmdb, 'TMDB', 24));
                 }
             }
         }
@@ -650,7 +652,8 @@
                     '<div class="source--name"></div>' +
                 '</div>'
             );
-            mcElement.find('.source--name').html(iconImg(ICONS.metacritic,'Metacritic'));
+            // Metacritic 22px
+            mcElement.find('.source--name').html(iconImg(ICONS.metacritic,'Metacritic',22));
 
             var afterImdb = $('.rate--imdb', rateLine);
             if (afterImdb.length) mcElement.insertAfter(afterImdb);
@@ -660,14 +663,15 @@
         // Rotten Tomatoes (після Metacritic)
         if (data.rt_display && !$('.rate--rt', rateLine).length) {
             var rtIconUrl = data.rt_fresh ? ICONS.rotten_good : ICONS.rotten_bad;
-            var extra = data.rt_fresh ? 'border-radius:4px;' : ''; // <-- закруглення кутів тільки для fresh
+            var extra = data.rt_fresh ? 'border-radius:4px;' : ''; // закруглення для fresh
             var rtElement = $(
                 '<div class="full-start__rate rate--rt">' +
                     '<div>' + data.rt_display + '</div>' +
                     '<div class="source--name"></div>' +
                 '</div>'
             );
-            rtElement.find('.source--name').html(iconImg(rtIconUrl,'Rotten Tomatoes', extra));
+            // Rotten 22px
+            rtElement.find('.source--name').html(iconImg(rtIconUrl,'Rotten Tomatoes',22, extra));
 
             var afterMc = $('.rate--mc', rateLine);
             if (afterMc.length) rtElement.insertAfter(afterMc);
@@ -686,7 +690,8 @@
                     '<div class="source--name"></div>' +
                 '</div>'
             );
-            pcElement.find('.source--name').html(iconImg(ICONS.popcorn,'Audience'));
+            // PopcornMeter 22px
+            pcElement.find('.source--name').html(iconImg(ICONS.popcorn,'Audience',22));
 
             var afterRt = $('.rate--rt', rateLine);
             if (afterRt.length) pcElement.insertAfter(afterRt);
@@ -697,7 +702,7 @@
             }
         }
 
-        // Інші нагороди (other wins)
+        // Інші нагороди (other wins) - іконка awards на 20px
         if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
             var awardsElement = $(
                 '<div class="full-start__rate rate--awards rate--gold">' +
@@ -706,12 +711,12 @@
                 '</div>'
             );
             awardsElement.find('.source--name')
-                .html(iconImg(ICONS.awards,'Awards'))
+                .html(iconImg(ICONS.awards,'Awards',20))
                 .attr('title', Lampa.Lang.translate('awards_other_label'));
             rateLine.prepend(awardsElement);
         }
 
-        // Emmy
+        // Emmy - тепер emmyIconInline() рендерить ~16px
         if (data.emmy && data.emmy > 0 && !$('.rate--emmy', rateLine).length) {
             var emmyElement = $(
                 '<div class="full-start__rate rate--emmy rate--gold">' +
@@ -725,7 +730,7 @@
             rateLine.prepend(emmyElement);
         }
 
-        // Oscars
+        // Oscars - oscarIconInline() тепер ~18px
         if (data.oscars && data.oscars > 0 && !$('.rate--oscars', rateLine).length) {
             var oscarsElement = $(
                 '<div class="full-start__rate rate--oscars rate--gold">' +
@@ -743,10 +748,11 @@
     }
 
 
-    /**
-     * TOTAL / середній рейтинг:
-     * Більше не пишемо текст "TOTAL"/"ЗАГАЛОМ", тільки іконка-зірка + число.
-     */
+
+/**
+ * TOTAL / середній рейтинг:
+ * Більше не пишемо текст "TOTAL"/"ЗАГАЛОМ", тільки іконка-зірка + число.
+ */
     function calculateAverageRating(data) {
         var render = Lampa.Activity.active().activity.render();
         if (!render) return;
@@ -784,7 +790,8 @@
         );
 
         // тільки зірка, без тексту
-        var starHtml = iconImg(ICONS.total_star,'AVG');
+        // ВАЖЛИВО: передаємо розмір 20px як третій аргумент
+        var starHtml = iconImg(ICONS.total_star, 'AVG', 20);
         avgElement.find('.source--name').html(starHtml);
 
         var firstRate = $('.full-start__rate:first', rateLine);
@@ -794,6 +801,7 @@
         removeLoadingAnimation();
         rateLine.css('visibility','visible');
     }
+
 
 
     /**

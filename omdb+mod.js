@@ -152,6 +152,14 @@ var pluginStyles = "<style>" +
     "    color: inherit !important;" +
     "}" +
 
+    /* ущільнюємо відстань між бейджами рейтингів */
+    ".full-start-new__rate-line .full-start__rate {" +
+    "    margin-right: 0.7em !important;" +
+    "}" +
+    ".full-start-new__rate-line .full-start__rate:last-child {" +
+    "    margin-right: 0 !important;" +
+    "}" +
+    
     "</style>";
 
 

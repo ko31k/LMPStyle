@@ -390,79 +390,84 @@
                 return;
             }
 
-            var res = {
-                tmdb_display: null,
-                tmdb_for_avg: null,
+        var res = {
+            tmdb_display: null,
+            tmdb_for_avg: null,
 
-                imdb_display: null,
-                imdb_for_avg: null,
+            imdb_display: null,
+            imdb_for_avg: null,
 
-                mc_display: null,
-                mc_for_avg: null,
+            // Metacritic: ми збираємо обидва, а потім оберемо пріоритет пізніше
+            mc_user_display: null,
+            mc_user_for_avg: null,
 
-                rt_display: null,
-                rt_for_avg: null,
-                rt_fresh: null,
+            mc_critic_display: null,
+            mc_critic_for_avg: null,
 
-                popcorn_display: null,
-                popcorn_for_avg: null
-            };
+            rt_display: null,
+            rt_for_avg: null,
+            rt_fresh: null,
 
-            function parseRawScore(rawVal) {
-                if (rawVal === null || rawVal === undefined) return null;
-                if (typeof rawVal === 'number') return rawVal;
-                if (typeof rawVal === 'string') {
-                    if (rawVal.indexOf('%') !== -1) {
-                        return parseFloat(rawVal.replace('%',''));
-                    }
-                    if (rawVal.indexOf('/') !== -1) {
-                        return parseFloat(rawVal.split('/')[0]);
-                    }
-                    return parseFloat(rawVal);
-                }
-                return null;
+            popcorn_display: null,
+            popcorn_for_avg: null
+        };
+
+        function isUserSource(src) {
+            return (
+                src.indexOf('user') !== -1 ||
+                src.indexOf('users') !== -1 ||
+                src.indexOf('metacriticuser') !== -1 ||
+                src.indexOf('metacritic_user') !== -1
+            );
+        }
+
+        response.ratings.forEach(function(r) {
+            var src = (r.source || '').toLowerCase();
+            var val = parseRawScore(r.value);
+            if (val === null || isNaN(val)) return;
+
+            // TMDB
+            if (src.indexOf('tmdb') !== -1) {
+                var tmdb10 = val > 10 ? (val / 10) : val;
+                res.tmdb_display = tmdb10.toFixed(1);
+                res.tmdb_for_avg = tmdb10;
             }
 
-            response.ratings.forEach(function(r) {
-                var src = (r.source || '').toLowerCase();
-                var val = parseRawScore(r.value);
-                if (val === null || isNaN(val)) return;
+            // IMDb
+            if (src.indexOf('imdb') !== -1) {
+                var imdb10 = val > 10 ? (val / 10) : val;
+                res.imdb_display = imdb10.toFixed(1);
+                res.imdb_for_avg = imdb10;
+            }
 
-                // TMDB: може бути 73 -> 7.3
-                if (src.indexOf('tmdb') !== -1) {
-                    var tmdb10 = val > 10 ? (val / 10) : val;
-                    res.tmdb_display = tmdb10.toFixed(1);
-                    res.tmdb_for_avg = tmdb10;
-                }
+            // Metacritic USER score (0..10 зазвичай)
+            if (src.indexOf('metacritic') !== -1 && isUserSource(src)) {
+                var user10 = val > 10 ? (val / 10) : val;
+                res.mc_user_display = user10.toFixed(1);
+                res.mc_user_for_avg = user10;
+            }
 
-                // IMDb
-                if (src.indexOf('imdb') !== -1) {
-                    var imdb10 = val > 10 ? (val / 10) : val;
-                    res.imdb_display = imdb10.toFixed(1);
-                    res.imdb_for_avg = imdb10;
-                }
+            // Metacritic CRITIC metascore (0..100 зазвичай)
+            if (src.indexOf('metacritic') !== -1 && !isUserSource(src)) {
+                var critic10 = val > 10 ? (val / 10) : val; // 73 -> 7.3
+                res.mc_critic_display = critic10.toFixed(1);
+                res.mc_critic_for_avg = critic10;
+            }
 
-                // Metacritic / Metascore
-                // тепер показуємо з одним знаком після крапки, типу 7.1 / 4.6
-                if (src.indexOf('meta') !== -1 || src.indexOf('metacritic') !== -1) {
-                    var mc10 = val > 10 ? (val / 10) : val;
-                    res.mc_display = mc10.toFixed(1); // було просто "7", тепер "7.1"
-                    res.mc_for_avg = mc10;           // для середього рейтингу
-                }
+            // Rotten Tomatoes
+            if (src.indexOf('rotten') !== -1 || src.indexOf('tomato') !== -1) {
+                res.rt_display = String(Math.round(val));   // "85"
+                res.rt_for_avg = val / 10;                  // 85 -> 8.5
+                res.rt_fresh = val >= 60;
+            }
 
-                // Rotten Tomatoes (%, 0..100)
-                if (src.indexOf('rotten') !== -1 || src.indexOf('tomato') !== -1) {
-                    res.rt_display = String(Math.round(val));   // показуємо 85
-                    res.rt_for_avg = val / 10;                  // 85 → 8.5
-                    res.rt_fresh = val >= 60;                   // 60+ свіжий
-                }
+            // Popcorn
+            if (src.indexOf('popcorn') !== -1 || src.indexOf('audience') !== -1) {
+                res.popcorn_display = String(Math.round(val)); // "91"
+                res.popcorn_for_avg = val / 10;                // 91 -> 9.1
+            }
+        });
 
-                // Popcorn / Audience
-                if (src.indexOf('popcorn') !== -1 || src.indexOf('audience') !== -1) {
-                    res.popcorn_display = String(Math.round(val)); // "91"
-                    res.popcorn_for_avg = val / 10;                // 91 → 9.1
-                }
-            });
 
             callback(res);
         }).fail(function() {
@@ -520,8 +525,12 @@
                 imdb_display: data.imdbRating && data.imdbRating !== 'N/A' ? parseFloat(data.imdbRating).toFixed(1) : null,
                 imdb_for_avg: data.imdbRating && data.imdbRating !== 'N/A' ? parseFloat(data.imdbRating) : null,
 
-                mc_display: (mc10 !== null ? mc10.toFixed(1) : null),
-                mc_for_avg: (mc10 !== null ? mc10 : null),
+                // OMDb знає тільки про Metascore критиків
+                mc_user_display: null,
+                mc_user_for_avg: null,
+
+                mc_critic_display: (mc10 !== null ? mc10.toFixed(1) : null),
+                mc_critic_for_avg: (mc10 !== null ? mc10 : null),
 
                 rt_display: (rtScore !== null && !isNaN(rtScore)) ? String(rtScore) : null,
                 rt_for_avg: (rtScore !== null && !isNaN(rtScore)) ? (rtScore / 10) : null,
@@ -537,6 +546,7 @@
                 awards: awardsParsed.awards || 0
             };
 
+
             callback(res);
         }, function() {
             callback(null);
@@ -551,6 +561,23 @@
         mdb = mdb || {};
         omdb = omdb || {};
 
+        // 1. обираємо Metacritic User якщо є
+        // 2. інакше Metacritic Critic (mdb)
+        // 3. інакше Metacritic Critic (omdb)
+        var mc_display = null;
+        var mc_for_avg = null;
+
+        if (mdb.mc_user_display) {
+            mc_display = mdb.mc_user_display;
+            mc_for_avg = mdb.mc_user_for_avg;
+        } else if (mdb.mc_critic_display) {
+            mc_display = mdb.mc_critic_display;
+            mc_for_avg = mdb.mc_critic_for_avg;
+        } else if (omdb.mc_critic_display) {
+            mc_display = omdb.mc_critic_display;
+            mc_for_avg = omdb.mc_critic_for_avg;
+        }
+
         var merged = {
             tmdb_display: mdb.tmdb_display || null,
             tmdb_for_avg: mdb.tmdb_for_avg || null,
@@ -558,8 +585,9 @@
             imdb_display: mdb.imdb_display || omdb.imdb_display || null,
             imdb_for_avg: mdb.imdb_for_avg || omdb.imdb_for_avg || null,
 
-            mc_display: mdb.mc_display || omdb.mc_display || null,
-            mc_for_avg: mdb.mc_for_avg || omdb.mc_for_avg || null,
+            // ← одне єдине фінальне поле під назвою Metacritic
+            mc_display: mc_display || null,
+            mc_for_avg: (typeof mc_for_avg === 'number' ? mc_for_avg : null),
 
             rt_display: mdb.rt_display || omdb.rt_display || null,
             rt_for_avg: mdb.rt_for_avg || omdb.rt_for_avg || null,
@@ -578,6 +606,7 @@
 
         return merged;
     }
+
 
 
     /**
@@ -637,115 +666,186 @@
      * Popcorn → після RottenTomatoes
      * Awards/Emmy/Oscars → prepend
      */
-    function insertRatings(data) {
-        var render = Lampa.Activity.active().activity.render();
-        if (!render) return;
+function insertRatings(data) {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render) return;
 
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length) return;
+    var rateLine = $('.full-start-new__rate-line', render);
+    if (!rateLine.length) return;
 
-        // Metacritic (після IMDb)
-        if (data.mc_display && !$('.rate--mc', rateLine).length) {
-            var mcElement = $(
-                '<div class="full-start__rate rate--mc">' +
-                    '<div>' + data.mc_display + '</div>' +
-                    '<div class="source--name"></div>' +
-                '</div>'
-            );
-            // Metacritic 22px
-            mcElement.find('.source--name').html(iconImg(ICONS.metacritic,'Metacritic',22));
+    /**
+     * Metacritic (після IMDb)
+     *
+     * Логіка вже така:
+     * - data.mc_display / data.mc_for_avg прийшли з mergeRatings()
+     *   де ми вибрали User Score або, якщо нема, Metascore критиків (приведений до /10).
+     * - Тобто тут у нас уже ГОТОВЕ фінальне значення.
+     * - Нам треба тільки красиво показати дробову частину (5.9, 7.8, 8.2 і т.д.).
+     */
+    if (data.mc_display && !$('.rate--mc', rateLine).length) {
 
-            var afterImdb = $('.rate--imdb', rateLine);
-            if (afterImdb.length) mcElement.insertAfter(afterImdb);
-            else rateLine.append(mcElement);
+        // нормалізуємо число перед виводом
+        var mcVal = null;
+
+        if (data.mc_for_avg && !isNaN(data.mc_for_avg)) {
+            // найбільш надійне джерело — числове поле для середнього
+            mcVal = parseFloat(data.mc_for_avg);
+        } else if (!isNaN(parseFloat(data.mc_display))) {
+            // fallback: взяти текст і зробити parseFloat
+            mcVal = parseFloat(data.mc_display);
         }
 
-        // Rotten Tomatoes (після Metacritic)
-        if (data.rt_display && !$('.rate--rt', rateLine).length) {
-            var rtIconUrl = data.rt_fresh ? ICONS.rotten_good : ICONS.rotten_bad;
-            var extra = data.rt_fresh ? 'border-radius:4px;' : ''; // закруглення для fresh
-            var rtElement = $(
-                '<div class="full-start__rate rate--rt">' +
-                    '<div>' + data.rt_display + '</div>' +
-                    '<div class="source--name"></div>' +
-                '</div>'
-            );
-            // Rotten 22px
-            rtElement.find('.source--name').html(iconImg(rtIconUrl,'Rotten Tomatoes',22, extra));
+        // якщо змогли отримати нормальне число - формат X.Y
+        var mcText = (mcVal !== null && !isNaN(mcVal))
+            ? mcVal.toFixed(1)
+            : data.mc_display; // крайній випадок: показати як є
 
-            var afterMc = $('.rate--mc', rateLine);
-            if (afterMc.length) rtElement.insertAfter(afterMc);
-            else {
-                var afterImdb2 = $('.rate--imdb', rateLine);
-                if (afterImdb2.length) rtElement.insertAfter(afterImdb2);
-                else rateLine.append(rtElement);
-            }
-        }
+        var mcElement = $(
+            '<div class="full-start__rate rate--mc">' +
+                '<div>' + mcText + '</div>' +
+                '<div class="source--name"></div>' +
+            '</div>'
+        );
 
-        // Popcorn / Audience score (після Rotten Tomatoes)
-        if (data.popcorn_display && !$('.rate--popcorn', rateLine).length) {
-            var pcElement = $(
-                '<div class="full-start__rate rate--popcorn">' +
-                    '<div>' + data.popcorn_display + '</div>' +
-                    '<div class="source--name"></div>' +
-                '</div>'
-            );
-            // PopcornMeter 22px
-            pcElement.find('.source--name').html(iconImg(ICONS.popcorn,'Audience',22));
+        // логотип Metacritic (памʼятаємо: +2px від базового → 22px)
+        mcElement.find('.source--name').html(
+            iconImg(ICONS.metacritic, 'Metacritic', 22)
+        );
 
-            var afterRt = $('.rate--rt', rateLine);
-            if (afterRt.length) pcElement.insertAfter(afterRt);
-            else {
-                var afterMc2 = $('.rate--mc', rateLine);
-                if (afterMc2.length) pcElement.insertAfter(afterMc2);
-                else rateLine.append(pcElement);
-            }
-        }
-
-        // Інші нагороди (other wins) - іконка awards на 20px
-        if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
-            var awardsElement = $(
-                '<div class="full-start__rate rate--awards rate--gold">' +
-                    '<div>' + data.awards + '</div>' +
-                    '<div class="source--name"></div>' +
-                '</div>'
-            );
-            awardsElement.find('.source--name')
-                .html(iconImg(ICONS.awards,'Awards',20))
-                .attr('title', Lampa.Lang.translate('awards_other_label'));
-            rateLine.prepend(awardsElement);
-        }
-
-        // Emmy - тепер emmyIconInline() рендерить ~16px
-        if (data.emmy && data.emmy > 0 && !$('.rate--emmy', rateLine).length) {
-            var emmyElement = $(
-                '<div class="full-start__rate rate--emmy rate--gold">' +
-                    '<div>' + data.emmy + '</div>' +
-                    '<div class="source--name"></div>' +
-                '</div>'
-            );
-            emmyElement.find('.source--name')
-                .html(emmyIconInline())
-                .attr('title', Lampa.Lang.translate('emmy_label'));
-            rateLine.prepend(emmyElement);
-        }
-
-        // Oscars - oscarIconInline() тепер ~18px
-        if (data.oscars && data.oscars > 0 && !$('.rate--oscars', rateLine).length) {
-            var oscarsElement = $(
-                '<div class="full-start__rate rate--oscars rate--gold">' +
-                    '<div>' + data.oscars + '</div>' +
-                    '<div class="source--name"></div>' +
-                '</div>'
-            );
-
-            oscarsElement.find('.source--name')
-                .html(oscarIconInline())
-                .attr('title', Lampa.Lang.translate('oscars_label'));
-
-            rateLine.prepend(oscarsElement);
+        // вставляємо одразу після IMDb
+        var afterImdb = $('.rate--imdb', rateLine);
+        if (afterImdb.length) {
+            mcElement.insertAfter(afterImdb);
+        } else {
+            rateLine.append(mcElement);
         }
     }
+
+    /**
+     * Rotten Tomatoes (після Metacritic)
+     * - rt_display показуємо як ціле число (85)
+     * - іконка залежить від свіжості:
+     *   >=60% → свіжа (rotten_good) з округленими кутами,
+     *   <60%  → гнила (rotten_bad) без заокруглення.
+     */
+    if (data.rt_display && !$('.rate--rt', rateLine).length) {
+        var rtIconUrl = data.rt_fresh ? ICONS.rotten_good : ICONS.rotten_bad;
+        var extra = data.rt_fresh ? 'border-radius:4px;' : ''; // легке скруглення лише для fresh
+
+        var rtElement = $(
+            '<div class="full-start__rate rate--rt">' +
+                '<div>' + data.rt_display + '</div>' +
+                '<div class="source--name"></div>' +
+            '</div>'
+        );
+
+        // Rotten Tomatoes logo 22px (+2px)
+        rtElement.find('.source--name').html(
+            iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra)
+        );
+
+        // Вставляємо після Metacritic, якщо він є. Якщо ні — після IMDb. Якщо й IMDb нема з якоїсь причини, просто в кінець.
+        var afterMc = $('.rate--mc', rateLine);
+        if (afterMc.length) {
+            rtElement.insertAfter(afterMc);
+        } else {
+            var afterImdb2 = $('.rate--imdb', rateLine);
+            if (afterImdb2.length) rtElement.insertAfter(afterImdb2);
+            else rateLine.append(rtElement);
+        }
+    }
+
+    /**
+     * PopcornMeter / Audience score (після Rotten Tomatoes)
+     * - popcorn_display показуємо як ціле число (91)
+     * - логотип із GitHub, 22px (+2px від базового)
+     */
+    if (data.popcorn_display && !$('.rate--popcorn', rateLine).length) {
+        var pcElement = $(
+            '<div class="full-start__rate rate--popcorn">' +
+                '<div>' + data.popcorn_display + '</div>' +
+                '<div class="source--name"></div>' +
+            '</div>'
+        );
+
+        pcElement.find('.source--name').html(
+            iconImg(ICONS.popcorn, 'Audience', 22)
+        );
+
+        // Ставимо після Rotten Tomatoes; якщо RT нема — після Metacritic; інакше в кінець
+        var afterRt = $('.rate--rt', rateLine);
+        if (afterRt.length) {
+            pcElement.insertAfter(afterRt);
+        } else {
+            var afterMc2 = $('.rate--mc', rateLine);
+            if (afterMc2.length) pcElement.insertAfter(afterMc2);
+            else rateLine.append(pcElement);
+        }
+    }
+
+    /**
+     * Нагороди:
+     * prepend у зворотньому порядку:
+     * - інші нагороди (awards.png)
+     * - Emmy (emmy_svg)
+     * - Oscars (оскар-статуетка)
+     *
+     * Всі вони золотого кольору для тексту ("rate--gold"),
+     * ми їм додали .rate--oscars/.rate--emmy/.rate--awards раніше,
+     * іконки:
+     *  - awards.png   ~20px
+     *  - emmy_svg     ми зараз масштабували до 16px контейнер з scale(1.2)
+     *  - Oscar статуетка ~18px контейнер
+     */
+
+    // Інші нагороди (other wins)
+    if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
+        var awardsElement = $(
+            '<div class="full-start__rate rate--awards rate--gold">' +
+                '<div>' + data.awards + '</div>' +
+                '<div class="source--name"></div>' +
+            '</div>'
+        );
+        awardsElement.find('.source--name')
+            .html(iconImg(ICONS.awards, 'Awards', 20))
+            .attr('title', Lampa.Lang.translate('awards_other_label'));
+
+        rateLine.prepend(awardsElement);
+    }
+
+    // Emmy
+    if (data.emmy && data.emmy > 0 && !$('.rate--emmy', rateLine).length) {
+        var emmyElement = $(
+            '<div class="full-start__rate rate--emmy rate--gold">' +
+                '<div>' + data.emmy + '</div>' +
+                '<div class="source--name"></div>' +
+            '</div>'
+        );
+
+        emmyElement.find('.source--name')
+            .html(emmyIconInline())
+            .attr('title', Lampa.Lang.translate('emmy_label'));
+
+        rateLine.prepend(emmyElement);
+    }
+
+    // Oscars
+    if (data.oscars && data.oscars > 0 && !$('.rate--oscars', rateLine).length) {
+        var oscarsElement = $(
+            '<div class="full-start__rate rate--oscars rate--gold">' +
+                '<div>' + data.oscars + '</div>' +
+                '<div class="source--name"></div>' +
+            '</div>'
+        );
+
+        oscarsElement.find('.source--name')
+            .html(oscarIconInline())
+            .attr('title', Lampa.Lang.translate('oscars_label'));
+
+        rateLine.prepend(oscarsElement);
+    }
+}
+
 
 
 

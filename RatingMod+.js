@@ -319,7 +319,7 @@ body.lmp-enh--mono .full-start__rate {
 
     function emmyIconInline() {
         // базова висота 16px, + offset (іконки масштабуються разом з іншими)
-        var base = 16 + RatingsSettings.iconOffsetPx;
+        var base = 14 + RatingsSettings.iconOffsetPx;
         if (base < 1) base = 1;
 
         var filter = RatingsSettings.monochrome ? 'filter:grayscale(100%);' : '';
@@ -335,7 +335,7 @@ body.lmp-enh--mono .full-start__rate {
     // Я залишаю ту ж base64 з твоєї версії. Якщо захочеш – можеш змінити тут.
     function oscarIconInline() {
         // базова висота 16px + зсув з меню (iconOffsetPx)
-        var base = 16 + RatingsSettings.iconOffsetPx;
+        var base = 14 + RatingsSettings.iconOffsetPx;
         if (base < 1) base = 1;
 
         // ч/б режим через перемикач "Ч/Б логотипи"

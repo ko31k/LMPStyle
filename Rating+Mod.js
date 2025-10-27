@@ -2,14 +2,12 @@
     'use strict';
 
     /********************************************************************
-     * Ratings Plugin (оновлений)
+     * Ratings Plugin
      * 
-     * 1. Меню "Рейтинги" як окремий розділ у Lampa.SettingsApi
-     * 2. Збереження ключів API та прапорців у Lampa.Storage
-     * 3. Ч/Б режим логотипів через клас body.ratings-plugin--mono
-     * 4. Відображення рейтингів, середнього балу та нагород —
-     *    ТОЧНО так, як в оригіналі плагіна (ніяких нових версток)
-     * 5. Кеш mdblist + omdb з TTL
+     * - Окремий розділ "Рейтинги" в налаштуваннях Lampa
+     * - Ключі OMDb / MDBList, перемикачі Ч/Б, Нагороди, Середній рейтинг
+     * - Кнопка "Очистити кеш рейтингів" з повідомленням
+     * - Відображення рейтингів, нагород і середнього рейтингу
      ********************************************************************/
 
     /*******************************
@@ -20,14 +18,14 @@
     var STORAGE_KEY_MONO        = 'ratings_plugin_monochrome';
     var STORAGE_KEY_SHOWAWARDS  = 'ratings_plugin_showawards';
     var STORAGE_KEY_SHOWAVERAGE = 'ratings_plugin_showaverage';
-    var STORAGE_KEY_CLEARCACHE  = 'ratings_plugin_clearcache'; // для кнопки "очистити кеш"
+    var STORAGE_KEY_CLEARCACHE  = 'ratings_plugin_clearcache'; // службовий прапорець для кнопки
 
     /*******************************
      * КЛЮЧІ ДЛЯ КЕШУ
      *******************************/
     var CACHE_TIME_MS         = 3 * 24 * 60 * 60 * 1000; // 3 дні
-    var RATINGS_CACHE_KEY     = 'ratings_plugin_cache';     // раніше lmp_enh_rating_cache
-    var ID_MAPPING_CACHE_KEY  = 'ratings_plugin_id_map';    // раніше maxsm_rating_id_mapping
+    var RATINGS_CACHE_KEY     = 'ratings_plugin_cache';    // кеш відповідей mdblist+omdb
+    var ID_MAPPING_CACHE_KEY  = 'ratings_plugin_id_map';   // кеш TMDB->IMDb
 
     /*******************************
      * ДОПОМОЖНІ I/O
@@ -45,12 +43,24 @@
     function saveToStorage(key, value) {
         try {
             Lampa.Storage.set(key, value);
-        } catch (e) {
-            /* no-op */
-        }
+        } catch (e) { /* no-op */ }
     }
 
-    // Налаштування плагіна як "живі" геттери
+    /*******************************
+     * ІНІЦІАЛІЗАЦІЯ ЗНАЧЕНЬ ЗА ЗАМОВЧУВАННЯМ
+     * (щоб у меню "Нагороди" і "Середній рейтинг"
+     * одразу було "Так", а не "Ні")
+     *******************************/
+    if (typeof Lampa.Storage.get(STORAGE_KEY_SHOWAWARDS) === 'undefined') {
+        saveToStorage(STORAGE_KEY_SHOWAWARDS, true);
+    }
+    if (typeof Lampa.Storage.get(STORAGE_KEY_SHOWAVERAGE) === 'undefined') {
+        saveToStorage(STORAGE_KEY_SHOWAVERAGE, true);
+    }
+
+    /*******************************
+     * Обʼєкт-налаштування (живі геттери)
+     *******************************/
     var RatingsSettings = {
         get mdblistKey() {
             return loadFromStorage(STORAGE_KEY_MDBLIST, '');
@@ -62,12 +72,10 @@
             return !!loadFromStorage(STORAGE_KEY_MONO, false);
         },
         get showAwards() {
-            var v = loadFromStorage(STORAGE_KEY_SHOWAWARDS, undefined);
-            return (typeof v === 'undefined') ? true : !!v;
+            return !!loadFromStorage(STORAGE_KEY_SHOWAWARDS, true);
         },
         get showAverage() {
-            var v = loadFromStorage(STORAGE_KEY_SHOWAVERAGE, undefined);
-            return (typeof v === 'undefined') ? true : !!v;
+            return !!loadFromStorage(STORAGE_KEY_SHOWAVERAGE, true);
         }
     };
 
@@ -83,7 +91,7 @@
     applyMonochromeClass(); // застосувати при старті
 
     /*******************************
-     * ПЕРЕКЛАДИ ДЛЯ ТУЛТІПІВ ТА ОПИСІВ
+     * ПЕРЕКЛАДИ
      *******************************/
     Lampa.Lang.add({
         oscars_label: {
@@ -111,7 +119,6 @@
         source_mc:  { ru:'Metacritic', en:'Metacritic', uk:'Metacritic' },
         source_rt:  { ru:'Rotten', en:'Rotten', uk:'Rotten' },
 
-        // Опис пунктів меню
         ratings_plugin_mdblist_desc: {
             uk: "Введи свій ключ MDBList. Можна отримати на mdblist.com",
             en: "Enter your MDBList API key. You can get it at mdblist.com",
@@ -150,8 +157,7 @@
     });
 
     /*******************************
-     * КОНСТАНТИ / РЕСУРСИ ІКОНОК
-     * (точно як у твоєму оригіналі)
+     * РЕСУРСИ ІКОНОК (як в оригіналі)
      *******************************/
     var ICONS = {
         total_star: 'https://raw.githubusercontent.com/ko31k/LMPStyle/main/wwwroot/star.png',
@@ -164,24 +170,10 @@
         rotten_good:'https://www.streamingdiscovery.com/logo/rotten-tomatoes.png'
     };
 
-    // Повний SVG статуетки Emmy із оригіналу.
-    // ВАЖЛИВО: сюди вставляється ТВОЯ повна змінна emmy_svg з початкового файлу.
-    // Я скорочую тут до '...' щоб не дублювати мегабайтний SVG в цій відповіді.
-    // У себе в коді заміни '...' на той самий emmy_svg, який уже є у твоєму файлі.
-    var emmy_svg = '...'; // <-- вставити повний emmy_svg з твоєї версії
+    // !!! ВСТАВ СЮДИ ПОВНИЙ emmy_svg З ОРИГІНАЛУ !!!
+    var emmy_svg = '/* вставити повний emmy_svg із твого оригіналу */';
 
-    // Oscar inline (base64 svg) — залишаємо як у твоєму оригіналі
-    function oscarIconInline() {
-        var filter = RatingsSettings.monochrome ? 'filter:grayscale(100%);' : '';
-        return '<span style="' +
-            'height:18px; width:auto; display:inline-block; vertical-align:middle; ' +
-            'object-fit:contain; transform:scale(1.2); transform-origin:center; ' +
-            filter + '">' +
-            '<img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnMiIKICAgdmlld0JveD0iMCAwIDM4LjE4NTc0NCAxMDEuNzY1IgogICBoZWlnaHQ9IjEzNS42Njk0NSIKICAgd2lkdGg9IjUwLjkwODIwMyI+CiAgPG1ldGFkYXRhCiAgICAgaWQ9Im1ldGFkYXRhMTYiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPjwvZGM6dGl0bGU+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04LjQwNjE3NDUsMC42OTMpIiBzdHlsZT0iZmlsbDojZmZjYzAwIj48cGF0aCBkPSJtIDI3LjM3MSwtMC42OTMg..."></img>' +
-            '</span>';
-    }
-
-    // Emmy inline — використовуємо збережений emmy_svg
+    // Emmy inline
     function emmyIconInline() {
         var filter = RatingsSettings.monochrome ? 'filter:grayscale(100%);' : '';
         return '<span style="' +
@@ -192,7 +184,22 @@
             '</span>';
     }
 
-    // будь-яка логотипна картинка (IMDb, TMDB, Metacritic, Rotten, Popcorn, Star, Awards)
+    // Oscar inline — тепер маленький вбудований SVG статуетки
+    // (стабільний, без обрізаного base64; колір золото, потім через grayscale стане сірим)
+    function oscarIconInline() {
+        var filter = RatingsSettings.monochrome ? 'filter:grayscale(100%);' : '';
+        return '' +
+            '<span style="' +
+            'height:18px; width:auto; display:inline-block; vertical-align:middle; ' +
+            'object-fit:contain; transform:scale(1.2); transform-origin:center; ' +
+            filter + '">' +
+            '<img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnMiIKICAgdmlld0JveD0iMCAwIDM4LjE4NTc0NCAxMDEuNzY1IgogICBoZWlnaHQ9IjEzNS42Njk0NSIKICAgd2lkdGg9IjUwLjkwODIwMyI+CiAgPG1ldGFkYXRhCiAgICAgaWQ9Im1ldGFkYXRhMTYiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPjwvZGM6dGl0bGU+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxkZWZzCiAgICAgaWQ9ImRlZnMxNCIgLz4KICA8ZwogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04LjQwNjE3NDUsMC42OTMpIgogICAgIGlkPSJnNCIKICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7ZmlsbDojZmZjYzAwIj4KICAgIDxwYXRoCiAgICAgICBpZD0icGF0aDYiCiAgICAgICBkPSJtIDI3LjM3MSwtMC42OTMgYyAtMy45MjcsMC4zNjYgLTUuMjI5LDMuNTM4IC00Ljk2Myw2Ljc3OCAwLjI2NiwzLjIzOSAzLjY4NSw2Ljk3MiAwLjEzNSw4Ljk1NiAtMS41NzcsMS40MTMgLTMuMTU0LDMuMDczIC01LjIwNywzLjU0IC0yLjY3OSwwLjYwNyAtNC4yODcsMy4wNTQgLTQuNjA3LDYuNDE5IDEuMzg4LDQuODI0IDAuMzY1LDkuMjg1IDEuNzczLDEyLjgyNCAxLjQwNywzLjUzOSAzLjY5NiwzLjgzMSAzLjk4Niw1LjA3NiAwLjMxNyw3LjYzNyAyLjM0MSwxNy41MzUgMC44NTYsMjQuOTMgMS4xNzIsMC4xODQgMC45MywwLjQ0NCAwLjg5NCwwLjcyOSAtMC4wMzYsMC4yODQgLTAuNDgsMC4zODEgLTEuMDg4LDAuNTI3IDAuODQ3LDcuNjg0IC0wLjI3OCwxMi4xMzYgMS45ODMsMTguNzcxIGwgMCwzLjU5MiAtMS4wNywwIDAsMS41MjQgYyAwLDAgLTcuMzEsLTAuMDA1IC04LjU2NSwwIDAsMCAwLjY4LDIuMTU5IC0xLjUyMywzLjAyNyAwLjAwOCwxLjEgMCwyLjcxOSAwLDIuNzE5IGwgLTEuNTY5LDAgMCwyLjM1MyBjIDEzLjIyMTcwMywwIDI2LjgzNzkwNywwIDM4LjE4NiwwIGwgMCwtMi4zNTIgLTEuNTcsMCBjIDAsMCAtMC4wMDcsLTEuNjE5IDAuMDAxLC0yLjcxOSBDIDQyLjgyLDk1LjEzMyA0My41LDkyLjk3NCA0My41LDkyLjk3NCBjIC0xLjI1NSwtMC4wMDUgLTguNTY0LDAgLTguNTY0LDAgbCAwLC0xLjUyNCAtMS4wNzMsMCAwLC0zLjU5MiBjIDIuMjYxLC02LjYzNSAxLjEzOCwtMTEuMDg3IDEuOTg1LC0xOC43NzEgLTAuNjA4LC0wLjE0NiAtMS4wNTQsLTAuMjQzIC0xLjA5LC0wLjUyNyAtMC4wMzYsLTAuMjg1IC0wLjI3OCwtMC41NDUgMC44OTQsLTAuNzI5IC0wLjg0NSwtOC4wNTggMC45MDIsLTE3LjQ5MyAwLjg1OCwtMjQuOTMgMC4yOSwtMS4yNDUgMi41NzksLTEuNTM3IDMuOTg2LC01LjA3NiAxLjQwOCwtMy41MzkgMC4zODUsLTggMS43NzQsLTEyLjgyNCAtMC4zMiwtMy4zNjUgLTEuOTMxLC01LjgxMiAtNC42MSwtNi40MiAtMi4wNTMsLTAuNDY2IC0zLjQ2OSwtMi42IC01LjM2OSwtMy44ODQgLTMuMTE4LC0yLjQ3MiAtMC42MSwtNS4zNjQgMC4zNzMsLTguNTc4IDAsLTUuMDEgLTIuMTU0LC02LjQ4MyAtNS4yOTMsLTYuODExIHoiCiAgICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7b3BhY2l0eToxO2ZpbGw6I2ZmY2MwMCIgLz4KICA8L2c+Cjwvc3ZnPgo="' +
+            '" style="height:18px; width:auto; display:inline-block; vertical-align:middle; object-fit:contain;">' +
+            '</span>';
+    }
+
+    
+    // Будь-який логотип (IMDb, TMDB, Metacritic, RT, Popcorn, Star, Awards)
     function iconImg(url, alt, sizePx, extraStyle) {
         var filter = RatingsSettings.monochrome ? 'filter:grayscale(100%);' : '';
         return '<img style="' +
@@ -204,11 +211,7 @@
     }
 
     /*******************************
-     * СТИЛІ (взято з оригіналу, адаптовано)
-     * - золотий текст для нагород
-     * - приглушення в монохромному режимі
-     * - ущільнені відступи між бейджами
-     * - loader "Loading ratings"
+     * СТИЛІ (з твого оригіналу + правки під Ч/Б режим)
      *******************************/
     function injectStyles() {
         if (document.getElementById('ratings_plugin_styles')) return;
@@ -239,15 +242,15 @@
     40% {transform:translateY(-0.5em);opacity:1;}
 }
 
-/* кольоровий режим за замовчуванням */
+/* звичайний режим: золото для нагород */
 .rate--oscars, .rate--emmy, .rate--awards, .rate--gold {
     color: gold;
 }
 
-/* монохромний режим:
+/* Ч/Б режим:
    - глушимо золото
-   - глушимо зелені/лаймові/помаранчеві/червоні кольори рейтингу
-   - скидаємо яскравість .full-start__rate
+   - глушимо кольорові класи рейтингів
+   - робимо текст бейджів нейтральним
 */
 body.ratings-plugin--mono .rate--oscars,
 body.ratings-plugin--mono .rate--emmy,
@@ -279,7 +282,7 @@ body.ratings-plugin--mono .full-start__rate {
     injectStyles();
 
     /*******************************
-     * ДОПОМІЖНІ ФУНКЦІЇ ЛОАДЕРА
+     * LOADER (анімовані крапки)
      *******************************/
     function addLoadingAnimation() {
         var render = Lampa.Activity.active().activity.render();
@@ -306,7 +309,7 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * КЕШ
+     * КЕШ (рейтинги + мапа ID)
      *******************************/
     function nowMs() {
         return Date.now ? Date.now() : (new Date()).getTime();
@@ -376,7 +379,6 @@ body.ratings-plugin--mono .full-start__rate {
 
         requestJson(url, function (data) {
             var imdbId = data && data.imdb_id ? data.imdb_id : null;
-            // якщо не знайшли, fallback для tv
             if (!imdbId && normType === 'tv') {
                 var altUrl = 'https://api.themoviedb.org/3/tv/' + tmdbId +
                              '?api_key=' + Lampa.TMDB.key();
@@ -405,7 +407,7 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * РОЗБІР НАГОРОД І ВІКОВОГО РЕЙТИНГУ
+     * Парс нагород OMDb та вікових рейтингів
      *******************************/
     var AGE_RATINGS = {
         'G': '3+',
@@ -459,7 +461,7 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * MDBList: TMDB / IMDb / Metacritic / RT / Popcorn
+     * MDBList ratings
      *******************************/
     function fetchMdbListRatings(card, callback) {
         var key = RatingsSettings.mdblistKey;
@@ -553,7 +555,7 @@ body.ratings-plugin--mono .full-start__rate {
                     res.mc_user_for_avg = user10;
                 }
 
-                // Metacritic CRITIC (0..100 -> /10)
+                // Metacritic CRITIC (0..100 → /10)
                 if (src.indexOf('metacritic') !== -1 && !isUserSource(src)) {
                     var critic10 = val > 10 ? (val / 10) : val;
                     res.mc_critic_display = critic10.toFixed(1);
@@ -581,7 +583,7 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * OMDb: IMDb, Metacritic Critic, Rotten, Age rating, Awards
+     * OMDb ratings
      *******************************/
     function fetchOmdbRatings(card, callback) {
         var key = RatingsSettings.omdbKey;
@@ -654,7 +656,7 @@ body.ratings-plugin--mono .full-start__rate {
                 ageRating: data.Rated || null,
 
                 oscars: awardsParsed.oscars || 0,
-                emmy: awardsParsed.emmy || 0,
+                emmy:   awardsParsed.emmy || 0,
                 awards: awardsParsed.awards || 0
             };
 
@@ -665,16 +667,16 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * МЕРДЖ MDBLIST + OMDb
+     * MERGE MDBList + OMDb
      *******************************/
     function mergeRatings(mdb, omdb) {
         mdb = mdb || {};
         omdb = omdb || {};
 
-        // вибір Metacritic:
-        // 1) user score (mdb.mc_user_*)
-        // 2) critic score з MDBList
-        // 3) critic score з OMDb
+        // Metacritic вибираємо в порядку:
+        // 1) користувацький (mdb.mc_user_*)
+        // 2) критики з MDBList
+        // 3) критики з OMDb
         var mc_display = null;
         var mc_for_avg = null;
         if (mdb.mc_user_display) {
@@ -716,8 +718,8 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * ОНОВЛЕННЯ ПРИХОВАНИХ ЕЛЕМЕНТІВ КАРТКИ (IMDb/TMDB PG)
-     * — як у твоєму коді
+     * ОНОВЛЕННЯ ІСНУЮЧИХ ЕЛЕМЕНТІВ КАРТКИ
+     * (IMDb/TMDB/PG)
      *******************************/
     function updateHiddenElements(data) {
         var render = Lampa.Activity.active().activity.render();
@@ -734,38 +736,36 @@ body.ratings-plugin--mono .full-start__rate {
             }
         }
 
-        // IMDb блок
+        // IMDb
         var imdbContainer = $('.rate--imdb', render);
         if (imdbContainer.length) {
             if (data.imdb_display) {
                 imdbContainer.removeClass('hide');
-                var parts = imdbContainer.find('> div');
-                if (parts.length >= 2) {
-                    parts.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
-                    parts.eq(1).html(iconImg(ICONS.imdb, 'IMDb', 22));
+                var imdbParts = imdbContainer.find('> div');
+                if (imdbParts.length >= 2) {
+                    imdbParts.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
+                    imdbParts.eq(1).html(iconImg(ICONS.imdb, 'IMDb', 22));
                 }
             } else {
                 imdbContainer.addClass('hide');
             }
         }
 
-        // TMDB блок
+        // TMDB
         var tmdbContainer = $('.rate--tmdb', render);
         if (tmdbContainer.length) {
             if (data.tmdb_display) {
-                var parts2 = tmdbContainer.find('> div');
-                if (parts2.length >= 2) {
-                    parts2.eq(0).text(parseFloat(data.tmdb_display).toFixed(1));
-                    parts2.eq(1).html(iconImg(ICONS.tmdb, 'TMDB', 24));
+                var tmdbParts = tmdbContainer.find('> div');
+                if (tmdbParts.length >= 2) {
+                    tmdbParts.eq(0).text(parseFloat(data.tmdb_display).toFixed(1));
+                    tmdbParts.eq(1).html(iconImg(ICONS.tmdb, 'TMDB', 24));
                 }
             }
         }
     }
 
     /*******************************
-     * ВСТАВКА БЕЙДЖІВ У КАРТКУ
-     * (Metacritic, Rotten Tomatoes, Popcorn, Awards)
-     * логіка і верстка = як у твоєму оригіналі
+     * ДОДАЄМО НАШІ БЕЙДЖІ (Metacritic, RT, Popcorn, Нагороди)
      *******************************/
     function insertRatings(data) {
         var render = Lampa.Activity.active().activity.render();
@@ -776,7 +776,6 @@ body.ratings-plugin--mono .full-start__rate {
 
         // Metacritic (після IMDb)
         if (data.mc_display && !$('.rate--mc', rateLine).length) {
-            // mc_display завжди у форматі "X.Y"
             var mcElement = $(
                 '<div class="full-start__rate rate--mc">' +
                     '<div>' + data.mc_display + '</div>' +
@@ -805,6 +804,7 @@ body.ratings-plugin--mono .full-start__rate {
             rtElement.find('.source--name').html(
                 iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra)
             );
+
             var afterMc = $('.rate--mc', rateLine);
             if (afterMc.length) rtElement.insertAfter(afterMc);
             else {
@@ -825,6 +825,7 @@ body.ratings-plugin--mono .full-start__rate {
             pcElement.find('.source--name').html(
                 iconImg(ICONS.popcorn, 'Audience', 22)
             );
+
             var afterRt = $('.rate--rt', rateLine);
             if (afterRt.length) pcElement.insertAfter(afterRt);
             else {
@@ -834,9 +835,9 @@ body.ratings-plugin--mono .full-start__rate {
             }
         }
 
-        // Нагороди (prepend), тільки якщо дозволено в налаштуваннях
+        // Нагороди (prepend), тільки якщо дозволено
         if (RatingsSettings.showAwards) {
-            // other awards
+            // Інші нагороди
             if (data.awards && data.awards > 0 && !$('.rate--awards', rateLine).length) {
                 var awardsElement = $(
                     '<div class="full-start__rate rate--awards rate--gold">' +
@@ -884,9 +885,7 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * СЕРЕДНІЙ РЕЙТИНГ (TOTAL/AVG)
-     * - логіка як у твоєму оригіналі
-     * - тепер показуємо тільки якщо ввімкнено в налаштуваннях showAverage
+     * СЕРЕДНІЙ РЕЙТИНГ (AVG)
      *******************************/
     function calculateAverageRating(data) {
         var render = Lampa.Activity.active().activity.render();
@@ -895,7 +894,17 @@ body.ratings-plugin--mono .full-start__rate {
         var rateLine = $('.full-start-new__rate-line', render);
         if (!rateLine.length) return;
 
-        // Прихопимо всі джерела, які йдуть у середній
+        // прибираємо попередній AVG
+        $('.rate--avg', rateLine).remove();
+
+        // якщо вимкнено показ середнього — нічого не додаємо
+        if (!RatingsSettings.showAverage) {
+            removeLoadingAnimation();
+            rateLine.css('visibility', 'visible');
+            return;
+        }
+
+        // беремо всі джерела, які йдуть у середній
         var parts = [];
         if (data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) parts.push(data.tmdb_for_avg);
         if (data.imdb_for_avg && !isNaN(data.imdb_for_avg)) parts.push(data.imdb_for_avg);
@@ -903,32 +912,19 @@ body.ratings-plugin--mono .full-start__rate {
         if (data.rt_for_avg && !isNaN(data.rt_for_avg))     parts.push(data.rt_for_avg);
         if (data.popcorn_for_avg && !isNaN(data.popcorn_for_avg)) parts.push(data.popcorn_for_avg);
 
-        // прибрати попередню версію AVG перед перемалюванням
-        $('.rate--avg', rateLine).remove();
-
-        // якщо немає джерел → немає середнього
         if (!parts.length) {
             removeLoadingAnimation();
             rateLine.css('visibility', 'visible');
             return;
         }
 
-        // якщо користувач вимкнув "Середній рейтинг", то просто не вставляємо бейдж
-        if (!RatingsSettings.showAverage) {
-            removeLoadingAnimation();
-            rateLine.css('visibility', 'visible');
-            return;
-        }
-
-        // обчислити середній
         var sum = 0;
         for (var i = 0; i < parts.length; i++) sum += parts[i];
         var avg = sum / parts.length;
 
         var colorClass = getRatingClass(avg);
 
-        // Формат: <div class="full-start__rate rate--avg {colorClass}"><div>7.5</div><div class="source--name">★</div></div>
-        // Увага: тепер без тексту 'TOTAL'/'AVG', тільки іконка-зірка + число.
+        // тільки число + зірка (ICON.total_star), без слова "TOTAL"
         var avgElement = $(
             '<div class="full-start__rate rate--avg ' + colorClass + '">' +
                 '<div>' + avg.toFixed(1) + '</div>' +
@@ -948,12 +944,7 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * ГОЛОВНИЙ PIPELINE:
-     * 1. нормалізувати дані картки
-     * 2. отримати imdb_id (якщо треба)
-     * 3. витягнути MDBList + OMDb
-     * 4. змерджити
-     * 5. оновити картку
+     * ПОВНИЙ ЦИКЛ ОНОВЛЕННЯ ДАНИХ
      *******************************/
     var currentRatingsData = null;
 
@@ -1032,10 +1023,10 @@ body.ratings-plugin--mono .full-start__rate {
     }
 
     /*******************************
-     * SETTINGS МЕНЮ "Рейтинги"
+     * МЕНЮ "РЕЙТИНГИ" У НАЛАШТУВАННЯХ
      *******************************/
     (function registerSettingsMenu() {
-        // окремий розділ у налаштуваннях з власною іконкою ★ контуром
+        // окремий розділ у Settings із контурною зіркою
         Lampa.SettingsApi.addComponent({
             component: "ratings_plugin",
             name: 'Рейтинги',
@@ -1083,7 +1074,7 @@ body.ratings-plugin--mono .full-start__rate {
             }
         });
 
-        // 3. Кольорові або Ч/Б логотипи (перемикач)
+        // 3. Кольорові або Ч/Б логотипи
         Lampa.SettingsApi.addParam({
             component: "ratings_plugin",
             param: {
@@ -1114,6 +1105,7 @@ body.ratings-plugin--mono .full-start__rate {
                 description: Lampa.Lang.translate('ratings_plugin_awards_desc')
             },
             onChange: function () {
+                // оновимо UI, прапорець збережеться автоматично
                 Lampa.Settings.update();
             }
         });
@@ -1150,7 +1142,17 @@ body.ratings-plugin--mono .full-start__rate {
             onChange: function (value) {
                 if (value === true) {
                     clearRatingsCache();
+
+                    // візуальний фідбек
+                    if (Lampa.Noty && Lampa.Noty.show) {
+                        Lampa.Noty.show('Кеш рейтингів очищено');
+                    }
+
+                    // повертаємо перемикач назад у "ні",
+                    // щоб не залишався на "так"
                     saveToStorage(STORAGE_KEY_CLEARCACHE, false);
+
+                    // оновлюємо панель налаштувань
                     Lampa.Settings.update();
                 }
             }
@@ -1176,7 +1178,6 @@ body.ratings-plugin--mono .full-start__rate {
      *******************************/
     function startPlugin() {
         window.ratings_plugin_started = true;
-
         Lampa.Listener.follow('full', function (e) {
             if (e.type === 'complite') {
                 setTimeout(function () {

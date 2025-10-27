@@ -327,7 +327,7 @@ body.lmp-enh--mono .full-start__rate {
             'height:' + base + 'px; width:auto; display:inline-block; vertical-align:middle; ' +
             'transform:scale(1.2); transform-origin:center; ' +
             filter + '">' +
-            EMMY_SVG +
+            emmy_svg +
             '</span>';
     }
 

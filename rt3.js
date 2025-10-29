@@ -164,6 +164,22 @@
 "    vertical-align:middle;" +
 "    object-fit:contain;" +
 "}" +
+
+
+/* Базові розміри іконок (замість inline-стилів) */
+".rate--imdb .source--name img," +
+".rate--mc .source--name img," +
+".rate--rt .source--name img," +
+".rate--popcorn .source--name img {" +
+"    height: 22px;" +
+"}" +
+".rate--tmdb .source--name img {" +
+"    height: 24px;" +
+"}" +
+".rate--awards .source--name img," +
+".rate--avg .source--name img {" +
+"    height: 20px;" +
+"}" +
         
         "</style>";
 
@@ -220,9 +236,10 @@
 
     // універсальна картинка-сервіс
     // [ВИПРАВЛЕНО]: прибрано 'var filter' - тепер цим керує applyBwLogos() з меню
-    function iconImg(url, alt, sizePx, extraStyle) {
+function iconImg(url, alt, sizePx, extraStyle) {
         return '<img style="' +
-            'height:' + sizePx + 'px; width:auto; display:inline-block; vertical-align:middle; ' +
+            /* 'height:' + sizePx + 'px; ' + */ // Висота тепер у CSS
+            'width:auto; display:inline-block; vertical-align:middle; ' +
             'object-fit:contain; ' +
             (extraStyle || '') + ' ' +
             '" ' +
@@ -1106,40 +1123,37 @@
 // Масштабування логотипів (у т.ч. IMDb + нагороди)
 function tuneLogos(offsetPx){
     var logos = document.querySelectorAll(
+        // Іконки в .source--name (MC, RT, Popcorn, Awards, AVG)
         '.full-start__rate .source--name img,' +
-        '.full-start__rate .source--name span,' +
-        '.rate--imdb .source--name img,' +            // підстраховка для IMDb
-        '.lmp-award-icon,' +                          // наші нові обгортки нагород
-        '.lmp-award-icon img,' +
-        '.lmp-award-icon svg'
+        // Іконки IMDb та TMDB, що лежать у другому div
+        '.rate--imdb > div:nth-child(2) img,' +
+        '.rate--tmdb > div:nth-child(2) img,' +
+        // <span>-обгортки для Оскара/Еммі
+        '.lmp-award-icon'
     );
 
     logos.forEach(function(logo){
         if (!logo.getAttribute('data-base-height')){
             var ch = parseFloat(window.getComputedStyle(logo).height);
-            if (isNaN(ch)) ch = 16;
+            if (isNaN(ch) || ch <= 0) {
+                // Фоллбек, якщо CSS не завантажився
+                if (logo.closest('.rate--tmdb')) ch = 24;
+                else if (logo.closest('.rate--awards, .rate--avg')) ch = 20;
+                else if (logo.matches('.lmp-award-icon')) ch = 18;
+                else ch = 22; // IMDb, MC, RT, Popcorn
+            }
             logo.setAttribute('data-base-height', ch);
         }
 
         var baseH = parseFloat(logo.getAttribute('data-base-height'));
-        if (isNaN(baseH) || baseH <= 0) baseH = 16;
+        if (isNaN(baseH) || baseH <= 0) baseH = 18; // Загальний фоллбек
 
         var finalH = baseH + offsetPx;
         if (finalH < 1) finalH = 1;
 
         logo.style.height     = finalH + 'px';
         logo.style.maxHeight  = finalH + 'px';
-        logo.style.lineHeight = finalH + 'px';
-
-        // оновлюємо всі внутрішні <img>/<svg>, якщо є (Оскар/Еммі всередині <span>)
-        var innerImgs = logo.querySelectorAll && logo.querySelectorAll('img,svg');
-        if (innerImgs && innerImgs.length){
-            innerImgs.forEach(function(inner){
-                inner.style.height     = finalH + 'px';
-                inner.style.maxHeight  = finalH + 'px';
-                inner.style.lineHeight = finalH + 'px';
-            });
-        }
+        logo.style.lineHeight = finalH + 'px'; // Важливо для <span>-обгорток
     });
 }
 
@@ -1189,16 +1203,19 @@ function tuneGap(gapStep){
 // Ч/Б логотипи (грейскейл) – тепер також чіпляємо IMDb і наші нагороди
 function applyBwLogos(enabled){
     var logos = document.querySelectorAll(
+        // Іконки в .source--name (MC, RT, Popcorn, Awards, AVG)
         '.full-start__rate .source--name img,' +
-        '.full-start__rate .source--name span,' +
-        '.rate--imdb .source--name img,' +
-        '.lmp-award-icon,' +
-        '.lmp-award-icon img,' +
-        '.lmp-award-icon svg'
+        // Іконки IMDb та TMDB, що лежать у другому div
+        '.rate--imdb > div:nth-child(2) img,' +
+        '.rate--tmdb > div:nth-child(2) img,' +
+        // <span>-обгортки для Оскара/Еммі
+        '.lmp-award-icon'
     );
 
+    var filterValue = enabled ? 'grayscale(100%)' : '';
+
     logos.forEach(function(node){
-        node.style.filter = enabled ? 'grayscale(100%)' : '';
+        node.style.filter = filterValue;
     });
 }
 

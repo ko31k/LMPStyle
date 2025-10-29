@@ -318,7 +318,7 @@ function iconImg(url, alt, sizePx, extraStyle) {
     // Oscar статуетка
 function oscarIconInline() {
     return '' +
-        '<span class="lmp-award-icon">' +
+        '<span class="lmp-award-icon lmp-award-icon--oscar">' +
             '<img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnMiIKICAgdmlld0JveD0iMCAwIDM4LjE4NTc0NCAxMDEuNzY1IgogICBoZWlnaHQ9IjEzNS42Njk0NSIKICAgd2lkdGg9IjUwLjkwODIwMyI+CiAgPG1ldGFkYXRhCiAgICAgaWQ9Im1ldGFkYXRhMTYiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPjwvZGM6dGl0bGU+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxkZWZzCiAgICAgaWQ9ImRlZnMxNCIgLz4KICA8ZwogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04LjQwNjE3NDUsMC42OTMpIgogICAgIGlkPSJnNCIKICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7ZmlsbDojZmZjYzAwIj4KICAgIDxwYXRoCiAgICAgICBpZD0icGF0aDYiCiAgICAgICBkPSJtIDI3LjM3MSwtMC42OTMgYyAtMy45MjcsMC4zNjYgLTUuMjI5LDMuNTM4IC00Ljk2Myw2Ljc3OCAwLjI2NiwzLjIzOSAzLjY4NSw2Ljk3MiAwLjEzNSw4Ljk1NiAtMS41NzcsMS40MTMgLTMuMTU0LDMuMDczIC01LjIwNywzLjU0IC0yLjY3OSwwLjYwNyAtNC4yODcsMy4wNTQgLTQuNjA3LDYuNDE5IDEuMzg4LDQuODI0IDAuMzY1LDkuMjg1IDEuNzczLDEyLjgyNCAxLjQwNywzLjUzOSAzLjY5NiwzLjgzMSAzLjk4Niw1LjA3NiAwLjMxNyw3LjYzNyAyLjM0MSwxNy41MzUgMC44NTYsMjQuOTMgMS4xNzIsMC4xODQgMC45MywwLjQ0NCAwLjg5NCwwLjcyOSAtMC4wMzYsMC4yODQgLTAuNDgsMC4zODEgLTEuMDg4LDAuNTI3IDAuODQ3LDcuNjg0IC0wLjI3OCwxMi4xMzYgMS45ODMsMTguNzcxIGwgMCwzLjU5MiAtMS4wNywwIDAsMS41MjQgYyAwLDAgLTcuMzEsLTAuMDA1IC04LjU2NSwwIDAsMCAwLjY4LDIuMTU5IC0xLjUyMywzLjAyNyAwLjAwOCwxLjEgMCwyLjcxOSAwLDIuNzE5IGwgLTEuNTY5LDAgMCwyLjM1MyBjIDEzLjIyMTcwMywwIDI2LjgzNzkwNywwIDM4LjE4NiwwIGwgMCwtMi4zNTIgLTEuNTcsMCBjIDAsMCAtMC4wMDcsLTEuNjE5IDAuMDAxLC0yLjcxOSBDIDQyLjgyLDk1LjEzMyA0My41LDkyLjk3NCA0My41LDkyLjk3NCBjIC0xLjI1NSwtMC4wMDUgLTguNTY0LDAgLTguNTY0LDAgbCAwLC0xLjUyNCAtMS4wNzMsMCAwLC0zLjU5MiBjIDIuMjYxLC02LjYzNSAxLjEzOCwtMTEuMDg3IDEuOTg1LC0xOC43NzEgLTAuNjA4LC0wLjE0NiAtMS4wNTQsLTAuMjQzIC0xLjA5LC0wLjUyNyAtMC4wMzYsLTAuMjg1IC0wLjI3OCwtMC41NDUgMC44OTQsLTAuNzI5IC0wLjg0NSwtOC4wNTggMC45MDIsLTE3LjQ5MyAwLjg1OCwtMjQuOTMgMC4yOSwtMS4yNDUgMi41NzksLTEuNTM3IDMuOTg2LC01LjA3NiAxLjQwOCwtMy41MzkgMC4zODUsLTggMS43NzQsLTEyLjgyNCAtMC4zMiwtMy4zNjUgLTEuOTMxLC01LjgxMiAtNC42MSwtNi40MiAtMi4wNTMsLTAuNDY2IC0zLjQ2OSwtMi42IC01LjM2OSwtMy44ODQgLTMuMTE4LC0yLjQ3MiAtMC42MSwtNS4zNjQgMC4zNzMsLTguNTc4IDAsLTUuMDEgLTIuMTU0LC02LjQ4MyAtNS4yOTMsLTYuODExIHoiCiAgICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7b3BhY2l0eToxO2ZpbGw6I2ZmY2MwMCIgLz4KICA8L2c+Cjwvc3ZnPgo=" alt="Oscar"/>' +
         '</span>';
 }
@@ -994,14 +994,18 @@ function updateHiddenElements(data) {
         // [ДОДАНО] Синхронізуємо конфіг з налаштувань Lampa
         refreshConfigFromStorage();
 
-        var normalizedCard = {
-            id: card.id,
-            imdb_id: card.imdb_id || card.imdb || null,
-            title: card.title || card.name || '',
-            original_title: card.original_title || card.original_name || '',
-            type: getCardType(card),
-            release_date: card.release_date || card.first_air_date || ''
-        };
+var normalizedCard = {
+    id: card.id,
+    imdb_id: card.imdb_id || card.imdb || null,
+    title: card.title || card.name || '',
+    original_title: card.original_title || card.original_name || '',
+    type: getCardType(card),
+    release_date: card.release_date || card.first_air_date || '',
+
+    // ⬇️ додаємо запасний рейтинг з TMDB (vote_average)
+    vote: card.vote_average || card.vote || null
+};
+
 
         var rateLine = $('.full-start-new__rate-line', render);
         if (rateLine.length) {
@@ -1009,38 +1013,81 @@ function updateHiddenElements(data) {
             addLoadingAnimation();
         }
 
-        function proceedWithImdbId() {
-            var cacheKey = normalizedCard.type + '_' + (normalizedCard.imdb_id || normalizedCard.id);
-            var cached = getCachedRatings(cacheKey);
-            if (cached) {
-                currentRatingsData = cached;
-                renderAll();
-                return;
-            }
+function proceedWithImdbId() {
+    // 1) будуємо ключ кешу акуратно
+    var cacheKeyBase = normalizedCard.imdb_id || normalizedCard.id;
+    var cacheKey = cacheKeyBase ? (normalizedCard.type + '_' + cacheKeyBase) : null;
 
-            var pending = 2;
-            var mdbRes = null;
-            var omdbRes = null;
+    // 2) якщо в кеші вже є НЕпорожні дані — просто малюємо і виходимо
+    var cached = cacheKey ? getCachedRatings(cacheKey) : null;
+    if (cached) {
+        currentRatingsData = cached;
+        renderAll();
+        return;
+    }
 
-            function oneDone() {
-                pending--;
-                if (pending === 0) {
-                    currentRatingsData = mergeRatings(mdbRes, omdbRes);
-                    saveCachedRatings(cacheKey, currentRatingsData);
-                    renderAll();
+    // 3) тягнемо MDBList і OMDb паралельно
+    var pending = 2;
+    var mdbRes = null;
+    var omdbRes = null;
+
+    function oneDone() {
+        pending--;
+        if (pending === 0) {
+            // 4) змерджили обидві відповіді
+            currentRatingsData = mergeRatings(mdbRes, omdbRes);
+
+            // 5) fallback на vote_average з TMDB,
+            // якщо MDBList не дав tmdb_display
+            if (
+                (!currentRatingsData.tmdb_display || !currentRatingsData.tmdb_for_avg) &&
+                normalizedCard.vote != null
+            ) {
+                var tm = parseFloat(normalizedCard.vote);
+                if (!isNaN(tm)) {
+                    // іноді значення може бути не в діапазоні 0-10 (проти надійності)
+                    if (tm > 10) tm = tm / 10;
+                    if (tm < 0) tm = 0;
+                    if (tm > 10) tm = 10;
+
+                    currentRatingsData.tmdb_for_avg = tm;
+                    currentRatingsData.tmdb_display = tm.toFixed(1);
                 }
             }
 
-            fetchMdbListRatings(normalizedCard, function(r1) {
-                mdbRes = r1 || {};
-                oneDone();
-            });
+            // 6) кешуємо ТІЛЬКИ якщо є якісь реальні дані,
+            // щоб не закешувати "порожнечу назавжди"
+            if (
+                cacheKey &&
+                currentRatingsData && (
+                    currentRatingsData.tmdb_display ||
+                    currentRatingsData.imdb_display ||
+                    currentRatingsData.mc_display ||
+                    currentRatingsData.rt_display ||
+                    currentRatingsData.popcorn_display ||
+                    currentRatingsData.oscars ||
+                    currentRatingsData.emmy ||
+                    currentRatingsData.awards
+                )
+            ) {
+                saveCachedRatings(cacheKey, currentRatingsData);
+            }
 
-            fetchOmdbRatings(normalizedCard, function(r2) {
-                omdbRes = r2 || {};
-                oneDone();
-            });
+            // 7) малюємо все
+            renderAll();
         }
+    }
+
+    fetchMdbListRatings(normalizedCard, function(r1) {
+        mdbRes = r1 || {};
+        oneDone();
+    });
+
+    fetchOmdbRatings(normalizedCard, function(r2) {
+        omdbRes = r2 || {};
+        oneDone();
+    });
+}
 
         function renderAll() {
             if (!currentRatingsData) {

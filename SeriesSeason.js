@@ -389,7 +389,7 @@
         "    .card--season-complete {\n" +
         "        position: absolute;\n" +
         "        left: 0;\n" +
-        "        margin-left: -0.65em; // ВІДСТУП за лівий край\n" +
+        "        margin-left: -0.65em; /*ВІДСТУП за лівий край*/\n" +
         "        bottom: 0.50em;\n" +
         "        background-color: rgba(61, 161, 141, 0.9);  /* Зелений фон (0.9 = трохи прозорий) */\n" +
         "        z-index: 12;\n" +

@@ -167,24 +167,26 @@
 
 
 /* Базові розміри іконок (замість inline-стилів) */
-".rate--imdb .source--name img {" +
-"    height: 22px;" +
-".rate--mc .source--name img {" +
-"    height: 22px;" +
-"}" +        
-".rate--rt .source--name img {" +
-"    height: 24px;" +
+".rate--imdb .source--name img{" +
+"    height:22px;" +
 "}" +
-".rate--popcorn .source--name img {" +
-"    height: 22px;" +
+".rate--mc .source--name img{" +
+"    height:22px;" +
 "}" +
-".rate--tmdb .source--name img {" +
-"    height: 25px;" +
+".rate--rt .source--name img{" +
+"    height:24px;" +
 "}" +
-".rate--awards .source--name img {" +
-"    height: 18px;" +
-".rate--avg .source--name img {" +
-"    height: 20px;" +
+".rate--popcorn .source--name img{" +
+"    height:22px;" +
+"}" +
+".rate--tmdb .source--name img{" +
+"    height:25px;" +
+"}" +
+".rate--awards .source--name img{" +
+"    height:18px;" +
+"}" +
+".rate--avg .source--name img{" +
+"    height:20px;" +
 "}" +
       
         "</style>";
@@ -664,46 +666,61 @@ function iconImg(url, alt, sizePx, extraStyle) {
     /**
      * Оновлюємо приховані елементи (з omdb+mod.js)
      */
-    function updateHiddenElements(data) {
-        var render = Lampa.Activity.active().activity.render();
-        if (!render || !render[0]) return;
+function updateHiddenElements(data) {
+    var render = Lampa.Activity.active().activity.render();
+    if (!render || !render[0]) return;
 
-        var pgElement = $('.full-start__pg.hide', render);
-        if (pgElement.length && data.ageRating) {
-            var invalidRatings = ['N/A', 'Not Rated', 'Unrated'];
-            var isValid = invalidRatings.indexOf(data.ageRating) === -1;
+    // віковий рейтинг
+    var pgElement = $('.full-start__pg.hide', render);
+    if (pgElement.length && data.ageRating) {
+        var invalidRatings = ['N/A', 'Not Rated', 'Unrated'];
+        var isValid = invalidRatings.indexOf(data.ageRating) === -1;
 
-            if (isValid) {
-                var localized = AGE_RATINGS[data.ageRating] || data.ageRating;
-                pgElement.removeClass('hide').text(localized);
-            }
+        if (isValid) {
+            var localized = AGE_RATINGS[data.ageRating] || data.ageRating;
+            pgElement.removeClass('hide').text(localized);
         }
+    }
 
-        var imdbContainer = $('.rate--imdb', render);
-        if (imdbContainer.length) {
-            if (data.imdb_display) {
-                imdbContainer.removeClass('hide');
-                var imdbDivs = imdbContainer.find('> div');
-                if (imdbDivs.length >= 2) {
-                    imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
-                    imdbDivs.eq(1).html(iconImg(ICONS.imdb, 'IMDb', 22));
-                }
-            } else {
-                imdbContainer.addClass('hide');
+    // IMDb блок
+    var imdbContainer = $('.rate--imdb', render);
+    if (imdbContainer.length) {
+        if (data.imdb_display) {
+            imdbContainer.removeClass('hide');
+
+            var imdbDivs = imdbContainer.find('> div');
+            if (imdbDivs.length >= 2) {
+                // значення рейтингу
+                imdbDivs.eq(0).text(parseFloat(data.imdb_display).toFixed(1));
+
+                // логотип
+                imdbDivs.eq(1)
+                    .addClass('source--name') // <-- важливо!
+                    .html(iconImg(ICONS.imdb, 'IMDb', 22));
             }
+        } else {
+            imdbContainer.addClass('hide');
         }
+    }
 
-        var tmdbContainer = $('.rate--tmdb', render);
-        if (tmdbContainer.length) {
-            if (data.tmdb_display) {
-                var tmdbDivs = tmdbContainer.find('> div');
-                if (tmdbDivs.length >= 2) {
-                    tmdbDivs.eq(0).text(parseFloat(data.tmdb_display).toFixed(1));
-                    tmdbDivs.eq(1).html(iconImg(ICONS.tmdb, 'TMDB', 24));
-                }
+    // TMDB блок
+    var tmdbContainer = $('.rate--tmdb', render);
+    if (tmdbContainer.length) {
+        if (data.tmdb_display) {
+            var tmdbDivs = tmdbContainer.find('> div');
+            if (tmdbDivs.length >= 2) {
+                // значення рейтингу
+                tmdbDivs.eq(0).text(parseFloat(data.tmdb_display).toFixed(1));
+
+                // логотип
+                tmdbDivs.eq(1)
+                    .addClass('source--name') // <-- теж важливо
+                    .html(iconImg(ICONS.tmdb, 'TMDB', 24));
             }
         }
     }
+}
+
 
 
     /**

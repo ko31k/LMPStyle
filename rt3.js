@@ -1267,7 +1267,67 @@ function proceedWithImdbId() {
      * Масштабує логотипи
      */
 // Масштабування логотипів (у т.ч. IMDb + нагороди)
+
 function tuneLogos(offsetPx){
+    // еталон (IMDb базово ~28px)
+    var REF_BASE = 28;
+
+    // рахуємо коефіцієнт масштабу для цього offset
+    // приклад: offset +5 -> (28+5)/28 ≈ 1.1786
+    //          offset -5 -> (28-5)/28 ≈ 0.8214
+    var scale = (REF_BASE + offsetPx) / REF_BASE;
+
+    // не даємо скейлу впасти в нуль або мінус, щоб нічого не схлопнулось
+    if (scale < 0.1) scale = 0.1;
+
+    var logos = document.querySelectorAll(
+        // всі картинки-логотипи в плитках
+        '.full-start__rate .source--name img,' +
+        '.rate--imdb > div:nth-child(2) img,' +
+        '.rate--tmdb > div:nth-child(2) img,' +
+        // контейнер для Оскара/Еммі
+        '.lmp-award-icon'
+    );
+
+    logos.forEach(function(logo){
+        // 1) запам'ятати базову висоту один раз
+        if (!logo.getAttribute('data-base-height')){
+            var ch = parseFloat(window.getComputedStyle(logo).height);
+
+            // фолбеки на випадок коли ще не змальовано стилі
+            if (isNaN(ch) || ch <= 0){
+                if (logo.closest('.rate--rt') || logo.closest('.rate--tmdb')) ch = 30;
+                else if (logo.closest('.rate--mc') || logo.closest('.rate--popcorn')) ch = 30;
+                else if (logo.closest('.rate--imdb') || logo.closest('.rate--avg')) ch = 28;
+                else if (
+                    logo.closest('.rate--awards') ||
+                    logo.classList.contains('lmp-award-icon')
+                ) ch = 24;
+                else ch = 28;
+            }
+
+            logo.setAttribute('data-base-height', ch);
+        }
+
+        var baseH = parseFloat(logo.getAttribute('data-base-height'));
+        if (isNaN(baseH) || baseH <= 0) baseH = 24;
+
+        // 2) обчислити кінцеву висоту через масштаб
+        var finalH = baseH * scale;
+
+        // 3) застовпити в style
+        logo.style.height    = finalH + 'px';
+        logo.style.maxHeight = finalH + 'px';
+
+        // line-height нам критично лише для IMG, не для flex-контейнера .lmp-award-icon
+        if (!logo.classList.contains('lmp-award-icon')){
+            logo.style.lineHeight = finalH + 'px';
+        }
+    });
+}
+
+
+/*function tuneLogos(offsetPx){
     var logos = document.querySelectorAll(
         // Іконки в .source--name (MC, RT, Popcorn, Awards, AVG)
         '.full-start__rate .source--name img,' +
@@ -1301,7 +1361,7 @@ function tuneLogos(offsetPx){
         logo.style.maxHeight  = finalH + 'px';
         logo.style.lineHeight = finalH + 'px'; // Важливо для <span>-обгорток
     });
-}
+}*/
 
     /**
      * Оновлює прозорість та тон бекґраунду

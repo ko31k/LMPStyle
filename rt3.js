@@ -230,27 +230,22 @@
     }
 
     // Emmy статуетка
-    // [ВИПРАВЛЕНО]: прибрано 'var filter'
+    //
+
     function emmyIconInline() {
-        return '<span style="' +
-            'height:16px; width:auto; display:inline-block; vertical-align:middle; ' +
-            'transform:scale(1.2); transform-origin:center; ' +
-            '">' +
-            emmy_svg +
-            '</span>';
+    // emmy_svg у тебе вже є як велике <svg ...> жовтого кольору
+    // (рядки з var emmy_svg = '<svg ...>' лишаються без змін)
+    return '<span class="lmp-award-icon">' + emmy_svg + '</span>';
     }
 
     // Oscar статуетка
-    // [ВИПРАВЛЕНО]: прибрано 'var filter'
     function oscarIconInline() {
-        return '<span style="' +
-            'height:18px; width:auto; display:inline-block; vertical-align:middle; ' +
-            'object-fit:contain; transform:scale(1.2); transform-origin:center; ' +
-            '">' +
+    return '' +
+        '<span class="lmp-award-icon">' +
             '<img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnMiIKICAgdmlld0JveD0iMCAwIDM4LjE4NTc0NCAxMDEuNzY1IgogICBoZWlnaHQ9IjEzNS42Njk0NSIKICAgd2lkdGg9IjUwLjkwODIwMyI+CiAgPG1ldGFkYXRhCiAgICAgaWQ9Im1ldGFkYXRhMTYiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPjwvZGM6dGl0bGU+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxkZWZzCiAgICAgaWQ9ImRlZnMxNCIgLz4KICA8ZwogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC04LjQwNjE3NDUsMC42OTMpIgogICAgIGlkPSJnNCIKICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7ZmlsbDojZmZjYzAwIj4KICAgIDxwYXRoCiAgICAgICBpZD0icGF0aDYiCiAgICAgICBkPSJtIDI3LjM3MSwtMC42OTMgYyAtMy45MjcsMC4zNjYgLTUuMjI5LDMuNTM4IC00Ljk2Myw2Ljc3OCAwLjI2NiwzLjIzOSAzLjY4NSw2Ljk3MiAwLjEzNSw4Ljk1NiAtMS41NzcsMS40MTMgLTMuMTU0LDMuMDczIC01LjIwNywzLjU0IC0yLjY3OSwwLjYwNyAtNC4yODcsMy4wNTQgLTQuNjA3LDYuNDE5IDEuMzg4LDQuODI0IDAuMzY1LDkuMjg1IDEuNzczLDEyLjgyNCAxLjQwNywzLjUzOSAzLjY5NiwzLjgzMSAzLjk4Niw1LjA3NiAwLjMxNyw3LjYzNyAyLjM0MSwxNy41MzUgMC44NTYsMjQuOTMgMS4xNzIsMC4xODQgMC45MywwLjQ0NCAwLjg5NCwwLjcyOSAtMC4wMzYsMC4yODQgLTAuNDgsMC4zODEgLTEuMDg4LDAuNTI3IDAuODQ3LDcuNjg0IC0wLjI3OCwxMi4xMzYgMS45ODMsMTguNzcxIGwgMCwzLjU5MiAtMS4wNywwIDAsMS41MjQgYyAwLDAgLTcuMzEsLTAuMDA1IC04LjU2NSwwIDAsMCAwLjY4LDIuMTU5IC0xLjUyMywzLjAyNyAwLjAwOCwxLjEgMCwyLjcxOSAwLDIuNzE5IGwgLTEuNTY5LDAgMCwyLjM1MyBjIDEzLjIyMTcwMywwIDI2LjgzNzkwNywwIDM4LjE4NiwwIGwgMCwtMi4zNTIgLTEuNTcsMCBjIDAsMCAtMC4wMDcsLTEuNjE5IDAuMDAxLC0yLjcxOSBDIDQyLjgyLDk1LjEzMyA0My41LDkyLjk3NCA0My41LDkyLjk3NCBjIC0xLjI1NSwtMC4wMDUgLTguNTY0LDAgLTguNTY0LDAgbCAwLC0xLjUyNCAtMS4wNzMsMCAwLC0zLjU5MiBjIDIuMjYxLC02LjYzNSAxLjEzOCwtMTEuMDg3IDEuOTg1LC0xOC43NzEgLTAuNjA4LC0wLjE0NiAtMS4wNTQsLTAuMjQzIC0xLjA5LC0wLjUyNyAtMC4wMzYsLTAuMjg1IC0wLjI3OCwtMC41NDUgMC44OTQsLTAuNzI5IC0wLjg0NSwtOC4wNTggMC45MDIsLTE3LjQ5MyAwLjg1OCwtMjQuOTMgMC4yOSwtMS4yNDUgMi41NzksLTEuNTM3IDMuOTg2LC01LjA3NiAxLjQwOCwtMy41MzkgMC4zODUsLTggMS43NzQsLTEyLjgyNCAtMC4zMiwtMy4zNjUgLTEuOTMxLC01LjgxMiAtNC42MSwtNi40MiAtMi4wNTMsLTAuNDY2IC0zLjQ2OSwtMi42IC01LjM2OSwtMy44ODQgLTMuMTE4LC0yLjQ3MiAtMC42MSwtNS4zNjQgMC4zNzMsLTguNTc4IDAsLTUuMDEgLTIuMTU0LC02LjQ4MyAtNS4yOTMsLTYuODExIHoiCiAgICAgICBzdHlsZT0iZGlzcGxheTppbmxpbmU7b3BhY2l0eToxO2ZpbGw6I2ZmY2MwMCIgLz4KICA8L2c+Cjwvc3ZnPgo="' +
             '" style="height:18px; width:auto; display:inline-block; vertical-align:middle; object-fit:contain;">' +
-            '</span>';
-    }
+        '</span>';
+}
 
 
     /**
@@ -1229,6 +1224,74 @@ function applyBwLogos(enabled){
         applyBwLogos(cfg.bwLogos);
     }
 
+    // Примусово увімкнути "Нагороди" та "Середній рейтинг", якщо це перший запуск
+function ensureDefaultToggles(){
+    if (typeof Lampa.Storage.get('ratings_show_awards') === 'undefined'){
+        Lampa.Storage.set('ratings_show_awards', true);
+    }
+    if (typeof Lampa.Storage.get('ratings_show_average') === 'undefined'){
+        Lampa.Storage.set('ratings_show_average', true);
+    }
+}
+
+// Слухаємо зміни в меню "Рейтинги" і застосовуємо стиль без перезавантаження
+function attachLiveSettingsHandlers(){
+    function scheduleApply(){
+        // даємо SettingsApi зберегти значення в Storage і одразу перевішуємо стилі
+        setTimeout(function(){
+            applyStylesToAll(); // ця функція вже в тебе все оновлює
+        }, 0);
+    }
+
+    // поля типу input (offset-и, alpha, tone, gap)
+    document.addEventListener('input', function(e){
+        var t = e.target;
+        if (!t) return;
+        var n = (t.getAttribute('name') || t.getAttribute('data-name') || '');
+        if (n.indexOf('ratings_') === 0){
+            scheduleApply();
+        }
+    }, true);
+
+    // тригери (trigger) можуть стріляти change
+    document.addEventListener('change', function(e){
+        var t = e.target;
+        if (!t) return;
+        var n = (t.getAttribute('name') || t.getAttribute('data-name') || '');
+        if (n.indexOf('ratings_') === 0){
+            scheduleApply();
+        }
+    }, true);
+
+    // деякі тумблери можуть бути взагалі не <input>, а div з data-name="ratings_*"
+    document.addEventListener('click', function(e){
+        if (!e.target.closest) return;
+        var el = e.target.closest('[data-name^="ratings_"]');
+        if (el){
+            scheduleApply();
+        }
+    }, true);
+}
+
+// ОНОВЛЕНА ініціалізація UI
+function initRatingsPluginUI(){
+    ensureDefaultToggles();          // виставляємо дефолт "так" для нагород і середнього рейтингу
+    addSettingsSection();            // реєструємо секцію "Рейтинги" в налаштуваннях
+    attachLiveSettingsHandlers();    // вмикаємо live-оновлення стилів
+
+    // Експортуємо утиліти (як у тебе було)
+    window.LampaRatings = window.LampaRatings || {};
+    window.LampaRatings.applyStyles = applyStylesToAll;
+    window.LampaRatings.getConfig   = getCfg;
+
+    // Одразу застосувати стилі до вже відкритої картки
+    applyStylesToAll();
+}
+
+    
+    
+    
+    
     /**
      * Реєструє секцію "★ Рейтинги" у налаштуваннях
      */
@@ -1238,7 +1301,7 @@ function applyBwLogos(enabled){
 
         Lampa.SettingsApi.addComponent({
             component: 'lmp_ratings',
-            name: '★ Рейтинги',
+            name: 'Рейтинги',
             icon:
                 '<svg width="24" height="24" viewBox="0 0 24 24" ' +
                 'fill="none" xmlns="http://www.w3.org/2000/svg">' +
@@ -1398,20 +1461,6 @@ function applyBwLogos(enabled){
             },
             onRender: function(item){}
         });
-    }
-
-    /**
-     * Ініціалізація меню та експорт утиліт
-     */
-    function initRatingsPluginUI(){
-        addSettingsSection();
-
-        window.LampaRatings = window.LampaRatings || {};
-        window.LampaRatings.applyStyles = applyStylesToAll;
-        window.LampaRatings.getConfig   = getCfg;
-
-        // одразу застосувати стилі до вже відкритої картки, якщо є
-        applyStylesToAll();
     }
 
     //

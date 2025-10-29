@@ -254,7 +254,7 @@
      */
     var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні
     var RATING_CACHE_KEY = 'lmp_enh_rating_cache';
-    var ID_MAPPING_CACHE = 'maxsm_rating_id_mapping';
+    var ID_MAPPING_CACHE = 'lmp_rating_id_cache';
 
     // для вікового рейтингу
     var AGE_RATINGS = {

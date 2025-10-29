@@ -33,10 +33,10 @@
         popcorn: 'https://raw.githubusercontent.com/ko31k/LMPStyle/main/wwwroot/popcorn.png',
 
         // Rotten Tomatoes "good"
-        rt_fresh: 'https://raw.githubusercontent.com/ko31k/LMPStyle/main/wwwroot/rotten-fresh.png',
+        rt_fresh: 'https://raw.githubusercontent.com/ko31k/LMPStyle/main/wwwroot/RottenTomatoes.png',
 
-        // Rotten Tomatoes "rotten"
-        rt_rotten: 'https://raw.githubusercontent.com/ko31k/LMPStyle/main/wwwroot/rotten-rotten.png',
+        // Rotten Tomatoes "bad"
+        rt_rotten: 'https://raw.githubusercontent.com/ko31k/LMPStyle/main/wwwroot/RottenBad.png',
 
         // логотипи сервісів (з Enchanser)
         imdb:        'https://www.streamingdiscovery.com/logo/imdb.png',

@@ -8,8 +8,8 @@
      */
     var LMP_ENH_CONFIG = {
         apiKeys: {
-            mdblist: 'm8po461k1zq14sroj2ez5d7um', // ✅ ключ до MDBList
-            omdb:    '12c9249c'     // ✅ ключ до OMDb
+            mdblist: '',     // ✅ ключ до MDBList
+            omdb:    ''      // ✅ ключ до OMDb
         },
 
         // true  -> іконки стають монохромні через filter: grayscale(100%)

@@ -1517,7 +1517,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Розмір числа рейтингу',
-                description: 'Зміна розміру числа рейтингу та фону. \n"0" – стандарт, "+1" → +1px, "-1" → -1px.'
+                description: 'Зміна розміру числа рейтингу та розміру фону. \n"0" – стандарт, "+1" → +1px, "-1" → -1px.'
             },
             onRender: function(item){}
         });
@@ -1532,7 +1532,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Прозорість фону під рейтингом',
-                description: 'Прозорість фону. \n"0" – прозорий, "1" – чорний. Стандартне значення: "0.15".'
+                description: 'Прозорість фону. Стандартне значення: "0.15". \n"0" – прозорий, "1" – чорний.'
             },
             onRender: function(item){}
         });
@@ -1562,7 +1562,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Відступи між блоками (крок)',
-                description: 'Додатковий відступ. "0" – стандарт (0.3em). "1" → +0.1em (0.4em).'
+                description: 'Додатковий відступ. "0" – стандарт (0.3em). \n"1" → +0.1em (0.4em).'
             },
             onRender: function(item){}
         });

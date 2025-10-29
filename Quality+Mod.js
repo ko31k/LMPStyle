@@ -1488,7 +1488,15 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
                     var qualityCode = (jrResult && jrResult.quality) || null;
                     var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
                      
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log(`LQE-QUALITY: JacRed returned - qualityCode: "${qualityCode}", full label: "${fullTorrentTitle}"`);
+					if (LQE_CONFIG.LOGGING_QUALITY) {
+    					console.log(
+        					"LQE-QUALITY: JacRed returned - qualityCode: \"" +
+        					qualityCode +
+        					"\", full label: \"" +
+        					fullTorrentTitle +
+        					"\""
+    					);
+					}
                     
                     if (qualityCode && qualityCode !== 'NO') {
                         saveQualityCache(cacheKey, {

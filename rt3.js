@@ -167,20 +167,26 @@
 
 
 /* Базові розміри іконок (замість inline-стилів) */
-".rate--imdb .source--name img," +
-".rate--mc .source--name img," +
-".rate--rt .source--name img," +
+".rate--imdb .source--name img {" +
+"    height: 22px;" +
+".rate--mc .source--name img {" +
+"    height: 22px;" +
+"}" +        
+".rate--rt .source--name img {" +
+"    height: 24px;" +
+"}" +
 ".rate--popcorn .source--name img {" +
 "    height: 22px;" +
 "}" +
 ".rate--tmdb .source--name img {" +
-"    height: 24px;" +
+"    height: 25px;" +
 "}" +
-".rate--awards .source--name img," +
+".rate--awards .source--name img {" +
+"    height: 18px;" +
 ".rate--avg .source--name img {" +
 "    height: 20px;" +
 "}" +
-        
+      
         "</style>";
 
     Lampa.Template.add('lmp_enh_styles', pluginStyles);

@@ -191,7 +191,7 @@
 "    display:inline-block;" +
 "    vertical-align:middle;" +
 "    line-height:1;" +
-"    height:18px;" +
+"    height:24px;" +
 "    width:auto;" +
 "}" +
 ".lmp-award-icon img," +
@@ -206,31 +206,38 @@
 
 /* Базові розміри іконок (замість inline-стилів) */
 ".rate--imdb .source--name img{" +
-"    height:30px;" +
-"}" +
-".rate--mc .source--name img{" +
-"    height:32px;" +
-"}" +
-".rate--rt .source--name img{" +
-"    height:34px;" +
-"}" +
-".rate--popcorn .source--name img{" +
-"    height:32px;" +
-"}" +
-".rate--tmdb .source--name img{" +
-"    height:36px;" +
-"}" +
-".rate--awards .source--name img{" +
 "    height:28px;" +
 "}" +
-".rate--avg .source--name img{" +
+".rate--mc .source--name img{" +
 "    height:30px;" +
+"}" +
+".rate--rt .source--name img{" +
+"    height:32px;" +
+"}" +
+".rate--popcorn .source--name img{" +
+"    height:30px;" +
+"}" +
+".rate--tmdb .source--name img{" +
+"    height:32px;" +
+"}" +
+".rate--awards .source--name img{" +
+"    height:26px;" +
+"}" +
+".rate--avg .source--name img{" +
+"    height:28px;" +
 "}" +
 
 ".settings-param__descr," +
 ".settings-param__subtitle {" +
 "    white-space: pre-line;" +
 "}" +
+
+".full-start__rate .source--name{" +
+"    display:inline-flex;" +
+"    align-items:center;" +        /* по вертикалі центр */
+"    justify-content:center;" +    /* по горизонталі центр */
+"}" +
+
         "</style>";
 
     Lampa.Template.add('lmp_enh_styles', pluginStyles);
@@ -1227,7 +1234,7 @@ function tuneLogos(offsetPx){
                 // Фоллбек, якщо CSS не завантажився
                 if (logo.closest('.rate--tmdb')) ch = 24;
                 else if (logo.closest('.rate--awards, .rate--avg')) ch = 20;
-                else if (logo.matches('.lmp-award-icon')) ch = 18;
+                else if (logo.matches('.lmp-award-icon')) ch = 24;
                 else ch = 22; // IMDb, MC, RT, Popcorn
             }
             logo.setAttribute('data-base-height', ch);

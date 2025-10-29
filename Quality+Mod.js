@@ -25,9 +25,192 @@
  * - Детальне логування різних компонентів
  */
 
+// --- LQE TV-BOX COMPAT LAYER ---------------------------------
+// Цей блок робить плагін життєздатним у старих WebView без fetch/Promise/localStorage/CORS
+(function () {
+    // 1. Проміси (дуже простий поліфіл, достатньо для then/catch)
+    if (typeof window.Promise !== 'function') {
+        (function () {
+            function SimplePromise(executor) {
+                var self = this;
+                self._state = 'pending';
+                self._value = undefined;
+                self._handlers = [];
+
+                function resolve(value) {
+                    if (self._state !== 'pending') return;
+                    self._state = 'fulfilled';
+                    self._value = value;
+                    run();
+                }
+
+                function reject(reason) {
+                    if (self._state !== 'pending') return;
+                    self._state = 'rejected';
+                    self._value = reason;
+                    run();
+                }
+
+                function run() {
+                    setTimeout(function () {
+                        for (var i = 0; i < self._handlers.length; i++) {
+                            handle(self._handlers[i]);
+                        }
+                        self._handlers = [];
+                    }, 0);
+                }
+
+                function handle(h) {
+                    if (self._state === 'pending') {
+                        self._handlers.push(h);
+                        return;
+                    }
+                    var cb = self._state === 'fulfilled' ? h.onFulfilled : h.onRejected;
+
+                    if (!cb) {
+                        (self._state === 'fulfilled' ? h.resolve : h.reject)(self._value);
+                        return;
+                    }
+
+                    try {
+                        var ret = cb(self._value);
+                        h.resolve(ret);
+                    } catch (e) {
+                        h.reject(e);
+                    }
+                }
+
+                self.then = function (onFulfilled, onRejected) {
+                    return new SimplePromise(function (resolve2, reject2) {
+                        handle({
+                            onFulfilled: typeof onFulfilled === 'function' ? onFulfilled : null,
+                            onRejected: typeof onRejected === 'function' ? onRejected : null,
+                            resolve: resolve2,
+                            reject: reject2
+                        });
+                    });
+                };
+
+                self.catch = function (onRejected) {
+                    return self.then(null, onRejected);
+                };
+
+                try {
+                    executor(resolve, reject);
+                } catch (e) {
+                    reject(e);
+                }
+            }
+
+            window.Promise = SimplePromise;
+        })();
+    }
+
+    // 2. requestAnimationFrame поліфіл (деякі дуже древні WebView його не мають)
+    if (typeof window.requestAnimationFrame !== 'function') {
+        window.requestAnimationFrame = function (cb) {
+            return setTimeout(cb, 16); // ~60fps
+        };
+    }
+
+    // 3. Безпечне localStorage (деякі бокси кидають SecurityError або просто забороняють сховище)
+    var safeLocalStorage = (function () {
+        try {
+            var testKey = '__lqe_test__';
+            window.localStorage.setItem(testKey, '1');
+            window.localStorage.removeItem(testKey);
+            // якщо дійшли сюди — localStorage живий
+            return window.localStorage;
+        } catch (e) {
+            // fallback у RAM (не переживає перезапуск, але не падає)
+            var memoryStore = {};
+            return {
+                getItem: function (k) { return memoryStore[k] || null; },
+                setItem: function (k, v) { memoryStore[k] = String(v); },
+                removeItem: function (k) { delete memoryStore[k]; }
+            };
+        }
+    })();
+
+    // 4. Якщо чомусь немає Lampa.Storage (деякі форки Lampa TV кастрять API),
+    // створимо просту сумісну версію поверх safeLocalStorage.
+    if (!window.Lampa) window.Lampa = {};
+    if (!Lampa.Storage) {
+        Lampa.Storage = {
+            get: function (key, def) {
+                try {
+                    var raw = safeLocalStorage.getItem(key);
+                    return raw ? JSON.parse(raw) : (def || null);
+                } catch (e) {
+                    return def || null;
+                }
+            },
+            set: function (key, val) {
+                try {
+                    safeLocalStorage.setItem(key, JSON.stringify(val));
+                } catch (e) {
+                    // ігноруємо, щоб не завалити плагін
+                }
+            }
+        };
+    }
+
+    // 5. safeFetchText: універсальна обгортка, яка:
+    //    - якщо є нормальний fetch -> використовує його
+    //    - якщо немає fetch -> XHR
+    //    - повертає Promise<String>, щоб залишити існуючу логіку з then/catch
+    function safeFetchText(url) {
+        return new Promise(function (resolve, reject) {
+            // Варіант 1: сучасний fetch
+            if (typeof fetch === 'function') {
+                try {
+                    fetch(url)
+                        .then(function (res) {
+                            if (!res.ok) throw new Error('HTTP ' + res.status);
+                            return res.text();
+                        })
+                        .then(resolve)
+                        .catch(reject);
+                    return;
+                } catch (e) {
+                    // якщо сам fetch впав синхронно — просто падати не будемо, йдемо в XHR
+                }
+            }
+
+            // Варіант 2: старий WebView -> XMLHttpRequest
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr.responseText);
+                        } else {
+                            reject(new Error('XHR ' + xhr.status));
+                        }
+                    }
+                };
+                xhr.onerror = function () {
+                    reject(new Error('Network error'));
+                };
+                xhr.send(null);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    // Експортуємо, щоб основний код плагіна зміг цим користуватись.
+    window.LQE_safeFetchText = safeFetchText;
+})();
+
+
+
+
+
 (function() {
     'use strict'; // Використання суворого режиму для запобігання помилок
-
+	
     // ===================== КОНФІГУРАЦІЯ =====================
     var LQE_CONFIG = {
         CACHE_VERSION: 2, // Версія кешу для інвалідації старих даних
@@ -335,65 +518,79 @@
     Lampa.Template.add('lampa_quality_loading_animation_css', loadingStylesLQE);
     $('body').append(Lampa.Template.get('lampa_quality_loading_animation_css', {}, true));
 
-    // ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
-    
-    /**
-     * Виконує запит через проксі з обробкою помилок
-     * @param {string} url - URL для запиту
-     * @param {string} cardId - ID картки для логування
-     * @param {function} callback - Callback функція
-     */
-    function fetchWithProxy(url, cardId, callback) {
-        var currentProxyIndex = 0; // Поточний індекс проксі в списку
-        var callbackCalled = false; // Прапорець виклику callback
+// ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
 
-        // Рекурсивна функція спроб через різні проксі
-        function tryNextProxy() {
-            // Перевіряємо, чи не вичерпано всі проксі
-            if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {
-                if (!callbackCalled) { // Якщо callback ще не викликано
-                    callbackCalled = true;
-                    callback(new Error('All proxies failed for ' + url)); // Повертаємо помилку
-                }
-                return;
+/**
+ * Виконує запит через проксі з обробкою помилок + fallback для старих WebView
+ * @param {string} url - оригінальний URL, який хочемо викликати
+ * @param {string} cardId - ID картки (тільки для логів)
+ * @param {function} callback - callback(err, data)
+ */
+    function fetchWithProxy(url, cardId, callback) {
+    var currentProxyIndex = 0;       // який проксі зараз пробуємо
+    var callbackCalled = false;      // щоб не викликати callback двічі
+
+    function tryNextProxy() {
+        // якщо всі проксі вже впали
+        if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {
+            if (!callbackCalled) {
+                callbackCalled = true;
+                callback(new Error('All proxies failed for ' + url));
             }
-            
-            // Формуємо URL з поточним проксі
-            var proxyUrl = LQE_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
-            if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
-            // Встановлюємо таймаут для запиту
-            var timeoutId = setTimeout(function() {
-                if (!callbackCalled) { // Якщо ще не отримали відповідь
-                    currentProxyIndex++; // Переходимо до наступного проксі
-                    tryNextProxy(); // Рекурсивний виклик
-                }
-            }, LQE_CONFIG.PROXY_TIMEOUT_MS);
-            // Виконуємо fetch запит
-            fetch(proxyUrl)
-                .then(function(response) {
-                    clearTimeout(timeoutId); // Очищаємо таймаут
-                    if (!response.ok) throw new Error('Proxy error: ' + response.status); // Перевіряємо статус
-                    return response.text(); // Повертаємо текст відповіді
-                })
-                .then(function(data) {
-                    if (!callbackCalled) {
-                        callbackCalled = true;
-                        clearTimeout(timeoutId);
-                        callback(null, data); // Успішний запит
-                    }
-                })
-                .catch(function(error) {
-                    console.error("LQE-LOG", "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":", error);
-                    clearTimeout(timeoutId);
-                    if (!callbackCalled) {
-                        currentProxyIndex++; // Переходимо до наступного проксі
-                        tryNextProxy(); // Рекурсивний виклик
-                    }
-                });
+            return;
         }
-        
-        tryNextProxy(); // Починаємо з першого проксі
+
+        // формуємо фінальний URL через поточний проксі
+        var proxyUrl = LQE_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
+
+        if (LQE_CONFIG.LOGGING_GENERAL) {
+            console.log("LQE-LOG", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
+        }
+
+        var finished = false;
+        var timeoutId = setTimeout(function () {
+            // якщо за таймаут не дочекались — пробуємо наступний проксі
+            if (finished) return;
+            finished = true;
+            currentProxyIndex++;
+            tryNextProxy();
+        }, LQE_CONFIG.PROXY_TIMEOUT_MS);
+
+        // ВАЖЛИВО:
+        // Використовуємо LQE_safeFetchText (Promise), який вже сам вирішить:
+        // - fetch+then або
+        // - XHR у старих WebView
+        LQE_safeFetchText(proxyUrl)
+            .then(function (data) {
+                if (finished) return;
+                finished = true;
+                clearTimeout(timeoutId);
+
+                if (!callbackCalled) {
+                    callbackCalled = true;
+                    callback(null, data); // успіх
+                }
+            })
+            .catch(function (error) {
+                if (finished) return;
+                finished = true;
+                clearTimeout(timeoutId);
+
+                console.error(
+                    "LQE-LOG",
+                    "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":",
+                    error
+                );
+
+                // переходимо до наступного проксі
+                currentProxyIndex++;
+                tryNextProxy();
+            });
     }
+
+    tryNextProxy();
+}
+
 
     // ===================== АНІМАЦІЯ ЗАВАНТАЖЕННЯ =====================
     
@@ -1150,38 +1347,61 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
      * @param {string} fullTorrentTitle - Назва торренту
      * @param {boolean} bypassTranslation - Пропустити переклад
      */
-    function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
-        var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
+function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, bypassTranslation) {
+    var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
 
-	// ✅ Якщо це ручне перевизначення І увімкнено спрощені мітки — беремо simple_label
-	if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
-    	var cardId = cardView?.card_data?.id || cardView?.closest('.card')?.card_data?.id;
-    	var manualData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
-    	if (manualData && manualData.simple_label) {
-        displayQuality = manualData.simple_label;
-    	}
-	}
-		
-        // Перевіряємо наявність ідентичного елемента
-        var existing = cardView.querySelector('.card__quality');
-        if (existing) {
-            var inner = existing.querySelector('div');
-            if (inner && inner.textContent === displayQuality) {
-                return; // Не оновлюємо якщо текст не змінився
+    // Старі WebView не мають optional chaining, тому робимо руками
+    if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
+        var detectedCardId = null;
+
+        // cardView.card_data.id ?
+        if (cardView && cardView.card_data && cardView.card_data.id) {
+            detectedCardId = cardView.card_data.id;
+        } else {
+            // або cardView.closest('.card').card_data.id ?
+            var closestCard = (cardView && cardView.closest) ? cardView.closest('.card') : null;
+            if (closestCard && closestCard.card_data && closestCard.card_data.id) {
+                detectedCardId = closestCard.card_data.id;
             }
-            existing.remove(); // Видаляємо старий
         }
 
-        // Створюємо новий елемент
+        if (detectedCardId && LQE_CONFIG.MANUAL_OVERRIDES[detectedCardId]) {
+            var manualData = LQE_CONFIG.MANUAL_OVERRIDES[detectedCardId];
+            if (manualData && manualData.simple_label) {
+                displayQuality = manualData.simple_label;
+            }
+        }
+    }
+
+    // прибираємо старий .card__quality, якщо він уже є
+    var existing = cardView.querySelector('.card__quality');
+    if (existing) {
+        var inner = existing.querySelector('div');
+        if (inner && inner.textContent === displayQuality) {
+            // вже оновлено, нічого не робимо
+        } else {
+            existing.remove();
+        }
+    }
+
+    // якщо елемента немає або ми його щойно зняли — ставимо свіжий
+    if (!cardView.querySelector('.card__quality')) {
         var qualityDiv = document.createElement('div');
         qualityDiv.className = 'card__quality';
+
         var innerElement = document.createElement('div');
         innerElement.textContent = displayQuality;
         qualityDiv.appendChild(innerElement);
+
         cardView.appendChild(qualityDiv);
-        // Плавне з'явлення
-        requestAnimationFrame(function(){ qualityDiv.classList.add('show'); });
+
+        // плавне з'явлення, з поліфілом requestAnimationFrame це працюватиме навіть у старому WebView
+        requestAnimationFrame(function () {
+            qualityDiv.classList.add('show');
+        });
     }
+}
+
 
     // ===================== ОБРОБКА ПОВНОЇ КАРТКИ =====================
     

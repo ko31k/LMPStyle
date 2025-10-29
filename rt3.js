@@ -168,25 +168,25 @@
 
 /* Базові розміри іконок (замість inline-стилів) */
 ".rate--imdb .source--name img{" +
-"    height:22px;" +
+"    height:30px;" +
 "}" +
 ".rate--mc .source--name img{" +
-"    height:22px;" +
+"    height:32px;" +
 "}" +
 ".rate--rt .source--name img{" +
-"    height:24px;" +
+"    height:34px;" +
 "}" +
 ".rate--popcorn .source--name img{" +
-"    height:22px;" +
+"    height:32px;" +
 "}" +
 ".rate--tmdb .source--name img{" +
-"    height:25px;" +
+"    height:36px;" +
 "}" +
 ".rate--awards .source--name img{" +
-"    height:18px;" +
+"    height:28px;" +
 "}" +
 ".rate--avg .source--name img{" +
-"    height:20px;" +
+"    height:30px;" +
 "}" +
       
         "</style>";

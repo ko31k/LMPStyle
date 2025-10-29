@@ -188,26 +188,27 @@
 
 "/* Однакове вирівнювання іконок нагород (Оскар / Еммі) */" +
 ".lmp-award-icon{" +
-"    display:inline-block;" +
-"    vertical-align:middle;" +
+"    display:inline-flex;" +
+"    align-items:center;" +
+"    justify-content:center;" +
 "    line-height:1;" +
 "    height:24px;" +
 "    width:auto;" +
+"    flex-shrink:0;" +
 "}" +
 ".lmp-award-icon img," +
 ".lmp-award-icon svg{" +
 "    height:100%;" +
 "    width:auto;" +
-"    display:inline-block;" +
-"    vertical-align:middle;" +
+"    display:block;" +
 "    object-fit:contain;" +
 "}" +
-
 ".lmp-award-icon--oscar{" +
-"    height:24px;" +   // розмір оскара
-"}" +
-
-/* Базові розміри іконок (замість inline-стилів) */
+"    height:24px;" +
+"    line-height:1;" +
+"}" +   
+        
+"/* Базові розміри іконок (замість inline-стилів) */"+
 ".rate--imdb .source--name img{" +
 "    height:28px;" +
 "}" +

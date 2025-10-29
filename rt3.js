@@ -188,7 +188,11 @@
 ".rate--avg .source--name img{" +
 "    height:30px;" +
 "}" +
-      
+
+".settings-param__descr," +
+".settings-param__subtitle {" +
+"    white-space: pre-line;" +
+"}" +
         "</style>";
 
     Lampa.Template.add('lmp_enh_styles', pluginStyles);
@@ -1437,7 +1441,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Розмір логотипів рейтингів',
-                description: 'Зміна висоти логотипів. "0" – стандарт, "1" → +1px, "-1" → -1px.'
+                description: 'Зміна висоти логотипів. \n"0" – стандарт, "вводимо 1" → +1px, "-1" → "-1px".'
             },
             onRender: function(item){}
         });
@@ -1452,7 +1456,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Розмір числа рейтингу',
-                description: 'Зміна розміру числа рейтингу. "0" – стандарт, "+1" → +1px, "-1" → -1px.'
+                description: 'Зміна розміру числа рейтингу та фону. \n"0" – стандарт, "+1" → +1px, "-1" → -1px.'
             },
             onRender: function(item){}
         });
@@ -1467,7 +1471,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Прозорість фону під рейтингом',
-                description: 'Прозорість фону. "0" – прозорий, "1" – чорний. Стандарт: "0.15".'
+                description: 'Прозорість фону. \n"0" – прозорий, "1" – чорний. Стандартне значення: "0.15".'
             },
             onRender: function(item){}
         });
@@ -1482,7 +1486,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Яскравість плиток',
-                description: 'Яскравість плиток. "0" – чорний. Від 0 до 255 (напр. "50" - темно-сірий).'
+                description: 'Яскравість плиток. \n"0" – чорний. Від 0 до 255 (напр. "50" - темно-сірий).'
             },
             onRender: function(item){}
         });

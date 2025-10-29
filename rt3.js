@@ -1,6 +1,44 @@
 (function() {
     'use strict';
+    // --- ПОЛІФІЛИ ДЛЯ СТАРИХ ANDROID WEBVIEW ---
 
+    // NodeList.forEach
+    if (window.NodeList && !NodeList.prototype.forEach) {
+        NodeList.prototype.forEach = function(callback, thisArg) {
+            thisArg = thisArg || window;
+            for (var i = 0; i < this.length; i++) {
+                callback.call(thisArg, this[i], i, this);
+            }
+        };
+    }
+
+    // Element.matches
+    if (!Element.prototype.matches) {
+        Element.prototype.matches =
+            Element.prototype.msMatchesSelector ||
+            Element.prototype.webkitMatchesSelector ||
+            function(selector) {
+                var node = this;
+                var nodes = (node.parentNode || document).querySelectorAll(selector);
+                for (var i = 0; i < nodes.length; i++) {
+                    if (nodes[i] === node) return true;
+                }
+                return false;
+            };
+    }
+
+    // Element.closest
+    if (!Element.prototype.closest) {
+        Element.prototype.closest = function(selector) {
+            var el = this;
+            while (el && el.nodeType === 1) {
+                if (el.matches(selector)) return el;
+                el = el.parentElement || el.parentNode;
+            }
+            return null;
+        };
+    }
+    
     /**
      * =========================
      * CONFIG
@@ -438,108 +476,131 @@ function iconImg(url, alt, sizePx, extraStyle) {
         var url = 'https://api.mdblist.com/tmdb/' + typeSegment + '/' + card.id +
                   '?apikey=' + encodeURIComponent(key);
 
-        $.ajax({
-            url: url,
-            method: 'GET',
-            timeout: 0
-        }).done(function(response) {
+        // основний запит через Lampa.Reguest (воно вміє ходити без CORS-проблем)
+        new Lampa.Reguest().silent(url, handleSuccess, handleFail);
+
+        // якщо silent не зміг, пробуємо native
+        function handleFail() {
+            new Lampa.Reguest().native(
+                url,
+                function(data){
+                    try {
+                        handleSuccess(typeof data === 'string' ? JSON.parse(data) : data);
+                    } catch(e){
+                        callback(null);
+                    }
+                },
+                function(){
+                    callback(null);
+                },
+                false,
+                { dataType: 'json' }
+            );
+        }
+
+        function handleSuccess(response){
             if (!response || !response.ratings || !response.ratings.length) {
                 callback(null);
                 return;
             }
 
-        var res = {
-            tmdb_display: null,
-            tmdb_for_avg: null,
+            var res = {
+                tmdb_display: null,
+                tmdb_for_avg: null,
 
-            imdb_display: null,
-            imdb_for_avg: null,
+                imdb_display: null,
+                imdb_for_avg: null,
 
-            mc_user_display: null,
-            mc_user_for_avg: null,
+                mc_user_display: null,
+                mc_user_for_avg: null,
 
-            mc_critic_display: null,
-            mc_critic_for_avg: null,
+                mc_critic_display: null,
+                mc_critic_for_avg: null,
 
-            rt_display: null,
-            rt_for_avg: null,
-            rt_fresh: null,
+                rt_display: null,
+                rt_for_avg: null,
+                rt_fresh: null,
 
-            popcorn_display: null,
-            popcorn_for_avg: null
-        };
+                popcorn_display: null,
+                popcorn_for_avg: null
+            };
 
-        function parseRawScore(rawVal) {
-            if (rawVal === null || rawVal === undefined) return null;
-            if (typeof rawVal === 'number') return rawVal;
+            function parseRawScore(rawVal) {
+                if (rawVal === null || rawVal === undefined) return null;
+                if (typeof rawVal === 'number') return rawVal;
 
-            if (typeof rawVal === 'string') {
-                if (rawVal.indexOf('%') !== -1) {
-                    return parseFloat(rawVal.replace('%',''));
+                if (typeof rawVal === 'string') {
+                    if (rawVal.indexOf('%') !== -1) {
+                        return parseFloat(rawVal.replace('%',''));
+                    }
+                    if (rawVal.indexOf('/') !== -1) {
+                        return parseFloat(rawVal.split('/')[0]);
+                    }
+                    return parseFloat(rawVal);
                 }
-                if (rawVal.indexOf('/') !== -1) {
-                    return parseFloat(rawVal.split('/')[0]);
+                return null;
+            }
+
+            function isUserSource(src) {
+                return (
+                    src.indexOf('user') !== -1 ||
+                    src.indexOf('users') !== -1 ||
+                    src.indexOf('metacriticuser') !== -1 ||
+                    src.indexOf('metacritic_user') !== -1
+                );
+            }
+
+            response.ratings.forEach(function(r) {
+                var src = (r.source || '').toLowerCase();
+                var val = parseRawScore(r.value);
+                if (val === null || isNaN(val)) return;
+
+                // TMDB
+                if (src.indexOf('tmdb') !== -1) {
+                    var tmdb10 = val > 10 ? (val / 10) : val;
+                    res.tmdb_display = tmdb10.toFixed(1);
+                    res.tmdb_for_avg = tmdb10;
                 }
-                return parseFloat(rawVal);
-            }
-            return null;
-        }
-          
-        function isUserSource(src) {
-            return (
-                src.indexOf('user') !== -1 ||
-                src.indexOf('users') !== -1 ||
-                src.indexOf('metacriticuser') !== -1 ||
-                src.indexOf('metacritic_user') !== -1
-            );
-        }
 
-        response.ratings.forEach(function(r) {
-            var src = (r.source || '').toLowerCase();
-            var val = parseRawScore(r.value);
-            if (val === null || isNaN(val)) return;
+                // IMDb
+                if (src.indexOf('imdb') !== -1) {
+                    var imdb10 = val > 10 ? (val / 10) : val;
+                    res.imdb_display = imdb10.toFixed(1);
+                    res.imdb_for_avg = imdb10;
+                }
 
-            if (src.indexOf('tmdb') !== -1) {
-                var tmdb10 = val > 10 ? (val / 10) : val;
-                res.tmdb_display = tmdb10.toFixed(1);
-                res.tmdb_for_avg = tmdb10;
-            }
+                // Metacritic (users)
+                if (src.indexOf('metacritic') !== -1 && isUserSource(src)) {
+                    var user10 = val > 10 ? (val / 10) : val;
+                    res.mc_user_display = user10.toFixed(1);
+                    res.mc_user_for_avg = user10;
+                }
 
-            if (src.indexOf('imdb') !== -1) {
-                var imdb10 = val > 10 ? (val / 10) : val;
-                res.imdb_display = imdb10.toFixed(1);
-                res.imdb_for_avg = imdb10;
-            }
+                // Metacritic (critics)
+                if (src.indexOf('metacritic') !== -1 && !isUserSource(src)) {
+                    var critic10 = val > 10 ? (val / 10) : val;
+                    res.mc_critic_display = critic10.toFixed(1);
+                    res.mc_critic_for_avg = critic10;
+                }
 
-            if (src.indexOf('metacritic') !== -1 && isUserSource(src)) {
-                var user10 = val > 10 ? (val / 10) : val;
-                res.mc_user_display = user10.toFixed(1);
-                res.mc_user_for_avg = user10;
-            }
+                // Rotten Tomatoes
+                if (src.indexOf('rotten') !== -1 || src.indexOf('tomato') !== -1) {
+                    res.rt_display = String(Math.round(val));
+                    res.rt_for_avg = val / 10;
+                    res.rt_fresh = val >= 60;
+                }
 
-            if (src.indexOf('metacritic') !== -1 && !isUserSource(src)) {
-                var critic10 = val > 10 ? (val / 10) : val;
-                res.mc_critic_display = critic10.toFixed(1);
-                res.mc_critic_for_avg = critic10;
-            }
-
-            if (src.indexOf('rotten') !== -1 || src.indexOf('tomato') !== -1) {
-                res.rt_display = String(Math.round(val));
-                res.rt_for_avg = val / 10;
-                res.rt_fresh = val >= 60;
-            }
-
-            if (src.indexOf('popcorn') !== -1 || src.indexOf('audience') !== -1) {
-                res.popcorn_display = String(Math.round(val));
-                res.popcorn_for_avg = val / 10;
-            }
-        });
+                // PopcornMeter / Audience
+                if (src.indexOf('popcorn') !== -1 || src.indexOf('audience') !== -1) {
+                    res.popcorn_display = String(Math.round(val));
+                    res.popcorn_for_avg = val / 10;
+                }
+            });
 
             callback(res);
-        }).fail(function() {
-            callback(null);
-        });
+        }
     }
+
 
 
     /**

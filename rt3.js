@@ -299,10 +299,10 @@ function iconImg(url, alt, sizePx, extraStyle) {
     //
 
 function emmyIconInline(){
-  return '<span class="lmp-award-icon"><img src="' + ICONS.emmy  + '" alt="Emmy"></span>';
+  return '<span class="lmp-award-icon lmp-award-icon--emmy"><img src="' + ICONS.emmy  + '" alt="Emmy"></span>';
 }
 function oscarIconInline(){
-  return '<span class="lmp-award-icon"><img src="' + ICONS.oscar + '" alt="Oscar"></span>';
+  return '<span class="lmp-award-icon lmp-award-icon--oscar"><img src="' + ICONS.oscar + '" alt="Oscar"></span>';
 }
 
 
@@ -1261,14 +1261,12 @@ function tuneLogos(offsetPx){
     // не даємо скейлу впасти в нуль або мінус, щоб нічого не схлопнулось
     if (scale < 0.1) scale = 0.1;
 
-    var logos = document.querySelectorAll(
-        // всі картинки-логотипи в плитках
-        '.full-start__rate .source--name img,' +
-        '.rate--imdb > div:nth-child(2) img,' +
-        '.rate--tmdb > div:nth-child(2) img,' +
-        // контейнер для Оскара/Еммі
-        '.lmp-award-icon'
-    );
+var logos = document.querySelectorAll(
+  '.full-start__rate .source--name img,' +
+  '.rate--imdb > div:nth-child(2) img,' +
+  '.rate--tmdb > div:nth-child(2) img,' +
+  '.lmp-award-icon img'
+);
 
     logos.forEach(function(logo){
         // 1) запам'ятати базову висоту один раз

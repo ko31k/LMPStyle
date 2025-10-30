@@ -169,6 +169,8 @@
      * CONFIG
      * =========================
      */
+    var __lmpRateLineObs = null;
+  
     var LMP_ENH_CONFIG = {
         apiKeys: {
             mdblist: '',    // ✅ ключ до MDBList
@@ -472,30 +474,86 @@ function undimRateLine(rateLine){
      * Loader helpers
      * =========================
      */
-    function addLoadingAnimation() {
-        var render = Lampa.Activity.active().activity.render();
-        if (!render) return;
 
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (!rateLine.length || $('.loading-dots-container', rateLine).length) return;
 
-        var loaderHtml =
-            '<div class="loading-dots-container">' +
-                '<div class="loading-dots__text">Пошук…</div>'+
-                '<div class="loading-dots__dot"></div>' +
-                '<div class="loading-dots__dot"></div>' +
-                '<div class="loading-dots__dot"></div>' +
-            '</div>';
+// Показати лоадер "Пошук…" саме у зоні рейтингів
+function addLoadingAnimation() {
+  var render = Lampa.Activity.active().activity.render();
+  if (!render || !render[0]) return;
 
-        rateLine.append(loaderHtml);
+  if ($('#lmp-search-loader', render).length) return; // вже є
+
+  var loaderHtml =
+    '<div id="lmp-search-loader" class="loading-dots-container">' +
+      '<div class="loading-dots__text">Пошук…</div>' +
+      '<div class="loading-dots__dot"></div>' +
+      '<div class="loading-dots__dot"></div>' +
+      '<div class="loading-dots__dot"></div>' +
+    '</div>';
+
+  // 1) шукаємо реальний rate-line (нова або стара розмітка), ігноруємо фейковий
+  var realSel = '.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])';
+  var rateLine = $(realSel, render).first();
+  if (rateLine.length) {
+    rateLine.append(loaderHtml);
+    dimRateLine(rateLine);
+    return;
+  }
+
+  // 2) real поки нема → ставимо фейковий rate-line, щоб лоадер був "на місці"
+  var fake = $(
+    '<div class="full-start-new__rate-line" ' +
+    '     id="lmp-loader-fake" data-lmp-fake="1" ' +
+    '     style="min-height:28px; display:flex; align-items:center;"></div>'
+  );
+
+  // Спроба поставити одразу під заголовком картки (типове місце rate-line)
+  var anchor = $('.full-start-new__title, .full-start__title', render).first();
+  if (anchor.length) anchor.after(fake);
+  else $(render).append(fake);
+
+  fake.append(loaderHtml);
+
+  // 3) спостерігаємо появу реального rate-line і переносимо лоадер
+  try { if (__lmpRateLineObs) __lmpRateLineObs.disconnect(); } catch(_) {}
+  __lmpRateLineObs = new MutationObserver(function(){
+    var rl = $(realSel, render).first();
+    var loader = $('#lmp-search-loader', render);
+    if (rl.length && loader.length) {
+      rl.append(loader);
+      dimRateLine(rl);
+      $('#lmp-loader-fake', render).remove();
+      try { __lmpRateLineObs.disconnect(); } catch(_) {}
+      __lmpRateLineObs = null;
     }
+  });
+  __lmpRateLineObs.observe(render[0], { childList:true, subtree:true });
 
-    function removeLoadingAnimation() {
-        var render = Lampa.Activity.active().activity.render();
-        if (!render) return;
-
-        $('.loading-dots-container', render).remove();
+  // таймаут безпеки, щоб не зависати
+  setTimeout(function(){
+    if (__lmpRateLineObs){
+      try { __lmpRateLineObs.disconnect(); } catch(_) {}
+      __lmpRateLineObs = null;
     }
+  }, 6000);
+}
+
+// Прибрати лоадер і відновити стан
+function removeLoadingAnimation() {
+  var render = Lampa.Activity.active().activity.render();
+  if (!render || !render[0]) return;
+
+  $('#lmp-search-loader', render).remove();
+  $('#lmp-loader-fake', render).remove();
+
+  var rl = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render).first();
+  if (rl.length) undimRateLine(rl);
+
+  try { if (__lmpRateLineObs) __lmpRateLineObs.disconnect(); } catch(_) {}
+  __lmpRateLineObs = null;
+}
+
+
 
     function getCachedRatings(key) {
         var cache = Lampa.Storage.get(RATING_CACHE_KEY) || {};
@@ -965,7 +1023,7 @@ function updateHiddenElements(data) {
         var render = Lampa.Activity.active().activity.render();
         if (!render) return;
 
-        var rateLine = $('.full-start-new__rate-line', render);
+        var rateLine = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render);
         if (!rateLine.length) return;
 
          if (data.mc_display && !$('.rate--mc', rateLine).length) {
@@ -1100,7 +1158,7 @@ function updateHiddenElements(data) {
         var render = Lampa.Activity.active().activity.render();
         if (!render) return;
 
-        var rateLine = $('.full-start-new__rate-line', render);
+        var rateLine = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render);
         if (!rateLine.length) return;
 
         var parts = [];
@@ -1169,93 +1227,86 @@ var normalizedCard = {
 };
 
 
-        var rateLine = $('.full-start-new__rate-line', render);
-        if (rateLine.length) {
-            dimRateLine(rateLine);
-            addLoadingAnimation();
-        }
+        //var rateLine = $('.full-start-new__rate-line', render);
+        //addLoadingAnimation();
+    
 
 
 function proceedWithImdbId() {
-    // 1) будуємо ключ кешу акуратно
-    var cacheKeyBase = normalizedCard.imdb_id || normalizedCard.id;
-    var cacheKey = cacheKeyBase ? (normalizedCard.type + '_' + cacheKeyBase) : null;
+  // 1) Акуратно будуємо ключ кешу:
+  //    - якщо вже знаємо imdb_id — кешуємо за ним,
+  //    - інакше — за tmdb id (щоб не чекати дарма)
+  var cacheKeyBase = normalizedCard.imdb_id || normalizedCard.id;
+  var cacheKey = cacheKeyBase ? (normalizedCard.type + '_' + cacheKeyBase) : null;
 
-    // 2) якщо в кеші вже є НЕпорожні дані — просто малюємо і виходимо
-    var cached = cacheKey ? getCachedRatings(cacheKey) : null;
-    if (cached) {
-        currentRatingsData = cached;
-        renderAll();
-        return;
+  // 2) Швидка гілка: дані є в кеші → малюємо одразу, БЕЗ лоадера
+  var cached = cacheKey ? getCachedRatings(cacheKey) : null;
+  if (cached) {
+    currentRatingsData = cached;
+    renderAll();          // малює рейтинги без анімації
+    return;
+  }
+
+  // 3) Кешу нема → показуємо лоадер «Пошук…» тільки тепер
+  addLoadingAnimation();
+
+  // 4) Тягнемо MDBList і OMDb паралельно
+  var pending = 2;
+  var mdbRes = null;
+  var omdbRes = null;
+
+  function oneDone() {
+    pending--;
+    if (pending !== 0) return;
+
+    // 5) Змерджили відповіді з MDBList та OMDb
+    currentRatingsData = mergeRatings(mdbRes, omdbRes);
+
+    // 6) Fallback: якщо MDBList не дав TMDB-оцінку — підхоплюємо vote_average з TMDB
+    if (
+      (!currentRatingsData.tmdb_display || !currentRatingsData.tmdb_for_avg) &&
+      normalizedCard.vote != null
+    ) {
+      var tm = parseFloat(normalizedCard.vote);
+      if (!isNaN(tm)) {
+        if (tm > 10) tm = tm / 10;   // нормалізація на 0–10
+        if (tm < 0) tm = 0;
+        if (tm > 10) tm = 10;
+        currentRatingsData.tmdb_for_avg = tm;
+        currentRatingsData.tmdb_display = tm.toFixed(1);
+      }
     }
 
-    // 3) тягнемо MDBList і OMDb паралельно
-    var pending = 2;
-    var mdbRes = null;
-    var omdbRes = null;
-
-    function oneDone() {
-        pending--;
-        if (pending === 0) {
-            // 4) змерджили обидві відповіді
-            currentRatingsData = mergeRatings(mdbRes, omdbRes);
-
-            // 5) fallback на vote_average з TMDB,
-            // якщо MDBList не дав tmdb_display
-            if (
-                (!currentRatingsData.tmdb_display || !currentRatingsData.tmdb_for_avg) &&
-                normalizedCard.vote != null
-            ) {
-                var tm = parseFloat(normalizedCard.vote);
-                if (!isNaN(tm)) {
-                    // іноді значення може бути не в діапазоні 0-10 (проти надійності)
-                    if (tm > 10) tm = tm / 10;
-                    if (tm < 0) tm = 0;
-                    if (tm > 10) tm = 10;
-
-                    currentRatingsData.tmdb_for_avg = tm;
-                    currentRatingsData.tmdb_display = tm.toFixed(1);
-                }
-            }
-
-            // 6) кешуємо ТІЛЬКИ якщо є якісь реальні дані,
-            // щоб не закешувати "порожнечу назавжди"
-            if (
-                cacheKey &&
-                currentRatingsData && (
-                    currentRatingsData.tmdb_display ||
-                    currentRatingsData.imdb_display ||
-                    currentRatingsData.mc_display ||
-                    currentRatingsData.rt_display ||
-                    currentRatingsData.popcorn_display ||
-                    currentRatingsData.oscars ||
-                    currentRatingsData.emmy ||
-                    currentRatingsData.awards
-                )
-            ) {
-                saveCachedRatings(cacheKey, currentRatingsData);
-            }
-
-            // 7) малюємо все
-            renderAll();
-        }
+    // 7) Кешуємо тільки «непорожній» результат (щоб не зафіксувати порожнечу)
+    if (
+      cacheKey &&
+      currentRatingsData && (
+        currentRatingsData.tmdb_display ||
+        currentRatingsData.imdb_display ||
+        currentRatingsData.mc_display ||
+        currentRatingsData.rt_display ||
+        currentRatingsData.popcorn_display ||
+        currentRatingsData.oscars ||
+        currentRatingsData.emmy ||
+        currentRatingsData.awards
+      )
+    ) {
+      saveCachedRatings(cacheKey, currentRatingsData);
     }
 
-    fetchMdbListRatings(normalizedCard, function(r1) {
-        mdbRes = r1 || {};
-        oneDone();
-    });
+    // 8) Фінальний рендер (усередині буде прибрано лоадер)
+    renderAll();
+  }
 
-    fetchOmdbRatings(normalizedCard, function(r2) {
-        omdbRes = r2 || {};
-        oneDone();
-    });
+  fetchMdbListRatings(normalizedCard, function(r1) { mdbRes = r1 || {}; oneDone(); });
+  fetchOmdbRatings(normalizedCard, function(r2)    { omdbRes = r2 || {}; oneDone(); });
 }
+
 
         function renderAll() {
         if (!currentRatingsData) {
             removeLoadingAnimation();
-            if (rateLine.length) undimRateLine(rateLine);
+            /*if (rateLine.length) undimRateLine(rateLine);*/
             return;
         }
 

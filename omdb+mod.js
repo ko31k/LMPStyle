@@ -303,55 +303,65 @@ var pluginStyles = "<style>" +
     /**
      * TMDB → imdb_id
      */
+    function getImdbIdFromTmdb(tmdbId, type, callback) {
+        if (!tmdbId) return callback(null);
 
-function getImdbIdFromTmdb(tmdbId, type, callback) {
-    if (!tmdbId) return callback(null);
+        var cleanType = type === 'movie' ? 'movie' : 'tv';
+        var cacheKey = cleanType + '_' + tmdbId;
+        var cache = Lampa.Storage.get(ID_MAPPING_CACHE) || {};
 
-    var cleanType = (type === 'movie') ? 'movie' : 'tv';
-    var cacheKey = cleanType + '_' + tmdbId;
-    var cache = Lampa.Storage.get(ID_MAPPING_CACHE) || {};
-
-    if (cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp < CACHE_TIME)) {
-        return callback(cache[cacheKey].imdb_id);
-    }
-
-    // основний ендпоінт external_ids (і для movie, і для tv є imdb_id)
-    var url = 'https://api.themoviedb.org/3/' + cleanType + '/' + tmdbId +
-              '/external_ids?api_key=' + Lampa.TMDB.key();
-
-    // запасний варіант для tv: тягнемо сам об’єкт + external_ids
-    var altUrlTv = 'https://api.themoviedb.org/3/tv/' + tmdbId +
-                   '?api_key=' + Lampa.TMDB.key() + '&append_to_response=external_ids';
-
-    var makeRequest = function(u, success, error) {
-        new Lampa.Reguest().silent(u, success, function() {
-            new Lampa.Reguest().native(u, function(data) {
-                try { success(typeof data === 'string' ? JSON.parse(data) : data); }
-                catch(e) { error(); }
-            }, error, false, { dataType: 'json' });
-        });
-    };
-
-    makeRequest(url, function(data) {
-        var imdbId = (data && data.imdb_id) ? data.imdb_id : null;
-        if (imdbId) {
-            cache[cacheKey] = { imdb_id: imdbId, timestamp: Date.now() };
-            Lampa.Storage.set(ID_MAPPING_CACHE, cache);
-            callback(imdbId);
-        } else if (cleanType === 'tv') {
-            makeRequest(altUrlTv, function(altData) {
-                var id = (altData && altData.external_ids && altData.external_ids.imdb_id) || null;
-                if (id) {
-                    cache[cacheKey] = { imdb_id: id, timestamp: Date.now() };
-                    Lampa.Storage.set(ID_MAPPING_CACHE, cache);
-                }
-                callback(id);
-            }, function(){ callback(null); });
-        } else {
-            callback(null);
+        if (cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp < CACHE_TIME)) {
+            return callback(cache[cacheKey].imdb_id);
         }
-    }, function(){ callback(null); });
-}
+
+        var url = 'https://api.themoviedb.org/3/' + cleanType + '/' + tmdbId +
+            '/external_ids?api_key=' + Lampa.TMDB.key();
+
+        var makeRequest = function(url, success, error) {
+            new Lampa.Reguest().silent(url, success, function() {
+                new Lampa.Reguest().native(url, function(data) {
+                    try {
+                        success(typeof data === 'string' ? JSON.parse(data) : data);
+                    } catch(e) {
+                        error();
+                    }
+                }, error, false, { dataType: 'json' });
+            });
+        };
+
+        makeRequest(url, function(data) {
+            if (data && data.imdb_id) {
+                cache[cacheKey] = {
+                    imdb_id: data.imdb_id,
+                    timestamp: Date.now()
+                };
+                Lampa.Storage.set(ID_MAPPING_CACHE, cache);
+                callback(data.imdb_id);
+            } else {
+                if (cleanType === 'tv') {
+                    var altUrl = 'https://api.themoviedb.org/3/tv/' + tmdbId +
+                        '?api_key=' + Lampa.TMDB.key();
+                    makeRequest(altUrl, function(altData) {
+                        var imdbId = (altData && altData.external_ids && altData.external_ids.imdb_id) || null;
+                        if (imdbId) {
+                            cache[cacheKey] = {
+                                imdb_id: imdbId,
+                                timestamp: Date.now()
+                            };
+                            Lampa.Storage.set(ID_MAPPING_CACHE, cache);
+                        }
+                        callback(imdbId);
+                    }, function() {
+                        callback(null);
+                    });
+                } else {
+                    callback(null);
+                }
+            }
+        }, function() {
+            callback(null);
+        });
+    }
 
 
     /**

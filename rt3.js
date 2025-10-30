@@ -361,7 +361,7 @@ var ICONS = {
 "  :root{" +
 "    --lmp-h-imdb:14px; --lmp-h-mc:16px; --lmp-h-rt:16px;" +
 "    --lmp-h-popcorn:16px; --lmp-h-tmdb:18px; --lmp-h-awards:10px;" +
-"    --lmp-h-avg:10px; --lmp-h-oscar:12px; --lmp-h-emmy:12px;" +
+"    --lmp-h-avg:14px; --lmp-h-oscar:14px; --lmp-h-emmy:14px;" +
 "  }" +
 "  .loading-dots-container{font-size:.8em; padding:.4em .8em;}" +
 "  .lmp-award-icon{height:16px;}" +
@@ -372,7 +372,7 @@ var ICONS = {
 "  :root{" +
 "    --lmp-h-imdb:12px; --lmp-h-mc:14px; --lmp-h-rt:14px;" +
 "    --lmp-h-popcorn:14px; --lmp-h-tmdb:16px; --lmp-h-awards:8px;" +
-"    --lmp-h-avg:8px; --lmp-h-oscar:10px; --lmp-h-emmy:10px;" +
+"    --lmp-h-avg:12px; --lmp-h-oscar:12px; --lmp-h-emmy:12px;" +
 "  }" +
 "  .lmp-award-icon{height:12px;}" +
 "}" +

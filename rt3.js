@@ -66,7 +66,8 @@
       });
     };
     global.Promise = MiniPromise;
-  })(this);
+    })(typeof globalThis!=='undefined' ? globalThis : (typeof window!=='undefined' ? window : this));
+
 
   /* =============================
    * fetch polyfill (з урахуванням Lampa.Reguest для обходу CORS)
@@ -118,7 +119,8 @@
         }catch(e){ reject(e); }
       });
     };
-  })(this);
+    })(typeof globalThis!=='undefined' ? globalThis : (typeof window!=='undefined' ? window : this));
+
 
     
 (function() {

@@ -1467,6 +1467,27 @@ function resetLogoBaseHeights(){
   });
 }
 
+
+// --- Storage patch: once ---
+function patchStorageSetOnce(){
+  if (window.__lmpRatingsPatchedStorage) return;
+  window.__lmpRatingsPatchedStorage = true;
+
+  var _set = Lampa.Storage.set;
+  Lampa.Storage.set = function(k, v){
+    var out = _set.apply(this, arguments);
+    if (typeof k === 'string' && k.indexOf('ratings_') === 0){
+      // дочекатись UI-циклу, тоді застосувати стилі миттєво
+      setTimeout(function(){
+        resetLogoBaseHeights();
+        applyStylesToAll();
+      }, 0);
+    }
+    return out;
+  };
+}
+    
+
 // debounce
 var reapplyOnResize = (function(){
   var t;
@@ -1498,47 +1519,55 @@ function ensureDefaultToggles(){
 
 // Слухаємо зміни в меню "Рейтинги" і застосовуємо стиль без перезавантаження
 function attachLiveSettingsHandlers(){
-    function scheduleApply(){
-        // даємо SettingsApi зберегти значення в Storage і одразу перевішуємо стилі
-        setTimeout(function(){
-            applyStylesToAll(); // ця функція вже в тебе все оновлює
-        }, 0);
+  // debounce застосування стилів, щоб встиг зберегтись Storage
+  var scheduleApply = (function(){
+    var t;
+    return function(){
+      clearTimeout(t);
+      t = setTimeout(function(){
+        // Скидаємо кеш базових висот, щоб масштаб/грейскейл тощо
+        // перерахувались одразу без «доганяння» наступною дією
+        resetLogoBaseHeights();
+        applyStylesToAll();
+      }, 150);
+    };
+  })();
+
+  function onDomChange(e){
+    var t = e.target;
+    if (!t) return;
+    var n = (t.getAttribute('name') || t.getAttribute('data-name') || '');
+    if (n && n.indexOf('ratings_') === 0) scheduleApply();
+  }
+
+  // Більшість контролів
+  document.addEventListener('input',  onDomChange, true);
+  document.addEventListener('change', onDomChange, true);
+
+  // Тумблери/«триґери», які можуть бути не <input>
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-name^="ratings_"],[name^="ratings_"]');
+    if (el) scheduleApply();
+  }, true);
+
+  // Щоб числові поля реагували і під час набору
+  document.addEventListener('keyup', onDomChange, true);
+
+  // Якщо у твоїй збірці є внутрішній bus — теж підпишемося
+  try {
+    if (Lampa.SettingsApi && Lampa.SettingsApi.listener && Lampa.SettingsApi.listener.follow){
+      Lampa.SettingsApi.listener.follow('change', function(ev){
+        if (ev && ev.name && ev.name.indexOf('ratings_') === 0) scheduleApply();
+      });
     }
-
-    // поля типу input (offset-и, alpha, tone, gap)
-    document.addEventListener('input', function(e){
-        var t = e.target;
-        if (!t) return;
-        var n = (t.getAttribute('name') || t.getAttribute('data-name') || '');
-        if (n.indexOf('ratings_') === 0){
-            scheduleApply();
-        }
-    }, true);
-
-    // тригери (trigger) можуть стріляти change
-    document.addEventListener('change', function(e){
-        var t = e.target;
-        if (!t) return;
-        var n = (t.getAttribute('name') || t.getAttribute('data-name') || '');
-        if (n.indexOf('ratings_') === 0){
-            scheduleApply();
-        }
-    }, true);
-
-    // деякі тумблери можуть бути взагалі не <input>, а div з data-name="ratings_*"
-    document.addEventListener('click', function(e){
-        if (!e.target.closest) return;
-        var el = e.target.closest('[data-name^="ratings_"]');
-        if (el){
-            scheduleApply();
-        }
-    }, true);
+  } catch(_) {}
 }
 
 // ОНОВЛЕНА ініціалізація UI
 function initRatingsPluginUI(){
     ensureDefaultToggles();          // виставляємо дефолт "так" для нагород і середнього рейтингу
     addSettingsSection();            // реєструємо секцію "Рейтинги" в налаштуваннях
+    patchStorageSetOnce();           // ⬅️ ДОДАНО: миттєво застосовує зміни з меню без перезаходу
     attachLiveSettingsHandlers();    // вмикаємо live-оновлення стилів
 
     // Експортуємо утиліти (як у тебе було)

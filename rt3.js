@@ -230,6 +230,45 @@ var ICONS = {
 "  align-items:center;" +          /* по вертикалі центр */
 "  justify-content:center;" +      /* по горизонталі центр */
 "}" +
+
+"/* ========================= */" +
+"/*       MOBILE RULES        */" +
+"/* ========================= */" +
+
+"@media (max-width: 600px){" +
+"  .full-start-new__rate-line{flex-wrap:wrap;}" +
+"  .full-start__rate{" +
+"    margin-right:.25em !important;" +
+"    margin-bottom:.25em;" +
+"    font-size:20px;" +
+"    min-width:unset;" +
+"  }" +
+"  .rate--imdb .source--name img{height:24px;}" +
+"  .rate--mc .source--name img{height:26px;}" +
+"  .rate--rt .source--name img{height:28px;}" +
+"  .rate--popcorn .source--name img{height:26px;}" +
+"  .rate--tmdb .source--name img{height:28px;}" +
+"  .rate--awards .source--name img{height:20px;}" +
+"  .rate--avg .source--name img{height:24px;}" +
+"  .lmp-award-icon{height:24px;}" +
+"  .lmp-award-icon--oscar{height:22px;}" +
+"  .lmp-award-icon--emmy{height:24px;}" +
+"  .loading-dots-container{font-size:.8em; padding:.4em .8em;}" +
+"}" +
+
+"@media (max-width: 360px){" +
+"  .full-start__rate{font-size:18px;}" +
+"  .rate--imdb .source--name img{height:22px;}" +
+"  .rate--mc .source--name img{height:24px;}" +
+"  .rate--rt .source--name img{height:26px;}" +
+"  .rate--popcorn .source--name img{height:24px;}" +
+"  .rate--tmdb .source--name img{height:26px;}" +
+"  .rate--awards .source--name img{height:18px;}" +
+"  .rate--avg .source--name img{height:22px;}" +
+"  .lmp-award-icon{height:22px;}" +
+"  .lmp-award-icon--oscar{height:20px;}" +
+"  .lmp-award-icon--emmy{height:22px;}" +
+"}" +
 "</style>";
 
     Lampa.Template.add('lmp_enh_styles', pluginStyles);
@@ -1394,8 +1433,15 @@ function applyBwLogos(enabled){
         '.rate--imdb > div:nth-child(2) img,' +
         '.rate--tmdb > div:nth-child(2) img,' +
         // <span>-обгортки для Оскара/Еммі
-        '.lmp-award-icon'
+        '.lmp-award-icon img'
     );
+    var filterValue = enabled ? 'grayscale(100%)' : '';
+    logos.forEach(function(node){
+        node.style.filter = filterValue;
+    });
+}
+
+    
 
     var filterValue = enabled ? 'grayscale(100%)' : '';
 
@@ -1425,6 +1471,40 @@ function applyBwLogos(enabled){
         tuneGap(cfg.gapStep);
         applyBwLogos(cfg.bwLogos);
     }
+
+
+
+
+function resetLogoBaseHeights(){
+  var logos = document.querySelectorAll(
+    '.full-start__rate .source--name img,' +
+    '.rate--imdb > div:nth-child(2) img,' +
+    '.rate--tmdb > div:nth-child(2) img,' +
+    '.lmp-award-icon img'
+  );
+  logos.forEach(function(logo){
+    logo.removeAttribute('data-base-height');
+  });
+}
+
+// debounce
+var reapplyOnResize = (function(){
+  var t;
+  return function(){
+    clearTimeout(t);
+    t = setTimeout(function(){
+      resetLogoBaseHeights();
+      applyStylesToAll();
+    }, 150);
+  };
+})();
+
+
+
+
+
+window.addEventListener('resize', reapplyOnResize);
+window.addEventListener('orientationchange', reapplyOnResize);
 
     // Примусово увімкнути "Нагороди" та "Середній рейтинг", якщо це перший запуск
 function ensureDefaultToggles(){
@@ -1495,7 +1575,7 @@ function initRatingsPluginUI(){
     
     
     /**
-     * Реєструє секцію "★ Рейтинги" у налаштуваннях
+     * Реєструє секцію "Рейтинги" у налаштуваннях
      */
     function addSettingsSection(){
         if (window.lmp_ratings_add_param_ready) return;

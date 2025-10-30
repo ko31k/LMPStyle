@@ -401,50 +401,79 @@ function oscarIconInline(){
 function getImdbIdFromTmdb(tmdbId, type, callback) {
     if (!tmdbId) return callback(null);
 
-    var cleanType = (type === 'movie') ? 'movie' : 'tv';
-    var cacheKey = cleanType + '_' + tmdbId;
-    var cache = Lampa.Storage.get(ID_MAPPING_CACHE) || {};
+    var preferredType = (type === 'movie') ? 'movie' : 'tv';
+    var altType       = preferredType === 'movie' ? 'tv' : 'movie';
 
-    if (cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp < CACHE_TIME)) {
-        return callback(cache[cacheKey].imdb_id);
+    var cache = Lampa.Storage.get(ID_MAPPING_CACHE) || {};
+    var now = Date.now();
+
+    function fromCache(key){
+        var item = cache[key];
+        if (!item) return null;
+        if (!item.imdb_id) return null;
+        if (now - item.timestamp > CACHE_TIME) return null;
+        return item.imdb_id;
     }
 
-    // основний ендпоінт external_ids (і для movie, і для tv є imdb_id)
-    var url = 'https://api.themoviedb.org/3/' + cleanType + '/' + tmdbId +
-              '/external_ids?api_key=' + Lampa.TMDB.key();
+    var keyPreferred = preferredType + '_' + tmdbId;
+    var keyAlt       = altType       + '_' + tmdbId;
 
-    // запасний варіант для tv: тягнемо сам об’єкт + external_ids
-    var altUrlTv = 'https://api.themoviedb.org/3/tv/' + tmdbId +
-                   '?api_key=' + Lampa.TMDB.key() + '&append_to_response=external_ids';
+    // 1) Шукаємо в кеші обидва варіанти
+    var cachedId = fromCache(keyPreferred) || fromCache(keyAlt);
+    if (cachedId) return callback(cachedId);
+
+    var tmdbKey = Lampa.TMDB.key();
+    // 2) Стара послідовна схема, але для обох типів
+    var queue = [
+        'https://api.themoviedb.org/3/' + preferredType + '/' + tmdbId + '/external_ids?api_key=' + tmdbKey,
+        'https://api.themoviedb.org/3/' + preferredType + '/' + tmdbId + '?api_key=' + tmdbKey + '&append_to_response=external_ids',
+        'https://api.themoviedb.org/3/' + altType       + '/' + tmdbId + '/external_ids?api_key=' + tmdbKey,
+        'https://api.themoviedb.org/3/' + altType       + '/' + tmdbId + '?api_key=' + tmdbKey + '&append_to_response=external_ids'
+    ];
 
     var makeRequest = function(u, success, error) {
         new Lampa.Reguest().silent(u, success, function() {
-            new Lampa.Reguest().native(u, function(data) {
-                try { success(typeof data === 'string' ? JSON.parse(data) : data); }
-                catch(e) { error(); }
-            }, error, false, { dataType: 'json' });
+            new Lampa.Reguest().native(
+                u,
+                function(data) {
+                    try { success(typeof data === 'string' ? JSON.parse(data) : data); }
+                    catch(e){ error(); }
+                },
+                error,
+                false,
+                { dataType: 'json' }
+            );
         });
     };
 
-    makeRequest(url, function(data) {
-        var imdbId = (data && data.imdb_id) ? data.imdb_id : null;
-        if (imdbId) {
-            cache[cacheKey] = { imdb_id: imdbId, timestamp: Date.now() };
-            Lampa.Storage.set(ID_MAPPING_CACHE, cache);
-            callback(imdbId);
-        } else if (cleanType === 'tv') {
-            makeRequest(altUrlTv, function(altData) {
-                var id = (altData && altData.external_ids && altData.external_ids.imdb_id) || null;
-                if (id) {
-                    cache[cacheKey] = { imdb_id: id, timestamp: Date.now() };
-                    Lampa.Storage.set(ID_MAPPING_CACHE, cache);
-                }
-                callback(id);
-            }, function(){ callback(null); });
-        } else {
-            callback(null);
-        }
-    }, function(){ callback(null); });
+    function extractImdbId(obj){
+        if (!obj || typeof obj !== 'object') return null;
+        if (obj.imdb_id && typeof obj.imdb_id === 'string') return obj.imdb_id;
+        if (obj.external_ids && typeof obj.external_ids.imdb_id === 'string') return obj.external_ids.imdb_id;
+        return null;
+    }
+
+    function saveAndReturn(id){
+        // кешуємо під ОБОМА ключами, щоб наступні виклики не залежали від type
+        var payload = { imdb_id: id, timestamp: Date.now() };
+        cache[keyPreferred] = payload;
+        cache[keyAlt]       = payload;
+        Lampa.Storage.set(ID_MAPPING_CACHE, cache);
+        callback(id);
+    }
+
+    (function next(){
+        var url = queue.shift();
+        if (!url) return callback(null);
+
+        makeRequest(url, function(data){
+            var imdbId = extractImdbId(data);
+            if (imdbId) saveAndReturn(imdbId);
+            else next();
+        }, function(){
+            next();
+        });
+    })();
 }
 
     /**

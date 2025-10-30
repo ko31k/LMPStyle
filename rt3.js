@@ -170,7 +170,7 @@ var ICONS = {
 "  --lmp-h-popcorn:26px;" +
 "  --lmp-h-tmdb:28px;" +
 "  --lmp-h-awards:20px;" +  // іконка 'Awards' у rate--awards
-"  --lmp-h-avg:24px;" +     // зірка 'TOTAL/AVG'
+"  --lmp-h-avg:20px;" +     // зірка 'TOTAL/AVG'
 "  --lmp-h-oscar:22px;" +   // статуетка Оскара
 "  --lmp-h-emmy:22px;" +    // статуетка Еммі
 "}" +

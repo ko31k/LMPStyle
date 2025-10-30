@@ -262,9 +262,9 @@ var ICONS = {
 "@media (max-width: 360px){" +
 "  .full-start__rate{font-size:18px;}" +
 "  :root{" +
-"    --lmp-h-imdb:16px; --lmp-h-mc:18px; --lmp-h-rt:18px;" +
-"    --lmp-h-popcorn:18px; --lmp-h-tmdb:20px; --lmp-h-awards:14px;" +
-"    --lmp-h-avg:18px; --lmp-h-oscar:16px; --lmp-h-emmy:16px;" +
+"    --lmp-h-imdb:14px; --lmp-h-mc:16px; --lmp-h-rt:16px;" +
+"    --lmp-h-popcorn:16px; --lmp-h-tmdb:18px; --lmp-h-awards:12px;" +
+"    --lmp-h-avg:16px; --lmp-h-oscar:14px; --lmp-h-emmy:14px;" +
 "  }" +
 "  .lmp-award-icon{height:22px;}" +
 "}" +

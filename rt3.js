@@ -164,15 +164,15 @@ var ICONS = {
         "}" +
 
 ":root{" +
-"  --lmp-h-imdb:26px;" +
-"  --lmp-h-mc:28px;" +
-"  --lmp-h-rt:30px;" +
-"  --lmp-h-popcorn:28px;" +
-"  --lmp-h-tmdb:30px;" +
-"  --lmp-h-awards:22px;" +  // іконка 'Awards' у rate--awards
-"  --lmp-h-avg:26px;" +     // зірка 'TOTAL/AVG'
-"  --lmp-h-oscar:24px;" +   // статуетка Оскара
-"  --lmp-h-emmy:26px;" +    // статуетка Еммі
+"  --lmp-h-imdb:24px;" +
+"  --lmp-h-mc:26px;" +
+"  --lmp-h-rt:26px;" +
+"  --lmp-h-popcorn:26px;" +
+"  --lmp-h-tmdb:28px;" +
+"  --lmp-h-awards:20px;" +  // іконка 'Awards' у rate--awards
+"  --lmp-h-avg:24px;" +     // зірка 'TOTAL/AVG'
+"  --lmp-h-oscar:22px;" +   // статуетка Оскара
+"  --lmp-h-emmy:22px;" +    // статуетка Еммі
 "}" +
  
         /* КОЛЬОРОВИЙ РЕЖИМ (за замовчуванням): */
@@ -251,9 +251,9 @@ var ICONS = {
 "    min-width:unset;" +
 "  }" +
 "  :root{" +
-"    --lmp-h-imdb:24px; --lmp-h-mc:26px; --lmp-h-rt:28px;" +
-"    --lmp-h-popcorn:26px; --lmp-h-tmdb:28px; --lmp-h-awards:20px;" +
-"    --lmp-h-avg:24px; --lmp-h-oscar:22px; --lmp-h-emmy:24px;" +
+"    --lmp-h-imdb:22px; --lmp-h-mc:24px; --lmp-h-rt:24px;" +
+"    --lmp-h-popcorn:24px; --lmp-h-tmdb:26px; --lmp-h-awards:20px;" +
+"    --lmp-h-avg:24px; --lmp-h-oscar:22px; --lmp-h-emmy:22px;" +
 "  }" +
 "  .loading-dots-container{font-size:.8em; padding:.4em .8em;}" +
 "  .lmp-award-icon{height:24px;}" +
@@ -262,9 +262,9 @@ var ICONS = {
 "@media (max-width: 360px){" +
 "  .full-start__rate{font-size:18px;}" +
 "  :root{" +
-"    --lmp-h-imdb:22px; --lmp-h-mc:24px; --lmp-h-rt:26px;" +
-"    --lmp-h-popcorn:24px; --lmp-h-tmdb:26px; --lmp-h-awards:18px;" +
-"    --lmp-h-avg:22px; --lmp-h-oscar:20px; --lmp-h-emmy:22px;" +
+"    --lmp-h-imdb:16px; --lmp-h-mc:18px; --lmp-h-rt:18px;" +
+"    --lmp-h-popcorn:18px; --lmp-h-tmdb:20px; --lmp-h-awards:14px;" +
+"    --lmp-h-avg:18px; --lmp-h-oscar:16px; --lmp-h-emmy:16px;" +
 "  }" +
 "  .lmp-award-icon{height:22px;}" +
 "}" +

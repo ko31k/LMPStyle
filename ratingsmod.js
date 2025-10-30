@@ -357,12 +357,12 @@ var ICONS = {
 "  .full-start__rate{" +
 "    margin-right:.25em !important;" +
 "    margin-bottom:.25em;" +
-"    font-size:18px;" +
+"    font-size:16px;" +
 "    min-width:unset;" +
 "  }" +
 "  :root{" +
 "    --lmp-h-imdb:14px; --lmp-h-mc:16px; --lmp-h-rt:16px;" +
-"    --lmp-h-popcorn:16px; --lmp-h-tmdb:18px; --lmp-h-awards:10px;" +
+"    --lmp-h-popcorn:16px; --lmp-h-tmdb:18px; --lmp-h-awards:14px;" +
 "    --lmp-h-avg:14px; --lmp-h-oscar:14px; --lmp-h-emmy:14px;" +
 "  }" +
 "  .loading-dots-container{font-size:.8em; padding:.4em .8em;}" +
@@ -370,10 +370,10 @@ var ICONS = {
 "}" +
 
 "@media (max-width: 360px){" +
-"  .full-start__rate{font-size:18px;}" +
+"  .full-start__rate{font-size:14px;}" +
 "  :root{" +
 "    --lmp-h-imdb:12px; --lmp-h-mc:14px; --lmp-h-rt:14px;" +
-"    --lmp-h-popcorn:14px; --lmp-h-tmdb:16px; --lmp-h-awards:8px;" +
+"    --lmp-h-popcorn:14px; --lmp-h-tmdb:16px; --lmp-h-awards:12px;" +
 "    --lmp-h-avg:12px; --lmp-h-oscar:12px; --lmp-h-emmy:12px;" +
 "  }" +
 "  .lmp-award-icon{height:12px;}" +

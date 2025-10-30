@@ -279,7 +279,8 @@ var ICONS = {
      * Кеш, допоміжне (з omdb+mod.js)
      * =========================
      */
-    var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні
+    /*var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні*/
+    var CACHE_TIME = 60 * 60 * 1000; // 1 година
     var RATING_CACHE_KEY = 'lmp_enh_rating_cache';
     var ID_MAPPING_CACHE = 'lmp_rating_id_cache';
 
@@ -1283,22 +1284,22 @@ function proceedWithImdbId() {
     /**
      * Масштабує текстову частину рейтингу
      */
-    function tuneRatingFont(offsetPx){
-        var tiles = document.querySelectorAll('.full-start__rate');
-        tiles.forEach(function(tile){
-            if (!tile.getAttribute('data-base-fontsize')){
-                var cs = window.getComputedStyle(tile);
-                var basePx = parseFloat(cs.fontSize);
-                if (isNaN(basePx)) basePx = 23;
-                tile.setAttribute('data-base-fontsize', basePx);
-            }
-            var baseStored = parseFloat(tile.getAttribute('data-base-fontsize'));
-            if (isNaN(baseStored)) baseStored = 23;
-            var finalPx = baseStored + offsetPx;
-            if (finalPx < 1) finalPx = 1;
-            tile.style.fontSize = finalPx + 'px';
-        });
-    }
+function tuneRatingFont(offsetPx){
+  var off = parseFloat(offsetPx)||0;
+  var tiles = document.querySelectorAll('.full-start__rate');
+
+  tiles.forEach(function(tile){
+    // Тимчасово прибираємо інлайнове значення, щоб прочитати «чисту» CSS-базу
+    var prev = tile.style.fontSize;
+    tile.style.fontSize = '';
+    var basePx = parseFloat(getComputedStyle(tile).fontSize);
+    if (isNaN(basePx)) basePx = 23;
+
+    var finalPx = Math.max(1, basePx + off);
+    tile.style.fontSize = finalPx + 'px';
+  });
+}
+
 
     /**
      * Масштабує логотипи
@@ -1306,45 +1307,48 @@ function proceedWithImdbId() {
 // Масштабування логотипів (у т.ч. IMDb + нагороди)
 
 function tuneLogos(offsetPx){
-    var REF_BASE = 28;
-    var scale = (REF_BASE + offsetPx) / REF_BASE;
-    if (scale < 0.1) scale = 0.1;
+  var REF_BASE = 28;
+  var scale = (REF_BASE + (parseFloat(offsetPx)||0)) / REF_BASE;
+  if (scale < 0.1) scale = 0.1;
 
-    var logos = document.querySelectorAll(
-      '.full-start__rate .source--name img,' +
-      '.rate--imdb > div:nth-child(2) img,' +
-      '.rate--tmdb > div:nth-child(2) img,' +
-      '.lmp-award-icon img'
-    );
+  var logos = document.querySelectorAll(
+    '.full-start__rate .source--name img,' +
+    '.rate--imdb > div:nth-child(2) img,' +
+    '.rate--tmdb > div:nth-child(2) img,' +
+    '.lmp-award-icon img'
+  );
 
-    logos.forEach(function(logo){
-        if (!logo.getAttribute('data-base-height')){
-            var ch = parseFloat(window.getComputedStyle(logo).height);
+  function cssVarPx(name){
+    if (!name) return null;
+    var raw = getComputedStyle(document.documentElement).getPropertyValue(name);
+    var n = parseFloat(raw);
+    return isNaN(n) ? null : n;
+  }
 
-            if (isNaN(ch) || ch <= 0){
-                if (logo.closest('.rate--rt') || logo.closest('.rate--tmdb')) ch = 30;
-                else if (logo.closest('.rate--mc') || logo.closest('.rate--popcorn')) ch = 30;
-                else if (logo.closest('.rate--imdb') || logo.closest('.rate--avg')) ch = 28;
-                else if (
-                    logo.closest('.rate--awards') ||
-                    logo.closest('.rate--oscars') ||
-                    logo.closest('.rate--emmy')   ||
-                    logo.closest('.lmp-award-icon')
-                ) ch = 24;
-                else ch = 28;
-            }
-            logo.setAttribute('data-base-height', ch);
-        }
+  logos.forEach(function(img){
+    var varName = null;
+    if (img.closest('.rate--imdb'))         varName = '--lmp-h-imdb';
+    else if (img.closest('.rate--tmdb'))    varName = '--lmp-h-tmdb';
+    else if (img.closest('.rate--mc'))      varName = '--lmp-h-mc';
+    else if (img.closest('.rate--rt'))      varName = '--lmp-h-rt';
+    else if (img.closest('.rate--popcorn')) varName = '--lmp-h-popcorn';
+    else if (img.closest('.rate--awards'))  varName = '--lmp-h-awards';
+    else if (img.closest('.rate--avg'))     varName = '--lmp-h-avg';
+    else if (img.closest('.rate--oscars') || img.closest('.lmp-award-icon--oscar'))
+                                            varName = '--lmp-h-oscar';
+    else if (img.closest('.rate--emmy')   || img.closest('.lmp-award-icon--emmy'))
+                                            varName = '--lmp-h-emmy';
 
-        var baseH = parseFloat(logo.getAttribute('data-base-height'));
-        if (isNaN(baseH) || baseH <= 0) baseH = 24;
+    var baseH = cssVarPx(varName);
+    if (!baseH || baseH <= 0) baseH = 24; // акуратний фолбек
 
-        var finalH = baseH * scale;
-        logo.style.height    = finalH + 'px';
-        logo.style.maxHeight = finalH + 'px';
-        logo.style.lineHeight = finalH + 'px'; // тільки на IMG — це IMG і є
-    });
+    var finalH = Math.max(1, baseH * scale);
+    img.style.height    = finalH + 'px';
+    img.style.maxHeight = finalH + 'px';
+    // line-height для IMG не потрібен
+  });
 }
+
 
 
 /*function tuneLogos(offsetPx){
@@ -1466,22 +1470,6 @@ function applyBwLogos(enabled){
         applyBwLogos(cfg.bwLogos);
     }
 
-
-
-
-function resetLogoBaseHeights(){
-  var logos = document.querySelectorAll(
-    '.full-start__rate .source--name img,' +
-    '.rate--imdb > div:nth-child(2) img,' +
-    '.rate--tmdb > div:nth-child(2) img,' +
-    '.lmp-award-icon img'
-  );
-  logos.forEach(function(logo){
-    logo.removeAttribute('data-base-height');
-  });
-}
-
-
 // --- Storage patch: once ---
 function patchStorageSetOnce(){
   if (window.__lmpRatingsPatchedStorage) return;
@@ -1493,7 +1481,6 @@ function patchStorageSetOnce(){
     if (typeof k === 'string' && k.indexOf('ratings_') === 0){
       // дочекатись UI-циклу, тоді застосувати стилі миттєво
       setTimeout(function(){
-        resetLogoBaseHeights();
         applyStylesToAll();
       }, 0);
     }
@@ -1508,7 +1495,6 @@ var reapplyOnResize = (function(){
   return function(){
     clearTimeout(t);
     t = setTimeout(function(){
-      resetLogoBaseHeights();
       applyStylesToAll();
     }, 150);
   };
@@ -1541,7 +1527,6 @@ function attachLiveSettingsHandlers(){
       t = setTimeout(function(){
         // Скидаємо кеш базових висот, щоб масштаб/грейскейл тощо
         // перерахувались одразу без «доганяння» наступною дією
-        resetLogoBaseHeights();
         applyStylesToAll();
       }, 150);
     };

@@ -163,6 +163,18 @@ var ICONS = {
         "    40% { transform: translateY(-0.5em); opacity: 1; }" +
         "}" +
 
+":root{" +
+"  --lmp-h-imdb:26px;" +
+"  --lmp-h-mc:28px;" +
+"  --lmp-h-rt:30px;" +
+"  --lmp-h-popcorn:28px;" +
+"  --lmp-h-tmdb:30px;" +
+"  --lmp-h-awards:22px;" +  // іконка 'Awards' у rate--awards
+"  --lmp-h-avg:26px;" +     // зірка 'TOTAL/AVG'
+"  --lmp-h-oscar:24px;" +   // статуетка Оскара
+"  --lmp-h-emmy:26px;" +    // статуетка Еммі
+"}" +
+ 
         /* КОЛЬОРОВИЙ РЕЖИМ (за замовчуванням): */
         ".rate--oscars, .rate--emmy, .rate--awards, .rate--gold {" +
         "    color: gold;" +
@@ -191,37 +203,32 @@ var ICONS = {
         "    margin-right: 0 !important;" +
         "}" +
 
-"/* Однакове вирівнювання іконок нагород (Оскар / Еммі) */" +
-".lmp-award-icon{" +
+"/* Однакове вирівнювання іконок нагород (Оскар / Еммі) */" +".lmp-award-icon{" +
 "  display:inline-flex;" +
 "  align-items:center;" +
 "  justify-content:center;" +
 "  line-height:1;" +
-"  height:26px;" +                 /* базова для нагород */
+"  height:auto;" +                     /* не фіксуємо тут висоту */
 "  width:auto;" +
 "  flex-shrink:0;" +
 "}" +
 ".lmp-award-icon img{" +
-"  height:100%;" +
+"  height:auto;" +                     /* керуємо нижче через img у модифікаторах */
 "  width:auto;" +
 "  display:block;" +
 "  object-fit:contain;" +
 "}" +
-".lmp-award-icon--oscar{" +        /* Оскар окремо */
-"  height:24px;" +
-"}" +
-".lmp-award-icon--emmy{" +         /* Еммі окремо */
-"  height:26px;" +
-"}" +
+".lmp-award-icon--oscar img{height:var(--lmp-h-oscar);}" +
+".lmp-award-icon--emmy  img{height:var(--lmp-h-emmy);}" +
 
-"/* Базові розміри іконок (замість inline-стилів) */" +
-".rate--imdb .source--name img{height:26px;}" +
-".rate--mc .source--name img{height:28px;}" +
-".rate--rt .source--name img{height:30px;}" +
-".rate--popcorn .source--name img{height:28px;}" +
-".rate--tmdb .source--name img{height:30px;}" +
-".rate--awards .source--name img{height:22px;}" +
-".rate--avg .source--name img{height:26px;}" +
+"/* Базові розміри іконок через CSS-змінні */" +
+".rate--imdb    .source--name img{height:var(--lmp-h-imdb);}" +
+".rate--mc      .source--name img{height:var(--lmp-h-mc);}" +
+".rate--rt      .source--name img{height:var(--lmp-h-rt);}" +
+".rate--popcorn .source--name img{height:var(--lmp-h-popcorn);}" +
+".rate--tmdb    .source--name img{height:var(--lmp-h-tmdb);}" +
+".rate--awards  .source--name img{height:var(--lmp-h-awards);}" +
+".rate--avg     .source--name img{height:var(--lmp-h-avg);}" +
 
 ".settings-param__descr,.settings-param__subtitle{white-space:pre-line;}" +
 
@@ -243,31 +250,23 @@ var ICONS = {
 "    font-size:20px;" +
 "    min-width:unset;" +
 "  }" +
-"  .rate--imdb .source--name img{height:24px;}" +
-"  .rate--mc .source--name img{height:26px;}" +
-"  .rate--rt .source--name img{height:28px;}" +
-"  .rate--popcorn .source--name img{height:26px;}" +
-"  .rate--tmdb .source--name img{height:28px;}" +
-"  .rate--awards .source--name img{height:20px;}" +
-"  .rate--avg .source--name img{height:24px;}" +
-"  .lmp-award-icon{height:24px;}" +
-"  .lmp-award-icon--oscar{height:22px;}" +
-"  .lmp-award-icon--emmy{height:24px;}" +
+"  :root{" +
+"    --lmp-h-imdb:24px; --lmp-h-mc:26px; --lmp-h-rt:28px;" +
+"    --lmp-h-popcorn:26px; --lmp-h-tmdb:28px; --lmp-h-awards:20px;" +
+"    --lmp-h-avg:24px; --lmp-h-oscar:22px; --lmp-h-emmy:24px;" +
+"  }" +
 "  .loading-dots-container{font-size:.8em; padding:.4em .8em;}" +
+"  .lmp-award-icon{height:24px;}" +
 "}" +
 
 "@media (max-width: 360px){" +
 "  .full-start__rate{font-size:18px;}" +
-"  .rate--imdb .source--name img{height:22px;}" +
-"  .rate--mc .source--name img{height:24px;}" +
-"  .rate--rt .source--name img{height:26px;}" +
-"  .rate--popcorn .source--name img{height:24px;}" +
-"  .rate--tmdb .source--name img{height:26px;}" +
-"  .rate--awards .source--name img{height:18px;}" +
-"  .rate--avg .source--name img{height:22px;}" +
+"  :root{" +
+"    --lmp-h-imdb:22px; --lmp-h-mc:24px; --lmp-h-rt:26px;" +
+"    --lmp-h-popcorn:24px; --lmp-h-tmdb:26px; --lmp-h-awards:18px;" +
+"    --lmp-h-avg:22px; --lmp-h-oscar:20px; --lmp-h-emmy:22px;" +
+"  }" +
 "  .lmp-award-icon{height:22px;}" +
-"  .lmp-award-icon--oscar{height:20px;}" +
-"  .lmp-award-icon--emmy{height:22px;}" +
 "}" +
 "</style>";
 
@@ -408,10 +407,14 @@ function oscarIconInline(){
         if (cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp < CACHE_TIME)) {
             return callback(cache[cacheKey].imdb_id);
         }
+// було:
+/*var altUrl = 'https://api.themoviedb.org/3/tv/' + tmdbId +
+    '?api_key=' + Lampa.TMDB.key();*/
 
-        var url = 'https://api.themoviedb.org/3/' + cleanType + '/' + tmdbId +
-            '/external_ids?api_key=' + Lampa.TMDB.key();
-
+// стало:
+var altUrl = 'https://api.themoviedb.org/3/tv/' + tmdbId +
+    '?api_key=' + Lampa.TMDB.key() + '&append_to_response=external_ids';
+        
         var makeRequest = function(url, success, error) {
             new Lampa.Reguest().silent(url, success, function() {
                 new Lampa.Reguest().native(url, function(data) {
@@ -1289,58 +1292,43 @@ function proceedWithImdbId() {
 // Масштабування логотипів (у т.ч. IMDb + нагороди)
 
 function tuneLogos(offsetPx){
-    // еталон (IMDb базово ~28px)
     var REF_BASE = 28;
-
-    // рахуємо коефіцієнт масштабу для цього offset
-    // приклад: offset +5 -> (28+5)/28 ≈ 1.1786
-    //          offset -5 -> (28-5)/28 ≈ 0.8214
     var scale = (REF_BASE + offsetPx) / REF_BASE;
-
-    // не даємо скейлу впасти в нуль або мінус, щоб нічого не схлопнулось
     if (scale < 0.1) scale = 0.1;
 
-var logos = document.querySelectorAll(
-  '.full-start__rate .source--name img,' +
-  '.rate--imdb > div:nth-child(2) img,' +
-  '.rate--tmdb > div:nth-child(2) img,' +
-  '.lmp-award-icon img'
-);
+    var logos = document.querySelectorAll(
+      '.full-start__rate .source--name img,' +
+      '.rate--imdb > div:nth-child(2) img,' +
+      '.rate--tmdb > div:nth-child(2) img,' +
+      '.lmp-award-icon img'
+    );
 
     logos.forEach(function(logo){
-        // 1) запам'ятати базову висоту один раз
         if (!logo.getAttribute('data-base-height')){
             var ch = parseFloat(window.getComputedStyle(logo).height);
 
-            // фолбеки на випадок коли ще не змальовано стилі
             if (isNaN(ch) || ch <= 0){
                 if (logo.closest('.rate--rt') || logo.closest('.rate--tmdb')) ch = 30;
                 else if (logo.closest('.rate--mc') || logo.closest('.rate--popcorn')) ch = 30;
                 else if (logo.closest('.rate--imdb') || logo.closest('.rate--avg')) ch = 28;
                 else if (
                     logo.closest('.rate--awards') ||
-                    logo.classList.contains('lmp-award-icon')
+                    logo.closest('.rate--oscars') ||
+                    logo.closest('.rate--emmy')   ||
+                    logo.closest('.lmp-award-icon')
                 ) ch = 24;
                 else ch = 28;
             }
-
             logo.setAttribute('data-base-height', ch);
         }
 
         var baseH = parseFloat(logo.getAttribute('data-base-height'));
         if (isNaN(baseH) || baseH <= 0) baseH = 24;
 
-        // 2) обчислити кінцеву висоту через масштаб
         var finalH = baseH * scale;
-
-        // 3) застовпити в style
         logo.style.height    = finalH + 'px';
         logo.style.maxHeight = finalH + 'px';
-
-        // line-height нам критично лише для IMG, не для flex-контейнера .lmp-award-icon
-        if (!logo.classList.contains('lmp-award-icon')){
-            logo.style.lineHeight = finalH + 'px';
-        }
+        logo.style.lineHeight = finalH + 'px'; // тільки на IMG — це IMG і є
     });
 }
 
@@ -1441,14 +1429,6 @@ function applyBwLogos(enabled){
     });
 }
 
-    
-
-    var filterValue = enabled ? 'grayscale(100%)' : '';
-
-    logos.forEach(function(node){
-        node.style.filter = filterValue;
-    });
-}
 
     /**
      * Головна функція стилізації

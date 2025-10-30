@@ -1687,7 +1687,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Розмір логотипів рейтингів',
-                description: 'Зміна висоти логотипів. \n"0" – стандарт, "вводимо 1" → +1px, "-1" → "-1px".'
+                description: 'Зміна висоти логотипів. \n"0" – стандарт, вводимо від "1" чи від "-1".'
             },
             onRender: function(item){}
         });
@@ -1702,7 +1702,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Розмір числа рейтингу',
-                description: 'Зміна розміру числа рейтингу та розміру фону. \n"0" – стандарт, "+1" → +1px, "-1" → -1px.'
+                description: 'Зміна розміру числа рейтингу та розміру фону. \n"0" – стандарт, вводимо від "1" чи від "-1".'
             },
             onRender: function(item){}
         });
@@ -1747,7 +1747,7 @@ function initRatingsPluginUI(){
             },
             field: {
                 name: 'Відступи між блоками (крок)',
-                description: 'Додатковий відступ. "0" – стандарт (0.3em). \n"1" → +0.1em (0.4em).'
+                description: 'Додатковий відступ. "0" – стандарт (0.3em). \nЩоб збільшити - вводимо від "1"'
             },
             onRender: function(item){}
         });

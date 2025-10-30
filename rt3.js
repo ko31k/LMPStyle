@@ -344,6 +344,21 @@ function oscarIconInline(){
   return '<span class="lmp-award-icon lmp-award-icon--oscar"><img src="' + ICONS.oscar + '" alt="Oscar"></span>';
 }
 
+function dimRateLine(rateLine){
+  if (!rateLine || !rateLine.length) return;
+  rateLine.children('.full-start__rate').css({
+    opacity: .3,
+    pointerEvents: 'none'
+  });
+}
+
+function undimRateLine(rateLine){
+  if (!rateLine || !rateLine.length) return;
+  rateLine.children('.full-start__rate').css({
+    opacity: '',
+    pointerEvents: ''
+  });
+}
 
 
     /**
@@ -360,7 +375,7 @@ function oscarIconInline(){
 
         var loaderHtml =
             '<div class="loading-dots-container">' +
-                '<div class="loading-dots__text">Loading ratings</div>' +
+                '<div class="loading-dots__text">Пошук…</div>'
                 '<div class="loading-dots__dot"></div>' +
                 '<div class="loading-dots__dot"></div>' +
                 '<div class="loading-dots__dot"></div>' +
@@ -369,6 +384,24 @@ function oscarIconInline(){
         rateLine.append(loaderHtml);
     }
 
+function dimRateLine(rateLine){
+  if (!rateLine || !rateLine.length) return;
+  rateLine.children('.full-start__rate').css({
+    opacity: .3,
+    pointerEvents: 'none'
+  });
+}
+
+function undimRateLine(rateLine){
+  if (!rateLine || !rateLine.length) return;
+  rateLine.children('.full-start__rate').css({
+    opacity: '',
+    pointerEvents: ''
+  });
+}
+
+    
+    
     function removeLoadingAnimation() {
         var render = Lampa.Activity.active().activity.render();
         if (!render) return;
@@ -992,11 +1025,12 @@ function updateHiddenElements(data) {
 
         $('.rate--avg', rateLine).remove();
 
-        if (!parts.length) {
-            removeLoadingAnimation();
-            rateLine.css('visibility','visible');
-            return;
-        }
+if (!parts.length) {
+    removeLoadingAnimation();
+    undimRateLine(rateLine);
+    return;
+}
+
 
         var sum = 0;
         for (var i = 0; i < parts.length; i++) sum += parts[i];
@@ -1018,8 +1052,9 @@ function updateHiddenElements(data) {
         if (firstRate.length) firstRate.before(avgElement);
         else rateLine.prepend(avgElement);
 
-        removeLoadingAnimation();
-        rateLine.css('visibility','visible');
+removeLoadingAnimation();
+undimRateLine(rateLine);
+
     }
 
 
@@ -1048,9 +1083,10 @@ var normalizedCard = {
 
         var rateLine = $('.full-start-new__rate-line', render);
         if (rateLine.length) {
-            rateLine.css('visibility', 'hidden');
+            dimRateLine(rateLine);
             addLoadingAnimation();
         }
+
 
 function proceedWithImdbId() {
     // 1) будуємо ключ кешу акуратно
@@ -1129,11 +1165,12 @@ function proceedWithImdbId() {
 }
 
         function renderAll() {
-            if (!currentRatingsData) {
-                removeLoadingAnimation();
-                if (rateLine.length) rateLine.css('visibility','visible');
-                return;
-            }
+        if (!currentRatingsData) {
+            removeLoadingAnimation();
+            if (rateLine.length) undimRateLine(rateLine);
+            return;
+        }
+
 
             updateHiddenElements(currentRatingsData);
             insertRatings(currentRatingsData);

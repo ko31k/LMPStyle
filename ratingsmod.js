@@ -1338,10 +1338,15 @@ function proceedWithImdbId() {
 
 /* === FIX: показувати '10' замість '10.0' === */
 (function(){
-  function fixTenIn(el){
-    var t = (el.textContent || '').trim();
-    if (t === '10.0' || t === '10,0') el.textContent = '10';
-  }
+ function fixTenIn(el){
+   // нормалізуємо пробіли (у т.ч. нерозривні)
+   var t = (el.textContent || '').replace(/\u00A0/g, ' ').trim();
+
+   // 10 з будь-якою кількістю нульових десяткових: 10.0, 10.00, 10., 10,0, 10,00
+   if (/^10(?:[.,]0+)?$/.test(t)) {
+     el.textContent = '10';
+   }
+ }
 
   function scan(root){
     try{

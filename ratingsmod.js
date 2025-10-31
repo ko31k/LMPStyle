@@ -313,6 +313,16 @@ var ICONS = {
         "    margin-right: 0 !important;" +
         "}" +
 
+
+/* Повністю ховаємо рядок під час завантаження */
+".full-start-new__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader)," +
+".full-start__rate-line.lmp-is-loading-ratings > :not(#lmp-search-loader) {" +
+"    opacity: 0 !important;" + /* <--- ВАША ЗМІНА ТУТ */
+"    pointer-events: none !important;" +
+"    transition: opacity 0.15s;" + /* Для плавності */
+"}" +
+
+      
 "/* Однакове вирівнювання іконок нагород (Оскар / Еммі) */" +".lmp-award-icon{" +
 "  display:inline-flex;" +
 "  align-items:center;" +
@@ -454,18 +464,13 @@ function oscarIconInline(){
 
 function dimRateLine(rateLine){
   if (!rateLine || !rateLine.length) return;
-  rateLine.children('.full-start__rate').css({
-    opacity: .3,
-    pointerEvents: 'none'
-  });
+  rateLine.addClass('lmp-is-loading-ratings');
 }
+
 
 function undimRateLine(rateLine){
   if (!rateLine || !rateLine.length) return;
-  rateLine.children('.full-start__rate').css({
-    opacity: '',
-    pointerEvents: ''
-  });
+  rateLine.removeClass('lmp-is-loading-ratings');
 }
 
 
@@ -1329,6 +1334,74 @@ function proceedWithImdbId() {
         }
     }
 
+
+
+/* === FIX: показувати '10' замість '10.0' === */
+(function(){
+  function fixTenIn(el){
+    var t = (el.textContent || '').trim();
+    if (t === '10.0' || t === '10,0') el.textContent = '10';
+  }
+
+  function scan(root){
+    try{
+      var nodes = root.querySelectorAll('.full-start__rate > div:first-child');
+      for (var i=0;i<nodes.length;i++) fixTenIn(nodes[i]);
+    }catch(e){}
+  }
+
+  // Запускаємо спостерігача за рядком рейтингів
+  window.__lmpTenFixStart = function(){
+    try{
+      var render = Lampa && Lampa.Activity && Lampa.Activity.active()
+                && Lampa.Activity.active().activity.render
+                && Lampa.Activity.active().activity.render();
+      if (!render || !render[0]) return;
+
+      var target =
+        render[0].querySelector('.full-start-new__rate-line, .full-start__rate-line')
+        || render[0];
+
+      // одноразово виправляємо вже наявне
+      scan(target);
+
+      // якщо немає MutationObserver — просто одноразова правка й вихід
+      var MObs = window.MutationObserver || window.WebKitMutationObserver;
+      if (!MObs) return;
+
+      // скидаємо попереднього, якщо був
+      if (window.__lmpTenObs) { window.__lmpTenObs.disconnect(); window.__lmpTenObs = null; }
+
+      // реагуємо на нові/змінені вузли в рядку рейтингів
+      var obs = new MObs(function(muts){
+        for (var i=0;i<muts.length;i++){
+          var m = muts[i];
+          if (m.type === 'characterData'){
+            var p = m.target && m.target.parentNode;
+            if (p && p.nodeType === 1 && p.matches('.full-start__rate > div:first-child')) fixTenIn(p);
+          } else if (m.type === 'childList'){
+            var added = m.addedNodes || [];
+            for (var j=0;j<added.length;j++){
+              var n = added[j];
+              if (!n || n.nodeType !== 1) continue;
+              if (n.matches && n.matches('.full-start__rate > div:first-child')) fixTenIn(n);
+              if (n.querySelectorAll){
+                var inner = n.querySelectorAll('.full-start__rate > div:first-child');
+                for (var k=0;k<inner.length;k++) fixTenIn(inner[k]);
+              }
+            }
+          }
+        }
+      });
+
+      obs.observe(target, {subtree:true, childList:true, characterData:true});
+      window.__lmpTenObs = obs;
+    }catch(e){}
+  };
+})();
+
+
+  
     /**
      * Ініціалізація
      */
@@ -1338,12 +1411,13 @@ function proceedWithImdbId() {
             if (e.type === 'complite') {
                 setTimeout(function() {
                     fetchAdditionalRatings(e.data.movie || e.object || {});
+                    __lmpTenFixStart(); // ↩️ запускаємо мінімальний «фікс 10.0 → 10»
                 }, 500);
             }
         });
     }
 
-
+  
     /**
      * =========================
      * SETTINGS / UI / СТИЛІ

@@ -91,11 +91,11 @@
 
   // ============================= Налаштування ===============================
   var settings = {
-    info_panel      : Lampa.Storage.get('interface_mod_new_info_panel', true),   // за замовчуванням: ТАК
+    info_panel      : Lampa.Storage.get('interface_mod_new_info_panel', true),   // дефолт: ТАК
     colored_ratings : Lampa.Storage.get('interface_mod_new_colored_ratings', false),
     colored_status  : Lampa.Storage.get('interface_mod_new_colored_status', false),
     colored_age     : Lampa.Storage.get('interface_mod_new_colored_age', false),
-    theme           : Lampa.Storage.get('interface_mod_new_theme_select', 'default') // дефолтна тема
+    theme           : Lampa.Storage.get('interface_mod_new_theme_select', 'default') // дефолт: За замовчуванням
   };
 
   // Пам’ять поточної картки (для миттєвого оновлення без перезавантаження)
@@ -117,7 +117,6 @@
       }
       *:not(input){ -webkit-user-select:none !important; -moz-user-select:none !important; -ms-user-select:none !important; user-select:none !important; }
       *{ -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; box-sizing:border-box; outline:none; -webkit-user-drag:none; }
-      /* Вирівнювання елементів рейтингової лінії як у твоїх стилях */
       .full-start-new__rate-line > * {
         margin-left: 0 !important;
         margin-right: 1em !important;
@@ -288,22 +287,19 @@
       field: { name: Lampa.Lang.translate('interface_mod_new_theme_select_title') }
     });
 
-    // Перемістити одразу під «Інтерфейс»
-    (function moveSection(){
-      var tries = 20;
-      var t = setInterval(function(){
-        var $folders = $('.settings-folder');
-        var $interface = $folders.filter(function(){ return $(this).data('component') === 'interface'; });
-        var $mod = $folders.filter(function(){ return $(this).data('component') === 'interface_mod_new'; });
-        if ($interface.length && $mod.length) {
-          if ($mod.prev()[0] !== $interface[0]) $mod.insertAfter($interface);
-          clearInterval(t);
-        }
-        if (--tries <= 0) clearInterval(t);
-      }, 150);
-    })();
+    // Надійно перемістити «Інтерфейс+» одразу після «Інтерфейс»
+    function moveAfterInterface(){
+      var $folders = $('.settings-folder');
+      var $interface = $folders.filter(function(){ return $(this).data('component') === 'interface'; });
+      var $mod = $folders.filter(function(){ return $(this).data('component') === 'interface_mod_new'; });
+      if ($interface.length && $mod.length && $mod.prev()[0] !== $interface[0]) $mod.insertAfter($interface);
+    }
+    // Серія спроб + спостерігач за DOM, щоб спрацювало завжди
+    var tries=0, t=setInterval(function(){ moveAfterInterface(); if(++tries>=40) clearInterval(t); }, 150);
+    var obs = new MutationObserver(function(){ moveAfterInterface(); });
+    obs.observe(document.body, {childList:true, subtree:true});
 
-    // Перехоплення Storage.set — миттєве застосування
+    // Перехоплення Storage.set — миттєве застосування без перезавантаження
     if (!window.__ifx_patch_storage) {
       window.__ifx_patch_storage = true;
       var _set = Lampa.Storage.set;
@@ -486,19 +482,33 @@
   // =========================== Кольорові рейтинги ===========================
   function updateVoteColors() {
     if (!Lampa.Storage.get('interface_mod_new_colored_ratings', false)) return;
+
+    var EXTRA_SELECTORS = [
+      '.card__vote','.full-start__rate','.full-start-new__rate','.info__rate',
+      '.card__imdb-rate','.card__kinopoisk-rate','.card__tmdb-rate','.card__mc-rate','.card__rt-rate',
+      '[class*="__rate"]','[class*="-rate"]','[class*="rating"]','.rating','.vote'
+    ];
+    var SEL = EXTRA_SELECTORS.join(',');
+
     function paint(el) {
       var txt = ($(el).text() || '').trim();
-      var m = txt.match(/(\d+(\.\d+)?)/); if (!m) return;
-      var v = parseFloat(m[0]), color = '';
-      if (v >= 0 && v <= 3) color = 'red';
-      else if (v > 3 && v < 6) color = 'orange';
-      else if (v >= 6 && v < 8) color = 'cornflowerblue';
-      else if (v >= 8 && v <= 10) color = 'lawngreen';
-      if (color) $(el).css('color', color);
+      var m = txt.match(/(\d+(\.\d+)?)/);
+      if (!m) return;
+      var v = parseFloat(m[0]);
+      if (isNaN(v) || v < 0 || v > 10) return;
+      var color = '';
+      if (v <= 3) color = 'red';
+      else if (v < 6) color = 'orange';
+      else if (v < 8) color = 'cornflowerblue';
+      else color = 'lawngreen';
+      $(el).css('color', color);
     }
-    $(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").each(function(){ paint(this); });
+    $(SEL).each(function(){ paint(this); });
   }
-  function clearVoteColors(){ $(".card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate").css('color',''); }
+  function clearVoteColors(){
+    var SEL = '.card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate, .card__tmdb-rate, .card__mc-rate, .card__rt-rate, [class*="__rate"], [class*="-rate"], [class*="rating"], .rating, .vote';
+    $(SEL).css('color','');
+  }
   function setupVoteColorsObserver() {
     setTimeout(function(){ if (Lampa.Storage.get('interface_mod_new_colored_ratings', false)) updateVoteColors(); }, 400);
     var obs = new MutationObserver(function(){ if (Lampa.Storage.get('interface_mod_new_colored_ratings', false)) setTimeout(updateVoteColors, 80); });
@@ -506,7 +516,7 @@
     Lampa.Listener.follow('full', function (e) { if (e.type === 'complite' && Lampa.Storage.get('interface_mod_new_colored_ratings', false)) setTimeout(updateVoteColors, 100); });
   }
 
-  // ====== Базові CSS для статусів (точно як у твоєму прикладі) ==============
+  // ====== Базові розміри для статусів/PG (без білої рамки) ==================
   function ensureStatusBaseCss(on){
     var id = 'interface_mod_status_base_css';
     var ex = document.getElementById(id);
@@ -516,7 +526,7 @@
       s.textContent = `
         .full-start__pg, .full-start-new__pg, .full-start__status, .full-start-new__status {
           font-size: 1.2em !important;
-          border: 1px solid #fff !important;
+          border: 0 !important;
           -webkit-border-radius: 0.2em !important;
           -moz-border-radius: 0.2em !important;
           border-radius: 0.2em !important;
@@ -558,11 +568,7 @@
       else if (/пост/i.test(t) || /post/i.test(t)) key = 'post';
       if (!key) return;
       var c = palette[key];
-      $(el).css({
-        'background-color': c.bg,
-        color: c.text
-        // решта метрик (font-size, border, radius, padding, margins) задаються через ensureStatusBaseCss() з !important
-      });
+      $(el).css({ 'background-color': c.bg, color: c.text });
     }
     ensureStatusBaseCss(true);
 
@@ -621,7 +627,6 @@
       });
       if (!g) return;
       $(el).css({ 'background-color': col[g].bg, color: col[g].text });
-      // Розміри/рамка вже задані ensureStatusBaseCss() якщо включені статуси; тут нічого не ламамо
     }
 
     var SEL = '.full-start__pg, .full-start-new__pg';

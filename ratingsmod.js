@@ -296,20 +296,23 @@ var ICONS = {
         "body.lmp-enh--mono .rate--awards," +
         "body.lmp-enh--mono .rate--gold," +
 
-        "body.lmp-enh--mono .rating--green," +
-        "body.lmp-enh--mono .rating--lime," +
-        "body.lmp-enh--mono .rating--orange," +
-        "body.lmp-enh--mono .rating--red," +
+"body.lmp-enh--mono .rating--green," +
+"body.lmp-enh--mono .rating--blue," +
+"body.lmp-enh--mono .rating--orange," +
+"body.lmp-enh--mono .rating--red," +
+
+
 
         "body.lmp-enh--mono .full-start__rate {" +
         "    color: inherit !important;" +
         "}" +
 
 "/* Кольори оцінок: активні лише коли немає body.lmp-enh--mono */" +
-"body:not(.lmp-enh--mono) .full-start__rate.rating--green  { color: #2ecc71; }" +
-"body:not(.lmp-enh--mono) .full-start__rate.rating--lime   { color: #a3e635; }" +
-"body:not(.lmp-enh--mono) .full-start__rate.rating--orange { color: #f59e0b; }" +
-"body:not(.lmp-enh--mono) .full-start__rate.rating--red    { color: #ef4444; }" +
+"body:not(.lmp-enh--mono) .full-start__rate.rating--green  { color: #2ecc71; }" + /* ≥ 8.0  */
+"body:not(.lmp-enh--mono) .full-start__rate.rating--blue   { color: #60a5fa; }" + /* 6.0–7.9 */
+"body:not(.lmp-enh--mono) .full-start__rate.rating--orange { color: #f59e0b; }" + /* 4.0–5.9 */
+"body:not(.lmp-enh--mono) .full-start__rate.rating--red    { color: #ef4444; }" + /* < 4.0   */
+
 
       
         /* ущільнюємо відстань між бейджами рейтингів */
@@ -437,12 +440,15 @@ var ICONS = {
         return card.name || card.original_name ? 'tv' : 'movie';
     }
 
-    function getRatingClass(rating) {
-        if (rating >= 8.0) return 'rating--green';
-        if (rating >= 6.0) return 'rating--lime';
-        if (rating >= 5.5) return 'rating--orange';
-        return 'rating--red';
-    }
+function getRatingClass(rating){
+  var r = parseFloat(rating);
+  if (isNaN(r)) return 'rating--red';
+  if (r >= 8.0) return 'rating--green';   // ≥ 8.0
+  if (r >= 6.0) return 'rating--blue';    // 6.0–7.9
+  if (r >= 4.0) return 'rating--orange';  // 4.0–5.9
+  return 'rating--red';                   // < 4.0
+}
+
 
 
     /**
@@ -996,7 +1002,7 @@ if (imdbContainer.length) {
   var cfg = getCfg();
   if (!cfg.enableImdb || !data.imdb_display) {
     imdbContainer.addClass('hide')
-                 .removeClass('rating--green rating--lime rating--orange rating--red');
+                 .removeClass('rating--green rating--blue rating--orange rating--red');
   } else {
     imdbContainer.removeClass('hide');
     var imdbDivs = imdbContainer.find('> div');
@@ -1005,7 +1011,7 @@ if (imdbContainer.length) {
       imdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.imdb, 'IMDb', 22));
     }
     // кольори
-    imdbContainer.removeClass('rating--green rating--lime rating--orange rating--red');
+    imdbContainer.removeClass('rating--green rating--blue rating--orange rating--red');
     if (cfg.colorizeAll && data.imdb_for_avg && !isNaN(data.imdb_for_avg)) {
       imdbContainer.addClass(getRatingClass(parseFloat(data.imdb_for_avg)));
     }
@@ -1019,14 +1025,14 @@ if (tmdbContainer.length) {
   var cfg = getCfg();
   if (!cfg.enableTmdb || !data.tmdb_display) {
     tmdbContainer.addClass('hide')
-                 .removeClass('rating--green rating--lime rating--orange rating--red');
+                 .removeClass('rating--green rating--blue rating--orange rating--red');
   } else {
     var tmdbDivs = tmdbContainer.find('> div');
     if (tmdbDivs.length >= 2) {
       tmdbDivs.eq(0).text(parseFloat(data.tmdb_display).toFixed(1)); // формат 0–10
       tmdbDivs.eq(1).addClass('source--name').html(iconImg(ICONS.tmdb, 'TMDB', 24));
     }
-    tmdbContainer.removeClass('hide rating--green rating--lime rating--orange rating--red');
+    tmdbContainer.removeClass('hide rating--green rating--blue rating--orange rating--red');
     if (cfg.colorizeAll && data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) {
       tmdbContainer.addClass(getRatingClass(parseFloat(data.tmdb_for_avg)));
     }
@@ -1039,7 +1045,7 @@ function applyAwardsColor(rateLine, cfg){
   var $tiles = rateLine.find('.rate--awards, .rate--oscars, .rate--emmy');
 
   // прибрати всі можливі колірні класи
-  $tiles.removeClass('rating--green rating--lime rating--orange rating--red');
+  $tiles.removeClass('rating--green rating--blue rating--orange rating--red');
 
   if (cfg && cfg.colorizeAll) {
     // тумблер увімкнено → залишаємо/ставимо «золото»
@@ -1112,7 +1118,7 @@ function insertRatings(data) {
   }
 
   // кольори (за глобальним тумблером)
-  cont.removeClass('rating--green rating--lime rating--orange rating--red');
+  cont.removeClass('rating--green rating--blue rating--orange rating--red');
   if (cfg.colorizeAll) cont.addClass(getRatingClass(mcVal));
 })();
 
@@ -1162,7 +1168,7 @@ function insertRatings(data) {
             cont.find('.source--name').html(iconImg(rtIconUrl, 'Rotten Tomatoes', 22, extra));
         }
 
-        cont.removeClass('rating--green rating--lime rating--orange rating--red');
+        cont.removeClass('rating--green rating--blue rating--orange rating--red');
         if (cfg.colorizeAll) cont.addClass(getRatingClass(rtVal));
     })();
 
@@ -1202,7 +1208,7 @@ function insertRatings(data) {
             cont.find('.source--name').html(iconImg(ICONS.popcorn, 'Audience', 22));
         }
 
-        cont.removeClass('rating--green rating--lime rating--orange rating--red');
+        cont.removeClass('rating--green rating--blue rating--orange rating--red');
         if (cfg.colorizeAll) cont.addClass(getRatingClass(pcVal));
     })();
 

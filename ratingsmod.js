@@ -432,7 +432,7 @@ var ICONS = {
     };
 
     var currentRatingsData = null;
-
+    var __lmpLastReqToken = null; 
 
     function getCardType(card) {
         var type = card.media_type || card.type;
@@ -1365,6 +1365,10 @@ var normalizedCard = {
     vote: card.vote_average || card.vote || null
 };
 
+var cardKeyForToken = (normalizedCard.type || getCardType(normalizedCard)) + '_' + (normalizedCard.imdb_id || normalizedCard.id || '');
+var reqToken = cardKeyForToken + '_' + Date.now();
+__lmpLastReqToken = reqToken;
+
 
         //var rateLine = $('.full-start-new__rate-line', render);
         //addLoadingAnimation();
@@ -1443,6 +1447,7 @@ function proceedWithImdbId() {
 
 
         function renderAll() {
+        if (reqToken !== __lmpLastReqToken) return;
         if (!currentRatingsData) {
             removeLoadingAnimation();
             /*if (rateLine.length) undimRateLine(rateLine);*/

@@ -1264,10 +1264,21 @@ function calculateAverageRating(data) {
     var rateLine = $('.full-start-new__rate-line:not([data-lmp-fake]), .full-start__rate-line:not([data-lmp-fake])', render);
     if (!rateLine.length) return;
 
-    var cfg = (typeof getCfg === 'function') ? getCfg() : {
-        enableImdb: true, enableTmdb: true, enableMc: true, enableRt: true, enablePop: true,
-        mcMode: 'meta', colorizeAll: true
-    };
+var cfg = (typeof getCfg === 'function') ? getCfg() : {
+  enableImdb: true, enableTmdb: true, enableMc: true, enableRt: true, enablePop: true,
+  mcMode: 'meta', colorizeAll: true, showAverage: true
+};
+
+$('.rate--avg', rateLine).remove();
+if (!cfg.showAverage) {
+  // користувач вимкнув AVG → не будуємо його взагалі
+  removeLoadingAnimation();
+  undimRateLine(rateLine);
+  // але все одно тримаємо нагороди в синхроні із загальним тумблером кольорів
+  try { applyAwardsColor(rateLine, cfg); } catch(e){}
+  return;
+}
+
 
     var parts = [];
 
@@ -1892,8 +1903,7 @@ function attachLiveSettingsHandlers(){
     return function(){
       clearTimeout(t);
 t = setTimeout(function(){
-  applyStylesToAll();
-  // Миттєвий перерендер поточних плиток, якщо вже є дані
+  // 1) Спочатку перемальовуємо плитки (дані)
   try{
     if (typeof currentRatingsData === 'object' && currentRatingsData){
       updateHiddenElements(currentRatingsData);
@@ -1901,7 +1911,11 @@ t = setTimeout(function(){
       calculateAverageRating(currentRatingsData);
     }
   }catch(e){}
+
+  // 2) Потім застосовуємо стилі (показ/приховати AVG/нагороди, розміри тощо)
+  applyStylesToAll();
 }, 150);
+
     };
   })();
 
@@ -2129,18 +2143,29 @@ function initRatingsPluginUI(){
             onRender: function() {}
           });
 
-          Lampa.SettingsApi.addParam({
-            component: 'lmp_ratings',
-            param: { name: 'ratings_mc_mode', type: 'select', values: '', "default": RCFG_DEFAULT.ratings_mc_mode },
-            field: {  name: 'Metacritic — джерело оцінки', description: 'Перемикач: Metascore або UserScore' },
-            options: [
-              { title: 'Metascore', value: 'meta' },
-              { title: 'UserScore', value: 'user' }
-            ],
-            onRender: function() {}
-          });
+Lampa.SettingsApi.addParam({
+  component: 'lmp_ratings',
+  param: {
+    name: 'ratings_mc_mode',
+    type: 'select',
+    // у Lampa select очікує values як масив об’єктів {title, value} або як мапу
+    values: [
+      { title: 'Metascore', value: 'meta' },
+      { title: 'UserScore', value: 'user' }
+    ],
+    "default": RCFG_DEFAULT.ratings_mc_mode
+  },
+  field: {
+    name: 'Metacritic — джерело оцінки',
+    description: 'Перемикач: Metascore або UserScore'
+  },
+  onRender: function(){},
+  // (необов’язково) підстрахуємось і запишемо в Storage при виборі
+  onChange: function(val){ try{ Lampa.Storage.set('ratings_mc_mode', val); }catch(e){} }
+});
 
-          ['imdb','tmdb','mc','rt','popcorn'].forEach(function(key){
+
+          ['imdb','tmdb','Metacritic','rottentomatoes','popcornmeter'].forEach(function(key){
             Lampa.SettingsApi.addParam({
               component: 'lmp_ratings',
               param: { name: 'ratings_enable_' + key, type: 'trigger', default: RCFG_DEFAULT['ratings_enable_' + key] },

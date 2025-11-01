@@ -1587,71 +1587,62 @@ function proceedWithImdbId() {
     /**
      * Повертає актуальні значення з Lampa.Storage
      */
-    function getCfg() {
-        var omdbKey = Lampa.Storage.get('ratings_omdb_key', RCFG_DEFAULT.ratings_omdb_key);
-        var mdblistKey = Lampa.Storage.get('ratings_mdblist_key', RCFG_DEFAULT.ratings_mdblist_key);
+function getCfg() {
+  var omdbKey   = Lampa.Storage.get('ratings_omdb_key', RCFG_DEFAULT.ratings_omdb_key);
+  var mdblistKey= Lampa.Storage.get('ratings_mdblist_key', RCFG_DEFAULT.ratings_mdblist_key);
 
-        var bwLogos = !!Lampa.Storage.field('ratings_bw_logos', RCFG_DEFAULT.ratings_bw_logos);
-        var showAwards = !!Lampa.Storage.field('ratings_show_awards', RCFG_DEFAULT.ratings_show_awards);
-        var showAverage = !!Lampa.Storage.field('ratings_show_average', RCFG_DEFAULT.ratings_show_average);
+  var bwLogos   = !!Lampa.Storage.field('ratings_bw_logos',      RCFG_DEFAULT.ratings_bw_logos);
+  var showAwards= !!Lampa.Storage.field('ratings_show_awards',   RCFG_DEFAULT.ratings_show_awards);
+  var showAverage=!!Lampa.Storage.field('ratings_show_average',  RCFG_DEFAULT.ratings_show_average);
 
-        var logoOffRaw = Lampa.Storage.get('ratings_logo_offset', RCFG_DEFAULT.ratings_logo_offset);
-        var logoOffset = parseInt(logoOffRaw,10);
-        if (isNaN(logoOffset)) logoOffset = 0;
+  var logoOffset= parseInt(Lampa.Storage.get('ratings_logo_offset',  RCFG_DEFAULT.ratings_logo_offset),10);
+  if (isNaN(logoOffset)) logoOffset = 0;
 
-        var fontOffRaw = Lampa.Storage.get('ratings_font_offset', RCFG_DEFAULT.ratings_font_offset);
-        var fontOffset = parseInt(fontOffRaw,10);
-        if (isNaN(fontOffset)) fontOffset = 0;
+  var fontOffset= parseInt(Lampa.Storage.get('ratings_font_offset',  RCFG_DEFAULT.ratings_font_offset),10);
+  if (isNaN(fontOffset)) fontOffset = 0;
 
-        var alphaRaw = Lampa.Storage.get('ratings_badge_alpha', RCFG_DEFAULT.ratings_badge_alpha);
-        var badgeAlpha = parseFloat(alphaRaw);
-        if (isNaN(badgeAlpha)) badgeAlpha = RCFG_DEFAULT.ratings_badge_alpha;
-        if (badgeAlpha < 0) badgeAlpha = 0;
-        if (badgeAlpha > 1) badgeAlpha = 1;
+  var badgeAlpha= parseFloat(Lampa.Storage.get('ratings_badge_alpha',RCFG_DEFAULT.ratings_badge_alpha));
+  if (isNaN(badgeAlpha)) badgeAlpha = RCFG_DEFAULT.ratings_badge_alpha;
+  if (badgeAlpha < 0) badgeAlpha = 0;
+  if (badgeAlpha > 1) badgeAlpha = 1;
 
-        var toneRaw = Lampa.Storage.get('ratings_badge_tone', RCFG_DEFAULT.ratings_badge_tone);
-        var badgeTone = parseInt(toneRaw,10);
-        if (isNaN(badgeTone)) badgeTone = RCFG_DEFAULT.ratings_badge_tone;
-        if (badgeTone < 0) badgeTone = 0;
-        if (badgeTone > 255) badgeTone = 255;
+  var badgeTone = parseInt(Lampa.Storage.get('ratings_badge_tone',   RCFG_DEFAULT.ratings_badge_tone),10);
+  if (isNaN(badgeTone)) badgeTone = RCFG_DEFAULT.ratings_badge_tone;
+  if (badgeTone < 0) badgeTone = 0;
+  if (badgeTone > 255) badgeTone = 255;
 
-        var gapRaw = Lampa.Storage.get('ratings_gap_step', RCFG_DEFAULT.ratings_gap_step);
-        var gapStep = parseInt(gapRaw,10);
-        if (isNaN(gapStep) || gapStep < 0) gapStep = 0;
+  var gapStep   = parseInt(Lampa.Storage.get('ratings_gap_step',     RCFG_DEFAULT.ratings_gap_step),10);
+  if (isNaN(gapStep) || gapStep < 0) gapStep = 0;
 
-        // === NEW FIELDS (read from Storage) ===
-        var colorizeAll = !!Lampa.Storage.field('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all);
+  var colorizeAll = !!Lampa.Storage.field('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all);
 
-        var enIMDB     = !!Lampa.Storage.field('ratings_enable_imdb',     RCFG_DEFAULT.ratings_enable_imdb);
-        var enTMDB     = !!Lampa.Storage.field('ratings_enable_tmdb',     RCFG_DEFAULT.ratings_enable_tmdb);
-        var enMC       = !!Lampa.Storage.field('ratings_enable_mc',       RCFG_DEFAULT.ratings_enable_mc);
-        var enRT       = !!Lampa.Storage.field('ratings_enable_rt',       RCFG_DEFAULT.ratings_enable_rt);
-        var enPopcorn  = !!Lampa.Storage.field('ratings_enable_popcorn',  RCFG_DEFAULT.ratings_enable_popcorn);
+  var enIMDB    = !!Lampa.Storage.field('ratings_enable_imdb',     RCFG_DEFAULT.ratings_enable_imdb);
+  var enTMDB    = !!Lampa.Storage.field('ratings_enable_tmdb',     RCFG_DEFAULT.ratings_enable_tmdb);
+  var enMC      = !!Lampa.Storage.field('ratings_enable_mc',       RCFG_DEFAULT.ratings_enable_mc);
+  var enRT      = !!Lampa.Storage.field('ratings_enable_rt',       RCFG_DEFAULT.ratings_enable_rt);
+  var enPopcorn = !!Lampa.Storage.field('ratings_enable_popcorn',  RCFG_DEFAULT.ratings_enable_popcorn);
 
+  return {
+    omdbKey: omdbKey || '',
+    mdblistKey: mdblistKey || '',
+    bwLogos: bwLogos,
+    showAwards: showAwards,
+    showAverage: showAverage,
+    logoOffset: logoOffset,
+    fontOffset: fontOffset,
+    badgeAlpha: badgeAlpha,
+    badgeTone: badgeTone,
+    gapStep: gapStep,
+    colorizeAll: colorizeAll,
 
-      
-        return {
-            omdbKey: omdbKey || '',
-            mdblistKey: mdblistKey || '',
-            bwLogos: bwLogos,
-            showAwards: showAwards,
-            showAverage: showAverage,
-            logoOffset: logoOffset,
-            fontOffset: fontOffset,
-            badgeAlpha: badgeAlpha,
-            badgeTone: badgeTone,
-            gapStep: gapStep,
-            colorizeAll: colorizeAll,
-            mcMode: mcMode,
+    enableImdb: enIMDB,
+    enableTmdb: enTMDB,
+    enableMc:   enMC,
+    enableRt:   enRT,
+    enablePop:  enPopcorn
+  };
+}
 
-            enableImdb: enIMDB,
-            enableTmdb: enTMDB,
-            enableMc:   enMC,
-            enableRt:   enRT,
-            enablePop:  enPopcorn
-
-        };
-    }
 
     /**
      * Синхронізує apiKeys + monochromeIcons у LMP_ENH_CONFIG

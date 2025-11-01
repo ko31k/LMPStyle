@@ -305,6 +305,13 @@ var ICONS = {
         "    color: inherit !important;" +
         "}" +
 
+"/* Кольори оцінок: активні лише коли немає body.lmp-enh--mono */" +
+"body:not(.lmp-enh--mono) .full-start__rate.rating--green  { color: #2ecc71; }" +
+"body:not(.lmp-enh--mono) .full-start__rate.rating--lime   { color: #a3e635; }" +
+"body:not(.lmp-enh--mono) .full-start__rate.rating--orange { color: #f59e0b; }" +
+"body:not(.lmp-enh--mono) .full-start__rate.rating--red    { color: #ef4444; }" +
+
+      
         /* ущільнюємо відстань між бейджами рейтингів */
         ".full-start-new__rate-line .full-start__rate {" +
         "    margin-right: 0.3em !important;" +
@@ -388,6 +395,8 @@ var ICONS = {
 "  }" +
 "  .lmp-award-icon{height:12px;}" +
 "}" +
+
+
 "</style>";
 
     Lampa.Template.add('lmp_enh_styles', pluginStyles);
@@ -1058,61 +1067,55 @@ function insertRatings(data) {
         mcMode: 'meta', colorizeAll: false
     };
 
-    // ===== METACRITIC (відображення як x.y; режим metascore/userscore; повага до вкл/викл) =====
-    (function(){
-        var cont = $('.rate--mc', rateLine);
-        // якщо вимкнено — прибираємо і не рендеримо
-        if (!cfg.enableMc) { cont.remove(); return; }
+// ===== METACRITIC (автовибір: UserScore → Metascore → старі поля) =====
+(function(){
+  var cont = $('.rate--mc', rateLine);
+  if (!cfg.enableMc) { cont.remove(); return; }
 
-        // Обрати значення згідно з режимом (все у 0–10 з одним знаком)
-        var mcVal = null;
+  var mcVal = null;
 
-        if (cfg.mcMode === 'user') {
-            if (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) mcVal = parseFloat(data.mc_user_for_avg);
-            else if (data.mc_user_display && !isNaN(parseFloat(data.mc_user_display))) mcVal = parseFloat(data.mc_user_display);
-            // fallback на старі поля (якщо парсер ще не розділяє)
-            else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) mcVal = parseFloat(data.mc_for_avg);
-            else if (data.mc_display && !isNaN(parseFloat(data.mc_display))) mcVal = parseFloat(data.mc_display); // очікуємо 0–10
-        } else {
-            // metascore (0–100 → 0–10)
-            if (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) mcVal = parseFloat(data.mc_critic_for_avg);
-            else if (data.mc_critic_display && !isNaN(parseFloat(data.mc_critic_display))) {
-                var mcd = parseFloat(data.mc_critic_display);
-                mcVal = (mcd > 10) ? (mcd / 10) : mcd;
-            }
-            // fallback на старі поля
-            else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) mcVal = parseFloat(data.mc_for_avg);
-            else if (data.mc_display && !isNaN(parseFloat(data.mc_display))) {
-                var md = parseFloat(data.mc_display);
-                mcVal = (md > 10) ? (md / 10) : md;
-            }
-        }
+  // 1) пріоритет userscore (0–10)
+  if (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) {
+    mcVal = parseFloat(data.mc_user_for_avg);
+  }
+  // 2) далі metascore (вже у 0–10)
+  else if (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) {
+    mcVal = parseFloat(data.mc_critic_for_avg);
+  }
+  // 3) fallback на старі поля (mc_for_avg / mc_display)
+  else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) {
+    mcVal = parseFloat(data.mc_for_avg);
+  } else if (data.mc_display && !isNaN(parseFloat(data.mc_display))) {
+    var md = parseFloat(data.mc_display);
+    mcVal = (md > 10) ? (md / 10) : md;
+  }
 
-        if (mcVal == null || isNaN(mcVal)) { cont.remove(); return; }
+  if (mcVal == null || isNaN(mcVal)) { cont.remove(); return; }
 
-        var mcText = mcVal.toFixed(1);
+  var mcText = mcVal.toFixed(1);
 
-        if (!cont.length) {
-            cont = $(
-                '<div class="full-start__rate rate--mc">' +
-                    '<div>' + mcText + '</div>' +
-                    '<div class="source--name"></div>' +
-                '</div>'
-            );
-            cont.find('.source--name').html(iconImg(ICONS.metacritic, 'Metacritic', 22));
+  if (!cont.length) {
+    cont = $(
+      '<div class="full-start__rate rate--mc">' +
+        '<div>' + mcText + '</div>' +
+        '<div class="source--name"></div>' +
+      '</div>'
+    );
+    cont.find('.source--name').html(iconImg(ICONS.metacritic, 'Metacritic', 22));
 
-            // порядок лишаємо як був: після IMDb; якщо IMDb немає — в кінець блоку рейтингів
-            var afterImdb = $('.rate--imdb', rateLine);
-            if (afterImdb.length) cont.insertAfter(afterImdb);
-            else rateLine.append(cont);
-        } else {
-            cont.find('> div').eq(0).text(mcText);
-        }
+    // порядок як був: після IMDb; якщо немає — в кінець блоку рейтингів
+    var afterImdb = $('.rate--imdb', rateLine);
+    if (afterImdb.length) cont.insertAfter(afterImdb);
+    else rateLine.append(cont);
+  } else {
+    cont.find('> div').eq(0).text(mcText);
+  }
 
-        // кольори (за глобальним тумблером)
-        cont.removeClass('rating--green rating--lime rating--orange rating--red');
-        if (cfg.colorizeAll) cont.addClass(getRatingClass(mcVal));
-    })();
+  // кольори (за глобальним тумблером)
+  cont.removeClass('rating--green rating--lime rating--orange rating--red');
+  if (cfg.colorizeAll) cont.addClass(getRatingClass(mcVal));
+})();
+
 
 
     // ===== ROTTEN TOMATOES (завжди 0–10 як x.y; повага до вкл/викл) =====
@@ -1266,40 +1269,37 @@ function calculateAverageRating(data) {
 
 var cfg = (typeof getCfg === 'function') ? getCfg() : {
   enableImdb: true, enableTmdb: true, enableMc: true, enableRt: true, enablePop: true,
-  mcMode: 'meta', colorizeAll: true, showAverage: true
+  colorizeAll: true, showAverage: true
 };
 
 $('.rate--avg', rateLine).remove();
 if (!cfg.showAverage) {
   // користувач вимкнув AVG → не будуємо його взагалі
+  try { applyAwardsColor(rateLine, cfg); } catch(e){}
   removeLoadingAnimation();
   undimRateLine(rateLine);
-  // але все одно тримаємо нагороди в синхроні із загальним тумблером кольорів
-  try { applyAwardsColor(rateLine, cfg); } catch(e){}
   return;
 }
 
+var parts = [];
 
-    var parts = [];
+if (cfg.enableTmdb && data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) parts.push(parseFloat(data.tmdb_for_avg));
+if (cfg.enableImdb && data.imdb_for_avg && !isNaN(data.imdb_for_avg)) parts.push(parseFloat(data.imdb_for_avg));
 
-    if (cfg.enableTmdb && data.tmdb_for_avg && !isNaN(data.tmdb_for_avg)) parts.push(parseFloat(data.tmdb_for_avg));
-    if (cfg.enableImdb && data.imdb_for_avg && !isNaN(data.imdb_for_avg)) parts.push(parseFloat(data.imdb_for_avg));
+// Metacritic — авто: user → critic → fallback
+if (cfg.enableMc) {
+  if (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) {
+    parts.push(parseFloat(data.mc_user_for_avg));
+  } else if (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) {
+    parts.push(parseFloat(data.mc_critic_for_avg));
+  } else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) {
+    parts.push(parseFloat(data.mc_for_avg));
+  }
+}
 
-    // Metacritic — беремо саме ОБРАНУ метрику
-    if (cfg.enableMc) {
-        if (cfg.mcMode === 'user') {
-            if (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) parts.push(parseFloat(data.mc_user_for_avg));
-            // fallback на старі поля
-            else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) parts.push(parseFloat(data.mc_for_avg));
-        } else {
-            if (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) parts.push(parseFloat(data.mc_critic_for_avg));
-            // fallback на старі поля
-            else if (data.mc_for_avg && !isNaN(data.mc_for_avg)) parts.push(parseFloat(data.mc_for_avg));
-        }
-    }
+if (cfg.enableRt && data.rt_for_avg && !isNaN(data.rt_for_avg)) parts.push(parseFloat(data.rt_for_avg));
+if (cfg.enablePop && data.popcorn_for_avg && !isNaN(data.popcorn_for_avg)) parts.push(parseFloat(data.popcorn_for_avg));
 
-    if (cfg.enableRt && data.rt_for_avg && !isNaN(data.rt_for_avg)) parts.push(parseFloat(data.rt_for_avg));
-    if (cfg.enablePop && data.popcorn_for_avg && !isNaN(data.popcorn_for_avg)) parts.push(parseFloat(data.popcorn_for_avg));
 
     $('.rate--avg', rateLine).remove();
 
@@ -1575,7 +1575,6 @@ function proceedWithImdbId() {
         ratings_gap_step:      0,
         // === NEW (ratings/toggles) ===
         ratings_colorize_all: false,          // Кольорові оцінки рейтингів (усі плитки + нагороди + AVG)
-        ratings_mc_mode: 'meta',              // 'meta' | 'user' — Metacritic: Metascore чи UserScore
 
         ratings_enable_imdb: true,            // Вкл/Викл IMDb
         ratings_enable_tmdb: true,            // Вкл/Викл TMDB
@@ -1622,9 +1621,6 @@ function proceedWithImdbId() {
 
         // === NEW FIELDS (read from Storage) ===
         var colorizeAll = !!Lampa.Storage.field('ratings_colorize_all', RCFG_DEFAULT.ratings_colorize_all);
-
-        var mcModeRaw = Lampa.Storage.get('ratings_mc_mode', RCFG_DEFAULT.ratings_mc_mode);
-        var mcMode = (mcModeRaw === 'user') ? 'user' : 'meta';
 
         var enIMDB     = !!Lampa.Storage.field('ratings_enable_imdb',     RCFG_DEFAULT.ratings_enable_imdb);
         var enTMDB     = !!Lampa.Storage.field('ratings_enable_tmdb',     RCFG_DEFAULT.ratings_enable_tmdb);
@@ -1903,7 +1899,7 @@ function attachLiveSettingsHandlers(){
     return function(){
       clearTimeout(t);
 t = setTimeout(function(){
-  // 1) Спочатку перемальовуємо плитки (дані)
+  // 1) Спочатку дані/плитки (в т.ч. додання/видалення класів rating--)
   try{
     if (typeof currentRatingsData === 'object' && currentRatingsData){
       updateHiddenElements(currentRatingsData);
@@ -1912,9 +1908,10 @@ t = setTimeout(function(){
     }
   }catch(e){}
 
-  // 2) Потім застосовуємо стилі (показ/приховати AVG/нагороди, розміри тощо)
+  // 2) Потім — стилі (bw-логотипи, шрифти, відступи, видимість AVG/нагород)
   applyStylesToAll();
 }, 150);
+
 
     };
   })();
@@ -2145,34 +2142,34 @@ function initRatingsPluginUI(){
 
 Lampa.SettingsApi.addParam({
   component: 'lmp_ratings',
-  param: {
-    name: 'ratings_mc_mode',
-    type: 'select',
-    // у Lampa select очікує values як масив об’єктів {title, value} або як мапу
-    values: [
-      { title: 'Metascore', value: 'meta' },
-      { title: 'UserScore', value: 'user' }
-    ],
-    "default": RCFG_DEFAULT.ratings_mc_mode
-  },
-  field: {
-    name: 'Metacritic — джерело оцінки',
-    description: 'Перемикач: Metascore або UserScore'
-  },
-  onRender: function(){},
-  // (необов’язково) підстрахуємось і запишемо в Storage при виборі
-  onChange: function(val){ try{ Lampa.Storage.set('ratings_mc_mode', val); }catch(e){} }
+  param: { name: 'ratings_enable_imdb', type: 'trigger', default: RCFG_DEFAULT.ratings_enable_imdb },
+  field: { name: 'IMDb', description: 'Показувати/ховати джерело' }
 });
 
+Lampa.SettingsApi.addParam({
+  component: 'lmp_ratings',
+  param: { name: 'ratings_enable_tmdb', type: 'trigger', default: RCFG_DEFAULT.ratings_enable_tmdb },
+  field: { name: 'TMDB', description: 'Показувати/ховати джерело' }
+});
 
-          ['imdb','tmdb','Metacritic','rottentomatoes','popcornmeter'].forEach(function(key){
-            Lampa.SettingsApi.addParam({
-              component: 'lmp_ratings',
-              param: { name: 'ratings_enable_' + key, type: 'trigger', default: RCFG_DEFAULT['ratings_enable_' + key] },
-              field: {  name: key.toUpperCase(), description: 'Показувати/ховати джерело' },
-              onRender: function() {}
-            });
-          });
+Lampa.SettingsApi.addParam({
+  component: 'lmp_ratings',
+  param: { name: 'ratings_enable_mc', type: 'trigger', default: RCFG_DEFAULT.ratings_enable_mc },
+  field: { name: 'Metacritic', description: 'Показувати/ховати джерело' }
+});
+
+Lampa.SettingsApi.addParam({
+  component: 'lmp_ratings',
+  param: { name: 'ratings_enable_rt', type: 'trigger', default: RCFG_DEFAULT.ratings_enable_rt },
+  field: { name: 'RottenTomatoes', description: 'Показувати/ховати джерело' }
+});
+
+Lampa.SettingsApi.addParam({
+  component: 'lmp_ratings',
+  param: { name: 'ratings_enable_popcorn', type: 'trigger', default: RCFG_DEFAULT.ratings_enable_popcorn },
+  field: { name: 'Popcornmeter', description: 'Показувати/ховати джерело' }
+});
+
    
     }
 

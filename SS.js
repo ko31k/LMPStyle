@@ -519,76 +519,79 @@
   }
 
   // ========= Бази стилів для статусів/PG: окремі, двостанні =========
-  function setStatusBaseCssEnabled(enabled){
-    var idEn = 'interface_mod_status_enabled';
-    var idDis = 'interface_mod_status_disabled';
-    var en = document.getElementById(idEn);
-    var dis = document.getElementById(idDis);
-    if (en) en.remove();
-    if (dis) dis.remove();
-    var st = document.createElement('style');
-    if (enabled){
-      st.id = idEn;
-      st.textContent = `
-        .full-start__status, .full-start-new__status {
-          font-size: 1.2em !important;
-          border: 0 !important;
-          border-radius: 0.2em !important;
-          padding: 0.3em !important;
-          margin-right: 0.3em !important;
-          margin-left: 0 !important;
-        }
-      `;
-    } else {
-      st.id = idDis;
-      st.textContent = `
-        .full-start__status, .full-start-new__status {
-          font-size: 1.2em !important;
-          border: 1px solid #fff !important;
-          border-radius: 0.2em !important;
-          padding: 0.3em !important;
-          margin-right: 0.3em !important;
-          margin-left: 0 !important;
-        }
-      `;
-    }
-    document.head.appendChild(st);
+function setStatusBaseCssEnabled(enabled){
+  var idEn = 'interface_mod_status_enabled';
+  var idDis = 'interface_mod_status_disabled';
+  var en = document.getElementById(idEn);
+  var dis = document.getElementById(idDis);
+  if (en) en.remove();
+  if (dis) dis.remove();
+
+  var st = document.createElement('style');
+  if (enabled){
+    // Кольоровий режим: без видимої рамки, але з прозорою щоб зберегти розмір
+    st.id = idEn;
+    st.textContent =
+      '.full-start__status, .full-start-new__status{' +
+        'font-size:1.2em!important;' +
+        'border:1px solid transparent!important;' + /* тримаємо геометрію, рамку не видно */
+        'border-radius:0.2em!important;' +
+        'padding:0.3em!important;' +
+        'margin-right:0.3em!important;' +
+        'margin-left:0!important;' +
+      '}';
+  } else {
+    // Вимкнено: стандартна біла рамка і розмір
+    st.id = idDis;
+    st.textContent =
+      '.full-start__status, .full-start-new__status{' +
+        'font-size:1.2em!important;' +
+        'border:1px solid #fff!important;' +
+        'border-radius:0.2em!important;' +
+        'padding:0.3em!important;' +
+        'margin-right:0.3em!important;' +
+        'margin-left:0!important;' +
+      '}';
   }
-  function setAgeBaseCssEnabled(enabled){
-    var idEn = 'interface_mod_age_enabled';
-    var idDis = 'interface_mod_age_disabled';
-    var en = document.getElementById(idEn);
-    var dis = document.getElementById(idDis);
-    if (en) en.remove();
-    if (dis) dis.remove();
-    var st = document.createElement('style');
-    if (enabled){
-      st.id = idEn;
-      st.textContent = `
-        .full-start__pg, .full-start-new__pg {
-          font-size: 1.2em !important;
-          border: 0 !important;
-          border-radius: 0.2em !important;
-          padding: 0.3em !important;
-          margin-right: 0.3em !important;
-          margin-left: 0 !important;
-        }
-      `;
-    } else {
-      st.id = idDis;
-      st.textContent = `
-        .full-start__pg, .full-start-new__pg {
-          font-size: 1.2em !important;
-          border: 1px solid #fff !important;
-          border-radius: 0.2em !important;
-          padding: 0.3em !important;
-          margin-right: 0.3em !important;
-          margin-left: 0 !important;
-        }
-      `;
-    }
-    document.head.appendChild(st);
+  document.head.appendChild(st);
+}
+
+function setAgeBaseCssEnabled(enabled){
+  var idEn = 'interface_mod_age_enabled';
+  var idDis = 'interface_mod_age_disabled';
+  var en = document.getElementById(idEn);
+  var dis = document.getElementById(idDis);
+  if (en) en.remove();
+  if (dis) dis.remove();
+
+  var st = document.createElement('style');
+  if (enabled){
+    // Кольоровий режим PG: без видимої рамки, збережена геометрія
+    st.id = idEn;
+    st.textContent =
+      '.full-start__pg, .full-start-new__pg{' +
+        'font-size:1.2em!important;' +
+        'border:1px solid transparent!important;' + /* тримаємо розмір як у стандарті */
+        'border-radius:0.2em!important;' +
+        'padding:0.3em!important;' +
+        'margin-right:0.3em!important;' +
+        'margin-left:0!important;' +
+      '}';
+  } else {
+    // Вимкнено: стандартна біла рамка і розмір
+    st.id = idDis;
+    st.textContent =
+      '.full-start__pg, .full-start-new__pg{' +
+        'font-size:1.2em!important;' +
+        'border:1px solid #fff!important;' +
+        'border-radius:0.2em!important;' +
+        'padding:0.3em!important;' +
+        'margin-right:0.3em!important;' +
+        'margin-left:0!important;' +
+      '}';
   }
+  document.head.appendChild(st);
+}
 
   // ========= Кольорові статуси =========
   var __statusObserver = null;

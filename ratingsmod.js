@@ -408,11 +408,11 @@ var ICONS = {
 
     /**
      * =========================
-     * Кеш, допоміжне
+     * ✅ Кеш, допоміжне ✅
      * =========================
      */
-    /*var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні*/
-    var CACHE_TIME = 60 * 60 * 1000; // 1 година
+    var CACHE_TIME = 3 * 24 * 60 * 60 * 1000; // 3 дні
+    /*var CACHE_TIME = 60 * 60 * 1000; // ✅1 година для перевірок*/
     var RATING_CACHE_KEY = 'lmp_enh_rating_cache';
     var ID_MAPPING_CACHE = 'lmp_rating_id_cache';
 

@@ -440,6 +440,16 @@ var ICONS = {
         return card.name || card.original_name ? 'tv' : 'movie';
     }
 
+// Hide Kinopoisk rating tiles everywhere (details, cards, etc.)
+(function(){
+  try{
+    var kpCss = '<style>.full-start__rate.rate--kp, .rate--kp{display:none!important;}</style>';
+    Lampa.Template.add('lmp_hide_kp', kpCss);
+    $('body').append(Lampa.Template.get('lmp_hide_kp', {}, true));
+  }catch(e){}
+})();
+
+  
 function getRatingClass(rating){
   var r = parseFloat(rating);
   if (isNaN(r)) return 'rating--red';

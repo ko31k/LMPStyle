@@ -5,7 +5,6 @@
    *  ПОЛІФІЛИ ТА УТИЛІТИ
    * ============================================================ */
 
-  // Polyfill startsWith для старих WebView
   if (!String.prototype.startsWith) {
     String.prototype.startsWith = function (searchString, position) {
       position = position || 0;
@@ -13,7 +12,6 @@
     };
   }
 
-  // Правильні українські форми слів (1/2-4/5+)
   function plural(n, one, two, five) {
     n = Math.abs(n) % 100;
     if (n >= 5 && n <= 20) return five;
@@ -23,14 +21,12 @@
     return five;
   }
 
-  // Нормалізація булевих значень з Storage (прибирає «залипання» тумблерів)
   function getBool(key, def){
     var v = Lampa.Storage.get(key, def);
     if (typeof v === 'string') v = v.trim().toLowerCase();
     return v === true || v === 'true' || v === 1 || v === '1';
   }
 
-  // Обчислення середньої тривалості серії
   function calculateAverageEpisodeDuration(movie) {
     if (!movie || typeof movie !== 'object') return 0;
     var total = 0, count = 0;
@@ -58,7 +54,6 @@
     return 0;
   }
 
-  // Форматування хвилин у «X годин Y хвилин»
   function formatDurationMinutes(minutes) {
     if (!minutes || minutes <= 0) return '';
     var h = Math.floor(minutes / 60), m = minutes % 60, out = '';
@@ -75,11 +70,9 @@
    *  ЛОКАЛІЗАЦІЯ
    * ============================================================ */
   Lampa.Lang.add({
-    // Група
     interface_mod_new_group_title: { ru:'Интерфейс +', en:'Interface +', uk:'Інтерфейс +' },
     interface_mod_new_plugin_name: { ru:'Интерфейс +', en:'Interface +', uk:'Інтерфейс +' },
 
-    // Інфо-панель
     interface_mod_new_info_panel: { ru:'Новая инфо-панель', en:'New info panel', uk:'Нова інфо-панель' },
     interface_mod_new_info_panel_desc: {
       ru:'Цветная и перефразированная строка информации',
@@ -87,7 +80,6 @@
       uk:'Кольорова та перефразована інфо-панель'
     },
 
-    // Рейтинги/статуси/PG
     interface_mod_new_colored_ratings: { ru:'Цветной рейтинг', en:'Colored rating', uk:'Кольоровий рейтинг' },
     interface_mod_new_colored_ratings_desc: {
       ru:'Включить подсветку рейтингов',
@@ -102,7 +94,6 @@
       uk:'Підсвічувати статус серіалу'
     },
 
-    // ← назва і опис ПЕРЕЙМЕНОВАНО під твоє ТЗ
     interface_mod_new_colored_age: { ru:'Цветной возрастной рейтинг', en:'Colored age rating', uk:'Кольоровий віковий рейтинг' },
     interface_mod_new_colored_age_desc: {
       ru:'Подсвечивать возрастной рейтинг',
@@ -110,25 +101,23 @@
       uk:'Підсвічувати віковий рейтинг'
     },
 
-    // Тема
     interface_mod_new_theme_select_title: { ru:'Тема интерфейса', en:'Interface theme', uk:'Тема інтерфейсу' },
     interface_mod_new_theme_default: { ru:'По умолчанию', en:'Default', uk:'За замовчуванням' },
     interface_mod_new_theme_emerald_v1: { ru:'Emerald V1', en:'Emerald V1', uk:'Emerald V1' },
     interface_mod_new_theme_emerald_v2: { ru:'Emerald V2', en:'Emerald V2', uk:'Emerald V2' },
     interface_mod_new_theme_aurora:     { ru:'Aurora',     en:'Aurora',     uk:'Aurora' },
 
-    // *** Перейменовано: "Англійські дані" → "Оригінальна назва"
-    interface_mod_new_en_data:       { ru:'Оригинальное название', en:'Original title', uk:'Оригінальна назва' },
-    interface_mod_new_en_data_desc:  {
+    // Перейменовано: «Англійські дані» → «Оригінальна назва»
+    interface_mod_new_en_data:      { ru:'Оригинальное название', en:'Original title', uk:'Оригінальна назва' },
+    interface_mod_new_en_data_desc: {
       ru:'Показывать оригинальное (EN) название под заголовком карточки',
       en:'Show original (EN) title under the card header',
       uk:'Показувати оригінальну (EN) назву під заголовком картки'
     },
 
-    // Кнопки
     interface_mod_new_all_buttons:        { ru:'Все кнопки в карточке', en:'All buttons in card', uk:'Всі кнопки в картці' },
     interface_mod_new_all_buttons_desc:   {
-      ru:'Показывает Онлайн, Торрент, Трейлеры даже если скрыты темой. Порядок: Торренты → Онлайн → Трейлеры → прочее.',
+      ru:'Показывает Онлайн, Торрент, Трейлеры даже если скрыты темой. Порядок: Торренти → Онлайн → Трейлери → інші.',
       en:'Show Online, Torrent, Trailers even if hidden by theme. Order: Torrents → Online → Trailers → Others.',
       uk:'Показує Онлайн, Торренти, Трейлери навіть якщо приховані темою. Порядок: Торренти → Онлайн → Трейлери → інші.'
     },
@@ -151,29 +140,27 @@
   /* ============================================================
    *  НАЛАШТУВАННЯ
    * ============================================================ */
-  function getEnglishDataFlag(){
-    // зворотна сумісність: приймаємо старий ключ 'interface_mod_new_english_data' теж
-    var v1 = getBool('interface_mod_new_en_data', true);
-    var v2 = getBool('interface_mod_new_english_data', true);
-    return !!(v1 || v2);
+
+  // ВАЖЛИВО: коректний пріоритет ключів — новий key > старий key
+  function getOriginalTitleEnabled(){
+    var rawNew = Lampa.Storage.get('interface_mod_new_en_data');           // без дефолта
+    if (typeof rawNew !== 'undefined') return getBool('interface_mod_new_en_data', true);
+    return getBool('interface_mod_new_english_data', false);               // старий ключ лише як fallback
   }
 
   var settings = {
-    // існуючі
     info_panel      : getBool('interface_mod_new_info_panel', true),
     colored_ratings : getBool('interface_mod_new_colored_ratings', false),
     colored_status  : getBool('interface_mod_new_colored_status', false),
     colored_age     : getBool('interface_mod_new_colored_age', false),
     theme           : (Lampa.Storage.get('interface_mod_new_theme_select', 'default') || 'default'),
 
-    // нові
-    en_data         : getEnglishDataFlag(),           // ← тепер це "Оригінальна назва"
+    en_data         : getOriginalTitleEnabled(),
     all_buttons     : getBool('interface_mod_new_all_buttons', false),
     icon_only       : getBool('interface_mod_new_icon_only', false),
     colored_buttons : getBool('interface_mod_new_colored_buttons', false)
   };
 
-  // Пам’ять поточної картки
   var __ifx_last = { details:null, movie:null, originalHTML:'', isTv:false, fullRoot:null };
 
   /* ============================================================
@@ -183,7 +170,6 @@
     if (document.getElementById('interface_mod_base')) return;
 
     var css = `
-      /* Блок короткої інформації під постером */
       .full-start-new__details{
         color:#fff !important;
         margin:-0.45em !important;
@@ -194,12 +180,9 @@
         min-height:1.9em !important;
         font-size:1.1em !important;
       }
-
-      /* UX: no text selection on touch */
       *:not(input){ -webkit-user-select:none !important; -moz-user-select:none !important; -ms-user-select:none !important; user-select:none !important; }
       *{ -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; box-sizing:border-box; outline:none; -webkit-user-drag:none; }
 
-      /* Рознесення елементів лінії рейтингів */
       .full-start-new__rate-line > * {
         margin-left: 0 !important;
         margin-right: 1em !important;
@@ -207,21 +190,21 @@
         flex-grow: 0;
       }
 
-      /* ===== ОРИГІНАЛЬНА НАЗВА (простий сірий текст, -25% розмір) ===== */
+      /* ===== ОРИГІНАЛЬНА НАЗВА: сірий текст, -25%, З ЛІВОЮ ЛІНІЄЮ ===== */
       .ifx-original-title{
-        color:#aaa;                      /* сірий */
-        font-size: 0.75em;               /* на чверть менше */
-        font-weight: 600;                /* помірна вага, без жирної синьої лінії */
+        color:#aaa;
+        font-size: 0.75em;          /* −25% */
+        font-weight: 600;
         margin-top: 4px;
+        border-left: 2px solid #777; /* повернена лінія */
+        padding-left: 8px;
       }
 
-      /* Режим «Іконки без тексту» */
       .ifx-btn-icon-only .full-start__button span,
       .ifx-btn-icon-only .full-start__button .full-start__text{
         display:none !important;
       }
 
-      /* Універсальна сетка кнопок */
       .full-start__buttons.ifx-flex,
       .full-start-new__buttons.ifx-flex{
         display:flex !important;
@@ -245,10 +228,7 @@
 
     var themeCss = {
       emerald_v1: `
-        body {
-          background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18323a 100%) !important;
-          color: #dfdfdf !important;
-        }
+        body { background: linear-gradient(135deg, #0c1619 0%, #132730 50%, #18323a 100%) !important; color: #dfdfdf !important; }
         .menu__item, .settings-folder, .settings-param, .selectbox-item,
         .full-start__button, .full-descr__tag, .player-panel .button,
         .custom-online-btn, .custom-torrent-btn, .main2-more-btn,
@@ -258,76 +238,37 @@
         .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus,
         .simple-button.focus, .menu__version.focus {
-          background: linear-gradient(to right, #1a594d, #0e3652) !important;
-          color: #fff !important;
-          box-shadow: 0 2px 8px rgba(26,89,77,.25) !important;
-          border-radius: 1.0em !important;
+          background: linear-gradient(to right, #1a594d, #0e3652) !important; color: #fff !important;
+          box-shadow: 0 2px 8px rgba(26,89,77,.25) !important; border-radius: 1.0em !important;
         }
-        .card.focus .card__view::after, .card.hover .card__view::after {
-          border: 2px solid #1a594d !important;
-          box-shadow: 0 0 10px rgba(26,89,77,.35) !important;
-          border-radius: 1.0em !important;
-        }
-        .settings__content, .settings-input__content, .selectbox__content, .modal__content {
-          background: rgba(12,22,25,.97) !important;
-          border: 1px solid rgba(26,89,77,.12) !important;
-          border-radius: 1.0em !important;
-        }
+        .card.focus .card__view::after, .card.hover .card__view::after { border: 2px solid #1a594d !important; box-shadow: 0 0 10px rgba(26,89,77,.35) !important; border-radius: 1.0em !important; }
+        .settings__content, .settings-input__content, .selectbox__content, .modal__content { background: rgba(12,22,25,.97) !important; border: 1px solid rgba(26,89,77,.12) !important; border-radius: 1.0em !important; }
       `,
       emerald_v2: `
-        body {
-          background: radial-gradient(1200px 600px at 70% 10%, #214a57 0%, transparent 60%),
-                      linear-gradient(135deg, #112229 0%, #15303a 45%, #0f1c22 100%) !important;
-          color: #e6f2ef !important;
-        }
+        body { background: radial-gradient(1200px 600px at 70% 10%, #214a57 0%, transparent 60%), linear-gradient(135deg, #112229 0%, #15303a 45%, #0f1c22 100%) !important; color:#e6f2ef !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover,
         .settings-folder.focus, .settings-param.focus, .selectbox-item.focus,
         .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus,
         .simple-button.focus, .menu__version.focus {
-          background: linear-gradient(90deg, rgba(38,164,131,0.95), rgba(18,94,138,0.95)) !important;
-          color: #fff !important;
-          backdrop-filter: blur(2px) !important;
-          border-radius: .85em !important;
-          box-shadow: 0 6px 18px rgba(18,94,138,.35) !important;
+          background: linear-gradient(90deg, rgba(38,164,131,0.95), rgba(18,94,138,0.95)) !important; color:#fff !important;
+          backdrop-filter: blur(2px) !important; border-radius:.85em !important; box-shadow:0 6px 18px rgba(18,94,138,.35) !important;
         }
-        .card.focus .card__view::after, .card.hover .card__view::after {
-          border: 3px solid rgba(38,164,131,0.9) !important;
-          box-shadow: 0 0 20px rgba(38,164,131,.45) !important;
-          border-radius: .9em !important;
-        }
-        .settings__content, .settings-input__content, .selectbox__content, .modal__content {
-          background: rgba(10, 24, 29, 0.98) !important;
-          border: 1px solid rgba(38,164,131,.15) !important;
-          border-radius: .9em !important;
-        }
+        .card.focus .card__view::after, .card.hover .card__view::after { border: 3px solid rgba(38,164,131,0.9) !important; box-shadow: 0 0 20px rgba(38,164,131,.45) !important; border-radius: .9em !important; }
+        .settings__content, .settings-input__content, .selectbox__content, .modal__content { background: rgba(10,24,29,0.98) !important; border: 1px solid rgba(38,164,131,.15) !important; border-radius: .9em !important; }
       `,
       aurora: `
-        body {
-          background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%) !important;
-          color: #ffffff !important;
-        }
+        body { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%) !important; color: #ffffff !important; }
         .menu__item.focus, .menu__item.traverse, .menu__item.hover,
         .settings-folder.focus, .settings-param.focus, .selectbox-item.focus,
         .full-start__button.focus, .full-descr__tag.focus, .player-panel .button.focus,
         .custom-online-btn.focus, .custom-torrent-btn.focus, .main2-more-btn.focus,
         .simple-button.focus, .menu__version.focus {
-          background: linear-gradient(90deg, #aa4b6b, #6b6b83, #3b8d99) !important;
-          color: #fff !important;
-          box-shadow: 0 0 20px rgba(170,75,107,.35) !important;
-          transform: scale(1.02) !important;
-          border-radius: .85em !important;
+          background: linear-gradient(90deg, #aa4b6b, #6b6b83, #3b8d99) !important; color:#fff !important;
+          box-shadow: 0 0 20px rgba(170,75,107,.35) !important; transform: scale(1.02) !important; border-radius: .85em !important;
         }
-        .card.focus .card__view::after, .card.hover .card__view::after {
-          border: 2px solid #aa4b6b !important;
-          box-shadow: 0 0 22px rgba(170,75,107,.45) !important;
-          border-radius: .9em !important;
-        }
-        .settings__content, .settings-input__content, .selectbox__content, .modal__content {
-          background: rgba(20, 32, 39, 0.98) !important;
-          border: 1px solid rgba(59,141,153,.18) !important;
-          border-radius: .9em !important;
-        }
+        .card.focus .card__view::after, .card.hover .card__view::after { border: 2px solid #aa4b6b !important; box-shadow: 0 0 22px rgba(170,75,107,.45) !important; border-radius: .9em !important; }
+        .settings__content, .settings-input__content, .selectbox__content, .modal__content { background: rgba(20, 32, 39, 0.98) !important; border: 1px solid rgba(59,141,153,.18) !important; border-radius: .9em !important; }
       `
     };
 
@@ -342,19 +283,18 @@
   }
 
   /* ============================================================
-   *  УНІФІКОВАНІ СЕЛЕКТОРИ ДЛЯ СТАТУСІВ ТА PG
+   *  СЕЛЕКТОРИ ДЛЯ СТАТУСІВ ТА PG
    * ============================================================ */
   var STATUS_BASE_SEL = '.full-start__status, .full-start-new__status, .full-start__soon, .full-start-new__soon, .full-start [data-status], .full-start-new [data-status]';
   var AGE_BASE_SEL    = '.full-start__pg, .full-start-new__pg, .full-start [data-pg], .full-start-new [data-pg], .full-start [data-age], .full-start-new [data-age]';
 
   /* ============================================================
-   *  МЕНЮ «Інтерфейс+»
+   *  НАЛАШТУВАННЯ UI
    * ============================================================ */
   function initInterfaceModSettingsUI(){
     if (window.__ifx_settings_ready) return;
     window.__ifx_settings_ready = true;
 
-    // Група
     Lampa.SettingsApi.addComponent({
       component: 'interface_mod_new',
       name: Lampa.Lang.translate('interface_mod_new_group_title'),
@@ -363,7 +303,6 @@
 
     var add = Lampa.SettingsApi.addParam;
 
-    // Існуючі
     add({
       component: 'interface_mod_new',
       param: { name: 'interface_mod_new_info_panel', type: 'trigger', values: true, default: true },
@@ -379,14 +318,11 @@
       param: { name: 'interface_mod_new_colored_status', type: 'trigger', values: true, default: false },
       field: { name: Lampa.Lang.translate('interface_mod_new_colored_status'), description: Lampa.Lang.translate('interface_mod_new_colored_status_desc') }
     });
-
-    // ← ПУНКТ МЕНЮ ДЛЯ ВІКОВИХ РЕЙТИНГІВ (повернуто)
     add({
       component: 'interface_mod_new',
       param: { name: 'interface_mod_new_colored_age', type: 'trigger', values: true, default: false },
       field: { name: Lampa.Lang.translate('interface_mod_new_colored_age'), description: Lampa.Lang.translate('interface_mod_new_colored_age_desc') }
     });
-
     add({
       component: 'interface_mod_new',
       param: {
@@ -402,15 +338,11 @@
       },
       field: { name: Lampa.Lang.translate('interface_mod_new_theme_select_title') }
     });
-
-    // Перейменовано «Англійські дані» → «Оригінальна назва»
     add({
       component: 'interface_mod_new',
       param: { name: 'interface_mod_new_en_data', type: 'trigger', values: true, default: true },
       field: { name: Lampa.Lang.translate('interface_mod_new_en_data'), description: Lampa.Lang.translate('interface_mod_new_en_data_desc') }
     });
-
-    // Кнопки
     add({
       component: 'interface_mod_new',
       param: { name: 'interface_mod_new_all_buttons', type: 'trigger', values: true, default: false },
@@ -427,7 +359,6 @@
       field: { name: Lampa.Lang.translate('interface_mod_new_colored_buttons'), description: Lampa.Lang.translate('interface_mod_new_colored_buttons_desc') }
     });
 
-    // Перемістити «Інтерфейс+» одразу після «Інтерфейс»
     function moveAfterInterface(){
       var $folders = $('.settings-folder');
       var $interface = $folders.filter(function(){ return $(this).data('component') === 'interface'; });
@@ -438,7 +369,14 @@
     var obsMenu = new MutationObserver(function(){ moveAfterInterface(); });
     obsMenu.observe(document.body, {childList:true, subtree:true});
 
-    // Патч Storage.set: миттєво застосовуємо зміни
+    // закриття відкритих селектів/меню — повернено (фікс "зависає")
+    function closeOpenSelects(){
+      setTimeout(function(){
+        $('.selectbox').remove();
+        try { Lampa.Controller.toggle('settings'); } catch(e){}
+      }, 60);
+    }
+
     if (!window.__ifx_patch_storage) {
       window.__ifx_patch_storage = true;
       var _set = Lampa.Storage.set;
@@ -446,52 +384,46 @@
         var res = _set.apply(this, arguments);
 
         if (typeof key === 'string' && key.indexOf('interface_mod_new_') === 0) {
-          // перечитуємо прапорці
           settings.info_panel      = getBool('interface_mod_new_info_panel', true);
           settings.colored_ratings = getBool('interface_mod_new_colored_ratings', false);
           settings.colored_status  = getBool('interface_mod_new_colored_status', false);
           settings.colored_age     = getBool('interface_mod_new_colored_age', false);
           settings.theme           = (Lampa.Storage.get('interface_mod_new_theme_select', 'default') || 'default');
 
-          settings.en_data         = getEnglishDataFlag();
+          settings.en_data         = getOriginalTitleEnabled();
           settings.all_buttons     = getBool('interface_mod_new_all_buttons', false);
           settings.icon_only       = getBool('interface_mod_new_icon_only', false);
           settings.colored_buttons = getBool('interface_mod_new_colored_buttons', false);
 
-          // Тема
           if (key === 'interface_mod_new_theme_select') applyTheme(settings.theme);
-
-          // Інфо-панель
           if (key === 'interface_mod_new_info_panel') rebuildInfoPanelActive();
 
-          // Рейтинги
           if (key === 'interface_mod_new_colored_ratings') {
             if (settings.colored_ratings) updateVoteColors(); else clearVoteColors();
           }
 
-          // Статуси
           if (key === 'interface_mod_new_colored_status') {
             setStatusBaseCssEnabled(settings.colored_status);
             if (settings.colored_status) enableStatusColoring(); else disableStatusColoring(true);
           }
 
-          // PG
           if (key === 'interface_mod_new_colored_age') {
             setAgeBaseCssEnabled(settings.colored_age);
             if (settings.colored_age) enableAgeColoring(); else disableAgeColoring(true);
           }
 
-          // Оригінальна назва
           if (key === 'interface_mod_new_en_data' || key === 'interface_mod_new_english_data') {
-            applyOriginalTitleToggle(); // ← додає/прибирає з активної картки
+            applyOriginalTitleToggle();
           }
 
-          // Кнопки (з описом порядку всередині "Всі кнопки")
           if (key === 'interface_mod_new_all_buttons' ||
               key === 'interface_mod_new_icon_only' ||
               key === 'interface_mod_new_colored_buttons') {
             rebuildButtonsNow();
           }
+
+          // Закриваємо відкриті селекти, щоб меню не зависало
+          closeOpenSelects();
         }
         return res;
       };
@@ -499,7 +431,7 @@
   }
 
   /* ============================================================
-   *  ІНФО-ПАНЕЛЬ (4 ряди) — без змін
+   *  ІНФО-ПАНЕЛЬ (без змін по суті)
    * ============================================================ */
   function buildInfoPanel(details, movie, isTvShow, originalDetails){
     var container = $('<div>').css({
@@ -540,7 +472,6 @@
       'line-height':'1.2em', 'margin-right':'0.4em', 'margin-bottom':'0.2em'
     };
 
-    /* 1 — Серії */
     if ((movie.number_of_seasons || (movie.seasons && movie.seasons.length)) && Array.isArray(movie.seasons)) {
       var totalEps = 0, airedEps = 0, now = new Date(), hasEpisodes = false;
       movie.seasons.forEach(function (s) {
@@ -567,58 +498,43 @@
       if (totalEps > 0 && airedEps > 0 && airedEps < totalEps) epsText = airedEps + ' ' + plural(airedEps, 'Серія', 'Серії', 'Серій') + ' з ' + totalEps;
       else if (totalEps > 0) epsText = totalEps + ' ' + plural(totalEps, 'Серія', 'Серії', 'Серій');
 
-      if (epsText) row1.append($('<span>').text(epsText).css($.extend({}, baseBadge, { 'background-color': colors.episodes.bg, color: colors.episodes.text })));
+      if (epsText) container.append($('<div>').append($('<span>').text(epsText).css($.extend({}, baseBadge, { 'background-color': colors.episodes.bg, color: colors.episodes.text }))));
     }
 
-    /* 2 — Наступна серія */
     if (movie && movie.next_episode_to_air && movie.next_episode_to_air.air_date) {
       var nextDate = new Date(movie.next_episode_to_air.air_date), today = new Date();
       nextDate.setHours(0,0,0,0); today.setHours(0,0,0,0);
       var diff = Math.floor((nextDate - today) / (1000*60*60*24));
       var txt = diff===0 ? 'Наступна серія вже сьогодні' : diff===1 ? 'Наступна серія вже завтра' : diff>1 ? ('Наступна серія через ' + diff + ' ' + plural(diff,'день','дні','днів')) : '';
-      if (txt) row2.append($('<span>').text(txt).css($.extend({}, baseBadge, { 'background-color': colors.next.bg, color: colors.next.text })));
+      if (txt) container.append($('<div>').append($('<span>').text(txt).css($.extend({}, baseBadge, { 'background-color': colors.next.bg, color: colors.next.text }))));
     }
 
-    /* 3 — Тривалість */
     if (movie && !movie.number_of_seasons && !movie.seasons && movie.runtime > 0) {
       var mins = movie.runtime, h = Math.floor(mins/60), m = mins%60;
       var t = 'Тривалість фільму: ';
       if (h > 0) t += h + ' ' + plural(h,'година','години','годин');
       if (m > 0) t += (h>0?' ':'') + m + ' хв.';
-      row3.append($('<span>').text(t).css($.extend({}, baseBadge, { 'background-color': colors.duration.bg, color: colors.duration.text })));
+      container.append($('<div>').append($('<span>').text(t).css($.extend({}, baseBadge, { 'background-color': colors.duration.bg, color: colors.duration.text }))));
     } else if (movie && (movie.number_of_seasons || (movie.seasons && movie.seasons.length))) {
       var avg = calculateAverageEpisodeDuration(movie);
-      if (avg > 0) row3.append($('<span>').text('Тривалість серії ≈ ' + formatDurationMinutes(avg)).css($.extend({}, baseBadge, { 'background-color': colors.duration.bg, color: colors.duration.text })));
+      if (avg > 0) container.append($('<div>').append($('<span>').text('Тривалість серії ≈ ' + formatDurationMinutes(avg)).css($.extend({}, baseBadge, { 'background-color': colors.duration.bg, color: colors.duration.text }))));
     }
 
-    /* 4 — Сезони + Жанри */
     var seasonsCount = (movie.season_count || movie.number_of_seasons || (movie.seasons ? movie.seasons.filter(function(s){return s.season_number!==0;}).length : 0)) || 0;
     if (seasonsCount > 0) {
-      row4.append($('<span>').text('Сезони: ' + seasonsCount).css($.extend({}, baseBadge, { 'background-color': colors.seasons.bg, color: colors.seasons.text })));
+      container.append($('<div>').append($('<span>').text('Сезони: ' + seasonsCount).css($.extend({}, baseBadge, { 'background-color': 'rgba(52,152,219,0.8)', color: 'white' }))));
     }
 
     var genreList = [];
     if (Array.isArray(movie.genres) && movie.genres.length) {
       genreList = movie.genres.map(function(g){ return g.name; });
-    } else if (originalDetails) {
-      var tmp = $('<div>').html(originalDetails);
-      tmp.find('span').each(function(){
-        var t = $(this).text().trim();
-        if (t.indexOf(' | ') !== -1) genreList = genreList.concat(t.split(' | ').map(function(s){return s.trim();}));
-      });
     }
     genreList = genreList.filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; });
-
     var baseGenre = { 'border-radius':'0.3em', border:'0', 'font-size':'1.0em', padding:'0.2em 0.6em', display:'inline-block', 'white-space':'nowrap', 'line-height':'1.2em', 'margin-right':'0.4em', 'margin-bottom':'0.2em' };
     genreList.forEach(function(gn){
-      var c = colors.genres[gn] || { bg:'rgba(255,255,255,.12)', text:'white' };
-      row4.append($('<span>').text(gn).css($.extend({}, baseGenre, { 'background-color': c.bg, color: c.text })));
+      var c = { bg:'rgba(255,255,255,.12)', text:'white' };
+      container.append($('<div>').append($('<span>').text(gn).css($.extend({}, baseGenre, { 'background-color': c.bg, color: c.text }))));
     });
-
-    container.append(row1);
-    if (row2.children().length) container.append(row2);
-    if (row3.children().length) container.append(row3);
-    if (row4.children().length) container.append(row4);
 
     details.append(container);
   }
@@ -666,7 +582,7 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ РЕЙТИНГИ (числові) — як було
+   *  КОЛЬОРОВІ РЕЙТИНГИ (числові)
    * ============================================================ */
   function updateVoteColors() {
     if (!getBool('interface_mod_new_colored_ratings', false)) return;
@@ -714,7 +630,7 @@
   }
 
   /* ============================================================
-   *  БАЗА СТИЛІВ ДЛЯ СТАТУСІВ/PG (дві стани)
+   *  БАЗА СТИЛІВ ДЛЯ СТАТУСІВ/PG
    * ============================================================ */
   function setStatusBaseCssEnabled(enabled){
     var idEn = 'interface_mod_status_enabled';
@@ -796,16 +712,16 @@
     if (!getBool('interface_mod_new_colored_status', false)) return;
 
     var palette = {
-      completed: { bg:'rgba(46,204,113,.85)', text:'white' }, // Завершено / Ended
-      canceled : { bg:'rgba(231,76,60,.9)',   text:'white' }, // Скасовано
-      ongoing  : { bg:'rgba(243,156,18,.95)', text:'black' }, // Виходить / Returning
-      production:{bg:'rgba(52,152,219,.9)',   text:'white' }, // У виробництві
-      planned  : { bg:'rgba(155,89,182,.9)',  text:'white' }, // Заплановано
-      pilot    : { bg:'rgba(230,126,34,.95)', text:'white' }, // Пілот
-      released : { bg:'rgba(26,188,156,.9)',  text:'white' }, // Випущено
-      rumored  : { bg:'rgba(149,165,166,.9)', text:'white' }, // Чутки
-      post     : { bg:'rgba(0,188,212,.9)',   text:'white' }, // Постпродакшн
-      soon     : { bg:'rgba(52,152,219,.95)', text:'white' }  // Незабаром / Soon
+      completed: { bg:'rgba(46,204,113,.85)', text:'white' },
+      canceled : { bg:'rgba(231,76,60,.9)',   text:'white' },
+      ongoing  : { bg:'rgba(243,156,18,.95)', text:'black' },
+      production:{bg:'rgba(52,152,219,.9)',   text:'white' },
+      planned  : { bg:'rgba(155,89,182,.9)',  text:'white' },
+      pilot    : { bg:'rgba(230,126,34,.95)', text:'white' },
+      released : { bg:'rgba(26,188,156,.9)',  text:'white' },
+      rumored  : { bg:'rgba(149,165,166,.9)', text:'white' },
+      post     : { bg:'rgba(0,188,212,.9)',   text:'white' },
+      soon     : { bg:'rgba(52,152,219,.95)', text:'white' }
     };
 
     var $root = $(elRoot||document);
@@ -864,7 +780,7 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG) — FIXED OBSERVER
+   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG) — розширений OBSERVER + ретраї
    * ============================================================ */
   var __ageObserver = null;
   var __ageFollowReady = false;
@@ -913,8 +829,15 @@
     });
   }
 
+  // додаткові «проходи» після відкриття картки — щоб зловити кеш/пізні зміни
+  function scheduleAgePasses(root){
+    var delays = [100, 300, 800, 1600];
+    delays.forEach(function(ms){
+      setTimeout(function(){ applyAgeOnceIn(root); }, ms);
+    });
+  }
+
   function enableAgeColoring(){
-    // стартове застосування
     applyAgeOnceIn(document);
 
     if (__ageObserver) __ageObserver.disconnect();
@@ -923,14 +846,12 @@
       if (!getBool('interface_mod_new_colored_age', false)) return;
 
       muts.forEach(function(m){
-        // 1) додані вузли
         (m.addedNodes||[]).forEach(function(n){
           if (n.nodeType !== 1) return;
           if (n.matches && n.matches(AGE_BASE_SEL)) applyAgeOnceIn(n);
           $(n).find && $(n).find(AGE_BASE_SEL).each(function(){ applyAgeOnceIn(this); });
         });
 
-        // 2) зміни атрибутів (class/data-*)
         if (m.type === 'attributes' && m.target && m.target.nodeType === 1) {
           var target = m.target;
           if (target.matches && target.matches(AGE_BASE_SEL)) {
@@ -938,7 +859,6 @@
           }
         }
 
-        // 3) зміни тексту
         if (m.type === 'characterData' && m.target && m.target.parentNode) {
           var parent = m.target.parentNode;
           if (parent.matches && parent.matches(AGE_BASE_SEL)) {
@@ -948,7 +868,6 @@
       });
     });
 
-    // слідкуємо за всім релевантним
     __ageObserver.observe(document.body, {
       childList: true,
       subtree: true,
@@ -961,9 +880,9 @@
       __ageFollowReady = true;
       Lampa.Listener.follow('full', function(e){
         if (e.type === 'complite' && getBool('interface_mod_new_colored_age', false)) {
-          // два проходи: одразу і за інерцією
-          setTimeout(function(){ applyAgeOnceIn(e.object.activity.render()); }, 120);
-          setTimeout(function(){ applyAgeOnceIn(e.object.activity.render()); }, 400);
+          var root = e.object.activity.render();
+          setTimeout(function(){ applyAgeOnceIn(root); }, 120);
+          scheduleAgePasses(root); // 100/300/800/1600 мс
         }
       });
     }
@@ -975,34 +894,32 @@
   }
 
   /* ============================================================
-   *  ОРИГІНАЛЬНА НАЗВА (EN) — БЕЗ підтягування опису
+   *  ОРИГІНАЛЬНА НАЗВА (EN) — лише назва
    * ============================================================ */
-  // Додаємо/оновлюємо оригінальну назву в head
   function setOriginalTitle(fullRoot, movie){
     if (!fullRoot || !movie) return;
+
     var head = fullRoot.find('.full-start-new__head, .full-start__head').first();
     if (!head.length) return;
 
     head.find('.ifx-original-title').remove();
 
+    // якщо вимкнено — нічого не додаємо
+    if (!getOriginalTitleEnabled()) return;
+
     var original = movie.original_title || movie.original_name || movie.original || movie.name || movie.title || '';
     if (!original) return;
-
-    // якщо вимкнено — не показуємо
-    if (!getBool('interface_mod_new_en_data', true) && !getBool('interface_mod_new_english_data', false)) return;
 
     $('<div class="ifx-original-title"></div>').text(original).appendTo(head);
   }
 
-  // Тогл з налаштувань: або додаємо (якщо є активна картка і увімкнено), або зносимо
   function applyOriginalTitleToggle(){
     if (!__ifx_last.fullRoot) return;
     var head = __ifx_last.fullRoot.find('.full-start-new__head, .full-start__head').first();
     if (!head.length) return;
 
-    var enabled = getEnglishDataFlag();
     head.find('.ifx-original-title').remove();
-    if (enabled) setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
+    if (getOriginalTitleEnabled()) setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
   }
 
   /* ============================================================
@@ -1059,10 +976,8 @@
 
     $container.addClass('ifx-flex');
 
-    // Всі кнопки
     var $all = fullRoot.find('.full-start__button');
 
-    // Категоризація
     var groups = { online:[], torrent:[], trailer:[], other:[] };
     $all.each(function(){
       var $btn = $(this);
@@ -1073,7 +988,6 @@
       else groups.other.push($btn);
     });
 
-    // Порядок (як в описі: Торренти → Онлайн → Трейлери → інші)
     var order = ['torrent','online','trailer','other'];
 
     $container.empty();
@@ -1081,7 +995,6 @@
       groups[cat].forEach(function($b){ $container.append($b); });
     });
 
-    // Іконки без тексту
     if (settings.icon_only){
       $container.addClass('ifx-btn-icon-only');
       $container.find('.full-start__button').css('min-width','auto');
@@ -1089,13 +1002,11 @@
       $container.removeClass('ifx-btn-icon-only');
     }
 
-    // «Всі кнопки»
     if (settings.all_buttons){
       $container.css({ display:'flex', flexWrap:'wrap', gap:'10px' });
       $container.find('.full-start__button').css({ display:'inline-flex' });
     }
 
-    // Кольорові іконки + SVG
     ensureColoredButtonsCss(settings.colored_buttons);
     replaceButtonIcons(fullRoot);
 
@@ -1108,7 +1019,7 @@
   }
 
   /* ============================================================
-   *  СЛУХАЧ КАРТКИ — Оригінальна назва + кнопки
+   *  СЛУХАЧ КАРТКИ
    * ============================================================ */
   function wireFullCardEnhancers(){
     Lampa.Listener.follow('full', function (e) {
@@ -1118,43 +1029,34 @@
         __ifx_last.fullRoot = root;
         __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
 
-        // Оригінальна назва (лише назва; без опису)
         setOriginalTitle(root, __ifx_last.movie);
-
-        // Кнопки
         reorderAndShowButtons(root);
       }, 120);
     });
   }
 
   /* ============================================================
-   *  ЗАПУСК ПЛАГІНА
+   *  ЗАПУСК
    * ============================================================ */
   function startPlugin() {
     initInterfaceModSettingsUI();
     newInfoPanel();
     setupVoteColorsObserver();
 
-    // Кольорові рейтинги — стартове підфарбування
     if (settings.colored_ratings) updateVoteColors();
 
-    // Статуси
     setStatusBaseCssEnabled(settings.colored_status);
     if (settings.colored_status) enableStatusColoring(); else disableStatusColoring(true);
 
-    // PG
     setAgeBaseCssEnabled(settings.colored_age);
     if (settings.colored_age) enableAgeColoring(); else disableAgeColoring(true);
 
-    // Тема
     if (settings.theme) applyTheme(settings.theme);
 
-    // Оригінальна назва + кнопки
     ensureColoredButtonsCss(settings.colored_buttons);
     wireFullCardEnhancers();
   }
 
-  // Очікуємо готовності застосунку
   if (window.appready) startPlugin();
   else {
     Lampa.Listener.follow('app', function (e) {

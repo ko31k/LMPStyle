@@ -141,9 +141,10 @@
 
     interface_mod_new_button_order:       { ru:'Порядок кнопок', en:'Button order', uk:'Порядок кнопок' },
     interface_mod_new_button_order_desc:  {
-      ru:'Онлайн → Торрент → Трейлери',
-      en:'Online → Torrent → Trailers',
-      uk:'Онлайн → Торрент → Трейлери'
+      // ОНОВЛЕНО під твою вимогу
+      ru:'Торренты → Онлайн → Трейлеры',
+      en:'Torrents → Online → Trailers',
+      uk:'Торенти → Онлайн → Трейлери'
     },
 
     interface_mod_new_colored_buttons:    { ru:'Цветные кнопки', en:'Colored buttons', uk:'Кольорові кнопки' },
@@ -448,11 +449,11 @@
     var obsMenu = new MutationObserver(function(){ moveAfterInterface(); });
     obsMenu.observe(document.body, {childList:true, subtree:true});
 
-    // Закриття відкритих селектів/меню налаштувань
+    // Закриття відкритих селектів/меню налаштувань (без перемикання контролера)
     function closeOpenSelects(){
       setTimeout(function(){
         $('.selectbox').remove();
-        try { Lampa.Controller.toggle('settings'); } catch(e){}
+        // БУЛО: Lampa.Controller.toggle('settings'); — прибрано, щоб не "викидало" з меню
       }, 60);
     }
 
@@ -686,8 +687,27 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ РЕЙТИНГИ
+   *  КОЛЬОРОВІ РЕЙТИНГИ (поліпшене парсіння + миттєвий старт)
    * ============================================================ */
+  function extractScoreFromEl(el){
+    // Для плиток з номером у першому div
+    if (el && (el.classList && (el.classList.contains('full-start__rate') || el.classList.contains('full-start-new__rate')))) {
+      var first = el.querySelector(':scope > div:first-child');
+      if (first && first.textContent) {
+        var s = first.textContent.trim();
+        s = s.replace(',', '.'); // 7,8 → 7.8
+        var m = s.match(/(\d+(?:\.\d+)?)/);
+        if (m) return parseFloat(m[1]);
+      }
+    }
+    // Загальний випадок
+    var t = ($(el).text() || '').trim();
+    t = t.replace(',', '.'); // локаль з комою
+    var match = t.match(/(\d+(?:\.\d+)?)/);
+    if (!match) return NaN;
+    return parseFloat(match[1]);
+  }
+
   function updateVoteColors() {
     if (!getBool('interface_mod_new_colored_ratings', false)) return;
 
@@ -701,11 +721,11 @@
     ].join(',');
 
     function paint(el) {
-      var txt = ($(el).text() || '').trim();
-      var m = txt.match(/(\d+(\.\d+)?)/);
-      if (!m) return;
-      var v = parseFloat(m[0]);
-      if (isNaN(v) || v < 0 || v > 10) return;
+      var v = extractScoreFromEl(el);
+      if (isNaN(v)) return;
+
+      // якщо раптом приходить % або з іншого масштабу — не фарбуємо
+      if (v < 0 || v > 10) return;
 
       var color =
         (v <= 3) ? 'red' :
@@ -718,18 +738,25 @@
 
     $(SEL).each(function(){ paint(this); });
   }
+
   function clearVoteColors(){
     var SEL = '.card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate';
     $(SEL).css({ color:'', border:'' });
   }
+
   function setupVoteColorsObserver() {
-    setTimeout(function(){ if (getBool('interface_mod_new_colored_ratings', false)) updateVoteColors(); }, 400);
+    if (getBool('interface_mod_new_colored_ratings', false)) {
+      // фарбуємо одразу (без 400мс), щоб покрити випадок «дані вже в DOM з кешу»
+      requestAnimationFrame(updateVoteColors);
+    }
     var obs = new MutationObserver(function(){
       if (getBool('interface_mod_new_colored_ratings', false)) setTimeout(updateVoteColors, 80);
     });
     obs.observe(document.body, {childList:true, subtree:true});
     Lampa.Listener.follow('full', function (e) {
-      if (e.type === 'complite' && getBool('interface_mod_new_colored_ratings', false)) setTimeout(updateVoteColors, 100);
+      if (e.type === 'complite' && getBool('interface_mod_new_colored_ratings', false)) {
+        setTimeout(updateVoteColors, 60);
+      }
     });
   }
 
@@ -1055,6 +1082,7 @@
     `);
   }
 
+  // Порядок кнопок ТІЛЬКИ для режиму «Всі кнопки в картці»
   function reorderAndShowButtons(fullRoot){
     if (!fullRoot) return;
 
@@ -1077,15 +1105,23 @@
       else groups.other.push($btn);
     });
 
-    // Порядок
-    var order = ['online','torrent','trailer','other'];
-    if (settings.button_order) order = ['online','torrent','trailer','other']; // фіксований як у описі
+    // ⚠ РЕОРДЕР лише коли увімкнено "Всі кнопки в картці"
+    if (settings.all_buttons) {
+      // Порядок під твою вимогу
+      var order = settings.button_order
+        ? ['torrent','online','trailer','other']
+        : ['torrent','online','trailer','other']; // навіть без тумблера тримаємо правильний порядок у цьому режимі
 
-    // «Всі кнопки» — зібрати всі і показати
-    $container.empty();
-    order.forEach(function(cat){
-      groups[cat].forEach(function($b){ $container.append($b); });
-    });
+      $container.empty();
+      order.forEach(function(cat){
+        groups[cat].forEach(function($b){ $container.append($b); });
+      });
+
+      // Забезпечуємо видимість і обтікання
+      $container.css({ display:'flex', flexWrap:'wrap', gap:'10px' });
+      $container.find('.full-start__button').css({ display:'inline-flex' });
+    }
+    // Якщо "Всі кнопки" вимкнено — НЕ переупорядковуємо DOM (все як у теми)
 
     // Іконки без тексту
     if (settings.icon_only){
@@ -1093,12 +1129,6 @@
       $container.find('.full-start__button').css('min-width','auto');
     } else {
       $container.removeClass('ifx-btn-icon-only');
-    }
-
-    // Всі кнопки — забезпечуємо видимість і обтікання
-    if (settings.all_buttons){
-      $container.css({ display:'flex', flexWrap:'wrap', gap:'10px' });
-      $container.find('.full-start__button').css({ display:'inline-flex' });
     }
 
     // Кольорові іконки + потрібні SVG
@@ -1138,7 +1168,7 @@
     newInfoPanel();
     setupVoteColorsObserver();
 
-    // Кольорові рейтинги — стартове підфарбування
+    // Кольорові рейтинги — стартове підфарбування (ще раз на всяк)
     if (settings.colored_ratings) updateVoteColors();
 
     // Статуси

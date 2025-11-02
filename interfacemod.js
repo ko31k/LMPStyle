@@ -809,160 +809,168 @@
   }
 
   /* ============================================================
-   *  ВІКОВІ РЕЙТИНГИ (PG) — стабільний спостерігач
+   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG) — розширений OBSERVER + ретраї
    * ============================================================ */
-  function setAgeBaseCssEnabled(enabled){
-    var idEn = 'interface_mod_age_enabled';
-    var idDis = 'interface_mod_age_disabled';
-    document.getElementById(idEn) && document.getElementById(idEn).remove();
-    document.getElementById(idDis) && document.getElementById(idDis).remove();
+/* ========================== ВІКОВІ РЕЙТИНГИ (PG) — FIX ========================== */
+/* Якщо у вас вже є AGE_BASE_SEL — залиште свій. Інакше розкоментуйте рядок нижче. */
+// var AGE_BASE_SEL = '.full-start__pg, .full-start-new__pg, .full-start [data-pg], .full-start-new [data-pg], .full-start [data-age], .full-start-new [data-age]';
 
-    var st = document.createElement('style');
-    if (enabled){
-      st.id = idEn;
-      st.textContent =
-        AGE_BASE_SEL + '{' +
-          'font-size:1.2em!important;' +
-          'border:1px solid transparent!important;' +
-          'border-radius:0.2em!important;' +
-          'padding:0.3em!important;' +
-          'margin-right:0.3em!important;' +
-          'margin-left:0!important;' +
-        '}';
-    } else {
-      st.id = idDis;
-      st.textContent =
-        AGE_BASE_SEL + '{' +
-          'font-size:1.2em!important;' +
-          'border:1px solid #fff!important;' +
-          'border-radius:0.2em!important;' +
-          'padding:0.3em!important;' +
-          'margin-right:0.3em!important;' +
-          'margin-left:0!important;' +
-        '}';
-    }
-    document.head.appendChild(st);
+var __ageObserver = null;
+var __ageFollowReady = false;
+
+/* batch-фарбування через requestAnimationFrame, щоб уникати “лупа” від власних змін */
+var __agePaintQueue = new Set();
+var __ageRafId = 0;
+function __queueAgePaint(el){
+  if (!el || el.nodeType !== 1) return;
+  __agePaintQueue.add(el);
+  if (!__ageRafId){
+    __ageRafId = requestAnimationFrame(function(){
+      var nodes = Array.from(__agePaintQueue);
+      __agePaintQueue.clear();
+      __ageRafId = 0;
+      nodes.forEach(function(n){ applyAgeOnceIn(n); });
+    });
   }
+}
 
-  var __ageObserver = null;
-  var __ageFollowReady = false;
+/* Нормалізація тексту/атрибутів у єдиний рядок рейтингу */
+function __getAgeText(el){
+  var t = ($(el).text()||'').trim();
+  if (!t){
+    t = (el.getAttribute('data-age') || el.getAttribute('data-pg') || el.getAttribute('data-rating') || '').trim();
+  }
+  return t;
+}
 
-  // Батч-фарбування через rAF (щоб не ловити рекурсію)
-  var __agePaintQueue = new Set();
-  var __ageRafId = 0;
-  function __queueAgePaint(el){
-    if (!el || el.nodeType !== 1) return;
-    __agePaintQueue.add(el);
-    if (!__ageRafId){
-      __ageRafId = requestAnimationFrame(function(){
-        var nodes = Array.from(__agePaintQueue);
-        __agePaintQueue.clear();
-        __ageRafId = 0;
-        nodes.forEach(function(n){ applyAgeOnceIn(n); });
+/* Основне фарбування одного контейнера або всередині кореня */
+function applyAgeOnceIn(elRoot){
+  if (!getBool('interface_mod_new_colored_age', false)) return;
+
+  var groups = {
+    kids:        ['G','TV-Y','TV-G','0+','3+','0','3'],
+    children:    ['PG','TV-PG','TV-Y7','6+','7+','6','7'],
+    teens:       ['PG-13','TV-14','12+','13+','14+','12','13','14'],
+    almostAdult: ['R','TV-MA','16+','17+','16','17'],
+    adult:       ['NC-17','18+','18','X']
+  };
+  var col = {
+    kids:{bg:'#2ecc71',text:'white'},
+    children:{bg:'#3498db',text:'white'},
+    teens:{bg:'#f1c40f',text:'black'},
+    almostAdult:{bg:'#e67e22',text:'white'},
+    adult:{bg:'#e74c3c',text:'white'}
+  };
+
+  var $root = $(elRoot||document);
+  $root.find(AGE_BASE_SEL).each(function(){
+    var el = this;
+    var txt = __getAgeText(el);
+    if (!txt){
+      $(el).css({ 'background-color':'', color:'', border:'1px solid #fff', 'display':'inline-block' });
+      return;
+    }
+
+    var g = '';
+    Object.keys(groups).some(function(k){
+      return groups[k].some(function(mark){
+        if (txt.indexOf(mark) !== -1) { g = k; return true; }
+        return false;
       });
-    }
-  }
+    });
 
-  function applyAgeOnceIn(elRoot){
+    if (!g){
+      /* невідомий формат — повертаємо білу рамку */
+      $(el).css({ 'background-color':'', color:'', border:'1px solid #fff', 'display':'inline-block' });
+      return;
+    }
+
+    $(el).css({
+      'background-color': col[g].bg,
+      color: col[g].text,
+      'border-color':'transparent',
+      'display':'inline-block'
+    });
+  });
+}
+
+/* Додаткові “проходи” після відкриття картки — щоб наздогнати пізні зміни DOM/ratingsmod */
+function __scheduleAgePasses(root){
+  [100, 300, 800, 1600].forEach(function(ms){
+    setTimeout(function(){ applyAgeOnceIn(root); }, ms);
+  });
+}
+
+function enableAgeColoring(){
+  /* стартове застосування */
+  applyAgeOnceIn(document);
+
+  /* перевідкриття спостерігача */
+  if (__ageObserver) __ageObserver.disconnect();
+
+  __ageObserver = new MutationObserver(function(muts){
     if (!getBool('interface_mod_new_colored_age', false)) return;
 
-    var groups = {
-      kids:        ['G','TV-Y','TV-G','0+','3+','0','3'],
-      children:    ['PG','TV-PG','TV-Y7','6+','7+','6','7'],
-      teens:       ['PG-13','TV-14','12+','13+','14+','12','13','14'],
-      almostAdult: ['R','TV-MA','16+','17+','16','17'],
-      adult:       ['NC-17','18+','18','X']
-    };
-    var col = {
-      kids:{bg:'#2ecc71',text:'white'},
-      children:{bg:'#3498db',text:'white'},
-      teens:{bg:'#f1c40f',text:'black'},
-      almostAdult:{bg:'#e67e22',text:'white'},
-      adult:{bg:'#e74c3c',text:'white'}
-    };
+    for (var i=0; i<muts.length; i++){
+      var m = muts[i];
 
-    var $root = $(elRoot||document);
-    $root.find(AGE_BASE_SEL).each(function(){
-      var el = this;
-      var t = ($(el).text()||'').trim();
-      var g = '';
-      Object.keys(groups).some(function(k){
-        return groups[k].some(function(mark){
-          if (t.indexOf(mark) !== -1) { g = k; return true; }
-          return false;
-        });
-      });
-
-      if (!g){
-        $(el).css({ 'background-color':'', color:'', border:'1px solid #fff' });
-        return;
+      /* 1) Нові вузли */
+      if (m.type === 'childList'){
+        if (m.addedNodes && m.addedNodes.length){
+          m.addedNodes.forEach(function(n){
+            if (n.nodeType !== 1) return;
+            if (n.matches && n.matches(AGE_BASE_SEL)) __queueAgePaint(n);
+            $(n).find && $(n).find(AGE_BASE_SEL).each(function(){ __queueAgePaint(this); });
+          });
+        }
+        continue;
       }
 
-      $(el).css({ 'background-color': col[g].bg, color: col[g].text, 'border-color':'transparent' });
-    });
-  }
-
-  function enableAgeColoring(){
-    // Стартове застосування
-    applyAgeOnceIn(document);
-
-    if (__ageObserver) __ageObserver.disconnect();
-    __ageObserver = new MutationObserver(function(muts){
-      if (!getBool('interface_mod_new_colored_age', false)) return;
-
-      for (var i=0; i<muts.length; i++){
-        var m = muts[i];
-
-        // 1) Додані вузли
-        if (m.type === 'childList'){
-          if (m.addedNodes && m.addedNodes.length){
-            m.addedNodes.forEach(function(n){
-              if (n.nodeType !== 1) return;
-              if (n.matches && n.matches(AGE_BASE_SEL)) __queueAgePaint(n);
-              $(n).find(AGE_BASE_SEL).each(function(){ __queueAgePaint(this); });
-            });
-          }
-          continue;
-        }
-
-        // 2) Атрибути (ігноруємо style, щоб не ловити власні зміни)
-        if (m.type === 'attributes'){
-          if (m.attributeName === 'style') continue;
-          var t = m.target;
-          if (t && t.nodeType === 1 && t.matches && t.matches(AGE_BASE_SEL)) __queueAgePaint(t);
-          continue;
-        }
-
-        // 3) Текст
-        if (m.type === 'characterData'){
-          var p = m.target && m.target.parentNode;
-          if (p && p.matches && p.matches(AGE_BASE_SEL)) __queueAgePaint(p);
-        }
+      /* 2) Атрибути — ігноруємо 'style', щоб не ловити власні зміни */
+      if (m.type === 'attributes'){
+        if (m.attributeName === 'style') continue;
+        var t = m.target;
+        if (t && t.nodeType === 1 && t.matches && t.matches(AGE_BASE_SEL)) __queueAgePaint(t);
+        continue;
       }
-    });
 
-    __ageObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class','data-age','data-pg','data-rating'],
-      characterData: true
-    });
-
-    if (!__ageFollowReady){
-      __ageFollowReady = true;
-      Lampa.Listener.follow('full', function(e){
-        if (e.type === 'complite' && getBool('interface_mod_new_colored_age', false)) {
-          setTimeout(function(){ applyAgeOnceIn(e.object.activity.render()); }, 120);
-        }
-      });
+      /* 3) Зміна тексту (characterData) */
+      if (m.type === 'characterData'){
+        var p = m.target && m.target.parentNode;
+        if (p && p.matches && p.matches(AGE_BASE_SEL)) __queueAgePaint(p);
+      }
     }
-  }
+  });
 
-  function disableAgeColoring(clearInline){
-    if (__ageObserver) { __ageObserver.disconnect(); __ageObserver = null; }
-    if (clearInline) $(AGE_BASE_SEL).css({ 'background-color':'', color:'', border:'' });
+  __ageObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    characterData: true,
+    attributeFilter: ['class','data-age','data-pg','data-rating']  /* style свідомо НЕ відстежуємо */
+  });
+
+  /* підхопити картку після відкриття */
+  if (!__ageFollowReady){
+    __ageFollowReady = true;
+    Lampa.Listener.follow('full', function(e){
+      if (e.type === 'complite' && getBool('interface_mod_new_colored_age', false)) {
+        var root = e.object && e.object.activity ? e.object.activity.render() : null;
+        setTimeout(function(){ applyAgeOnceIn(root||document); }, 120);
+        __scheduleAgePasses(root||document);
+      }
+    });
   }
+}
+
+function disableAgeColoring(clearInline){
+  if (__ageObserver) { __ageObserver.disconnect(); __ageObserver = null; }
+  if (clearInline) $(AGE_BASE_SEL).css({
+    'background-color':'', color:'', border:'1px solid #fff', 'display':'inline-block'
+  });
+}
+/* ======================== /ВІКОВІ РЕЙТИНГИ (PG) — FIX ========================= */
+
 
   /* ============================================================
    *  ОРИГІНАЛЬНА НАЗВА (лише назва, без опису)

@@ -71,6 +71,11 @@
     return out;
   }
 
+  // Перевірка тексту на «Незабаром/Скоро/Soon»
+  function isSoonText(t){
+    return /(незабаром|скоро|soon)/i.test(String(t || '').trim());
+  }
+
   /* ============================================================
    *  ЛОКАЛІЗАЦІЯ
    * ============================================================ */
@@ -130,7 +135,6 @@
 
   /* ============================================================
    *  БАЗОВІ (СУМІСНІ) СТИЛІ КОНТЕЙНЕРА
-   *  — безпечні зміни, не ламають стандартні блоки
    * ============================================================ */
   (function injectBaseCss(){
     if (document.getElementById('interface_mod_base')) return;
@@ -168,7 +172,6 @@
 
   /* ============================================================
    *  ТЕМИ: Emerald V1, Emerald V2, Aurora
-   *  — додаємо style-тег один, знімаємо попередній при перемиканні
    * ============================================================ */
   function applyTheme(theme) {
     var old = document.getElementById('interface_mod_theme');
@@ -248,7 +251,7 @@
           color: #fff !important;
           box-shadow: 0 0 20px rgba(170,75,107,.35) !important;
           transform: scale(1.02) !important;
-          border-radius: .85em !important;
+          border-radius: .85ем !important;
         }
         .card.focus .card__view::after, .card.hover .card__view::after {
           border: 2px solid #aa4b6b !important;
@@ -275,10 +278,32 @@
 
   /* ============================================================
    *  УНІФІКОВАНІ СЕЛЕКТОРИ ДЛЯ СТАТУСІВ ТА PG
-   *  — додаємо варіанти «soon», data-атрибути тощо
    * ============================================================ */
-  var STATUS_BASE_SEL = '.full-start__status, .full-start-new__status, .full-start__soon, .full-start-new__soon, .full-start [data-status], .full-start-new [data-status]';
-  var AGE_BASE_SEL    = '.full-start__pg, .full-start-new__pg, .full-start [data-pg], .full-start-new [data-pg], .full-start [data-age], .full-start-new [data-age]';
+  var STATUS_BASE_SEL = '' +
+    '.full-start__status, .full-start-new__status,' +
+    '.full-start__soon, .full-start-new__soon,' +               /* типові класові варіанти «Незабаром» */
+    '.full-start [data-status], .full-start-new [data-status]'; /* можливі data-варіанти */
+
+  var AGE_BASE_SEL = '' +
+    '.full-start__pg, .full-start-new__pg,' +
+    '.full-start [data-pg], .full-start-new [data-pg],' +
+    '.full-start [data-age], .full-start-new [data-age]';
+
+  // Пошук вузлів «Незабаром» навіть якщо немає відомих класів (fall-back)
+  function findSoonNodes(root){
+    var $root = $(root || document);
+    // Шукаємо лише у шапці картки, не в описі
+    var $scope = $root.find('.full-start, .full-start-new, .full-start__details, .full-start-new__details');
+    var $candidates = $scope.find('span,div,em,b,i,strong');
+    var out = [];
+    $candidates.each(function(){
+      var $el = $(this);
+      if (isSoonText($el.text()) && !$el.closest('.full-descr, .full-descr__text').length){
+        out.push(this);
+      }
+    });
+    return $(out);
+  }
 
   /* ============================================================
    *  МЕНЮ «Інтерфейс+» + МИТТЄВЕ ЗАСТОСУВАННЯ НАЛАШТУВАНЬ
@@ -368,7 +393,8 @@
 
           if (key === 'interface_mod_new_colored_status') {
             setStatusBaseCssEnabled(settings.colored_status);
-            if (settings.colored_status) enableStatusColoring(); else disableStatusColoring(true);
+            if (settings.colored_status) { enableStatusColoring(); ensureSoonBaseFrame(document, true); }
+            else { disableStatusColoring(true); ensureSoonBaseFrame(document, false); }
           }
 
           if (key === 'interface_mod_new_colored_age') {
@@ -393,7 +419,7 @@
 
     // Ряди
     var row1 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'center',margin:'0 0 0.2em 0' });
-    var row2 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'center',margin:'0 0 0.2ем 0'.replace('ем','em') });
+    var row2 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'center',margin:'0 0 0.2em 0' });
     var row3 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'center',margin:'0 0 0.2em 0' });
     var row4 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'flex-start',margin:'0 0 0.2em 0' });
 
@@ -666,8 +692,8 @@
           'font-size:1.2em!important;' +
           'border:1px solid #fff!important;' +
           'border-radius:0.2em!important;' +
-          'padding:0.3ем!important;'.replace('ем','em') +
-          'margin-right:0.3ем!important;'.replace('ем','em') +
+          'padding:0.3em!important;' +
+          'margin-right:0.3em!important;' +
           'margin-left:0!important;' +
         '}';
     }
@@ -675,10 +701,27 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ СТАТУСИ (+ підтримка «Незабаром/Скоро/Soon»)
+   *  КОЛЬОРОВІ СТАТУСИ (+ надійна підтримка «Незабаром/Скоро/Soon»)
    * ============================================================ */
   var __statusObserver = null;
   var __statusFollowReady = false;
+
+  // Fallback-рамка для «Незабаром», якщо елемент не потрапляє під STATUS_BASE_SEL
+  function ensureSoonBaseFrame(root, enabled){
+    var $nodes = findSoonNodes(root);
+    $nodes.each(function(){
+      var $el = $(this);
+      $el.css({
+        display: 'inline-block',
+        'font-size':'1.2em',
+        'border': enabled ? '1px solid transparent' : '1px solid #fff',
+        'border-radius':'0.2em',
+        'padding':'0.3em',
+        'margin-right':'0.3em',
+        'margin-left':'0'
+      });
+    });
+  }
 
   function applyStatusOnceIn(elRoot){
     if (!getBool('interface_mod_new_colored_status', false)) return;
@@ -709,10 +752,10 @@
       else if (/випущ/i.test(t) || /released/i.test(t)) key = 'released';
       else if (/чутк/i.test(t) || /rumored/i.test(t)) key = 'rumored';
       else if (/пост/i.test(t) || /post/i.test(t)) key = 'post';
-      else if (/незабаром|скоро|soon/i.test(t)) key = 'soon';
+      else if (isSoonText(t)) key = 'soon';
 
       if (!key){
-        // Fallback: якщо статус не розпізнано, повертаємо видиму рамку
+        // Нерозпізнаний статус: залишаємо видиму рамку
         $(el).css({ 'background-color':'', color:'', border:'1px solid #fff' });
         return;
       }
@@ -720,11 +763,18 @@
       $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent' });
     }
 
-    (elRoot || document).querySelectorAll && $(elRoot||document).find(SEL).each(function(){ paint(this); });
+    var $root = $(elRoot || document);
+
+    // 1) Фарбування відомих контейнерів
+    $root.find(SEL).each(function(){ paint(this); });
+
+    // 2) Додатково — знайти «Незабаром» без класів і зафарбувати
+    findSoonNodes($root).each(function(){ paint(this); });
   }
 
   function enableStatusColoring(){
     applyStatusOnceIn(document);
+    ensureSoonBaseFrame(document, true); // гарантуємо «рамку-геометрію» для Незабаром
 
     if (__statusObserver) __statusObserver.disconnect();
     __statusObserver = new MutationObserver(function(muts){
@@ -733,6 +783,7 @@
         (m.addedNodes||[]).forEach(function(n){
           if (n.nodeType !== 1) return;
           applyStatusOnceIn(n);
+          ensureSoonBaseFrame(n, true);
         });
       });
     });
@@ -742,7 +793,10 @@
       __statusFollowReady = true;
       Lampa.Listener.follow('full', function(e){
         if (e.type === 'complite' && getBool('interface_mod_new_colored_status', false)) {
-          setTimeout(function(){ applyStatusOnceIn(e.object.activity.render()); }, 120);
+          setTimeout(function(){
+            applyStatusOnceIn(e.object.activity.render());
+            ensureSoonBaseFrame(e.object.activity.render(), true);
+          }, 120);
         }
       });
     }
@@ -751,6 +805,8 @@
   function disableStatusColoring(clearInline){
     if (__statusObserver) { __statusObserver.disconnect(); __statusObserver = null; }
     if (clearInline) $(STATUS_BASE_SEL).css({ 'background-color':'', color:'', border:'' });
+    // Для «Незабаром» без відомих класів — повернути білу рамку
+    ensureSoonBaseFrame(document, false);
   }
 
   /* ============================================================
@@ -796,7 +852,8 @@
       $(el).css({ 'background-color': col[g].bg, color: col[g].text, 'border-color':'transparent' });
     }
 
-    (elRoot || document).querySelectorAll && $(elRoot||document).find(SEL).each(function(){ paint(this); });
+    var $root = $(elRoot || document);
+    $root.find(SEL).each(function(){ paint(this); });
   }
 
   function enableAgeColoring(){
@@ -837,12 +894,13 @@
     newInfoPanel();
     setupVoteColorsObserver();
 
-    // Кольорові рейтинги — одноразове фарбування на старті (далі стежать обсервери)
+    // Кольорові рейтинги — разове фарбування на старті
     if (settings.colored_ratings) updateVoteColors();
 
     // База стилів + увімкнення/вимкнення кольорів статусів
     setStatusBaseCssEnabled(settings.colored_status);
-    if (settings.colored_status) enableStatusColoring(); else disableStatusColoring(true);
+    if (settings.colored_status) { enableStatusColoring(); ensureSoonBaseFrame(document, true); }
+    else { disableStatusColoring(true); ensureSoonBaseFrame(document, false); }
 
     // База стилів + увімкнення/вимкнення кольорів PG
     setAgeBaseCssEnabled(settings.colored_age);

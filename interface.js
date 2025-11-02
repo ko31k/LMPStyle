@@ -3,6 +3,7 @@
 
   /* ============================================================
    *  ПОЛІФІЛИ ТА УТИЛІТИ
+   *  — базові допоміжні функції й поліфіли для старих WebView
    * ============================================================ */
 
   // Polyfill startsWith для старих WebView
@@ -23,14 +24,14 @@
     return five;
   }
 
-  // Нормалізація булевих значень з Storage (прибирає «залипання» тумблерів)
+  // Нормалізація булевих значень зі Storage (уніфікує true/"true"/1/"1")
   function getBool(key, def){
     var v = Lampa.Storage.get(key, def);
     if (typeof v === 'string') v = v.trim().toLowerCase();
     return v === true || v === 'true' || v === 1 || v === '1';
   }
 
-  // Обчислення середньої тривалості серії
+  // Обчислення середньої тривалості серії (TMDB-подібна структура)
   function calculateAverageEpisodeDuration(movie) {
     if (!movie || typeof movie !== 'object') return 0;
     var total = 0, count = 0;
@@ -58,7 +59,7 @@
     return 0;
   }
 
-  // Форматування хвилин у «X годин Y хвилин»
+  // Форматування хвилин у текст «X годин Y хвилин»
   function formatDurationMinutes(minutes) {
     if (!minutes || minutes <= 0) return '';
     var h = Math.floor(minutes / 60), m = minutes % 60, out = '';
@@ -71,13 +72,9 @@
     return out;
   }
 
-  // Перевірка тексту на «Незабаром/Скоро/Soon»
-  function isSoonText(t){
-    return /(незабаром|скоро|soon)/i.test(String(t || '').trim());
-  }
-
   /* ============================================================
    *  ЛОКАЛІЗАЦІЯ
+   *  — ключі для назви плагіна, опцій і описів
    * ============================================================ */
   Lampa.Lang.add({
     interface_mod_new_group_title: { ru:'Интерфейс +', en:'Interface +', uk:'Інтерфейс +' },
@@ -119,11 +116,11 @@
   });
 
   /* ============================================================
-   *  НАЛАШТУВАННЯ (дефолти як просив)
-   *  — читання всіх тумблерів через getBool
+   *  НАЛАШТУВАННЯ
+   *  — читання опцій, дефолти, кешування поточного стану картки
    * ============================================================ */
   var settings = {
-    info_panel      : getBool('interface_mod_new_info_panel', true),   // «Так» за замовчуванням
+    info_panel      : getBool('interface_mod_new_info_panel', true),
     colored_ratings : getBool('interface_mod_new_colored_ratings', false),
     colored_status  : getBool('interface_mod_new_colored_status', false),
     colored_age     : getBool('interface_mod_new_colored_age', false),
@@ -134,7 +131,31 @@
   var __ifx_last = { details:null, movie:null, originalHTML:'', isTv:false };
 
   /* ============================================================
+   *  УНІФІКОВАНІ СЕЛЕКТОРИ ДЛЯ СТАТУСІВ ТА PG
+   *  — охоплюють стандартні, «new»-варіанти, атрибути і спец-блоки
+   * ============================================================ */
+  var STATUS_BASE_SEL = '.full-start__status, .full-start-new__status, .full-start__soon, .full-start-new__soon, .full-start [data-status], .full-start-new [data-status]';
+  var AGE_BASE_SEL    = '.full-start__pg, .full-start-new__pg, .full-start [data-pg], .full-start-new [data-pg], .full-start [data-age], .full-start-new [data-age]';
+
+  /* ============================================================
+   *  РАЗОВА ІНʼЄКЦІЯ CSS ДЛЯ «ФОЛБЕКІВ»
+   *  — класи, які примусово показують білу рамку поверх !important
+   *  — потрібні, коли режим увімкнено, але значення не розпізнано
+   * ============================================================ */
+  function injectFallbackCss(){
+    if (document.getElementById('ifx_fallback_css')) return;
+    var st = document.createElement('style');
+    st.id = 'ifx_fallback_css';
+    st.textContent = `
+      .ifx-status-fallback{ border-color:#fff !important; background:none !important; color:inherit !important; }
+      .ifx-age-fallback{    border-color:#fff !important; background:none !important; color:inherit !important; }
+    `;
+    document.head.appendChild(st);
+  }
+
+  /* ============================================================
    *  БАЗОВІ (СУМІСНІ) СТИЛІ КОНТЕЙНЕРА
+   *  — коректний вигляд і поведінка без конфліктів
    * ============================================================ */
   (function injectBaseCss(){
     if (document.getElementById('interface_mod_base')) return;
@@ -171,7 +192,8 @@
   })();
 
   /* ============================================================
-   *  ТЕМИ: Emerald V1, Emerald V2, Aurora
+   *  ТЕМИ ОФОРМЛЕННЯ: Emerald V1, Emerald V2, Aurora
+   *  — вставка одного style-тега; видалення попереднього при зміні
    * ============================================================ */
   function applyTheme(theme) {
     var old = document.getElementById('interface_mod_theme');
@@ -251,7 +273,7 @@
           color: #fff !important;
           box-shadow: 0 0 20px rgba(170,75,107,.35) !important;
           transform: scale(1.02) !important;
-          border-radius: .85ем !important;
+          border-radius: .85em !important;
         }
         .card.focus .card__view::after, .card.hover .card__view::after {
           border: 2px solid #aa4b6b !important;
@@ -277,42 +299,14 @@
   }
 
   /* ============================================================
-   *  УНІФІКОВАНІ СЕЛЕКТОРИ ДЛЯ СТАТУСІВ ТА PG
-   * ============================================================ */
-  var STATUS_BASE_SEL = '' +
-    '.full-start__status, .full-start-new__status,' +
-    '.full-start__soon, .full-start-new__soon,' +               /* типові класові варіанти «Незабаром» */
-    '.full-start [data-status], .full-start-new [data-status]'; /* можливі data-варіанти */
-
-  var AGE_BASE_SEL = '' +
-    '.full-start__pg, .full-start-new__pg,' +
-    '.full-start [data-pg], .full-start-new [data-pg],' +
-    '.full-start [data-age], .full-start-new [data-age]';
-
-  // Пошук вузлів «Незабаром» навіть якщо немає відомих класів (fall-back)
-  function findSoonNodes(root){
-    var $root = $(root || document);
-    // Шукаємо лише у шапці картки, не в описі
-    var $scope = $root.find('.full-start, .full-start-new, .full-start__details, .full-start-new__details');
-    var $candidates = $scope.find('span,div,em,b,i,strong');
-    var out = [];
-    $candidates.each(function(){
-      var $el = $(this);
-      if (isSoonText($el.text()) && !$el.closest('.full-descr, .full-descr__text').length){
-        out.push(this);
-      }
-    });
-    return $(out);
-  }
-
-  /* ============================================================
    *  МЕНЮ «Інтерфейс+» + МИТТЄВЕ ЗАСТОСУВАННЯ НАЛАШТУВАНЬ
+   *  — додає секцію в Настройках; тумблери працюють без перезавантаження
    * ============================================================ */
   function initInterfaceModSettingsUI(){
     if (window.__ifx_settings_ready) return;
     window.__ifx_settings_ready = true;
 
-    // Створюємо групу «Інтерфейс+»
+    // Група «Інтерфейс+»
     Lampa.SettingsApi.addComponent({
       component: 'interface_mod_new',
       name: Lampa.Lang.translate('interface_mod_new_group_title'),
@@ -369,7 +363,7 @@
     var obsMenu = new MutationObserver(function(){ moveAfterInterface(); });
     obsMenu.observe(document.body, {childList:true, subtree:true});
 
-    // Патч Storage.set: миттєво застосовуємо зміни з меню (без перезавантаження картки)
+    // Патч Storage.set: миттєво застосовуємо зміни з меню (live-оновлення)
     if (!window.__ifx_patch_storage) {
       window.__ifx_patch_storage = true;
       var _set = Lampa.Storage.set;
@@ -393,8 +387,7 @@
 
           if (key === 'interface_mod_new_colored_status') {
             setStatusBaseCssEnabled(settings.colored_status);
-            if (settings.colored_status) { enableStatusColoring(); ensureSoonBaseFrame(document, true); }
-            else { disableStatusColoring(true); ensureSoonBaseFrame(document, false); }
+            if (settings.colored_status) enableStatusColoring(); else disableStatusColoring(true);
           }
 
           if (key === 'interface_mod_new_colored_age') {
@@ -408,7 +401,8 @@
   }
 
   /* ============================================================
-   *  ІНФО-ПАНЕЛЬ (4 ряди з точними відступами)
+   *  ІНФО-ПАНЕЛЬ (4 ряди з чіткими відступами)
+   *  — 1) серії; 2) наступна серія; 3) тривалість; 4) сезони+жанри
    * ============================================================ */
   function buildInfoPanel(details, movie, isTvShow, originalDetails){
     // Контейнер панелі
@@ -484,7 +478,7 @@
       if (epsText) row1.append($('<span>').text(epsText).css($.extend({}, baseBadge, { 'background-color': colors.episodes.bg, color: colors.episodes.text })));
     }
 
-    /* 2 — Наступна серія (людський текст: сьогодні/завтра/через N днів) */
+    /* 2 — Наступна серія (сьогодні/завтра/через N днів) */
     if (isTvShow && movie.next_episode_to_air && movie.next_episode_to_air.air_date) {
       var nextDate = new Date(movie.next_episode_to_air.air_date), today = new Date();
       nextDate.setHours(0,0,0,0); today.setHours(0,0,0,0);
@@ -529,13 +523,11 @@
       row4.append($('<span>').text(gn).css($.extend({}, baseGenre, { 'background-color': c.bg, color: c.text })));
     });
 
-    // Збирання рядів
+    // Збирання рядів і вставка в DOM
     container.append(row1);
     if (row2.children().length) container.append(row2);
     if (row3.children().length) container.append(row3);
     if (row4.children().length) container.append(row4);
-
-    // Вставка до DOM
     details.append(container);
   }
 
@@ -552,7 +544,7 @@
     }
   }
 
-  // Слухач відкриття картки: будуємо інфо-панель, якщо увімкнено
+  // Слухач відкриття картки: при побудові створюємо інфо-панель
   function newInfoPanel() {
     Lampa.Listener.follow('full', function (data) {
       if (data.type !== 'complite') return;
@@ -569,7 +561,7 @@
           movie.type === 'tv' || movie.type === 'serial'
         ));
 
-        // Запам’ятовуємо стан картки для live-перебудови
+        // Кеш для live-перебудови
         __ifx_last.details = details;
         __ifx_last.movie = movie;
         __ifx_last.isTv = isTvShow;
@@ -584,7 +576,7 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ РЕЙТИНГИ — акуратні селектори
+   *  КОЛЬОРОВІ РЕЙТИНГИ — акуратні селектори, без побічних ефектів
    * ============================================================ */
   function updateVoteColors() {
     if (!getBool('interface_mod_new_colored_ratings', false)) return;
@@ -633,6 +625,10 @@
 
   /* ============================================================
    *  БАЗА СТИЛІВ ДЛЯ СТАТУСІВ/PG (дві стани)
+   *  — enabled: прозора рамка (щоб не стрибала геометрія), 1.2em
+   *  — disabled: біла рамка, той самий розмір
+   *  ! ВАЖЛИВО: тут використовується !important, тому для фолбеків
+   *    ми застосовуємо окремі класи з !important (див. injectFallbackCss)
    * ============================================================ */
   function setStatusBaseCssEnabled(enabled){
     var idEn = 'interface_mod_status_enabled';
@@ -701,80 +697,74 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ СТАТУСИ (+ надійна підтримка «Незабаром/Скоро/Soon»)
+   *  КОЛЬОРОВІ СТАТУСИ (включно з «Незабаром/Скоро/Soon»)
+   *  — розпізнаємо по тексту та, на всяк випадок, по класу/атрибуту
+   *  — якщо не впізнали, додаємо .ifx-status-fallback (білу рамку)
    * ============================================================ */
   var __statusObserver = null;
   var __statusFollowReady = false;
-
-  // Fallback-рамка для «Незабаром», якщо елемент не потрапляє під STATUS_BASE_SEL
-  function ensureSoonBaseFrame(root, enabled){
-    var $nodes = findSoonNodes(root);
-    $nodes.each(function(){
-      var $el = $(this);
-      $el.css({
-        display: 'inline-block',
-        'font-size':'1.2em',
-        'border': enabled ? '1px solid transparent' : '1px solid #fff',
-        'border-radius':'0.2em',
-        'padding':'0.3em',
-        'margin-right':'0.3em',
-        'margin-left':'0'
-      });
-    });
-  }
 
   function applyStatusOnceIn(elRoot){
     if (!getBool('interface_mod_new_colored_status', false)) return;
 
     var palette = {
-      completed: { bg:'rgba(46,204,113,.85)', text:'white' }, // Завершено / Ended
-      canceled : { bg:'rgba(231,76,60,.9)',   text:'white' }, // Скасовано
-      ongoing  : { bg:'rgba(243,156,18,.95)', text:'black' }, // Виходить / Returning series
-      production:{bg:'rgba(52,152,219,.9)',   text:'white' }, // У виробництві
-      planned  : { bg:'rgba(155,89,182,.9)',  text:'white' }, // Заплановано
-      pilot    : { bg:'rgba(230,126,34,.95)', text:'white' }, // Пілот
-      released : { bg:'rgba(26,188,156,.9)',  text:'white' }, // Випущено (для фільмів)
-      rumored  : { bg:'rgba(149,165,166,.9)', text:'white' }, // Чутки
-      post     : { bg:'rgba(0,188,212,.9)',   text:'white' }, // Постпродакшн
-      soon     : { bg:'rgba(52,152,219,.95)', text:'white' }  // Незабаром / Скоро / Soon
+      completed : { bg:'rgba(46,204,113,.85)', text:'white' }, // Завершено / Ended
+      canceled  : { bg:'rgba(231,76,60,.9)',   text:'white' }, // Скасовано
+      ongoing   : { bg:'rgba(243,156,18,.95)', text:'black' }, // Виходить / Returning series
+      production: { bg:'rgba(52,152,219,.9)',  text:'white' }, // У виробництві
+      planned   : { bg:'rgba(155,89,182,.9)',  text:'white' }, // Заплановано
+      pilot     : { bg:'rgba(230,126,34,.95)', text:'white' }, // Пілот
+      released  : { bg:'rgba(26,188,156,.9)',  text:'white' }, // Випущено (фільми)
+      rumored   : { bg:'rgba(149,165,166,.9)', text:'white' }, // Чутки
+      post      : { bg:'rgba(0,188,212,.9)',   text:'white' }, // Постпродакшн
+      soon      : { bg:'rgba(142,68,173,.95)', text:'white' }  // Незабаром / Скоро / Soon
     };
 
-    var SEL = STATUS_BASE_SEL;
-
-    function paint(el){
-      var t = ($(el).text()||'').trim(), key = '';
-      if (/заверш/i.test(t) || /ended/i.test(t)) key = 'completed';
-      else if (/скасов/i.test(t) || /cancel(l)?ed/i.test(t)) key = 'canceled';
-      else if (/онгоїн|виходить|триває/i.test(t) || /returning/i.test(t)) key = 'ongoing';
-      else if (/виробництв/i.test(t) || /in\s*production/i.test(t)) key = 'production';
-      else if (/заплан/i.test(t) || /planned/i.test(t)) key = 'planned';
-      else if (/пілот/i.test(t) || /pilot/i.test(t)) key = 'pilot';
-      else if (/випущ/i.test(t) || /released/i.test(t)) key = 'released';
-      else if (/чутк/i.test(t) || /rumored/i.test(t)) key = 'rumored';
-      else if (/пост/i.test(t) || /post/i.test(t)) key = 'post';
-      else if (isSoonText(t)) key = 'soon';
-
-      if (!key){
-        // Нерозпізнаний статус: залишаємо видиму рамку
-        $(el).css({ 'background-color':'', color:'', border:'1px solid #fff' });
-        return;
-      }
-      var c = palette[key];
-      $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent' });
-    }
-
     var $root = $(elRoot || document);
+    $root.find(STATUS_BASE_SEL).each(function(){
+      var el = this;
+      var t  = ($(el).text()||'').trim();
+      var key = '';
 
-    // 1) Фарбування відомих контейнерів
-    $root.find(SEL).each(function(){ paint(this); });
+      // 1) Пряме текстове розпізнавання (включно з «Незабаром/Скоро/Soon»)
+      if (/незабаром|скоро|soon/i.test(t))                                 key = 'soon';
+      else if (/заверш/i.test(t) || /ended/i.test(t))                      key = 'completed';
+      else if (/скасов/i.test(t) || /cancel(l)?ed/i.test(t))               key = 'canceled';
+      else if (/онгоїн|виходить|триває/i.test(t) || /returning/i.test(t))  key = 'ongoing';
+      else if (/виробництв/i.test(t) || /in\s*production/i.test(t))        key = 'production';
+      else if (/заплан/i.test(t) || /planned/i.test(t))                    key = 'planned';
+      else if (/пілот/i.test(t) || /pilot/i.test(t))                       key = 'pilot';
+      else if (/випущ/i.test(t) || /released/i.test(t))                    key = 'released';
+      else if (/чутк/i.test(t) || /rumored/i.test(t))                      key = 'rumored';
+      else if (/пост/i.test(t) || /post/i.test(t))                         key = 'post';
 
-    // 2) Додатково — знайти «Незабаром» без класів і зафарбувати
-    findSoonNodes($root).each(function(){ paint(this); });
+      // 2) Додаткові підказки: клас/атрибут
+      if (!key) {
+        var cls = (el.className || '');
+        if (/soon/i.test(cls)) key = 'soon';
+        if (!key && el.hasAttribute('data-status')) {
+          var ds = (el.getAttribute('data-status') || '').toLowerCase();
+          if (ds.indexOf('soon') !== -1 || ds.indexOf('скоро') !== -1 || ds.indexOf('незабаром') !== -1) key = 'soon';
+        }
+      }
+
+      // Скидаємо попередній фолбек (якщо був)
+      el.classList.remove('ifx-status-fallback');
+
+      if (key){
+        var c = palette[key];
+        // фон + текст; рамкою керує базовий CSS (прозора у ввімкненому режимі)
+        $(el).css({ 'background-color': c.bg, color: c.text });
+      } else {
+        // Невідомий статус: показати білу рамку (override !important у базі)
+        el.classList.add('ifx-status-fallback');
+        $(el).css({ 'background-color':'', color:'' });
+      }
+    });
   }
 
   function enableStatusColoring(){
     applyStatusOnceIn(document);
-    ensureSoonBaseFrame(document, true); // гарантуємо «рамку-геометрію» для Незабаром
 
     if (__statusObserver) __statusObserver.disconnect();
     __statusObserver = new MutationObserver(function(muts){
@@ -783,7 +773,6 @@
         (m.addedNodes||[]).forEach(function(n){
           if (n.nodeType !== 1) return;
           applyStatusOnceIn(n);
-          ensureSoonBaseFrame(n, true);
         });
       });
     });
@@ -793,10 +782,7 @@
       __statusFollowReady = true;
       Lampa.Listener.follow('full', function(e){
         if (e.type === 'complite' && getBool('interface_mod_new_colored_status', false)) {
-          setTimeout(function(){
-            applyStatusOnceIn(e.object.activity.render());
-            ensureSoonBaseFrame(e.object.activity.render(), true);
-          }, 120);
+          setTimeout(function(){ applyStatusOnceIn(e.object.activity.render()); }, 120);
         }
       });
     }
@@ -804,56 +790,73 @@
 
   function disableStatusColoring(clearInline){
     if (__statusObserver) { __statusObserver.disconnect(); __statusObserver = null; }
-    if (clearInline) $(STATUS_BASE_SEL).css({ 'background-color':'', color:'', border:'' });
-    // Для «Незабаром» без відомих класів — повернути білу рамку
-    ensureSoonBaseFrame(document, false);
+    if (clearInline) $(STATUS_BASE_SEL).removeClass('ifx-status-fallback').css({ 'background-color':'', color:'' });
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG) — з fallback-рамкою
+   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG)
+   *  — розпізнаємо маркери (G/PG/TV-14/18+) або числовий формат «17 +»
+   *  — при нерозпізнанні додаємо .ifx-age-fallback (білу рамку)
    * ============================================================ */
   var __ageObserver = null;
   var __ageFollowReady = false;
 
+  // Мапінг категорій і кольорів
+  var __ageGroups = {
+    kids        : ['G','TV-Y','TV-G','0+','3+','0','3'],
+    children    : ['PG','TV-PG','TV-Y7','6+','7+','6','7'],
+    teens       : ['PG-13','TV-14','12+','13+','14+','12','13','14'],
+    almostAdult : ['R','TV-MA','16+','17+','16','17'],
+    adult       : ['NC-17','18+','18','X']
+  };
+  var __ageColors = {
+    kids:{bg:'#2ecc71',text:'white'},
+    children:{bg:'#3498db',text:'white'},
+    teens:{bg:'#f1c40f',text:'black'},
+    almostAdult:{bg:'#e67e22',text:'white'},
+    adult:{bg:'#e74c3c',text:'white'}
+  };
+
+  // Визначення категорії за текстом, включно з форматами «17+», «17 +»
+  function ageCategoryFor(text){
+    // 1) прямі збіги
+    for (var k in __ageGroups){
+      if (__ageGroups[k].some(function(mark){ return text.indexOf(mark) !== -1; })) return k;
+    }
+    // 2) числовий формат: "17+" / "17 +" / " 17 + "
+    var m = text.match(/(^|\D)(\d{1,2})\s*\+(?=\D|$)/);
+    if (m){
+      var n = parseInt(m[2],10);
+      if (n <= 3)  return 'kids';
+      if (n <= 7)  return 'children';
+      if (n <= 14) return 'teens';
+      if (n <= 17) return 'almostAdult';
+      return 'adult';
+    }
+    return '';
+  }
+
   function applyAgeOnceIn(elRoot){
     if (!getBool('interface_mod_new_colored_age', false)) return;
 
-    var groups = {
-      kids:        ['G','TV-Y','TV-G','0+','3+','0','3'],
-      children:    ['PG','TV-PG','TV-Y7','6+','7+','6','7'],
-      teens:       ['PG-13','TV-14','12+','13+','14+','12','13','14'],
-      almostAdult: ['R','TV-MA','16+','17+','16','17'],
-      adult:       ['NC-17','18+','18','X']
-    };
-    var col = {
-      kids:{bg:'#2ecc71',text:'white'},
-      children:{bg:'#3498db',text:'white'},
-      teens:{bg:'#f1c40f',text:'black'},
-      almostAdult:{bg:'#e67e22',text:'white'},
-      adult:{bg:'#e74c3c',text:'white'}
-    };
-    var SEL = AGE_BASE_SEL;
-
-    function paint(el){
-      var t = ($(el).text()||'').trim(), g = '';
-      Object.keys(groups).some(function(k){
-        return groups[k].some(function(mark){
-          if (t.indexOf(mark) !== -1) { g = k; return true; }
-          return false;
-        });
-      });
-
-      if (!g){
-        // Fallback: якщо PG не розпізнано (наприклад, «17+» нестандартно) — повернути рамку
-        $(el).css({ 'background-color':'', color:'', border:'1px solid #fff' });
-        return;
-      }
-
-      $(el).css({ 'background-color': col[g].bg, color: col[g].text, 'border-color':'transparent' });
-    }
-
     var $root = $(elRoot || document);
-    $root.find(SEL).each(function(){ paint(this); });
+    $root.find(AGE_BASE_SEL).each(function(){
+      var el = this;
+      var t  = ($(el).text()||'').trim();
+
+      // прибираємо попередній фолбек
+      el.classList.remove('ifx-age-fallback');
+
+      var g = ageCategoryFor(t);
+      if (g){
+        var c = __ageColors[g];
+        $(el).css({ 'background-color': c.bg, color: c.text });
+      } else {
+        // невідомий формат: біла рамка
+        el.classList.add('ifx-age-fallback');
+        $(el).css({ 'background-color':'', color:'' });
+      }
+    });
   }
 
   function enableAgeColoring(){
@@ -883,30 +886,31 @@
 
   function disableAgeColoring(clearInline){
     if (__ageObserver) { __ageObserver.disconnect(); __ageObserver = null; }
-    if (clearInline) $(AGE_BASE_SEL).css({ 'background-color':'', color:'', border:'' });
+    if (clearInline) $(AGE_BASE_SEL).removeClass('ifx-age-fallback').css({ 'background-color':'', color:'' });
   }
 
   /* ============================================================
    *  ЗАПУСК ПЛАГІНА
+   *  — ініціалізація меню, стилів, інфо-панелі та спостерігачів
    * ============================================================ */
   function startPlugin() {
-    initInterfaceModSettingsUI();
-    newInfoPanel();
-    setupVoteColorsObserver();
+    injectFallbackCss();             // класи для фолбек-рамок поверх !important
+    initInterfaceModSettingsUI();    // меню «Інтерфейс+»
+    newInfoPanel();                  // інфо-панель під постером
+    setupVoteColorsObserver();       // підсвітка рейтингів (автооновлення)
 
-    // Кольорові рейтинги — разове фарбування на старті
+    // Кольорові рейтинги — первинне фарбування
     if (settings.colored_ratings) updateVoteColors();
 
-    // База стилів + увімкнення/вимкнення кольорів статусів
+    // Статуси: база + режим
     setStatusBaseCssEnabled(settings.colored_status);
-    if (settings.colored_status) { enableStatusColoring(); ensureSoonBaseFrame(document, true); }
-    else { disableStatusColoring(true); ensureSoonBaseFrame(document, false); }
+    if (settings.colored_status) enableStatusColoring(); else disableStatusColoring(true);
 
-    // База стилів + увімкнення/вимкнення кольорів PG
+    // Вікові рейтинги (PG): база + режим
     setAgeBaseCssEnabled(settings.colored_age);
     if (settings.colored_age) enableAgeColoring(); else disableAgeColoring(true);
 
-    // Тема
+    // Тема оформлення
     if (settings.theme) applyTheme(settings.theme);
   }
 

@@ -116,7 +116,7 @@
     interface_mod_new_theme_emerald_v2: { ru:'Emerald V2', en:'Emerald V2', uk:'Emerald V2' },
     interface_mod_new_theme_aurora:     { ru:'Aurora',     en:'Aurora',     uk:'Aurora' },
 
-    // *** Англійські дані (ключи як у робочій версії) ***
+    // Англійські дані
     interface_mod_new_en_data:       { ru:'Английские данные', en:'English data', uk:'Англійські дані' },
     interface_mod_new_en_data_desc:  {
       ru:'Добавляет оригинальное название (EN) и описание, если локальное пустое',
@@ -127,9 +127,9 @@
     // Кнопки
     interface_mod_new_all_buttons:        { ru:'Все кнопки в карточке', en:'All buttons in card', uk:'Всі кнопки в картці' },
     interface_mod_new_all_buttons_desc:   {
-      ru:'Показывает Онлайн, Торрент, Трейлеры даже если скрыты темой',
-      en:'Show Online, Torrent, Trailers even if hidden by theme',
-      uk:'Показує Онлайн, Торрент, Трейлери навіть якщо приховані темою'
+      ru:'Показывает Онлайн, Торрент, Трейлеры даже если скрыты темой. Фиксированный порядок: Онлайн → Торренты → Трейлеры → прочее.',
+      en:'Show Online, Torrent, Trailers even if hidden by theme. Fixed order: Online → Torrents → Trailers → Others.',
+      uk:'Показує Онлайн, Торенти, Трейлери навіть якщо приховані темою. Фіксований порядок: Онлайн → Торенти → Трейлери → інші.'
     },
 
     interface_mod_new_icon_only:          { ru:'Иконки без текста', en:'Icons only', uk:'Іконки без тексту' },
@@ -137,14 +137,6 @@
       ru:'Скрывает подписи на кнопках, оставляет только иконки',
       en:'Hide button labels, keep only icons',
       uk:'Ховає підписи на кнопках, залишає лише іконки'
-    },
-
-    interface_mod_new_button_order:       { ru:'Порядок кнопок', en:'Button order', uk:'Порядок кнопок' },
-    interface_mod_new_button_order_desc:  {
-      // ОНОВЛЕНО під твою вимогу
-      ru:'Торренты → Онлайн → Трейлеры',
-      en:'Torrents → Online → Trailers',
-      uk:'Торенти → Онлайн → Трейлери'
     },
 
     interface_mod_new_colored_buttons:    { ru:'Цветные кнопки', en:'Colored buttons', uk:'Кольорові кнопки' },
@@ -177,7 +169,6 @@
     en_data         : getEnglishDataFlag(),
     all_buttons     : getBool('interface_mod_new_all_buttons', false),
     icon_only       : getBool('interface_mod_new_icon_only', false),
-    button_order    : getBool('interface_mod_new_button_order', false),
     colored_buttons : getBool('interface_mod_new_colored_buttons', false)
   };
 
@@ -429,11 +420,6 @@
     });
     add({
       component: 'interface_mod_new',
-      param: { name: 'interface_mod_new_button_order', type: 'trigger', values: true, default: false },
-      field: { name: Lampa.Lang.translate('interface_mod_new_button_order'), description: Lampa.Lang.translate('interface_mod_new_button_order_desc') }
-    });
-    add({
-      component: 'interface_mod_new',
       param: { name: 'interface_mod_new_colored_buttons', type: 'trigger', values: true, default: false },
       field: { name: Lampa.Lang.translate('interface_mod_new_colored_buttons'), description: Lampa.Lang.translate('interface_mod_new_colored_buttons_desc') }
     });
@@ -449,11 +435,11 @@
     var obsMenu = new MutationObserver(function(){ moveAfterInterface(); });
     obsMenu.observe(document.body, {childList:true, subtree:true});
 
-    // Закриття відкритих селектів/меню налаштувань (без перемикання контролера)
+    // Закриття відкритих селектів/меню налаштувань
     function closeOpenSelects(){
       setTimeout(function(){
         $('.selectbox').remove();
-        // БУЛО: Lampa.Controller.toggle('settings'); — прибрано, щоб не "викидало" з меню
+        try { Lampa.Controller.toggle('settings'); } catch(e){}
       }, 60);
     }
 
@@ -475,7 +461,6 @@
           settings.en_data         = getEnglishDataFlag();
           settings.all_buttons     = getBool('interface_mod_new_all_buttons', false);
           settings.icon_only       = getBool('interface_mod_new_icon_only', false);
-          settings.button_order    = getBool('interface_mod_new_button_order', false);
           settings.colored_buttons = getBool('interface_mod_new_colored_buttons', false);
 
           // Тема
@@ -506,7 +491,6 @@
               key === 'interface_mod_new_english_data' ||
               key === 'interface_mod_new_all_buttons' ||
               key === 'interface_mod_new_icon_only' ||
-              key === 'interface_mod_new_button_order' ||
               key === 'interface_mod_new_colored_buttons') {
             applyEnglishDataNow();
             rebuildButtonsNow();
@@ -687,27 +671,8 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ РЕЙТИНГИ (поліпшене парсіння + миттєвий старт)
+   *  КОЛЬОРОВІ РЕЙТИНГИ
    * ============================================================ */
-  function extractScoreFromEl(el){
-    // Для плиток з номером у першому div
-    if (el && (el.classList && (el.classList.contains('full-start__rate') || el.classList.contains('full-start-new__rate')))) {
-      var first = el.querySelector(':scope > div:first-child');
-      if (first && first.textContent) {
-        var s = first.textContent.trim();
-        s = s.replace(',', '.'); // 7,8 → 7.8
-        var m = s.match(/(\d+(?:\.\d+)?)/);
-        if (m) return parseFloat(m[1]);
-      }
-    }
-    // Загальний випадок
-    var t = ($(el).text() || '').trim();
-    t = t.replace(',', '.'); // локаль з комою
-    var match = t.match(/(\d+(?:\.\d+)?)/);
-    if (!match) return NaN;
-    return parseFloat(match[1]);
-  }
-
   function updateVoteColors() {
     if (!getBool('interface_mod_new_colored_ratings', false)) return;
 
@@ -721,11 +686,11 @@
     ].join(',');
 
     function paint(el) {
-      var v = extractScoreFromEl(el);
-      if (isNaN(v)) return;
-
-      // якщо раптом приходить % або з іншого масштабу — не фарбуємо
-      if (v < 0 || v > 10) return;
+      var txt = ($(el).text() || '').trim();
+      var m = txt.match(/(\d+(\.\d+)?)/);
+      if (!m) return;
+      var v = parseFloat(m[0]);
+      if (isNaN(v) || v < 0 || v > 10) return;
 
       var color =
         (v <= 3) ? 'red' :
@@ -738,25 +703,18 @@
 
     $(SEL).each(function(){ paint(this); });
   }
-
   function clearVoteColors(){
     var SEL = '.card__vote, .full-start__rate, .full-start-new__rate, .info__rate, .card__imdb-rate, .card__kinopoisk-rate';
     $(SEL).css({ color:'', border:'' });
   }
-
   function setupVoteColorsObserver() {
-    if (getBool('interface_mod_new_colored_ratings', false)) {
-      // фарбуємо одразу (без 400мс), щоб покрити випадок «дані вже в DOM з кешу»
-      requestAnimationFrame(updateVoteColors);
-    }
+    setTimeout(function(){ if (getBool('interface_mod_new_colored_ratings', false)) updateVoteColors(); }, 400);
     var obs = new MutationObserver(function(){
       if (getBool('interface_mod_new_colored_ratings', false)) setTimeout(updateVoteColors, 80);
     });
     obs.observe(document.body, {childList:true, subtree:true});
     Lampa.Listener.follow('full', function (e) {
-      if (e.type === 'complite' && getBool('interface_mod_new_colored_ratings', false)) {
-        setTimeout(updateVoteColors, 60);
-      }
+      if (e.type === 'complite' && getBool('interface_mod_new_colored_ratings', false)) setTimeout(updateVoteColors, 100);
     });
   }
 
@@ -907,7 +865,7 @@
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG) — з fallback-рамкою
+   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG) — з FIX для змін існуючих елементів
    * ============================================================ */
   var __ageObserver = null;
   var __ageFollowReady = false;
@@ -951,20 +909,58 @@
     });
   }
 
+  // FIXED: ловимо і зміни атрибутів/тексту (коли ratingsmod знімає .hide або міняє текст)
   function enableAgeColoring(){
     applyAgeOnceIn(document);
 
     if (__ageObserver) __ageObserver.disconnect();
-    __ageObserver = new MutationObserver(function(m){
+
+    var queued = false;
+    function schedule(fn){ if (queued) return; queued = true; requestAnimationFrame(function(){ queued = false; fn(); }); }
+
+    __ageObserver = new MutationObserver(function(muts){
       if (!getBool('interface_mod_new_colored_age', false)) return;
-      m.forEach(function(x){
-        (x.addedNodes||[]).forEach(function(n){
-          if (n.nodeType !== 1) return;
-          applyAgeOnceIn(n);
-        });
+
+      muts.forEach(function(m){
+        // 1) Додані вузли
+        if (m.type === 'childList' && m.addedNodes && m.addedNodes.length){
+          m.addedNodes.forEach(function(n){
+            if (n.nodeType !== 1) return;
+            if (n.matches && n.matches(AGE_BASE_SEL)) {
+              schedule(function(){ applyAgeOnceIn(n); });
+            }
+            $(n).find(AGE_BASE_SEL).each(function(){
+              var el = this;
+              schedule(function(){ applyAgeOnceIn(el); });
+            });
+          });
+        }
+
+        // 2) Зміни атрибутів (class, data-age, data-pg)
+        if (m.type === 'attributes' && m.target && m.target.nodeType === 1){
+          var t = m.target;
+          if (t.matches && t.matches(AGE_BASE_SEL)) {
+            schedule(function(){ applyAgeOnceIn(t); });
+          }
+        }
+
+        // 3) Зміни тексту (characterData)
+        if (m.type === 'characterData' && m.target){
+          var parent = m.target.parentNode;
+          if (parent && parent.nodeType === 1 && parent.matches && parent.matches(AGE_BASE_SEL)){
+            schedule(function(){ applyAgeOnceIn(parent); });
+          }
+        }
       });
     });
-    __ageObserver.observe(document.body, {childList:true, subtree:true});
+
+    __ageObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+      attributeFilter: ['class','data-age','data-pg']
+    });
 
     if (!__ageFollowReady){
       __ageFollowReady = true;
@@ -982,9 +978,7 @@
   }
 
   /* ============================================================
-   *  АНГЛІЙСЬКІ ДАНІ (як у робочій версії)
-   *   — додаємо EN-назву в .full-start-new__head
-   *   — якщо опис порожній, тягнемо en-US з TMDB і вставляємо
+   *  АНГЛІЙСЬКІ ДАНІ (як у робочій версії) — FIX перевірки локального опису
    * ============================================================ */
   var TMDB_KEY = '4ef0d7355d9ffb5151e987764708ce96'; // як у Enchanser
 
@@ -1007,7 +1001,12 @@
     // 2) Якщо опис пустий — запит TMDB en-US і вставка в .full-descr__text
     try {
       var descr = fullRoot.find('.full-descr__text');
-      var hasLocal = descr.length && descr.text().trim().length > 0;
+
+      // FIX: перевіряємо не DOM, а ЖИВІ ДАНІ (як робить Enchanser)
+      var hasLocal =
+        (movie && typeof movie.overview === 'string' && movie.overview.trim().length > 0) ||
+        (movie && typeof movie.description === 'string' && movie.description.trim().length > 0);
+
       if (!hasLocal && movie.id){
         var type = (movie.number_of_seasons || movie.original_name) ? 'tv' : 'movie';
         var url = 'https://api.themoviedb.org/3/'+type+'/'+movie.id+'?api_key='+TMDB_KEY+'&language=en-US';
@@ -1015,9 +1014,13 @@
         $.ajax({ url: url, method:'GET', dataType:'json', timeout: 8000 })
           .done(function(resp){
             var enOverview = (resp && resp.overview) ? String(resp.overview).trim() : '';
-            if (enOverview && !descr.text().trim().length){
-              descr.html('<div class="ifx-english-desc"></div>');
-              descr.find('.ifx-english-desc').text(enOverview);
+            if (enOverview) {
+              // ще раз перевіримо DOM, раптом локальний з'явився пізніше
+              var current = descr.text().trim();
+              if (!current.length){
+                descr.html('<div class="ifx-english-desc"></div>');
+                descr.find('.ifx-english-desc').text(enOverview);
+              }
             }
           })
           .fail(function(){
@@ -1033,10 +1036,12 @@
   }
 
   /* ============================================================
-   *  КНОПКИ (All / Icons only / Order / Colored + SVG як у cc+)
+   *  КНОПКИ (All / Icons only / Colored + SVG як у cc+)
+   *  — порядок фіксований: Онлайн → Торенти → Трейлери → інші
+   *  — НЕ чіпаємо порядок, якщо "Всі кнопки" вимкнено
    * ============================================================ */
 
-  // CSS для кольорових кнопок (точні кольори іконок як у твоїй робочій версії)
+  // CSS для кольорових кнопок (точні кольори іконок як у робочій версії)
   function ensureColoredButtonsCss(on){
     var id = 'ifx_colored_buttons_css';
     var old = document.getElementById(id);
@@ -1082,7 +1087,17 @@
     `);
   }
 
-  // Порядок кнопок ТІЛЬКИ для режиму «Всі кнопки в картці»
+  function dedupeButtons($buttons){
+    var seen = {};
+    return $buttons.filter(function(){
+      var $b = $(this);
+      var key = ($b.attr('data-action') || '') + '|' + ($b.attr('href') || '') + '|' + ($b.text()||'').trim();
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
   function reorderAndShowButtons(fullRoot){
     if (!fullRoot) return;
 
@@ -1091,47 +1106,48 @@
 
     $container.addClass('ifx-flex');
 
-    // Витягуємо всі кнопки звідусіль (включаючи приховані темою)
-    var $all = fullRoot.find('.full-start__button');
+    // ====== Якщо "Всі кнопки" увімкнено — збираємо ВСІ та виставляємо у фіксованому порядку
+    if (settings.all_buttons){
+      // Витягуємо всі кнопки звідусіль (включаючи приховані темою)
+      var $all = dedupeButtons(fullRoot.find('.full-start__button'));
 
-    // Категоризація
-    var groups = { online:[], torrent:[], trailer:[], other:[] };
-    $all.each(function(){
-      var $btn = $(this);
-      var cls = ($btn.attr('class')||'').toLowerCase();
-      if (cls.indexOf('view--online')  !== -1 || cls.indexOf('online')  !== -1) groups.online.push($btn);
-      else if (cls.indexOf('view--torrent') !== -1 || cls.indexOf('torrent') !== -1) groups.torrent.push($btn);
-      else if (cls.indexOf('view--trailer') !== -1 || cls.indexOf('trailer') !== -1) groups.trailer.push($btn);
-      else groups.other.push($btn);
-    });
-
-    // ⚠ РЕОРДЕР лише коли увімкнено "Всі кнопки в картці"
-    if (settings.all_buttons) {
-      // Порядок під твою вимогу
-      var order = settings.button_order
-        ? ['torrent','online','trailer','other']
-        : ['torrent','online','trailer','other']; // навіть без тумблера тримаємо правильний порядок у цьому режимі
-
-      $container.empty();
-      order.forEach(function(cat){
-        groups[cat].forEach(function($b){ $container.append($b); });
+      // Категоризація
+      var groups = { online:[], torrent:[], trailer:[], other:[] };
+      $all.each(function(){
+        var $btn = $(this);
+        var cls = ($btn.attr('class')||'').toLowerCase();
+        if (cls.indexOf('view--online')  !== -1 || cls.indexOf('online')  !== -1) groups.online.push($btn);
+        else if (cls.indexOf('view--torrent') !== -1 || cls.indexOf('torrent') !== -1) groups.torrent.push($btn);
+        else if (cls.indexOf('view--trailer') !== -1 || cls.indexOf('trailer') !== -1) groups.trailer.push($btn);
+        else groups.other.push($btn);
       });
 
-      // Забезпечуємо видимість і обтікання
+      // Фіксований порядок: Онлайн → Торенти → Трейлери → інші
+      var order = ['online','torrent','trailer','other'];
+
+      // «Всі кнопки» — зібрати всі і показати
+      $container.empty();
+      order.forEach(function(cat){
+        groups[cat].forEach(function($b){
+          // зробимо видимими
+          $b.css({ display:'inline-flex' });
+          $container.append($b);
+        });
+      });
+
+      // Іконки без тексту
+      if (settings.icon_only){
+        $container.addClass('ifx-btn-icon-only');
+        $container.find('.full-start__button').css('min-width','auto');
+      } else {
+        $container.removeClass('ifx-btn-icon-only');
+      }
+
+      // Всі кнопки — забезпечуємо видимість і обтікання
       $container.css({ display:'flex', flexWrap:'wrap', gap:'10px' });
-      $container.find('.full-start__button').css({ display:'inline-flex' });
-    }
-    // Якщо "Всі кнопки" вимкнено — НЕ переупорядковуємо DOM (все як у теми)
-
-    // Іконки без тексту
-    if (settings.icon_only){
-      $container.addClass('ifx-btn-icon-only');
-      $container.find('.full-start__button').css('min-width','auto');
-    } else {
-      $container.removeClass('ifx-btn-icon-only');
     }
 
-    // Кольорові іконки + потрібні SVG
+    // Кольорові іконки + потрібні SVG (працює в обох режимах)
     ensureColoredButtonsCss(settings.colored_buttons);
     replaceButtonIcons(fullRoot);
 
@@ -1168,14 +1184,14 @@
     newInfoPanel();
     setupVoteColorsObserver();
 
-    // Кольорові рейтинги — стартове підфарбування (ще раз на всяк)
+    // Кольорові рейтинги — стартове підфарбування
     if (settings.colored_ratings) updateVoteColors();
 
     // Статуси
     setStatusBaseCssEnabled(settings.colored_status);
     if (settings.colored_status) enableStatusColoring(); else disableStatusColoring(true);
 
-    // PG
+    // PG (з фіксом)
     setAgeBaseCssEnabled(settings.colored_age);
     if (settings.colored_age) enableAgeColoring(); else disableAgeColoring(true);
 

@@ -947,58 +947,83 @@
   /* ============================================================
    *  КНОПКИ (Всі / Іконки без тексту) — порядок: Онлайн → Торренти → Трейлери
    * ============================================================ */
-  function reorderAndShowButtons(fullRoot){
-    if (!fullRoot) return;
+function isPlayBtn($b){
+  var cls = ($b.attr('class')||'').toLowerCase();
+  var act = String($b.data('action')||'').toLowerCase();
+  var txt = ($b.text()||'').trim().toLowerCase();
+  if (/trailer/.test(cls) || /trailer/.test(act) || /трейлер|trailer/.test(txt)) return false;
+  if (/(^|\s)(button--play|view--play|button--player|view--player)(\s|$)/.test(cls)) return true;
+  if (/(^|\s)(play|player|resume|continue)(\s|$)/.test(act)) return true;
+  if (/^(play|відтворити|продовжити|старт)$/i.test(txt)) return true;
+  return false;
+}
 
-    var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
-    if (!$container.length) return;
+function reorderAndShowButtons(fullRoot){
+  if (!fullRoot) return;
 
-    $container.addClass('ifx-flex');
+  var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
+  if (!$container.length) return;
 
-    // Забираємо кнопки з обох контейнерів (без клонів)
-    var $hiddenBlock = fullRoot.find('.buttons--container .full-start__button');
-    var $visibleBlock = $container.find('.full-start__button');
+  // прибрати можливі дублі "play" у вихідних контейнерах
+  fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
 
-    // Прибрати дубльований play, якщо є
-    fullRoot.find('.button--play').remove();
+  var $source = fullRoot.find(
+    '.buttons--container .full-start__button, ' +
+    '.full-start__buttons .full-start__button, ' +
+    '.full-start-new__buttons .full-start__button'
+  );
 
-    // Категоризація
-    var all = $hiddenBlock.add($visibleBlock);
-    var groups = { online:[], torrent:[], trailer:[], other:[] };
-    var seen = new Set();
+  var seen = new Set();
+  function sig($b){ return ($b.attr('data-action')||'')+'|'+($b.attr('href')||'')+'|'+($b.attr('class')||''); }
 
-    all.each(function(){
-      var $btn = $(this).detach(); // переносимо ОРИГІНАЛ
-      var key = ($btn.attr('data-action') || '') + '|' + ($btn.text().trim() || '') + '|' + ($btn.attr('class') || '');
-      if (seen.has(key)) return;
-      seen.add(key);
+  var groups = { online:[], torrent:[], trailer:[], other:[] };
+  var moreBtn = null;
 
-      var cls = ($btn.attr('class')||'').toLowerCase();
-      if (cls.indexOf('online')  !== -1) groups.online.push($btn);
-      else if (cls.indexOf('torrent') !== -1) groups.torrent.push($btn);
-      else if (cls.indexOf('trailer') !== -1) groups.trailer.push($btn);
-      else groups.other.push($btn);
-    });
+  $source.each(function(){
+    var $b = $(this);
+    if (isPlayBtn($b)) return; // відсікаємо ВСІ play
 
-    var order = ['online','torrent','trailer','other']; // як попросив
+    var s = sig($b);
+    if (seen.has(s)) return;
+    seen.add(s);
 
-    $container.empty();
-    order.forEach(function(cat){ groups[cat].forEach(function($b){ $container.append($b); }); });
+    var cls = ($b.attr('class')||'').toLowerCase();
+    var act = String($b.data('action')||'').toLowerCase();
 
-    if (settings.icon_only){
-      $container.addClass('ifx-btn-icon-only');
-      $container.find('.full-start__button').css('min-width','auto');
-    } else {
-      $container.removeClass('ifx-btn-icon-only');
-    }
+    var isMore = /button--more|view--more/.test(cls) || act === 'more' || /(^|[^a-z])more([^a-z]|$)/.test(cls);
+    if (isMore){ if (!moreBtn) moreBtn = $b; return; }
 
-    if (settings.all_buttons){
-      $container.css({ display:'flex', flexWrap:'wrap', gap:'10px' });
-      $container.find('.full-start__button').css({ display:'inline-flex' });
-    }
+    if (cls.includes('online')) groups.online.push($b);
+    else if (cls.includes('torrent')) groups.torrent.push($b);
+    else if (cls.includes('trailer')) groups.trailer.push($b);
+    else groups.other.push($b);
+  });
 
-    try { Lampa.Controller.toggle('full_start'); } catch(e){}
+  $container.empty();
+  ['online','torrent','trailer','other'].forEach(function(cat){
+    groups[cat].forEach(function($b){ $container.append($b); });
+  });
+  if (moreBtn) $container.append(moreBtn);
+
+  if (settings.icon_only){
+    $container.addClass('ifx-btn-icon-only')
+              .find('.full-start__button').css('min-width','auto');
+  } else {
+    $container.removeClass('ifx-btn-icon-only');
   }
+
+  if (settings.all_buttons){
+    $container.css({ display:'flex', flexWrap:'wrap', gap:'10px' })
+              .find('.full-start__button').css('display','inline-flex');
+  }
+
+  // прибираємо порожні «привиди»
+  $container.find('.full-start__button').filter(function(){
+    return $(this).text().trim()==='' && $(this).find('svg').length===0;
+  }).remove();
+
+  try { Lampa.Controller.toggle('full_start'); } catch(e){}
+}
 
   function rebuildButtonsNow(){
     if (!__ifx_last.fullRoot) return;

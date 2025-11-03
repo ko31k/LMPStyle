@@ -154,7 +154,8 @@
   };
 
   var __ifx_last = { details:null, movie:null, originalHTML:'', isTv:false, fullRoot:null };
-
+  var __ifx_btn_cache = { container: null, nodes: null };
+  
   /* ============================================================
    *  ФОЛБЕК-CSS + ПРІОРИТЕТ СТИЛІВ
    * ============================================================ */
@@ -371,12 +372,12 @@
     var obsMenu = new MutationObserver(function(){ moveAfterInterface(); });
     obsMenu.observe(document.body, {childList:true, subtree:true});
 
-    function closeOpenSelects(){
-      setTimeout(function(){
-        $('.selectbox').remove();
-        try { Lampa.Controller.toggle('settings'); } catch(e){}
-      }, 60);
-    }
+function closeOpenSelects(){
+  setTimeout(function(){
+    $('.selectbox').remove();
+    Lampa.Settings.update();   // ← лише оновити, без toggle
+  }, 60);
+}
 
     if (!window.__ifx_patch_storage) {
       window.__ifx_patch_storage = true;
@@ -964,7 +965,7 @@ function reorderAndShowButtons(fullRoot){
   var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
   if (!$container.length) return;
 
-  // прибрати можливі дублі "play" у вихідних контейнерах
+  // прибрати можливі дублі "play"
   fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
 
   var $source = fullRoot.find(
@@ -981,7 +982,7 @@ function reorderAndShowButtons(fullRoot){
 
   $source.each(function(){
     var $b = $(this);
-    if (isPlayBtn($b)) return; // відсікаємо ВСІ play
+    if (isPlayBtn($b)) return;
 
     var s = sig($b);
     if (seen.has(s)) return;
@@ -1005,30 +1006,65 @@ function reorderAndShowButtons(fullRoot){
   });
   if (moreBtn) $container.append(moreBtn);
 
-  if (settings.icon_only){
-    $container.addClass('ifx-btn-icon-only')
-              .find('.full-start__button').css('min-width','auto');
-  } else {
-    $container.removeClass('ifx-btn-icon-only');
-  }
-
-  if (settings.all_buttons){
-    $container.css({ display:'flex', flexWrap:'wrap', gap:'10px' })
-              .find('.full-start__button').css('display','inline-flex');
-  }
-
-  // прибираємо порожні «привиди»
+  // прибрати порожні «плашки»
   $container.find('.full-start__button').filter(function(){
     return $(this).text().trim()==='' && $(this).find('svg').length===0;
   }).remove();
 
-  try { Lampa.Controller.toggle('full_start'); } catch(e){}
+  // фокус/навігація після перестановки
+  var focusables = $container.find('.full-start__button');
+  try {
+    Lampa.Controller.collectionSet(focusables);
+    Lampa.Controller.toggle('full_start');
+  } catch(e){}
+
+  // застосувати режим «іконки без тексту» (окремо)
+  applyIconOnlyClass(fullRoot);
 }
 
-  function rebuildButtonsNow(){
-    if (!__ifx_last.fullRoot) return;
+function restoreButtons(){
+  if (!__ifx_btn_cache.container || !__ifx_btn_cache.nodes) return;
+
+  var $c = __ifx_btn_cache.container;
+  // клон з подіями
+  $c.empty().append(__ifx_btn_cache.nodes.clone(true, true));
+
+  // повертаємо керування/фокус
+  try{
+    var focusables = $c.find('.full-start__button');
+    Lampa.Controller.collectionSet(focusables);
+    Lampa.Controller.toggle('full_start');
+  }catch(e){}
+
+  // поважаємо налаштування "іконки без тексту" і в рідній розмітці
+  applyIconOnlyClass(__ifx_last.fullRoot || $(document));
+}
+  
+function rebuildButtonsNow(){
+  if (!__ifx_last.fullRoot) return;
+
+  if (settings.all_buttons){
     reorderAndShowButtons(__ifx_last.fullRoot);
+  } else {
+    restoreButtons();
   }
+
+  // окремо застосовуємо/знімаємо режим іконок
+  applyIconOnlyClass(__ifx_last.fullRoot);
+}
+
+  function applyIconOnlyClass(fullRoot){
+  var $c = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
+  if (!$c.length) return;
+
+  if (settings.icon_only){
+    $c.addClass('ifx-btn-icon-only')
+      .find('.full-start__button').css('min-width','auto');
+  } else {
+    $c.removeClass('ifx-btn-icon-only')
+      .find('.full-start__button').css('min-width','');
+  }
+}
 
   /* ============================================================
    *  СЛУХАЧ КАРТКИ
@@ -1036,14 +1072,25 @@ function reorderAndShowButtons(fullRoot){
   function wireFullCardEnhancers(){
     Lampa.Listener.follow('full', function (e) {
       if (e.type !== 'complite') return;
-      setTimeout(function(){
-        var root = $(e.object.activity.render());
-        __ifx_last.fullRoot = root;
-        __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
+setTimeout(function(){
+  var root = $(e.object.activity.render());
 
-        setOriginalTitle(root, __ifx_last.movie);
-        if (settings.all_buttons || settings.icon_only) reorderAndShowButtons(root);
-      }, 120);
+  // кешуємо поточний контейнер і його дітей із подіями
+  var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
+  if ($container.length){
+    __ifx_btn_cache.container = $container;
+    __ifx_btn_cache.nodes = $container.children().clone(true, true);
+  }
+
+  __ifx_last.fullRoot = root;
+  __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
+
+  setOriginalTitle(root, __ifx_last.movie);
+
+  if (settings.all_buttons) reorderAndShowButtons(root);
+  // режим «іконки без тексту» застосовуємо завжди поверх поточного стану
+  applyIconOnlyClass(root);
+}, 120);
     });
   }
 

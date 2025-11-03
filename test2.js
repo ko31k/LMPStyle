@@ -980,7 +980,7 @@ function reorderAndShowButtons(fullRoot){
   function sig($b){ return ($b.attr('data-action')||'')+'|'+($b.attr('href')||'')+'|'+($b.attr('class')||''); }
 
   var groups = { online:[], torrent:[], trailer:[], other:[] };
-  var moreBtn = null;
+  // var moreBtn = null; // <- ЦЕ БІЛЬШЕ НЕ ПОТРІБНО
 
   $source.each(function(){
     var $b = $(this);
@@ -993,13 +993,20 @@ function reorderAndShowButtons(fullRoot){
     var cls = ($b.attr('class')||'').toLowerCase();
     var act = String($b.data('action')||'').toLowerCase();
 
-    var isMore = /button--more|view--more/.test(cls) || act === 'more' || /(^|[^a-z])more([^a-z]|$)/.test(cls);
-    if (isMore){ if (!moreBtn) moreBtn = $b; return; }
+    // var isMore = /button--more|view--more/.test(cls) || act === 'more' || /(^|[^a-z])more([^a-z]|$)/.test(cls); // <- ВИДАЛІТЬ ЦЕЙ РЯДОК
+    // if (isMore){ if (!moreBtn) moreBtn = $b; return; } // <- І ЦЕЙ БЛОК
 
-    if (cls.includes('online')) groups.online.push($b);
-    else if (cls.includes('torrent')) groups.torrent.push($b);
-    else if (cls.includes('trailer')) groups.trailer.push($b);
-    else groups.other.push($b);
+    if (cls.includes('online')) {
+        groups.online.push($b);
+    } else if (cls.includes('torrent')) {
+        groups.torrent.push($b);
+    } else if (cls.includes('trailer')) {
+        groups.trailer.push($b);
+    } else {
+        // *** ОСЬ ГОЛОВНЕ ВИПРАВЛЕННЯ: ***
+        // Клонуємо всі інші кнопки (Вибране, Дзвіночок, Ще і т.д.)
+        groups.other.push($b.clone(true));
+    }
   });
 
   // ⚠️ Акуратно перемикаємо контролер на час маніпуляцій (не чіпаємо collectionSet)
@@ -1014,7 +1021,7 @@ function reorderAndShowButtons(fullRoot){
   ['online','torrent','trailer','other'].forEach(function(cat){
     groups[cat].forEach(function($b){ $container.append($b); });
   });
-  if (moreBtn) $container.append(moreBtn);
+  // if (moreBtn) $container.append(moreBtn); // <- ВИДАЛІТЬ ЦЕЙ РЯДОК
 
   // Прибрати порожні «привиди»
   $container.find('.full-start__button').filter(function(){
@@ -1034,6 +1041,7 @@ function reorderAndShowButtons(fullRoot){
     }, 80);
   }
 }
+
 
 function restoreButtons(){
   if (!__ifx_btn_cache.container || !__ifx_btn_cache.nodes) return;

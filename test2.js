@@ -948,6 +948,7 @@ function closeOpenSelects(){
   /* ============================================================
    *  КНОПКИ (Всі / Іконки без тексту) — порядок: Онлайн → Торренти → Трейлери
    * ============================================================ */
+
 function isPlayBtn($b){
   var cls = ($b.attr('class')||'').toLowerCase();
   var act = String($b.data('action')||'').toLowerCase();
@@ -965,9 +966,10 @@ function reorderAndShowButtons(fullRoot){
   var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
   if (!$container.length) return;
 
-  // прибрати можливі дублі "play"
+  // Прибрати можливі дублі "play"
   fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
 
+  // Зібрати всі кнопки з відомих місць
   var $source = fullRoot.find(
     '.buttons--container .full-start__button, ' +
     '.full-start__buttons .full-start__button, ' +
@@ -982,7 +984,7 @@ function reorderAndShowButtons(fullRoot){
 
   $source.each(function(){
     var $b = $(this);
-    if (isPlayBtn($b)) return;
+    if (isPlayBtn($b)) return;                 // не чіпаємо play
 
     var s = sig($b);
     if (seen.has(s)) return;
@@ -1000,60 +1002,69 @@ function reorderAndShowButtons(fullRoot){
     else groups.other.push($b);
   });
 
+  // ⚠️ Акуратно перемикаємо контролер на час маніпуляцій (не чіпаємо collectionSet)
+  var needToggle = false;
+  try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
+  if (needToggle) {
+    try { Lampa.Controller.toggle('settings_component'); } catch(e){}
+  }
+
+  // Перекладаємо кнопки
   $container.empty();
   ['online','torrent','trailer','other'].forEach(function(cat){
     groups[cat].forEach(function($b){ $container.append($b); });
   });
   if (moreBtn) $container.append(moreBtn);
 
-  // прибрати порожні «плашки»
+  // Прибрати порожні «привиди»
   $container.find('.full-start__button').filter(function(){
     return $(this).text().trim()==='' && $(this).find('svg').length===0;
   }).remove();
 
-  // фокус/навігація після перестановки
-  var focusables = $container.find('.full-start__button');
-  try {
-    Lampa.Controller.collectionSet(focusables);
-    Lampa.Controller.toggle('full_start');
-  } catch(e){}
+  // Зробити контейнер контролером навігації (як у робочих прикладах)
+  $container.addClass('controller');
 
-  // застосувати режим «іконки без тексту» (окремо)
+  // Режим «іконки без тексту» — окремо
   applyIconOnlyClass(fullRoot);
+
+  // Повертаємо керування назад на full_start з невеликою затримкою
+  if (needToggle) {
+    setTimeout(function(){
+      try { Lampa.Controller.toggle('full_start'); } catch(e){}
+    }, 80);
+  }
 }
 
 function restoreButtons(){
   if (!__ifx_btn_cache.container || !__ifx_btn_cache.nodes) return;
 
+  var needToggle = false;
+  try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
+  if (needToggle) { try { Lampa.Controller.toggle('settings_component'); } catch(e){} }
+
   var $c = __ifx_btn_cache.container;
-  // клон з подіями
   $c.empty().append(__ifx_btn_cache.nodes.clone(true, true));
 
-  // повертаємо керування/фокус
-  try{
-    var focusables = $c.find('.full-start__button');
-    Lampa.Controller.collectionSet(focusables);
-    Lampa.Controller.toggle('full_start');
-  }catch(e){}
+  // Зберігаємо “controller”-статус контейнера (не завадить)
+  $c.addClass('controller');
 
-  // поважаємо налаштування "іконки без тексту" і в рідній розмітці
+  // Повертаємо назад контролер і застосовуємо режим іконок
+  if (needToggle) { setTimeout(function(){ try { Lampa.Controller.toggle('full_start'); } catch(e){} }, 80); }
   applyIconOnlyClass(__ifx_last.fullRoot || $(document));
 }
-  
+
 function rebuildButtonsNow(){
   if (!__ifx_last.fullRoot) return;
-
   if (settings.all_buttons){
     reorderAndShowButtons(__ifx_last.fullRoot);
   } else {
     restoreButtons();
   }
-
-  // окремо застосовуємо/знімаємо режим іконок
+  // Іконки без тексту застосовуються “поверх”
   applyIconOnlyClass(__ifx_last.fullRoot);
 }
 
-  function applyIconOnlyClass(fullRoot){
+function applyIconOnlyClass(fullRoot){
   var $c = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
   if (!$c.length) return;
 
@@ -1066,6 +1077,31 @@ function rebuildButtonsNow(){
   }
 }
 
+function wireFullCardEnhancers(){
+  Lampa.Listener.follow('full', function (e) {
+    if (e.type !== 'complite') return;
+
+    setTimeout(function(){
+      var root = $(e.object.activity.render());
+
+      // Кешуємо “рідну” верстку кнопок з подіями (для коректного restore)
+      var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
+      if ($container.length){
+        __ifx_btn_cache.container = $container;
+        __ifx_btn_cache.nodes = $container.children().clone(true, true);
+      }
+
+      __ifx_last.fullRoot = root;
+      __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
+
+      setOriginalTitle(root, __ifx_last.movie);
+
+      if (settings.all_buttons) reorderAndShowButtons(root);
+      // «Іконки без тексту» повинні працювати і з рідною, і з переставленою розміткою
+      applyIconOnlyClass(root);
+    }, 120);
+  });
+}
   /* ============================================================
    *  СЛУХАЧ КАРТКИ
    * ============================================================ */

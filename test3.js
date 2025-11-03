@@ -158,14 +158,12 @@
     en_data         : getOriginalTitleEnabled(),
     all_buttons     : getBool('interface_mod_new_all_buttons', false),
     icon_only       : getBool('interface_mod_new_icon_only', false),
-
-    /* (3) новий флаг */
-    colored_buttons : getBool('interface_mod_new_colored_buttons', false)
+    colored_buttons : getBool('interface_mod_new_colored_buttons', false) // ← NEW
   };
 
   var __ifx_last = { details:null, movie:null, originalHTML:'', isTv:false, fullRoot:null };
   var __ifx_btn_cache = { container: null, nodes: null };
-  
+
   /* ============================================================
    *  ФОЛБЕК-CSS + ПРІОРИТЕТ СТИЛІВ
    * ============================================================ */
@@ -246,28 +244,6 @@
     document.head.appendChild(st);
   })();
 
-  /* (5) CSS для кольорових кнопок */
-  function injectColoredButtonsCss(){
-    if (document.getElementById('interface_mod_colored_buttons_css')) return;
-    var st = document.createElement('style');
-    st.id = 'interface_mod_colored_buttons_css';
-    st.textContent = `
-      .ifx-colored-buttons .full-start__button{
-        border-radius:.7em; border:1px solid transparent; transition:filter .15s ease;
-      }
-      .ifx-colored-buttons .full-start__button.focus{ filter:brightness(1.08); }
-      .ifx-icon{ display:inline-flex; width:1.1em; height:1.1em; margin-right:.5em; line-height:0; }
-      .ifx-btn-icon-only .ifx-icon{ margin-right:0; }
-      .ifx-colored-buttons .ifx-btn--online { background:linear-gradient(90deg,#19a974,#12826a); color:#fff; }
-      .ifx-colored-buttons .ifx-btn--torrent{ background:linear-gradient(90deg,#9b59b6,#8e44ad); color:#fff; }
-      .ifx-colored-buttons .ifx-btn--trailer{ background:linear-gradient(90deg,#f39c12,#d35400); color:#fff; }
-      .ifx-colored-buttons .ifx-btn--fav    { background:linear-gradient(90deg,#e91e63,#c2185b); color:#fff; }
-      .ifx-colored-buttons .ifx-btn--notify { background:linear-gradient(90deg,#2980b9,#1f5f8f); color:#fff; }
-      .ifx-colored-buttons .ifx-btn--more   { background:linear-gradient(90deg,#7f8c8d,#636e72); color:#fff; }
-    `;
-    document.head.appendChild(st);
-  }
-
   /* ============================================================
    *  ТЕМИ
    * ============================================================ */
@@ -317,7 +293,7 @@
           background: linear-gradient(90deg, #aa4b6b, #6b6b83, #3b8d99) !important; color:#fff !important;
           box-shadow: 0 0 20px rgba(170,75,107,.35) !important; transform: scale(1.02) !important; border-radius: .85em !important;
         }
-        .card.focus .card__view::after, .card.hover .card__view::after { border: 2px solid #aa4b6b !important; box-shadow: 0 0 22px rgba(170,75,107,.45) !important; border-radius: .9em !important; }
+        .card.focus .card__view::after, .card.hover .card__view::after { border: 2px solid #aa4b6b !important; box-shadow: 0 0 22px rgba(170,75,107,.45) !important; border-radius: .9ем !important; }
         .settings__content, .settings-input__content, .selectbox__content, .modal__content { background: rgba(20, 32, 39, 0.98) !important; border: 1px solid rgba(59,141,153,.18) !important; border-radius: .9em !important; }
       `
     };
@@ -394,12 +370,11 @@
           param: { name: 'interface_mod_new_icon_only', type: 'trigger', values: true, default: false },
           field: { name: Lampa.Lang.translate('interface_mod_new_icon_only'), description: Lampa.Lang.translate('interface_mod_new_icon_only_desc') } });
 
-    // (2) пункт меню "Кольорові кнопки"
+    // NEW: Кольорові кнопки
     add({ component: 'interface_mod_new',
           param: { name: 'interface_mod_new_colored_buttons', type: 'trigger', values: true, default: false },
           field: { name: Lampa.Lang.translate('interface_mod_new_colored_buttons'), description: Lampa.Lang.translate('interface_mod_new_colored_buttons_desc') } });
 
-    
     function moveAfterInterface(){
       var $folders = $('.settings-folder');
       var $interface = $folders.filter(function(){ return $(this).data('component') === 'interface'; });
@@ -410,12 +385,12 @@
     var obsMenu = new MutationObserver(function(){ moveAfterInterface(); });
     obsMenu.observe(document.body, {childList:true, subtree:true});
 
-function closeOpenSelects(){
-  setTimeout(function(){
-    $('.selectbox').remove();
-    Lampa.Settings.update();   // ← лише оновити, без toggle
-  }, 60);
-}
+    function closeOpenSelects(){
+      setTimeout(function(){
+        $('.selectbox').remove();
+        Lampa.Settings.update();
+      }, 60);
+    }
 
     if (!window.__ifx_patch_storage) {
       window.__ifx_patch_storage = true;
@@ -433,7 +408,7 @@ function closeOpenSelects(){
           settings.en_data         = getOriginalTitleEnabled();
           settings.all_buttons     = getBool('interface_mod_new_all_buttons', false);
           settings.icon_only       = getBool('interface_mod_new_icon_only', false);
-          settings.colored_buttons = getBool('interface_mod_new_colored_buttons', false); /* (4) зчитуємо прапор */
+          settings.colored_buttons = getBool('interface_mod_new_colored_buttons', false);
 
           if (key === 'interface_mod_new_theme_select') applyTheme(settings.theme);
           if (key === 'interface_mod_new_info_panel')   rebuildInfoPanelActive();
@@ -460,8 +435,9 @@ function closeOpenSelects(){
             rebuildButtonsNow();
           }
 
-          if (key === 'interface_mod_new_colored_buttons') {  /* (4) реакція на перемикач */
-            applyColoredButtonsNow();
+          // NEW: toggle colored buttons
+          if (key === 'interface_mod_new_colored_buttons') {
+            setColoredButtonsEnabled(settings.colored_buttons);
           }
 
           closeOpenSelects();
@@ -476,12 +452,12 @@ function closeOpenSelects(){
    * ============================================================ */
   function buildInfoPanel(details, movie, isTvShow, originalDetails){
     var container = $('<div>').css({
-      display:'flex','flex-direction':'column',width:'100%',gap:'0em',
+      display:'flex','flex-direction':'column',width:'100%',gap:'0ем'.replace('ем','em'),
       margin:'-1.0em 0 0.2em 0.45em'
     });
 
-    var row1 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2ем','align-items':'center',margin:'0 0 0.2em 0'.replace('ем','em') });
-    var row2 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'center',margin:'0 0 0.2em 0' });
+    var row1 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'center',margin:'0 0 0.2em 0' });
+    var row2 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2ем'.replace('ем','em'),'align-items':'center',margin:'0 0 0.2em 0' });
     var row3 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'center',margin:'0 0 0.2em 0' });
     var row4 = $('<div>').css({ display:'flex','flex-wrap':'wrap',gap:'0.2em','align-items':'flex-start',margin:'0 0 0.2em 0' });
 
@@ -552,7 +528,7 @@ function closeOpenSelects(){
       if (txt) row2.append($('<span>').text(txt).css($.extend({}, baseBadge, { 'background-color': colors.next.bg, color: colors.next.text })));
     }
 
-    // 3 — Тривалість (фільм або серія)
+    // 3 — Тривалість
     if (!isTvShow && movie.runtime > 0) {
       var mins = movie.runtime, h = Math.floor(mins/60), m = mins%60;
       var t = 'Тривалість фільму: ';
@@ -576,7 +552,7 @@ function closeOpenSelects(){
     }
     genreList = genreList.filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; });
 
-    var baseGenre = { 'border-radius':'0.3em', border:'0', 'font-size':'1.0em', padding:'0.2em 0.6ем', display:'inline-block', 'white-space':'nowrap', 'line-height':'1.2ем', 'margin-right':'0.4ем', 'margin-bottom':'0.2ем'.replace(/ем/g,'em') };
+    var baseGenre = { 'border-radius':'0.3em', border:'0', 'font-size':'1.0em', padding:'0.2em 0.6em', display:'inline-block', 'white-space':'nowrap', 'line-height':'1.2em', 'margin-right':'0.4em', 'margin-bottom':'0.2em' };
     genreList.forEach(function(gn){
       var c = colors.genres[gn] || { bg:'rgba(255,255,255,.12)', text:'white' };
       row4.append($('<span>').text(gn).css($.extend({}, baseGenre, { 'background-color': c.bg, color: c.text })));
@@ -735,7 +711,7 @@ function closeOpenSelects(){
       st.id = idDis;
       st.textContent =
         AGE_BASE_SEL + '{' +
-          'font-size:1.2ем!important;'.replace('ем','em') +
+          'font-size:1.2em!important;' +
           'border:1px solid #fff!important;' +
           'border-radius:0.2em!important;' +
           'padding:0.3em!important;' +
@@ -839,7 +815,7 @@ function closeOpenSelects(){
   }
 
   /* ============================================================
-   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG) — розширений OBSERVER
+   *  КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG)
    * ============================================================ */
   var __ageObserver = null;
   var __ageFollowReady = false;
@@ -964,7 +940,7 @@ function closeOpenSelects(){
   }
 
   /* ============================================================
-   *  ОРИГІНАЛЬНА НАЗВА (EN) — лише назва
+   *  ОРИГІНАЛЬНА НАЗВА (EN)
    * ============================================================ */
   function setOriginalTitle(fullRoot, movie){
     if (!fullRoot || !movie) return;
@@ -989,212 +965,215 @@ function closeOpenSelects(){
   }
 
   /* ============================================================
-   *  КНОПКИ (Всі / Іконки без тексту) — порядок: Онлайн → Торренти → Трейлери
+   *  КНОПКИ (Всі / Іконки без тексту)
    * ============================================================ */
 
-function isPlayBtn($b){
-  var cls = ($b.attr('class')||'').toLowerCase();
-  var act = String($b.data('action')||'').toLowerCase();
-  var txt = ($b.text()||'').trim().toLowerCase();
-  if (/trailer/.test(cls) || /trailer/.test(act) || /трейлер|trailer/.test(txt)) return false;
-  if (/(^|\s)(button--play|view--play|button--player|view--player)(\s|$)/.test(cls)) return true;
-  if (/(^|\s)(play|player|resume|continue)(\s|$)/.test(act)) return true;
-  if (/^(play|відтворити|продовжити|старт)$/i.test(txt)) return true;
-  return false;
-}
-
-function reorderAndShowButtons(fullRoot){
-  if (!fullRoot) return;
-
-  var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
-  if (!$container.length) return;
-
-  // Прибрати можливі дублі "play"
-  fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
-
-  // Зібрати всі кнопки з відомих місць
-  var $source = fullRoot.find(
-    '.buttons--container .full-start__button, ' +
-    '.full-start__buttons .full-start__button, ' +
-    '.full-start-new__buttons .full-start__button'
-  );
-
-  var seen = new Set();
-  function sig($b){ return ($b.attr('data-action')||'')+'|'+($b.attr('href')||'')+'|'+($b.attr('class')||''); }
-
-  var groups = { online:[], torrent:[], trailer:[], other:[] };
-  // var moreBtn = null;
-
-  $source.each(function(){
-    var $b = $(this);
-    if (isPlayBtn($b)) return;                 // не чіпаємо play
-
-    var s = sig($b);
-    if (seen.has(s)) return;
-    seen.add(s);
-
+  function isPlayBtn($b){
     var cls = ($b.attr('class')||'').toLowerCase();
     var act = String($b.data('action')||'').toLowerCase();
+    var txt = ($b.text()||'').trim().toLowerCase();
+    if (/trailer/.test(cls) || /trailer/.test(act) || /трейлер|trailer/.test(txt)) return false;
+    if (/(^|\s)(button--play|view--play|button--player|view--player)(\s|$)/.test(cls)) return true;
+    if (/(^|\s)(play|player|resume|continue)(\s|$)/.test(act)) return true;
+    if (/^(play|відтворити|продовжити|старт)$/i.test(txt)) return true;
+    return false;
+  }
 
-    if (cls.includes('online')) {
-        groups.online.push($b);
-    } else if (cls.includes('torrent')) {
-        groups.torrent.push($b);
-    } else if (cls.includes('trailer')) {
-        groups.trailer.push($b);
-    } else {
-        // Клонуємо інші кнопки (Вибране/Дзвінок/Ще/…)
-        groups.other.push($b.clone(true));
+  function reorderAndShowButtons(fullRoot){
+    if (!fullRoot) return;
+
+    var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
+    if (!$container.length) return;
+
+    // Прибрати можливі дублі "play"
+    fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
+
+    // Зібрати всі кнопки
+    var $source = fullRoot.find(
+      '.buttons--container .full-start__button, ' +
+      '.full-start__buttons .full-start__button, ' +
+      '.full-start-new__buttons .full-start__button'
+    );
+
+    var seen = new Set();
+    function sig($b){ return ($b.attr('data-action')||'')+'|'+($b.attr('href')||'')+'|'+($b.attr('class')||''); }
+
+    var groups = { online:[], torrent:[], trailer:[], other:[] };
+
+    $source.each(function(){
+      var $b = $(this);
+      if (isPlayBtn($b)) return;
+
+      var s = sig($b);
+      if (seen.has(s)) return;
+      seen.add(s);
+
+      var cls = ($b.attr('class')||'').toLowerCase();
+
+      if (cls.includes('online')) {
+          groups.online.push($b);
+      } else if (cls.includes('torrent')) {
+          groups.torrent.push($b);
+      } else if (cls.includes('trailer')) {
+          groups.trailer.push($b);
+      } else {
+          groups.other.push($b.clone(true));
+      }
+    });
+
+    var needToggle = false;
+    try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
+    if (needToggle) {
+      try { Lampa.Controller.toggle('settings_component'); } catch(e){}
     }
-  });
 
-  // ⚠️ Перемикаємо контролер на час маніпуляцій
-  var needToggle = false;
-  try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
-  if (needToggle) {
-    try { Lampa.Controller.toggle('settings_component'); } catch(e){}
+    $container.empty();
+    ['online','torrent','trailer','other'].forEach(function(cat){
+      groups[cat].forEach(function($b){ $container.append($b); });
+    });
+
+    $container.find('.full-start__button').filter(function(){
+      return $(this).text().trim()==='' && $(this).find('svg').length===0;
+    }).remove();
+
+    $container.addClass('controller');
+
+    applyIconOnlyClass(fullRoot);
+
+    if (needToggle) {
+      setTimeout(function(){
+        try { Lampa.Controller.toggle('full_start'); } catch(e){}
+      }, 80);
+    }
   }
 
-  // Перекладаємо кнопки
-  $container.empty();
-  ['online','torrent','trailer','other'].forEach(function(cat){
-    groups[cat].forEach(function($b){ $container.append($b); });
-  });
+  function restoreButtons(){
+    if (!__ifx_btn_cache.container || !__ifx_btn_cache.nodes) return;
 
-  // Прибрати порожні «привиди»
-  $container.find('.full-start__button').filter(function(){
-    return $(this).text().trim()==='' && $(this).find('svg').length===0;
-  }).remove();
+    var needToggle = false;
+    try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
+    if (needToggle) { try { Lampa.Controller.toggle('settings_component'); } catch(e){} }
 
-  // Контролер навігації
-  $container.addClass('controller');
+    var $c = __ifx_btn_cache.container;
+    $c.empty().append(__ifx_btn_cache.nodes.clone(true, true));
 
-  // «Іконки без тексту»
-  applyIconOnlyClass(fullRoot);
-  // (7) Кольорові кнопки
-  applyColoredButtons(fullRoot);
+    $c.addClass('controller');
 
-  // Повертаємо керування назад
-  if (needToggle) {
-    setTimeout(function(){
-      try { Lampa.Controller.toggle('full_start'); } catch(e){}
-    }, 80);
+    if (needToggle) { setTimeout(function(){ try { Lampa.Controller.toggle('full_start'); } catch(e){} }, 80); }
+    applyIconOnlyClass(__ifx_last.fullRoot || $(document));
   }
-}
 
+  function rebuildButtonsNow(){
+    if (!__ifx_last.fullRoot) return;
+    if (settings.all_buttons){
+      reorderAndShowButtons(__ifx_last.fullRoot);
+    } else {
+      restoreButtons();
+    }
+    applyIconOnlyClass(__ifx_last.fullRoot);
 
-function restoreButtons(){
-  if (!__ifx_btn_cache.container || !__ifx_btn_cache.nodes) return;
-
-  var needToggle = false;
-  try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
-  if (needToggle) { try { Lampa.Controller.toggle('settings_component'); } catch(e){} }
-
-  var $c = __ifx_btn_cache.container;
-  $c.empty().append(__ifx_btn_cache.nodes.clone(true, true));
-
-  // Зберігаємо “controller”-статус контейнера
-  $c.addClass('controller');
-
-  // Повертаємо контролер
-  if (needToggle) { setTimeout(function(){ try { Lampa.Controller.toggle('full_start'); } catch(e){} }, 80); }
-  // «іконки без тексту» + (7) кольорові
-  applyIconOnlyClass(__ifx_last.fullRoot || $(document));
-  applyColoredButtons(__ifx_last.fullRoot || $(document));
-}
-
-function rebuildButtonsNow(){
-  if (!__ifx_last.fullRoot) return;
-  if (settings.all_buttons){
-    reorderAndShowButtons(__ifx_last.fullRoot);
-  } else {
-    restoreButtons();
+    // якщо ввімкнено — оновлюємо кольорові кнопки після перестановки
+    if (settings.colored_buttons) applyColoredButtonsIn(__ifx_last.fullRoot);
   }
-  // Іконки без тексту поверх
-  applyIconOnlyClass(__ifx_last.fullRoot);
-  // (7) Кольорові поверх поточного стану
-  applyColoredButtons(__ifx_last.fullRoot);
-}
 
-function applyIconOnlyClass(fullRoot){
-  var $c = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
-  if (!$c.length) return;
+  function applyIconOnlyClass(fullRoot){
+    var $c = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
+    if (!$c.length) return;
 
-  if (settings.icon_only){
-    $c.addClass('ifx-btn-icon-only')
-      .find('.full-start__button').css('min-width','auto');
-  } else {
-    $c.removeClass('ifx-btn-icon-only')
-      .find('.full-start__button').css('min-width','');
+    if (settings.icon_only){
+      $c.addClass('ifx-btn-icon-only')
+        .find('.full-start__button').css('min-width','auto');
+    } else {
+      $c.removeClass('ifx-btn-icon-only')
+        .find('.full-start__button').css('min-width','');
+    }
   }
-}
 
-/* =========================
- * (6) ЛОГІКА КОЛЬОРОВИХ КНОПОК
- * ========================= */
-function iconSvg(kind){
-  var m = {
-    online:  '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
-    torrent: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0A9 9 0 0 0 3 12zm9-7a7 7 0 0 1 0 14v-2a5 5 0 1 0-5-5H5a7 7 0 0 1 7-7z"/></svg>',
-    trailer: '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M4 6h13l3 4v8a2 2 0 0 1-2 2H4zM17 6V4h2v2zM13 6V4h2v2zM9 6V4h2v2z"/></svg>',
-    fav:     '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 21s-7-4.35-7-9.5A4.5 4.5 0 0 1 12 8a4.5 4.5 0 0 1 7 3.5C19 16.65 12 21 12 21z"/></svg>',
-    notify:  '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm7-6V11a7 7 0 1 0-14 0v5L3 17v2h18v-2z"/></svg>',
-    more:    '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'
+  /* ============================================================
+   *  КОЛЬОРОВІ КНОПКИ (як у cc+.js)
+   * ============================================================ */
+  var __ifx_colbtn = { styleId: 'interface_mod_colored_buttons' };
+
+  function injectColoredButtonsCss(){
+    if (document.getElementById(__ifx_colbtn.styleId)) return;
+    var css = `
+      /* як у cc+.js */
+      .head__action.selector.open--feed svg path { fill: #2196F3 !important; }
+
+      .full-start__button { transition: transform 0.2s ease !important; position: relative; }
+      .full-start__button:active { transform: scale(0.98) !important; }
+
+      .full-start__button.view--online  svg path { fill: #2196f3 !important; }
+      .full-start__button.view--torrent svg path { fill: lime !important; }
+      .full-start__button.view--trailer svg path { fill: #f44336 !important; }
+
+      .full-start__button.loading::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: rgba(255,255,255,0.5);
+        animation: ifx_loading 1s linear infinite;
+      }
+      @keyframes ifx_loading {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+    `;
+    var st = document.createElement('style');
+    st.id = __ifx_colbtn.styleId;
+    st.textContent = css;
+    document.head.appendChild(st);
+  }
+  function removeColoredButtonsCss(){
+    var el = document.getElementById(__ifx_colbtn.styleId);
+    if (el) el.remove();
+  }
+
+  // SVG з cc+.js (1:1)
+  var SVG_MAP = {
+    torrent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="50px" height="50px"><path d="M25,2C12.317,2,2,12.317,2,25s10.317,23,23,23s23-10.317,23-23S37.683,2,25,2zM40.5,30.963c-3.1,0-4.9-2.4-4.9-2.4S34.1,35,27,35c-1.4,0-3.6-0.837-3.6-0.837l4.17,9.643C26.727,43.92,25.874,44,25,44c-2.157,0-4.222-0.377-6.155-1.039L9.237,16.851c0,0-0.7-1.2,0.4-1.5c1.1-0.3,5.4-1.2,5.4-1.2s1.475-0.494,1.8,0.5c0.5,1.3,4.063,11.112,4.063,11.112S22.6,29,27.4,29c4.7,0,5.9-3.437,5.7-3.937c-1.2-3-4.993-11.862-4.993-11.862s-0.6-1.1,0.8-1.4c1.4-0.3,3.8-0.7,3.8-0.7s1.105-0.163,1.6,0.8c0.738,1.437,5.193,11.262,5.193,11.262s1.1,2.9,3.3,2.9c0.464,0,0.834-0.046,1.152-0.104c-0.082,1.635-0.348,3.221-0.817,4.722C42.541,30.867,41.756,30.963,40.5,30.963z"/></svg>',
+    online:  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M20.331 14.644l-13.794-13.831 17.55 10.075zM2.938 0c-0.813 0.425-1.356 1.2-1.356 2.206v27.581c0 1.006 0.544 1.781 1.356 2.206l16.038-16zM29.512 14.1l-3.681-2.131-4.106 4.031 4.106 4.031 3.756-2.131c1.125-0.893 1.125-2.906-0.075-3.8zM6.538 31.188l17.55-10.075-3.756-3.756z"/></svg>',
+    trailer: '<svg height="70" viewBox="0 0 80 70" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M71.2555 2.08955C74.6975 3.2397 77.4083 6.62804 78.3283 10.9306C80 18.7291 80 35 80 35C80 35 80 51.2709 78.3283 59.0694C77.4083 63.372 74.6975 66.7603 71.2555 67.9104C65.0167 70 40 70 40 70C40 70 14.9833 70 8.74453 67.9104C5.3025 66.7603 2.59172 63.372 1.67172 59.0694C0 51.2709 0 35 0 35C0 35 0 18.7291 1.67172 10.9306C2.59172 6.62804 5.3025 3.2395 8.74453 2.08955C14.9833 0 40 0 40 0C40 0 65.0167 0 71.2555 2.08955ZM55.5909 35.0004L29.9773 49.5714V20.4286L55.5909 35.0004Z"/></svg>'
   };
-  return m[kind] || '';
-}
 
-function classifyButton($b){
-  var cls = ($b.attr('class')||'').toLowerCase();
-  var act = String($b.data('action')||'').toLowerCase();
-  var txt = ($b.text()||'').trim().toLowerCase();
+  function replaceIconsIn($root){
+    $root = $root && $root.length ? $root : $(document);
+    ['torrent','online','trailer'].forEach(function(kind){
+      $root.find('.full-start__button.view--'+kind+' svg').each(function(){
+        var $svg = $(this);
+        var $btn = $svg.closest('.full-start__button');
+        if (!$btn.data('ifxOrigSvg')) $btn.data('ifxOrigSvg', $svg.prop('outerHTML'));
+        $svg.replaceWith(SVG_MAP[kind]);
+      });
+    });
+  }
+  function restoreIconsIn($root){
+    $root = $root && $root.length ? $root : $(document);
+    $root.find('.full-start__button').each(function(){
+      var $btn = $(this);
+      var orig = $btn.data('ifxOrigSvg');
+      if (orig) {
+        var $current = $btn.find('svg').first();
+        if ($current.length) $current.replaceWith(orig);
+        $btn.removeData('ifxOrigSvg');
+      }
+    });
+  }
 
-  if (/(^|\s)online\b/.test(cls) || /online/.test(act) || /онлайн|online/.test(txt)) return 'online';
-  if (/(^|\s)torrent\b|tor\b/.test(cls) || /torrent|tor/.test(act) || /торрент|торент|magnet|торренти/.test(txt)) return 'torrent';
-  if (/(^|\s)trailer\b/.test(cls) || /trailer/.test(act) || /трейлер|trailer/.test(txt)) return 'trailer';
-  if (/fav|favorite|bookmark|like/.test(cls) || /fav|favorite|bookmark|like/.test(act) || /вибран|избран|favorite|заклад/.test(txt)) return 'fav';
-  if (/notify|bell|subscribe|remind/.test(cls) || /notify|bell|subscribe|remind/.test(act) || /сповіщ|уведом|дзвін|колокол|bell/.test(txt)) return 'notify';
-  if (/button--more|view--more|(^|\W)more(\W|$)/.test(cls) || act==='more' || /ще|ещё|more/.test(txt)) return 'more';
-  return '';
-}
-
-function stripIfxBtnClasses(el){
-  el.className = el.className.replace(/\bifx-btn--\w+\b/g,'').trim();
-}
-
-function applyColoredButtons(fullRoot){
-  var $c = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
-  if (!$c.length) return;
-
-  // скинути
-  $c.removeClass('ifx-colored-buttons');
-  $c.find('.ifx-icon').remove();
-  $c.find('.full-start__button').each(function(){ stripIfxBtnClasses(this); });
-
-  if (!settings.colored_buttons) return;
-
-  $c.addClass('ifx-colored-buttons');
-
-  $c.find('.full-start__button').each(function(){
-    var $b = $(this);
-    var kind = classifyButton($b);
-    if (!kind) return;
-
-    stripIfxBtnClasses(this);
-    $b.addClass('ifx-btn--' + kind);
-
-    // не дублюємо іконку
-    $b.find('.ifx-icon').remove();
-    var $icon = $('<i class="ifx-icon" aria-hidden="true"></i>').html(iconSvg(kind));
-    // вставляємо на початок
-    $b.prepend($icon);
-  });
-}
-
-function applyColoredButtonsNow(){
-  if (!__ifx_last.fullRoot) return;
-  applyColoredButtons(__ifx_last.fullRoot);
-}
+  function applyColoredButtonsIn(root){
+    injectColoredButtonsCss();
+    replaceIconsIn(root);
+  }
+  function setColoredButtonsEnabled(enabled){
+    if (enabled){
+      injectColoredButtonsCss();
+      if (__ifx_last.fullRoot) replaceIconsIn(__ifx_last.fullRoot);
+    } else {
+      removeColoredButtonsCss();
+      restoreIconsIn(__ifx_last.fullRoot || $(document));
+    }
+  }
 
   /* ============================================================
    *  СЛУХАЧ КАРТКИ
@@ -1202,27 +1181,29 @@ function applyColoredButtonsNow(){
   function wireFullCardEnhancers(){
     Lampa.Listener.follow('full', function (e) {
       if (e.type !== 'complite') return;
-setTimeout(function(){
-  var root = $(e.object.activity.render());
+      setTimeout(function(){
+        var root = $(e.object.activity.render());
 
-  // кешуємо поточний контейнер і його дітей із подіями
-  var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
-  if ($container.length){
-    __ifx_btn_cache.container = $container;
-    __ifx_btn_cache.nodes = $container.children().clone(true, true);
-  }
+        // кешуємо поточний контейнер і його дітей із подіями
+        var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
+        if ($container.length){
+          __ifx_btn_cache.container = $container;
+          __ifx_btn_cache.nodes = $container.children().clone(true, true);
+        }
 
-  __ifx_last.fullRoot = root;
-  __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
+        __ifx_last.fullRoot = root;
+        __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
 
-  setOriginalTitle(root, __ifx_last.movie);
+        setOriginalTitle(root, __ifx_last.movie);
 
-  if (settings.all_buttons) reorderAndShowButtons(root);
-  // режим «іконки без тексту» застосовуємо завжди поверх поточного стану
-  applyIconOnlyClass(root);
-  // (7) також застосувати кольорові кнопки
-  applyColoredButtons(root);
-}, 120);
+        if (settings.all_buttons) reorderAndShowButtons(root);
+
+        // режим «іконки без тексту»
+        applyIconOnlyClass(root);
+
+        // NEW: кольорові кнопки
+        if (settings.colored_buttons) applyColoredButtonsIn(root);
+      }, 120);
     });
   }
 
@@ -1231,7 +1212,6 @@ setTimeout(function(){
    * ============================================================ */
   function startPlugin() {
     injectFallbackCss();
-    injectColoredButtonsCss();              /* (8) CSS для кнопок */
     initInterfaceModSettingsUI();
     newInfoPanel();
     setupVoteColorsObserver();
@@ -1248,7 +1228,8 @@ setTimeout(function(){
 
     wireFullCardEnhancers();
 
-    if (settings.colored_buttons) applyColoredButtonsNow();  /* (8) ініціалізація */
+    // ініціалізація стану «Кольорові кнопки»
+    setColoredButtonsEnabled(settings.colored_buttons);
   }
 
   if (window.appready) startPlugin();

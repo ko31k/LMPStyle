@@ -203,7 +203,59 @@ function injectFallbackCss(){
   /* ============================================================
    * БАЗОВІ СТИЛІ
    * ============================================================ */
+  
   (function injectBaseCss(){
+  if (document.getElementById('interface_mod_base')) return;
+
+  var css = `
+    .full-start-new__details{
+      color:#fff !important;
+      margin:-0.45em !important;
+      margin-bottom:1em !important;
+      display:flex !important;
+      align-items:center !important;
+      flex-wrap:wrap !important;
+      min-height:1.9em !important;
+      font-size:1.1em !important;
+    }
+    *:not(input){ -webkit-user-select:none !important; -moz-user-select:none !important; -ms-user-select:none !important; user-select:none !important; }
+    *{ -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; box-sizing:border-box; outline:none; -webkit-user-drag:none; }
+
+    .full-start-new__rate-line > * {
+      margin-left: 0 !important;
+      margin-right: 1em !important;
+      flex-shrink: 0;
+      flex-grow: 0;
+    }
+
+    .ifx-original-title{
+      color:#aaa;
+      font-size: 0.75em;
+      font-weight: 600;
+      margin-top: 4px;
+      border-left: 2px solid #777;
+      padding-left: 8px;
+    }
+
+    .ifx-btn-icon-only .full-start__button span,
+    .ifx-btn-icon-only .full-start__button .full-start__text{
+      display:none !important;
+    }
+
+    .full-start__buttons.ifx-flex,
+    .full-start-new__buttons.ifx-flex{
+      display:flex !important;
+      flex-wrap:wrap !important;
+      gap:10px !important;
+    }
+  `;
+  var st = document.createElement('style');
+  st.id = 'interface_mod_base';
+  st.textContent = css;
+  document.head.appendChild(st);
+})();
+  
+  /*(function injectBaseCss(){
     if (document.getElementById('interface_mod_base')) return;
 
     var css = `
@@ -254,7 +306,8 @@ function injectFallbackCss(){
     st.id = 'interface_mod_base';
     st.textContent = css;
     document.head.appendChild(st);
-  })();
+  }
+  )();*/
 
   /* ============================================================
    * ТЕМИ
@@ -893,31 +946,51 @@ function injectFallbackCss(){
     return '';
   }
 
+function readAgeText(el){
+  // беремо з атрибутів або з тексту, вирівнюємо регістр
+  var t = (el.getAttribute('data-age') || el.getAttribute('data-pg') || el.textContent || '').trim();
+  return t;
+}
+
 function applyAgeOnceIn(elRoot){
   if (!getBool('interface_mod_new_colored_age', false)) return;
 
   var $root = $(elRoot || document);
   $root.find(AGE_BASE_SEL).each(function(){
     var el = this;
-    var t  = ($(el).text()||'').trim();
-    if (!t){                       // порожньо → нічого не малюємо
-      el.classList.remove('ifx-age-fallback');
-      el.style.cssText = '';
+    var raw = readAgeText(el);
+    var t = raw.toUpperCase(); // __ageGroups очікує верхній регістр для міток типу TV-MA
+
+    // прибираємо попередні стани
+    el.classList.remove('ifx-age-fallback','ifx-age-pending');
+    el.style.removeProperty('background-color');
+    el.style.removeProperty('color');
+    el.style.removeProperty('border-color');
+
+    // 1) Немає тексту — нічого не малюємо (жодних рамок/паддінгів)
+    if (!raw) {
+      el.classList.add('ifx-age-pending');
       return;
     }
 
-    var g = ageCategoryFor(t);
+    // 2) Є текст — намагаємося визначити категорію
+    var g = ageCategoryFor(t); // твоя функція з __ageGroups
     if (g){
       var c = __ageColors[g];
+      // базовий enabled-стиль уже дав прозору рамку і паддінг,
+      // ми просто фарбуємо фон/текст
       $(el).css({
-        'background-color': c.bg, color: c.text,
-        'border-color':'transparent', 'display':'inline-block'
+        'background-color': c.bg,
+        'color': c.text,
+        'border-color': 'transparent',
+        'display': 'inline-block'
       });
     } else {
-      el.classList.add('ifx-age-fallback');       // без рамки і фону
-      el.style.setProperty('border-color','transparent','important');
-      el.style.setProperty('background-color','transparent','important');
-      el.style.setProperty('color','inherit','important');
+      // 3) Формат невідомий — обирай режим:
+      //   а) просто показати цифру без рамки:
+      // el.classList.add('ifx-age-pending');
+      //   б) або біла рамка як фолбек:
+      el.classList.add('ifx-age-fallback');
     }
   });
 }
@@ -1026,7 +1099,7 @@ function applyAgeOnceIn(elRoot){
   }
 
  
-  function reorderAndShowButtons(fullRoot){
+function reorderAndShowButtons(fullRoot){
     if (!fullRoot) return;
 
     var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
@@ -1057,26 +1130,24 @@ function applyAgeOnceIn(elRoot){
 
       var cls = ($b.attr('class')||'').toLowerCase();
 
-      // *** ОСЬ ВИПРАВЛЕННЯ: ***
-      // Ми маємо клонувати ВСІ кнопки, щоб зберегти 
-      // обробники подій Lampa для навігації та контролера.
-
+      // Використовуємо правильну логіку 'Enchanser':
+      // Переміщуємо оригінали 'online', 'torrent', 'trailer'
       if (cls.includes('online')) {
-          groups.online.push($b.clone(true)); // <-- ДОДАНО .clone(true)
+          groups.online.push($b);
       } else if (cls.includes('torrent')) {
-          groups.torrent.push($b.clone(true)); // <-- ДОДАНО .clone(true)
+          groups.torrent.push($b);
       } else if (cls.includes('trailer')) {
-          groups.trailer.push($b.clone(true)); // <-- ДОДАНО .clone(true)
+          groups.trailer.push($b);
       } else {
-          groups.other.push($b.clone(true)); // <-- Це вже було виправлено
+          // Клонуємо 'other' (Вибране, Ще, Дзвіночок)
+          groups.other.push($b.clone(true)); 
       }
     });
 
-    var needToggle = false;
-    try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
-    if (needToggle) {
-      try { Lampa.Controller.toggle('settings_component'); } catch(e){}
-    }
+    // *** ОСЬ ГОЛОВНЕ ВИПРАВЛЕННЯ: ***
+    // Повністю видаляємо всю логіку з 'needToggle'
+    // var needToggle = false; ... (ВИДАЛИТИ)
+    // if (needToggle) { ... (ВИДАЛИТИ)
 
     $container.empty();
     ['online','torrent','trailer','other'].forEach(function(cat){
@@ -1088,14 +1159,17 @@ function applyAgeOnceIn(elRoot){
     }).remove();
 
     $container.addClass('controller');
-
+    
+    // Застосовуємо іконки ДО фінального toggle
     applyIconOnlyClass(fullRoot);
 
-    if (needToggle) {
-      setTimeout(function(){
-        try { Lampa.Controller.toggle('full_start'); } catch(e){}
-      }, 80);
-    }
+    // *** ОСТАТОЧНЕ ВИПРАВЛЕННЯ: ***
+    // Просто викликаємо toggle('full_start') ОДИН РАЗ в кінці, 
+    // як це робить Enchanser.js.
+    // Це змусить Lampa "пересканувати" кнопки, не ламаючи стан.
+    Lampa.Controller.toggle('full_start');
+
+    // Блок 'if (needToggle)' з 'setTimeout' тут більше не потрібен (ВИДАЛИТИ)
 }
 
   

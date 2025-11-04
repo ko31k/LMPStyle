@@ -277,20 +277,20 @@ function injectFallbackCss(){
         margin-right: 1em !important;
         flex-shrink: 0;
         flex-grow: 0;
-      }
+      }*/
 
       /* ОРИГІНАЛЬНА НАЗВА — сірий, −25%, з лівою лінією */
-      .ifx-original-title{
+      /*.ifx-original-title{
         color:#aaa;
         font-size: 0.75em;
         font-weight: 600;
         margin-top: 4px;
         border-left: 2px solid #777;
         padding-left: 8px;
-      }
+      }*/
 
       /* Іконки без тексту */
-      .ifx-btn-icon-only .full-start__button span,
+      /*.ifx-btn-icon-only .full-start__button span,
       .ifx-btn-icon-only .full-start__button .full-start__text{
         display:none !important;
       }

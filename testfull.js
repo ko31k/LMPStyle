@@ -889,21 +889,48 @@
     adult:{bg:'#e74c3c',text:'white'}
   };
 
-  function ageCategoryFor(text){
-    for (var k in __ageGroups){
-      if (__ageGroups[k].some(function(mark){ return text.indexOf(mark) !== -1; })) return k;
-    }
-    var m = text.match(/(^|\D)(\d{1,2})\s*\+(?=\D|$)/);
-    if (m){
-      var n = parseInt(m[2],10);
-      if (n <= 3)  return 'kids';
-      if (n <= 7)  return 'children';
-      if (n <= 14) return 'teens';
-      if (n <= 17) return 'almostAdult';
-      return 'adult';
-    }
-    return '';
+function normalizePg(raw){
+  return String(raw||'')
+    .replace(/[\u00A0\u202F]/g,' ')   // NBSP, thin space → звичайний пробіл
+    .replace(/[\uFF0B\u2795]/g,'+')   // повноширинний плюс, heavy plus → '+'
+    .replace(/\s*\+\s*/g,'+')         // прибрати пробіли навколо '+'
+    .replace(/\s+/g,' ')
+    .toUpperCase()
+    .trim();
+}
+
+function ageCategoryFor(textOrEl){
+  // з елемента беремо пріоритетно атрибути, потім текст
+  var t = '';
+  if (textOrEl && textOrEl.nodeType === 1){
+    t = normalizePg(
+      textOrEl.getAttribute('data-age') || textOrEl.getAttribute('data-pg') ||
+      (textOrEl.dataset ? (textOrEl.dataset.age || textOrEl.dataset.pg) : '') ||
+      textOrEl.textContent
+    );
+  } else {
+    t = normalizePg(textOrEl);
   }
+  if (!t) return '';
+
+  if (/^(G|TV-Y|TV-G|0\+|3\+)$/.test(t)) return 'kids';
+  if (/^(PG|TV-PG|TV-Y7|6\+|7\+)$/.test(t)) return 'children';
+  if (/^(PG-13|TV-14|12\+|13\+|14\+)$/.test(t)) return 'teens';
+  if (/^(R|TV-MA|16\+|17\+)$/.test(t)) return 'almostAdult';
+  if (/^(NC-17|18\+|21\+|X)$/.test(t)) return 'adult';
+
+  // запасний варіант: просто число з опціональним '+'
+  var m = t.match(/(\d{1,2})\+?$/);
+  if (m){
+    var n = +m[1];
+    if (n <= 3)  return 'kids';
+    if (n <= 7)  return 'children';
+    if (n <= 14) return 'teens';
+    if (n <= 17) return 'almostAdult';
+    return 'adult';
+  }
+  return '';
+}
 
 
 function applyAgeOnceIn(elRoot){
@@ -912,40 +939,40 @@ function applyAgeOnceIn(elRoot){
   var $root = $(elRoot || document);
   $root.find(AGE_BASE_SEL).each(function(){
     var el = this;
-    // акуратно нормалізуємо текст
-    var t  = (el.textContent || '').replace(/\u00A0/g,' ').trim();
 
-    // 1) якщо порожньо — ховаємо бейдж і виходимо
+    // беремо атрибути або текст
+    var tAttr = el.getAttribute('data-age') || el.getAttribute('data-pg') ||
+                (el.dataset ? (el.dataset.age || el.dataset.pg) : '') || '';
+    var tText = (el.textContent || '').replace(/[\u00A0\u202F]/g,' ').trim();
+    var t = tAttr || tText;
+
+    // порожнє — ховаємо повністю
     if (!t){
       el.classList.add('ifx-empty');
-      el.classList.remove('ifx-age-fallback'); // на всяк випадок
       el.style.setProperty('display','none','important');
       el.style.setProperty('border','0','important');
-      el.style.setProperty('background-color','transparent','important');
+      el.style.setProperty('background','transparent','important');
       el.style.setProperty('color','inherit','important');
       el.style.setProperty('padding','0','important');
       el.style.setProperty('margin','0','important');
       return;
     } else {
       el.classList.remove('ifx-empty');
-      // скидаємо "порожні" стилі, якщо раніше були
       el.style.removeProperty('display');
       el.style.removeProperty('border');
-      el.style.removeProperty('background-color');
+      el.style.removeProperty('background');
       el.style.removeProperty('color');
       el.style.removeProperty('padding');
       el.style.removeProperty('margin');
     }
 
-    // 2) якщо є значення — фарбуємо за категоріями
-    var g = ageCategoryFor(t);
-    if (g){
-      var c = __ageColors[g];
+    // фарбуємо
+    var grp = ageCategoryFor(el);
+    if (grp){
+      var c = __ageColors[grp];
       $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent', 'display':'inline-block' });
-      el.classList.remove('ifx-age-fallback');
     } else {
-      // невідома мітка: показуємо як простий текст БЕЗ рамки
-      el.classList.remove('ifx-age-fallback');
+      // невідоме значення — простий текст, без рамки
       $(el).css({ 'background-color':'transparent', color:'inherit', 'border-color':'transparent', 'display':'inline-block' });
     }
   });

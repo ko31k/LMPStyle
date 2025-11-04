@@ -169,26 +169,16 @@
   /* ============================================================
    * ФОЛБЕК-CSS + ПРІОРИТЕТ СТИЛІВ
    * ============================================================ */
-function injectFallbackCss(){
-  if (document.getElementById('ifx_fallback_css')) return;
-  var st = document.createElement('style');
-  st.id = 'ifx_fallback_css';
-  st.textContent = `
-    /* тільки для віку: не показуємо «рамку», доки немає тексту */
-    ${AGE_BASE_SEL}:empty{
-      border-color:transparent !important;
-      background:none !important;
-      color:inherit !important;
-      padding:0 !important; margin:0 !important; display:none !important;
-    }
-    .ifx-age-fallback{
-      border-color:transparent !important;
-      background:none !important;
-      color:inherit !important;
-    }
-  `;
-  document.head.appendChild(st);
-}
+  function injectFallbackCss(){
+    if (document.getElementById('ifx_fallback_css')) return;
+    var st = document.createElement('style');
+    st.id = 'ifx_fallback_css';
+    st.textContent = `
+      .ifx-status-fallback{ border-color:#fff !important; background:none !important; color:inherit !important; }
+      .ifx-age-fallback{    border-color:#fff !important; background:none !important; color:inherit !important; }
+    `;
+    document.head.appendChild(st);
+  }
   function ensureStylesPriority(ids){
     var head = document.head;
     ids.forEach(function(id){
@@ -203,59 +193,7 @@ function injectFallbackCss(){
   /* ============================================================
    * БАЗОВІ СТИЛІ
    * ============================================================ */
-  
   (function injectBaseCss(){
-  if (document.getElementById('interface_mod_base')) return;
-
-  var css = `
-    .full-start-new__details{
-      color:#fff !important;
-      margin:-0.45em !important;
-      margin-bottom:1em !important;
-      display:flex !important;
-      align-items:center !important;
-      flex-wrap:wrap !important;
-      min-height:1.9em !important;
-      font-size:1.1em !important;
-    }
-    *:not(input){ -webkit-user-select:none !important; -moz-user-select:none !important; -ms-user-select:none !important; user-select:none !important; }
-    *{ -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; box-sizing:border-box; outline:none; -webkit-user-drag:none; }
-
-    .full-start-new__rate-line > * {
-      margin-left: 0 !important;
-      margin-right: 1em !important;
-      flex-shrink: 0;
-      flex-grow: 0;
-    }
-
-    .ifx-original-title{
-      color:#aaa;
-      font-size: 0.75em;
-      font-weight: 600;
-      margin-top: 4px;
-      border-left: 2px solid #777;
-      padding-left: 8px;
-    }
-
-    .ifx-btn-icon-only .full-start__button span,
-    .ifx-btn-icon-only .full-start__button .full-start__text{
-      display:none !important;
-    }
-
-    .full-start__buttons.ifx-flex,
-    .full-start-new__buttons.ifx-flex{
-      display:flex !important;
-      flex-wrap:wrap !important;
-      gap:10px !important;
-    }
-  `;
-  var st = document.createElement('style');
-  st.id = 'interface_mod_base';
-  st.textContent = css;
-  document.head.appendChild(st);
-})();
-  
-  /*(function injectBaseCss(){
     if (document.getElementById('interface_mod_base')) return;
 
     var css = `
@@ -277,20 +215,20 @@ function injectFallbackCss(){
         margin-right: 1em !important;
         flex-shrink: 0;
         flex-grow: 0;
-      }*/
+      }
 
       /* ОРИГІНАЛЬНА НАЗВА — сірий, −25%, з лівою лінією */
-      /*.ifx-original-title{
+      .ifx-original-title{
         color:#aaa;
         font-size: 0.75em;
         font-weight: 600;
         margin-top: 4px;
         border-left: 2px solid #777;
         padding-left: 8px;
-      }*/
+      }
 
       /* Іконки без тексту */
-      /*.ifx-btn-icon-only .full-start__button span,
+      .ifx-btn-icon-only .full-start__button span,
       .ifx-btn-icon-only .full-start__button .full-start__text{
         display:none !important;
       }
@@ -306,8 +244,7 @@ function injectFallbackCss(){
     st.id = 'interface_mod_base';
     st.textContent = css;
     document.head.appendChild(st);
-  }
-  )();*/
+  })();
 
   /* ============================================================
    * ТЕМИ
@@ -946,54 +883,30 @@ function injectFallbackCss(){
     return '';
   }
 
-function readAgeText(el){
-  // беремо з атрибутів або з тексту, вирівнюємо регістр
-  var t = (el.getAttribute('data-age') || el.getAttribute('data-pg') || el.textContent || '').trim();
-  return t;
-}
+  function applyAgeOnceIn(elRoot){
+    if (!getBool('interface_mod_new_colored_age', false)) return;
 
-function applyAgeOnceIn(elRoot){
-  if (!getBool('interface_mod_new_colored_age', false)) return;
+    var $root = $(elRoot || document);
+    $root.find(AGE_BASE_SEL).each(function(){
+      var el = this;
+      var t  = ($(el).text()||'').trim();
 
-  var $root = $(elRoot || document);
-  $root.find(AGE_BASE_SEL).each(function(){
-    var el = this;
-    var raw = readAgeText(el);
-    var t = raw.toUpperCase(); // __ageGroups очікує верхній регістр для міток типу TV-MA
+      el.classList.remove('ifx-age-fallback');
 
-    // прибираємо попередні стани
-    el.classList.remove('ifx-age-fallback','ifx-age-pending');
-    el.style.removeProperty('background-color');
-    el.style.removeProperty('color');
-    el.style.removeProperty('border-color');
-
-    // 1) Немає тексту — нічого не малюємо (жодних рамок/паддінгів)
-    if (!raw) {
-      el.classList.add('ifx-age-pending');
-      return;
-    }
-
-    // 2) Є текст — намагаємося визначити категорію
-    var g = ageCategoryFor(t); // твоя функція з __ageGroups
-    if (g){
-      var c = __ageColors[g];
-      // базовий enabled-стиль уже дав прозору рамку і паддінг,
-      // ми просто фарбуємо фон/текст
-      $(el).css({
-        'background-color': c.bg,
-        'color': c.text,
-        'border-color': 'transparent',
-        'display': 'inline-block'
-      });
-    } else {
-      // 3) Формат невідомий — обирай режим:
-      //   а) просто показати цифру без рамки:
-      // el.classList.add('ifx-age-pending');
-      //   б) або біла рамка як фолбек:
-      el.classList.add('ifx-age-fallback');
-    }
-  });
-}
+      var g = ageCategoryFor(t);
+      if (g){
+        var c = __ageColors[g];
+        $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent', 'display':'inline-block' });
+      } else {
+        el.classList.add('ifx-age-fallback');
+        el.style.setProperty('border-width','1px','important');
+        el.style.setProperty('border-style','solid','important');
+        el.style.setProperty('border-color','#fff','important');
+        el.style.setProperty('background-color','transparent','important');
+        el.style.setProperty('color','inherit','important');
+      }
+    });
+  }
 
   function enableAgeColoring(){
     applyAgeOnceIn(document);
@@ -1098,82 +1011,7 @@ function applyAgeOnceIn(elRoot){
     return false;
   }
 
- 
-function reorderAndShowButtons(fullRoot){
-    if (!fullRoot) return;
-
-    var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
-    if (!$container.length) return;
-
-    // Прибрати можливі дублі "play"
-    fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
-
-    // Зібрати всі кнопки
-    var $source = fullRoot.find(
-      '.buttons--container .full-start__button, ' +
-      '.full-start__buttons .full-start__button, ' +
-      '.full-start-new__buttons .full-start__button'
-    );
-
-    var seen = new Set();
-    function sig($b){ return ($b.attr('data-action')||'')+'|'+($b.attr('href')||'')+'|'+($b.attr('class')||''); }
-
-    var groups = { online:[], torrent:[], trailer:[], other:[] };
-
-    $source.each(function(){
-      var $b = $(this);
-      if (isPlayBtn($b)) return;
-
-      var s = sig($b);
-      if (seen.has(s)) return;
-      seen.add(s);
-
-      var cls = ($b.attr('class')||'').toLowerCase();
-
-      // Використовуємо правильну логіку 'Enchanser':
-      // Переміщуємо оригінали 'online', 'torrent', 'trailer'
-      if (cls.includes('online')) {
-          groups.online.push($b);
-      } else if (cls.includes('torrent')) {
-          groups.torrent.push($b);
-      } else if (cls.includes('trailer')) {
-          groups.trailer.push($b);
-      } else {
-          // Клонуємо 'other' (Вибране, Ще, Дзвіночок)
-          groups.other.push($b.clone(true)); 
-      }
-    });
-
-    // *** ОСЬ ГОЛОВНЕ ВИПРАВЛЕННЯ: ***
-    // Повністю видаляємо всю логіку з 'needToggle'
-    // var needToggle = false; ... (ВИДАЛИТИ)
-    // if (needToggle) { ... (ВИДАЛИТИ)
-
-    $container.empty();
-    ['online','torrent','trailer','other'].forEach(function(cat){
-      groups[cat].forEach(function($b){ $container.append($b); });
-    });
-
-    $container.find('.full-start__button').filter(function(){
-      return $(this).text().trim()==='' && $(this).find('svg').length===0;
-    }).remove();
-
-    $container.addClass('controller');
-    
-    // Застосовуємо іконки ДО фінального toggle
-    applyIconOnlyClass(fullRoot);
-
-    // *** ОСТАТОЧНЕ ВИПРАВЛЕННЯ: ***
-    // Просто викликаємо toggle('full_start') ОДИН РАЗ в кінці, 
-    // як це робить Enchanser.js.
-    // Це змусить Lampa "пересканувати" кнопки, не ламаючи стан.
-    Lampa.Controller.toggle('full_start');
-
-    // Блок 'if (needToggle)' з 'setTimeout' тут більше не потрібен (ВИДАЛИТИ)
-}
-
-  
-  /*function reorderAndShowButtons(fullRoot){
+  function reorderAndShowButtons(fullRoot){
     if (!fullRoot) return;
 
     var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
@@ -1239,7 +1077,7 @@ function reorderAndShowButtons(fullRoot){
         try { Lampa.Controller.toggle('full_start'); } catch(e){}
       }, 80);
     }
-  }*/
+  }
 
   function restoreButtons(){
     if (!__ifx_btn_cache.container || !__ifx_btn_cache.nodes) return;

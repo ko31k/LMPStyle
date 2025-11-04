@@ -317,6 +317,28 @@
   var STATUS_BASE_SEL = '.full-start__status, .full-start-new__status, .full-start__soon, .full-start-new__soon, .full-start [data-status], .full-start-new [data-status]';
   var AGE_BASE_SEL    = '.full-start__pg, .full-start-new__pg, .full-start [data-pg], .full-start-new [data-pg], .full-start [data-age], .full-start-new [data-age]';
 
+(function injectAgeHideCss(){
+  var id = 'ifx_age_hide_empty_css';
+  if (document.getElementById(id)) return;
+  var st = document.createElement('style');
+  st.id = id;
+  st.textContent = `
+    ${AGE_BASE_SEL}:empty,
+    ${AGE_BASE_SEL}.ifx-empty,
+    ${AGE_BASE_SEL}[data-age=""],
+    ${AGE_BASE_SEL}[data-pg=""]{
+      display:none !important;
+      padding:0 !important;
+      border:0 !important;
+      margin:0 !important;
+      background:transparent !important;
+      color:inherit !important;
+    }
+  `;
+  document.head.appendChild(st);
+})();
+
+  
   /* ============================================================
    * НАЛАШТУВАННЯ UI
    * ============================================================ */
@@ -883,7 +905,53 @@
     return '';
   }
 
-  function applyAgeOnceIn(elRoot){
+
+function applyAgeOnceIn(elRoot){
+  if (!getBool('interface_mod_new_colored_age', false)) return;
+
+  var $root = $(elRoot || document);
+  $root.find(AGE_BASE_SEL).each(function(){
+    var el = this;
+    // акуратно нормалізуємо текст
+    var t  = (el.textContent || '').replace(/\u00A0/g,' ').trim();
+
+    // 1) якщо порожньо — ховаємо бейдж і виходимо
+    if (!t){
+      el.classList.add('ifx-empty');
+      el.classList.remove('ifx-age-fallback'); // на всяк випадок
+      el.style.setProperty('display','none','important');
+      el.style.setProperty('border','0','important');
+      el.style.setProperty('background-color','transparent','important');
+      el.style.setProperty('color','inherit','important');
+      el.style.setProperty('padding','0','important');
+      el.style.setProperty('margin','0','important');
+      return;
+    } else {
+      el.classList.remove('ifx-empty');
+      // скидаємо "порожні" стилі, якщо раніше були
+      el.style.removeProperty('display');
+      el.style.removeProperty('border');
+      el.style.removeProperty('background-color');
+      el.style.removeProperty('color');
+      el.style.removeProperty('padding');
+      el.style.removeProperty('margin');
+    }
+
+    // 2) якщо є значення — фарбуємо за категоріями
+    var g = ageCategoryFor(t);
+    if (g){
+      var c = __ageColors[g];
+      $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent', 'display':'inline-block' });
+      el.classList.remove('ifx-age-fallback');
+    } else {
+      // невідома мітка: показуємо як простий текст БЕЗ рамки
+      el.classList.remove('ifx-age-fallback');
+      $(el).css({ 'background-color':'transparent', color:'inherit', 'border-color':'transparent', 'display':'inline-block' });
+    }
+  });
+}
+  
+  /*function applyAgeOnceIn(elRoot){
     if (!getBool('interface_mod_new_colored_age', false)) return;
 
     var $root = $(elRoot || document);
@@ -906,7 +974,7 @@
         el.style.setProperty('color','inherit','important');
       }
     });
-  }
+  }*/
 
   function enableAgeColoring(){
     applyAgeOnceIn(document);

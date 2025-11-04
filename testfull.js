@@ -867,125 +867,7 @@
     adult:{bg:'#e74c3c',text:'white'}
   };
 
- 
-  // === [PATCH] Robust age rating detection & styling ===
-
-// 0) утиліти
-function escReg(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
-function normalizeAgeText(raw){
-  if(!raw) return '';
-  var t = String(raw).trim();
-
-  // уніфікуємо дефіси та плюси до ASCII
-  t = t.replace(/[\u2010\u2011\u2012\u2013\u2014\u2212\uFE58\uFE63\uFF0D]/g, '-'); // різні «дефіси»
-  t = t.replace(/[\u2795\uFF0B\uFE62]/g, '+');                                   // різні «плюси»
-
-  // прибираємо зайві проміжки коло +/-
-  t = t.replace(/\s*([+-])\s*/g, '$1');
-
-  // канонізуємо популярні маркери з довільними роздільниками
-  t = t
-    .replace(/\bTV\W*Y\b/gi,   'TV-Y')
-    .replace(/\bTV\W*Y\W*7\b/gi,'TV-Y7')
-    .replace(/\bTV\W*PG\b/gi,  'TV-PG')
-    .replace(/\bTV\W*14\b/gi,  'TV-14')
-    .replace(/\bTV\W*MA\b/gi,  'TV-MA')
-    .replace(/\bPG\W*13\b/gi,  'PG-13');
-
-  return t.toUpperCase();
-}
-
-function getAgeTextFrom(el){
-  // 1) видимий текст
-  var t = ($(el).text()||'').trim();
-  // 2) якщо порожній — атрибути
-  if(!t) t = el.getAttribute('data-age') || el.getAttribute('data-pg') || '';
-  // 3) інколи значення сидить глибше
-  if(!t && el.querySelector){
-    var child = el.querySelector('[data-age],[data-pg],[aria-label]');
-    if(child) t = child.getAttribute('data-age') || child.getAttribute('data-pg') || child.getAttribute('aria-label') || '';
-  }
-  return normalizeAgeText(t);
-}
-
-function hasMark(normalized, mark){
-  // словні межі для безпечного пошуку (щоб "X" не ловилося в "NETFLIX")
-  var re = new RegExp('(?:^|[^A-Z0-9+])' + escReg(mark) + '(?:[^A-Z0-9+]|$)');
-  return re.test(normalized);
-}
-
-// !! заміна твоєї функції
-function ageCategoryFor(text){
-  var norm = normalizeAgeText(text);
-
-  // 1) експліцитні маркери з груп (крім самотнього 'X', він шумний)
-  for (var k in __ageGroups){
-    for (var i = 0; i < __ageGroups[k].length; i++){
-      var m = __ageGroups[k][i];
-      if (m === 'X') continue; // уникаємо хибних спрацювань
-      if (hasMark(norm, m)) return k;
-    }
-  }
-
-  // 2) числові «N+»
-  var mx = norm.match(/(^|[^0-9])([0-1]?\d)\+(?:[^0-9]|$)/);
-  if (mx){
-    var n = parseInt(mx[2], 10);
-    if (n <= 3)  return 'kids';
-    if (n <= 7)  return 'children';
-    if (n <= 14) return 'teens';
-    if (n <= 17) return 'almostAdult';
-    return 'adult';
-  }
-
-  // 3) дуже короткі токени «X», якщо елемент буквально складається з "X"
-  if (/^\s*X\s*$/.test(text)) return 'adult';
-
-  return '';
-}
-
-// допоміжні: акуратно ставимо стилі / фолбек
-function paintAgeEl(el, group){
-  var c = __ageColors[group];
-  el.classList.remove('ifx-age-fallback');
-  el.style.setProperty('background-color', c.bg, 'important');
-  el.style.setProperty('color', c.text, 'important');
-  el.style.setProperty('border-color', 'transparent', 'important');
-  el.style.setProperty('display', 'inline-block', 'important');
-}
-function clearAgeEl(el){
-  el.classList.add('ifx-age-fallback');
-  el.style.setProperty('border-width','1px','important');
-  el.style.setProperty('border-style','solid','important');
-  el.style.setProperty('border-color','#fff','important');
-  el.style.setProperty('background-color','transparent','important');
-  el.style.setProperty('color','inherit','important');
-}
-
-// мемоізація, щоб не фарбувати повторно без зміни значення
-var __ageMemoKey = 'ifxAgeMemo';
-
-// !! заміна твоєї функції
-function applyAgeOnceIn(elRoot){
-  if (!getBool('interface_mod_new_colored_age', false)) return;
-
-  var $root = $(elRoot || document);
-  $root.find(AGE_BASE_SEL).each(function(){
-    var el = this;
-    var raw = getAgeTextFrom(el);        // нормалізований текст/атрибут
-    var prev = el.getAttribute(__ageMemoKey);
-    if (prev === raw) return;            // нічого не змінилося — скіпаємо
-
-    var g = ageCategoryFor(raw);
-    if (g) paintAgeEl(el, g);
-    else   clearAgeEl(el);
-
-    el.setAttribute(__ageMemoKey, raw);  // запам’ятали
-  });
-}
-  
-  /*function ageCategoryFor(text){
+  function ageCategoryFor(text){
     for (var k in __ageGroups){
       if (__ageGroups[k].some(function(mark){ return text.indexOf(mark) !== -1; })) return k;
     }
@@ -1024,7 +906,7 @@ function applyAgeOnceIn(elRoot){
         el.style.setProperty('color','inherit','important');
       }
     });
-  }*/
+  }
 
   function enableAgeColoring(){
     applyAgeOnceIn(document);

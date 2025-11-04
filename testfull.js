@@ -720,40 +720,41 @@
     document.head.appendChild(st);
   }
 
-  function setAgeBaseCssEnabled(enabled){
-    var idEn = 'interface_mod_age_enabled';
-    var idDis = 'interface_mod_age_disabled';
-    document.getElementById(idEn) && document.getElementById(idEn).remove();
-    document.getElementById(idDis) && document.getElementById(idDis).remove();
+function setAgeBaseCssEnabled(enabled){
+  var idEn = 'interface_mod_age_enabled';
+  var idDis = 'interface_mod_age_disabled';
+  document.getElementById(idEn) && document.getElementById(idEn).remove();
+  document.getElementById(idDis) && document.getElementById(idDis).remove();
 
-    var st = document.createElement('style');
-    if (enabled){
-      st.id = idEn;
-      st.textContent =
-        AGE_BASE_SEL + '{' +
-          'font-size:1.2em!important;' +
-          'border:1px solid transparent!important;' +
-          'border-radius:0.2em!important;' +
-          'padding:0.3em!important;' +
-          'margin-right:0.3em!important;' +
-          'margin-left:0!important;' +
-          'display:inline-block!important;' +
-        '}';
-    } else {
-      st.id = idDis;
-      st.textContent =
-        AGE_BASE_SEL + '{' +
-          'font-size:1.2em!important;' +
-          'border:1px solid #fff!important;' +
-          'border-radius:0.2em!important;' +
-          'padding:0.3em!important;' +
-          'margin-right:0.3em!important;' +
-          'margin-left:0!important;' +
-          'display:inline-block!important;' +
-        '}';
-    }
-    document.head.appendChild(st);
+  var st = document.createElement('style');
+  if (enabled){
+    st.id = idEn;
+    st.textContent =
+      AGE_BASE_SEL + '{' +
+        'font-size:1.2em!important;' +
+        'border:1px solid transparent!important;' +
+        'border-radius:0.2em!important;' +
+        'padding:0.3em!important;' +
+        'margin-right:0.3em!important;' +
+        'margin-left:0!important;' +
+        /* БЕЗ display тут! */ 
+      '}';
+  } else {
+    st.id = idDis;
+    st.textContent =
+      AGE_BASE_SEL + '{' +
+        'font-size:1.2em!important;' +
+        'border:1px solid #fff!important;' +
+        'border-radius:0.2em!important;' +
+        'padding:0.3em!important;' +
+        'margin-right:0.3em!important;' +
+        'margin-left:0!important;' +
+        /* БЕЗ display тут! */
+      '}';
   }
+  document.head.appendChild(st);
+}
+
 
   /* ============================================================
    * КОЛЬОРОВІ СТАТУСИ
@@ -883,30 +884,55 @@
     return '';
   }
 
-  function applyAgeOnceIn(elRoot){
-    if (!getBool('interface_mod_new_colored_age', false)) return;
+function applyAgeOnceIn(elRoot){
+  if (!getBool('interface_mod_new_colored_age', false)) return;
 
-    var $root = $(elRoot || document);
-    $root.find(AGE_BASE_SEL).each(function(){
-      var el = this;
-      var t  = ($(el).text()||'').trim();
+  var $root = $(elRoot || document);
+  $root.find(AGE_BASE_SEL).each(function(){
+    var el = this;
 
+    // беремо текст або значення з атрибутів
+    var t = (el.textContent || '').trim();
+    if (!t) {
+      var attr = ((el.getAttribute('data-age') || el.getAttribute('data-pg') || '') + '').trim();
+      if (attr) t = attr;
+    }
+
+    // якщо ПУСТО — ховаємо елемент і зчищаємо все
+    if (!t) {
+      el.classList.add('hide');
       el.classList.remove('ifx-age-fallback');
+      ['border-width','border-style','border-color','background-color','color','display'].forEach(function(p){
+        el.style.removeProperty(p);
+      });
+      return;
+    }
 
-      var g = ageCategoryFor(t);
-      if (g){
-        var c = __ageColors[g];
-        $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent', 'display':'inline-block' });
-      } else {
-        el.classList.add('ifx-age-fallback');
-        el.style.setProperty('border-width','1px','important');
-        el.style.setProperty('border-style','solid','important');
-        el.style.setProperty('border-color','#fff','important');
-        el.style.setProperty('background-color','transparent','important');
-        el.style.setProperty('color','inherit','important');
-      }
+    // є значення — показуємо та фарбуємо
+    el.classList.remove('hide');
+    el.classList.remove('ifx-age-fallback');
+    ['border-width','border-style','border-color','background-color','color'].forEach(function(p){
+      el.style.removeProperty(p);
     });
-  }
+
+    var g = ageCategoryFor(t);
+    if (g){
+      var c = __ageColors[g];
+      $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent' });
+      el.style.display = 'inline-block'; // без !important — .hide завжди переможе
+    } else {
+      // невідома категорія — «fallback», але тільки коли є текст
+      el.classList.add('ifx-age-fallback');
+      el.style.setProperty('border-width','1px','important');
+      el.style.setProperty('border-style','solid','important');
+      el.style.setProperty('border-color','#fff','important');
+      el.style.setProperty('background-color','transparent','important');
+      el.style.setProperty('color','inherit','important');
+      el.style.display = 'inline-block';
+    }
+  });
+}
+
 
   function enableAgeColoring(){
     applyAgeOnceIn(document);

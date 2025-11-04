@@ -169,16 +169,26 @@
   /* ============================================================
    * ФОЛБЕК-CSS + ПРІОРИТЕТ СТИЛІВ
    * ============================================================ */
-  function injectFallbackCss(){
-    if (document.getElementById('ifx_fallback_css')) return;
-    var st = document.createElement('style');
-    st.id = 'ifx_fallback_css';
-    st.textContent = `
-      .ifx-status-fallback{ border-color:#fff !important; background:none !important; color:inherit !important; }
-      .ifx-age-fallback{    border-color:#fff !important; background:none !important; color:inherit !important; }
-    `;
-    document.head.appendChild(st);
-  }
+function injectFallbackCss(){
+  if (document.getElementById('ifx_fallback_css')) return;
+  var st = document.createElement('style');
+  st.id = 'ifx_fallback_css';
+  st.textContent = `
+    /* тільки для віку: не показуємо «рамку», доки немає тексту */
+    ${AGE_BASE_SEL}:empty{
+      border-color:transparent !important;
+      background:none !important;
+      color:inherit !important;
+      padding:0 !important; margin:0 !important; display:none !important;
+    }
+    .ifx-age-fallback{
+      border-color:transparent !important;
+      background:none !important;
+      color:inherit !important;
+    }
+  `;
+  document.head.appendChild(st);
+}
   function ensureStylesPriority(ids){
     var head = document.head;
     ids.forEach(function(id){
@@ -883,30 +893,34 @@
     return '';
   }
 
-  function applyAgeOnceIn(elRoot){
-    if (!getBool('interface_mod_new_colored_age', false)) return;
+function applyAgeOnceIn(elRoot){
+  if (!getBool('interface_mod_new_colored_age', false)) return;
 
-    var $root = $(elRoot || document);
-    $root.find(AGE_BASE_SEL).each(function(){
-      var el = this;
-      var t  = ($(el).text()||'').trim();
-
+  var $root = $(elRoot || document);
+  $root.find(AGE_BASE_SEL).each(function(){
+    var el = this;
+    var t  = ($(el).text()||'').trim();
+    if (!t){                       // порожньо → нічого не малюємо
       el.classList.remove('ifx-age-fallback');
+      el.style.cssText = '';
+      return;
+    }
 
-      var g = ageCategoryFor(t);
-      if (g){
-        var c = __ageColors[g];
-        $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent', 'display':'inline-block' });
-      } else {
-        el.classList.add('ifx-age-fallback');
-        el.style.setProperty('border-width','1px','important');
-        el.style.setProperty('border-style','solid','important');
-        el.style.setProperty('border-color','#fff','important');
-        el.style.setProperty('background-color','transparent','important');
-        el.style.setProperty('color','inherit','important');
-      }
-    });
-  }
+    var g = ageCategoryFor(t);
+    if (g){
+      var c = __ageColors[g];
+      $(el).css({
+        'background-color': c.bg, color: c.text,
+        'border-color':'transparent', 'display':'inline-block'
+      });
+    } else {
+      el.classList.add('ifx-age-fallback');       // без рамки і фону
+      el.style.setProperty('border-color','transparent','important');
+      el.style.setProperty('background-color','transparent','important');
+      el.style.setProperty('color','inherit','important');
+    }
+  });
+}
 
   function enableAgeColoring(){
     applyAgeOnceIn(document);
@@ -1011,7 +1025,81 @@
     return false;
   }
 
+ 
   function reorderAndShowButtons(fullRoot){
+    if (!fullRoot) return;
+
+    var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
+    if (!$container.length) return;
+
+    // Прибрати можливі дублі "play"
+    fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
+
+    // Зібрати всі кнопки
+    var $source = fullRoot.find(
+      '.buttons--container .full-start__button, ' +
+      '.full-start__buttons .full-start__button, ' +
+      '.full-start-new__buttons .full-start__button'
+    );
+
+    var seen = new Set();
+    function sig($b){ return ($b.attr('data-action')||'')+'|'+($b.attr('href')||'')+'|'+($b.attr('class')||''); }
+
+    var groups = { online:[], torrent:[], trailer:[], other:[] };
+
+    $source.each(function(){
+      var $b = $(this);
+      if (isPlayBtn($b)) return;
+
+      var s = sig($b);
+      if (seen.has(s)) return;
+      seen.add(s);
+
+      var cls = ($b.attr('class')||'').toLowerCase();
+
+      // *** ОСЬ ВИПРАВЛЕННЯ: ***
+      // Ми маємо клонувати ВСІ кнопки, щоб зберегти 
+      // обробники подій Lampa для навігації та контролера.
+
+      if (cls.includes('online')) {
+          groups.online.push($b.clone(true)); // <-- ДОДАНО .clone(true)
+      } else if (cls.includes('torrent')) {
+          groups.torrent.push($b.clone(true)); // <-- ДОДАНО .clone(true)
+      } else if (cls.includes('trailer')) {
+          groups.trailer.push($b.clone(true)); // <-- ДОДАНО .clone(true)
+      } else {
+          groups.other.push($b.clone(true)); // <-- Це вже було виправлено
+      }
+    });
+
+    var needToggle = false;
+    try { needToggle = (Lampa.Controller.enabled().name === 'full_start'); } catch(e){}
+    if (needToggle) {
+      try { Lampa.Controller.toggle('settings_component'); } catch(e){}
+    }
+
+    $container.empty();
+    ['online','torrent','trailer','other'].forEach(function(cat){
+      groups[cat].forEach(function($b){ $container.append($b); });
+    });
+
+    $container.find('.full-start__button').filter(function(){
+      return $(this).text().trim()==='' && $(this).find('svg').length===0;
+    }).remove();
+
+    $container.addClass('controller');
+
+    applyIconOnlyClass(fullRoot);
+
+    if (needToggle) {
+      setTimeout(function(){
+        try { Lampa.Controller.toggle('full_start'); } catch(e){}
+      }, 80);
+    }
+}
+
+  
+  /*function reorderAndShowButtons(fullRoot){
     if (!fullRoot) return;
 
     var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
@@ -1077,7 +1165,7 @@
         try { Lampa.Controller.toggle('full_start'); } catch(e){}
       }, 80);
     }
-  }
+  }*/
 
   function restoreButtons(){
     if (!__ifx_btn_cache.container || !__ifx_btn_cache.nodes) return;

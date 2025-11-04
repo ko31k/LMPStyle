@@ -70,79 +70,71 @@
    * ЛОКАЛІЗАЦІЯ
    * ============================================================ */
   Lampa.Lang.add({
-    interface_mod_new_group_title: { ru:'Интерфейс +', en:'Interface +', uk:'Інтерфейс +' },
-    interface_mod_new_plugin_name: { ru:'Интерфейс +', en:'Interface +', uk:'Інтерфейс +' },
+    interface_mod_new_group_title: { en:'Interface +', uk:'Інтерфейс +' },
+    interface_mod_new_plugin_name: { en:'Interface +', uk:'Інтерфейс +' },
 
-    interface_mod_new_info_panel: { ru:'Новая инфо-панель', en:'New info panel', uk:'Нова інфо-панель' },
+    interface_mod_new_info_panel: { en:'New info panel', uk:'Нова інфо-панель' },
     interface_mod_new_info_panel_desc: {
-      ru:'Цветная и перефразированная строка информации',
       en:'Colored and rephrased info line',
-      uk:'Кольорова та перефразована інфо-панель'
+      uk:'Кольорова та перефразована інформаційна панель'
     },
 
-    interface_mod_new_colored_ratings: { ru:'Цветной рейтинг', en:'Colored rating', uk:'Кольоровий рейтинг' },
+    interface_mod_new_colored_ratings: { en:'Colored rating', uk:'Кольоровий рейтинг' },
     interface_mod_new_colored_ratings_desc: {
-      ru:'Включить подсветку рейтингов',
       en:'Enable colored rating highlight',
       uk:'Увімкнути кольорове виділення рейтингу'
     },
 
-    interface_mod_new_colored_status: { ru:'Цветные статусы', en:'Colored statuses', uk:'Кольорові статуси' },
+    interface_mod_new_colored_status: { en:'Colored statuses', uk:'Кольорові статуси' },
     interface_mod_new_colored_status_desc: {
-      ru:'Подсвечивать статус сериала цветом',
       en:'Colorize series status',
       uk:'Підсвічувати статус серіалу'
     },
 
-    interface_mod_new_colored_age: { ru:'Цветной возрастной рейтинг', en:'Colored age rating', uk:'Кольоровий віковий рейтинг' },
+    interface_mod_new_colored_age: { en:'Colored age rating', uk:'Кольоровий віковий рейтинг' },
     interface_mod_new_colored_age_desc: {
-      ru:'Подсвечивать возрастной рейтинг',
       en:'Colorize age rating',
       uk:'Підсвічувати віковий рейтинг'
     },
 
-    interface_mod_new_theme_select_title: { ru:'Тема интерфейса', en:'Interface theme', uk:'Тема інтерфейсу' },
-    interface_mod_new_theme_default: { ru:'По умолчанию', en:'Default', uk:'За замовчуванням' },
-    interface_mod_new_theme_emerald_v1: { ru:'Emerald V1', en:'Emerald V1', uk:'Emerald V1' },
-    interface_mod_new_theme_emerald_v2: { ru:'Emerald V2', en:'Emerald V2', uk:'Emerald V2' },
-    interface_mod_new_theme_aurora:     { ru:'Aurora',     en:'Aurora',     uk:'Aurora' },
+    interface_mod_new_theme_select_title: { en:'Interface theme', uk:'Тема інтерфейсу' },
+    interface_mod_new_theme_default: { en:'Default', uk:'За замовчуванням' },
+    interface_mod_new_theme_emerald_v1: { en:'Emerald V1', uk:'Emerald V1' },
+    interface_mod_new_theme_emerald_v2: { en:'Emerald V2', uk:'Emerald V2' },
+    interface_mod_new_theme_aurora:     { en:'Aurora',     uk:'Aurora' },
 
     // ОРИГІНАЛЬНА НАЗВА
-    interface_mod_new_en_data:      { ru:'Оригинальное название', en:'Original title', uk:'Оригінальна назва' },
+    interface_mod_new_en_data:      { en:'Original title', uk:'Оригінальна назва' },
     interface_mod_new_en_data_desc: {
-      ru:'Показывать оригинальное (EN) название под заголовком карточки',
       en:'Show original (EN) title under the card header',
-      uk:'Показувати оригінальну (EN) назву під заголовком картки'
+      uk:'Показувати оригінальну назву в заголовку картки'
     },
 
     // КНОПКИ
-    interface_mod_new_all_buttons:      { ru:'Все кнопки в карточке', en:'All buttons in card', uk:'Всі кнопки в картці' },
+    interface_mod_new_all_buttons:      { en:'All buttons in card', uk:'Всі кнопки в картці' },
     interface_mod_new_all_buttons_desc: {
-      ru:'Показывает все кнопки в карточке. Порядок: Онлайн → Торренты → Трейлеры',
       en:'Show all buttons in the card. Order: Online → Torrents → Trailers',
       uk:'Показує всі кнопки у картці. Порядок: Онлайн → Торренти → Трейлери'
     },
 
-    interface_mod_new_icon_only:      { ru:'Иконки без текста', en:'Icons only', uk:'Іконки без тексту' },
+    interface_mod_new_icon_only:      { en:'Icons only', uk:'Іконки без тексту' },
     interface_mod_new_icon_only_desc: {
-      ru:'Скрывает подписи на кнопках, оставляет только иконки',
       en:'Hide button labels, keep only icons',
       uk:'Ховає підписи на кнопках, лишає тільки іконки'
     },
 
-    interface_mod_new_colored_buttons: { ru:'Цветные кнопки', en:'Colored buttons', uk:'Кольорові кнопки' },
+    interface_mod_new_colored_buttons: { en:'Colored buttons', uk:'Кольорові кнопки' },
     interface_mod_new_colored_buttons_desc: {
-      ru:'Раскрашивать кнопки карточки и заменить иконки',
       en:'Colorize card buttons and update icons',
       uk:'Розфарбовує кнопки в картці та оновлює іконки'
     }
       ,
-    torr_mod_frame:        { uk:'Рамка блоку торентів за сідерами.', ru:'Рамка торрент-блоков по сидерам.', en:'Torrent frame by seeders' },
-    torr_mod_frame_desc:   { uk:'Підсвічувати блоки торентів кольоровою рамкою залежно від кількості сидерів на роздачі', ru:'Подсвечивать блоки торрентов рамкой в зависимости от числа сидов', en:'Outline torrent rows based on seeder count' },
-    torr_mod_bitrate:      { uk:'Кольоровий  бітрейт', ru:'Цветной битрейт', en:'Bitrate-based coloring' },
-    torr_mod_bitrate_desc: { uk:'Підсвічувати бітрейт кольором в залежності від розміру', ru:'Подсвечивать битрейт цветом в зависимости от величины', en:'Color bitrate by value' },
-    torr_mod_seeds:        { uk:'Кольорова кількість роздаючих.', ru:'Цветное количество сидов.', en:'Seeder count coloring' },
-    torr_mod_seeds_desc:   { uk:'Підсвічувати кількість на роздачі: 0–4 — червоний, 5–14 — жовтий, 15+ — зелений', ru:'Подсветка сидов: 0–4 красный, 5–14 жёлтый, 15+ зелёный', en:'Seeders: 0–4 red, 5–14 yellow, 15+ green' },
+    torr_mod_frame:        { uk:'Кольорова рамка блоку торентів.', en:'Torrent frame by seeders' },
+    torr_mod_frame_desc:   { uk:'Підсвічувати блоки торентів кольоровою рамкою залежно від кількості сідерів', en:'Outline torrent rows based on seeder count' },
+    torr_mod_bitrate:      { uk:'Кольоровий  бітрейт', en:'Bitrate-based coloring' },
+    torr_mod_bitrate_desc: { uk:'Підсвічувати бітрейт кольором в залежності від розміру', en:'Color bitrate by value' },
+    torr_mod_seeds:        { uk:'Кольорова кількість роздаючих.', en:'Seeder count coloring' },
+    torr_mod_seeds_desc:   { uk:'Підсвічувати кількість на роздачі: 0–4 — червоний, 5–14 — жовтий, 15+ — зелений', en:'Seeders: 0–4 red, 5–14 yellow, 15+ green' },
 });
 
   /* ============================================================
@@ -165,7 +157,10 @@
     en_data         : getOriginalTitleEnabled(),
     all_buttons     : getBool('interface_mod_new_all_buttons', false),
     icon_only       : getBool('interface_mod_new_icon_only', false),
-    colored_buttons : getBool('interface_mod_new_colored_buttons', false) // ← NEW
+    colored_buttons : getBool('interface_mod_new_colored_buttons', false), // ← NEW
+    tor_frame   : getBool('interface_mod_new_tor_frame', true),
+    tor_bitrate : getBool('interface_mod_new_tor_bitrate', true),
+    tor_seeds   : getBool('interface_mod_new_tor_seeds', true),
   };
 
   var __ifx_last = { details:null, movie:null, originalHTML:'', isTv:false, fullRoot:null };
@@ -508,6 +503,15 @@
         'Новини':{bg:'rgba(52,152,219,.85)',text:'white'}, 'Реаліті-шоу':{bg:'rgba(230,126,34,.9)',text:'white'},
         'НФ і Фентезі':{bg:'rgba(41,128,185,.85)',text:'white'}, 'Мильна опера':{bg:'rgba(233,30,99,.85)',text:'white'},
         'Ток-шоу':{bg:'rgba(241,196,15,.9)',text:'black'}, 'Війна і Політика':{bg:'rgba(127,140,141,.85)',text:'white'}
+        // Action & Adventure — як "Бойовик і Пригоди" (той самий червоний)
+        'Екшн і Пригоди':      { bg: 'rgba(231,76,60,.85)', text: 'white' },
+        'Екшн':                 { bg: 'rgba(231,76,60,.85)', text: 'white' },
+        // Sci-Fi — як "Фантастика"/"НФ і Фентезі" (той самий синій)
+        'Науково фантастичний': { bg: 'rgba(41,128,185,.85)', text: 'white' },
+        'Науково-фантастичний': { bg: 'rgba(41,128,185,.85)', text: 'white' },
+        'Наукова фантастика':   { bg: 'rgba(41,128,185,.85)', text: 'white' },
+        'Наукова-фантастика':   { bg: 'rgba(41,128,185,.85)', text: 'white' },
+        'Науково-фантастика':   { bg: 'rgba(41,128,185,.85)', text: 'white' }
       }
     };
 
@@ -1235,6 +1239,34 @@
     });
   }
 
+  // десь поряд із вашими іншими Listener'ами (після wireFullCardEnhancers())
+Lampa.Listener.follow('full', function(e){
+  if (e.type === 'complite') {
+    // затримка, щоб DOM устиг намалюватися
+    setTimeout(function(){
+      try { if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh(); } catch(e){}
+    }, 120);
+  }
+});
+
+// додатково — спостерігаємо за динамічним оновленням блоків торентів
+(function observeTorrents(){
+  var obs = new MutationObserver(function(muts){
+    if (typeof window.runTorrentStyleRefresh === 'function') {
+      // антидребезг
+      clearTimeout(window.__ifx_tor_debounce);
+      window.__ifx_tor_debounce = setTimeout(function(){
+        try { window.runTorrentStyleRefresh(); } catch(e){}
+      }, 60);
+    }
+  });
+  try {
+    obs.observe(document.body, {subtree:true, childList:true});
+  } catch(e){}
+})();
+
+
+  
   /* ============================================================
    * ЗАПУСК
    * ============================================================ */
@@ -1253,11 +1285,12 @@
     if (settings.colored_age) enableAgeColoring(); else disableAgeColoring(true);
 
     if (settings.theme) applyTheme(settings.theme);
-
+    
     wireFullCardEnhancers();
 
     // ініціалізація стану «Кольорові кнопки»
     setColoredButtonsEnabled(settings.colored_buttons);
+    try { if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh(); } catch(e){}
   }
 
   if (window.appready) startPlugin();
@@ -1721,7 +1754,7 @@
   })();
   
   // ===================== ІНІЦІАЛІЗАЦІЯ TV РЕЖИМУ LAMPA =====================
-  Lampa.Platform.tv();
+  /*Lampa.Platform.tv();*/
   }catch(e){ try{console.error('torrents+mod error', e);}catch(_e){} }})();
   /* ==== END torrents+mod.js ==== */
   

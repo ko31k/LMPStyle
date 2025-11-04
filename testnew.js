@@ -169,16 +169,18 @@
   /* ============================================================
    * ФОЛБЕК-CSS + ПРІОРИТЕТ СТИЛІВ
    * ============================================================ */
-  function injectFallbackCss(){
-    if (document.getElementById('ifx_fallback_css')) return;
-    var st = document.createElement('style');
-    st.id = 'ifx_fallback_css';
-    st.textContent = `
-      .ifx-status-fallback{ border-color:#fff !important; background:none !important; color:inherit !important; }
-      .ifx-age-fallback{    border-color:#fff !important; background:none !important; color:inherit !important; }
-    `;
-    document.head.appendChild(st);
-  }
+function injectFallbackCss(){
+  if (document.getElementById('ifx_fallback_css')) return;
+  var st = document.createElement('style');
+  st.id = 'ifx_fallback_css';
+  st.textContent = `
+    .ifx-status-fallback{ border-color:#fff !important; background:none !important; color:inherit !important; }
+    .ifx-age-fallback{    border-color:#fff !important; background:none !important; color:inherit !important; }
+    .ifx-age-hidden{      display:none !important; }
+  `;
+  document.head.appendChild(st);
+}
+
   function ensureStylesPriority(ids){
     var head = document.head;
     ids.forEach(function(id){
@@ -846,6 +848,23 @@
     }).css({ 'background-color':'', color:'', border:'' });
   }
 
+function hasAgeValue(raw){
+  var s = String(raw||'').trim();
+  if (!s) return false;
+  // цифри з плюсом (0+, 6+, 12+, 18+) або стандарти TV/MPAA
+  return /\d+\s*\+/.test(s) || /\b(G|PG|R|NC-17|TV-?Y7|TV-?Y|TV-?G|TV-?PG|TV-?14|TV-?MA)\b/i.test(s);
+}
+
+// трохи нормалізуємо різні варіанти тире/пробілів
+function normalizeAgeText(t){
+  return String(t||'')
+    .replace(/[–—]/g, '-')       // довгі тире → звичайне
+    .replace(/\s*-\s*/g, '-')    // навколо тире
+    .replace(/\s+/g, ' ')        // багато пробілів → один
+    .trim();
+}
+
+  
   /* ============================================================
    * КОЛЬОРОВІ ВІКОВІ РЕЙТИНГИ (PG)
    * ============================================================ */
@@ -930,31 +949,26 @@ function normalizeAgeText(raw){
   return '';
 }
 
-function ageCategoryFor(rawTextOrAttr){
-  var norm = normalizeAgeText(rawTextOrAttr);
-  if (!norm) return '';
+function ageCategoryFor(text){
+  var T = normalizeAgeText(text).toUpperCase();
 
-  // числові позначки (наприклад, "12+")
-  var num = norm.match(/^(\d{1,2})\+$/);
-  if (num){
-    var n = parseInt(num[1],10);
+  // спершу перевіряємо відомі маркери
+  for (var k in __ageGroups){
+    if (__ageGroups[k].some(function(mark){ return T.indexOf(mark) !== -1; })) return k;
+  }
+  // далі універсальний кейс 0+/6+/12+/16+/18+
+  var m = T.match(/(^|\D)(\d{1,2})\s*\+(?=\D|$)/);
+  if (m){
+    var n = parseInt(m[2],10);
     if (n <= 3)  return 'kids';
     if (n <= 7)  return 'children';
     if (n <= 14) return 'teens';
     if (n <= 17) return 'almostAdult';
     return 'adult';
   }
-
-  // фіксовані рейтинги
-  switch(norm){
-    case 'G': case 'TV-Y': case 'TV-G': return 'kids';
-    case 'PG': case 'TV-Y7':           return 'children';
-    case 'PG-13': case 'TV-14':        return 'teens';
-    case 'R': case 'TV-MA':            return 'almostAdult';
-    case 'NC-17': case 'X':            return 'adult';
-    default: return '';
-  }
+  return '';
 }
+
 
 function readAgeRaw(el){
   return el.getAttribute('data-age') ||
@@ -964,31 +978,60 @@ function readAgeRaw(el){
 
 // 3) Застосування фарбування: увімкнено → фарбуємо, невідомо → нічого не чіпаємо
 function applyAgeOnceIn(elRoot){
-  if (!getBool('interface_mod_new_colored_age', false)) return;
-
   var $root = $(elRoot || document);
+
   $root.find(AGE_BASE_SEL).each(function(){
     var el = this;
 
-    // скидаємо попередні інлайни
-    el.classList.remove('ifx-age-fallback');
-    ['background-color','color','border-color','border-width','border-style','display'].forEach(function(p){
-      el.style.removeProperty(p);
-    });
+    // беремо data-атрибути, якщо є, інакше текст
+    var raw = $(el).attr('data-age') || $(el).attr('data-pg') || (el.textContent || '');
+    var t = normalizeAgeText(raw);
 
-    var group = ageCategoryFor(readAgeRaw(el));
-    if (group){
-      var c = __ageColors[group];
+    // 1) Немає значення — ховаємо повністю й прибираємо інлайни
+    if (!hasAgeValue(t)) {
+      el.classList.add('ifx-age-hidden');
+      el.classList.remove('ifx-age-fallback');
+      el.style.removeProperty('background-color');
+      el.style.removeProperty('color');
+      el.style.removeProperty('border-color');
+      return;
+    } else {
+      el.classList.remove('ifx-age-hidden');
+    }
+
+    // 2) Якщо кольоровий PG вимкнено — лишаємо нейтральний вигляд (базовий CSS зробить білу рамку)
+    if (!getBool('interface_mod_new_colored_age', false)) {
+      el.classList.remove('ifx-age-fallback');
+      el.style.removeProperty('background-color');
+      el.style.removeProperty('color');
+      el.style.removeProperty('border-color');
+      return;
+    }
+
+    // 3) Кольоровий PG увімкнено — категоризуємо і фарбуємо
+    var g = ageCategoryFor(t);
+    el.classList.remove('ifx-age-fallback');
+
+    if (g) {
+      var c = __ageColors[g];
       $(el).css({
         'background-color': c.bg,
         'color': c.text,
         'border-color': 'transparent',
         'display': 'inline-block'
       });
+    } else {
+      // невідомий формат — нейтральний фолбек без “порожніх рамок”
+      el.classList.add('ifx-age-fallback');
+      el.style.setProperty('border-width','1px','important');
+      el.style.setProperty('border-style','solid','important');
+      el.style.setProperty('border-color','#fff','important');
+      el.style.setProperty('background-color','transparent','important');
+      el.style.setProperty('color','inherit','important');
     }
-    // якщо групи нема — залишаємо як є (жодних «порожніх рамок»)
   });
 }
+
 
 function enableAgeColoring(){
   applyAgeOnceIn(document);
@@ -1038,15 +1081,25 @@ function enableAgeColoring(){
 
 function disableAgeColoring(clearInline){
   if (__ageObserver) { __ageObserver.disconnect(); __ageObserver = null; }
-  if (clearInline) $(AGE_BASE_SEL).each(function(){
-    this.classList.remove('ifx-age-fallback');
-    ['border-width','border-style','border-color','background-color','color','display'].forEach(function(p){
-      this.style && this.style.removeProperty && this.style.removeProperty(p);
-    }, this);
-  });
-  // вимкнено: повертаємо білу рамку через base css
-  $(AGE_BASE_SEL).css({ 'background-color':'', color:'', border:'' });
+
+  if (clearInline){
+    $(AGE_BASE_SEL).each(function(){
+      // не чіпаємо вже сховані порожні
+      if (this.classList.contains('ifx-age-hidden')) return;
+
+      this.classList.remove('ifx-age-fallback');
+      this.style.removeProperty('background-color');
+      this.style.removeProperty('color');
+      this.style.removeProperty('border-color');
+    }).css({
+      'background-color':'',
+      'color':'',
+      'border':''
+      // ВАЖЛИВО: display не ставимо, щоб випадково не “розховати” порожні
+    });
+  }
 }
+
 
   
   /* ============================================================
@@ -1288,6 +1341,16 @@ function disableAgeColoring(clearInline){
   /* ============================================================
    * СЛУХАЧ КАРТКИ
    * ============================================================ */
+  Lampa.Listener.follow('full', function(e){
+  if (e.type === 'complite') {
+    var root = e.object.activity.render();
+    [80, 250, 600, 1200].forEach(function(ms){
+      setTimeout(function(){ applyAgeOnceIn(root); }, ms);
+    });
+  }
+});
+
+  
   function wireFullCardEnhancers(){
     Lampa.Listener.follow('full', function (e) {
       if (e.type !== 'complite') return;

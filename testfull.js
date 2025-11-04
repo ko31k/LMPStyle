@@ -246,138 +246,6 @@
     document.head.appendChild(st);
   })();
 
-(function injectPgCss(){
-  if (document.getElementById('interface_mod_pg')) return;
-var css = `
-  body.ifx-age-colored .full-start__pg.lmp-pg{
-    display:inline-flex; align-items:center; justify-content:center;
-    padding:2px 6px; border-radius:6px; font-weight:600; line-height:1; font-size:0.95em;
-  }
-  body.ifx-age-colored .full-start__pg.lmp-pg.age-kids{background:#22c55e!important;color:#fff!important;}
-  body.ifx-age-colored .full-start__pg.lmp-pg.age-teens{background:#60a5fa!important;color:#fff!important;}
-  body.ifx-age-colored .full-start__pg.lmp-pg.age-17{background:#f59e0b!important;color:#111!important;}
-  body.ifx-age-colored .full-start__pg.lmp-pg.age-18{background:#ef4444!important;color:#fff!important;}
-  .full-start-new__rate-line.lmp-is-loading-ratings > .full-start__pg,
-  .full-start__rate-line.lmp-is-loading-ratings > .full-start__pg{opacity:1!important;}
-`;
-  var st = document.createElement('style');
-  st.id = 'interface_mod_pg';
-  st.textContent = css;
-  document.head.appendChild(st);
-})();
-
-(function initAgeBadge(){
-  if (window.__lmpPgInit) return;
-  window.__lmpPgInit = true;
-
-  // Канонічні мапінги MPAA/TV -> N+
-  var MAP = {
-    'G':'3+','PG':'6+','PG-13':'13+','R':'17+','NC-17':'18+',
-    'TV-Y':'0+','TV-Y7':'7+','TV-G':'3+','TV-PG':'6+','TV-14':'14+','TV-MA':'17+'
-  };
-
-  function normalize(raw){
-    if (!raw && raw !== 0) return null;
-    var s = String(raw).replace(/\u00A0/g,' ').trim();
-    s = s.replace(/^Rated:\s*/i,''); // "Rated: PG-13" -> "PG-13"
-
-    // N/A / Unrated
-    if (/^(n\/?a|unrated|not\s*rated)$/i.test(s)) return null;
-
-    // Прямий мапінг
-    if (MAP[s]) return MAP[s];
-
-    // Числові: "6+", "6 +", "6-", "6 −", "18 plus", "R17+"
-    var m = s.match(/(\d{1,2})\s*(\+|plus|−|-)?/i);
-    if (m){
-      var n = parseInt(m[1],10);
-      if (!isNaN(n)) {
-        if (n <= 0) n = 0;
-        if (n === 1 || n === 2) n = 3; // уніфікація дрібних значень
-        return n + '+';
-      }
-    }
-    return null;
-  }
-
-  function clsForAge(ageStr){
-    var n = parseInt(ageStr,10);
-    if (isNaN(n)) return null;
-    if (n >= 18) return 'age-18';
-    if (n === 17) return 'age-17';
-    if (n >= 10)  return 'age-teens'; // 10..16
-    return 'age-kids';                // 0..9
-  }
-
-  function paint(el, ageStr){
-    // текст
-    el.textContent = ageStr;
-    // базовий клас + кольоровий
-    el.classList.add('lmp-pg');
-    el.classList.remove('age-kids','age-teens','age-17','age-18');
-    var c = clsForAge(ageStr);
-    if (c) el.classList.add(c);
-
-    // зняти .hide, якщо хтось ховав
-    el.classList.remove('hide');
-
-    // позначити, що оброблено
-    el.setAttribute('data-lmp-pg-processed','1');
-  }
-
-  function processRoot(root){
-    root = root || document;
-    var nodes = root.querySelectorAll('.full-start__pg:not([data-lmp-pg-processed])');
-    nodes.forEach(function(node){
-      // пріоритет: data-* атрибути → текст
-      var raw =
-        node.getAttribute('data-rated') ||
-        (node.dataset ? (node.dataset.pg || node.dataset.rated) : '') ||
-        node.textContent || node.innerText || '';
-
-      var norm = normalize(raw);
-      if (norm) paint(node, norm);
-    });
-  }
-
-  // Перше застосування
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ processRoot(); });
-  } else {
-    processRoot();
-  }
-
-  // Слухач змін DOM — підхоплює підстановки іншими плагінами
-  var mo = new MutationObserver(function(muts){
-    for (var i=0;i<muts.length;i++){
-      var m = muts[i];
-
-      if (m.type === 'childList'){
-        (m.addedNodes || []).forEach(function(n){
-          if (!n || n.nodeType !== 1) return;
-          if (n.matches && n.matches('.full-start__pg')) processRoot(n.parentNode || n);
-          else if (n.querySelector && n.querySelector('.full-start__pg')) processRoot(n);
-        });
-      }
-
-      if (m.type === 'attributes' && m.target && m.target.matches('.full-start__pg')){
-        // якщо хтось міняє атрибути/клас — переробити
-        m.target.removeAttribute('data-lmp-pg-processed');
-        processRoot(m.target.parentNode || document);
-      }
-    }
-  });
-  mo.observe(document.body, {
-    subtree:true,
-    childList:true,
-    attributes:true,
-    attributeFilter:['data-rated','data-pg','class']
-  });
-
-  // Ручний перезапуск з консолі: LampaPgRefresh()
-  window.LampaPgRefresh = function(root){ processRoot(root || document); };
-})();
-  
   /* ============================================================
    * ТЕМИ
    * ============================================================ */
@@ -449,28 +317,6 @@ var css = `
   var STATUS_BASE_SEL = '.full-start__status, .full-start-new__status, .full-start__soon, .full-start-new__soon, .full-start [data-status], .full-start-new [data-status]';
   var AGE_BASE_SEL    = '.full-start__pg, .full-start-new__pg, .full-start [data-pg], .full-start-new [data-pg], .full-start [data-age], .full-start-new [data-age]';
 
-(function injectAgeHideCss(){
-  var id = 'ifx_age_hide_empty_css';
-  if (document.getElementById(id)) return;
-  var st = document.createElement('style');
-  st.id = id;
-  st.textContent = `
-    ${AGE_BASE_SEL}:empty,
-    ${AGE_BASE_SEL}.ifx-empty,
-    ${AGE_BASE_SEL}[data-age=""],
-    ${AGE_BASE_SEL}[data-pg=""]{
-      display:none !important;
-      padding:0 !important;
-      border:0 !important;
-      margin:0 !important;
-      background:transparent !important;
-      color:inherit !important;
-    }
-  `;
-  document.head.appendChild(st);
-})();
-
-  
   /* ============================================================
    * НАЛАШТУВАННЯ UI
    * ============================================================ */
@@ -1021,96 +867,23 @@ var css = `
     adult:{bg:'#e74c3c',text:'white'}
   };
 
-function normalizePg(raw){
-  return String(raw||'')
-    .replace(/[\u00A0\u202F]/g,' ')   // NBSP, thin space → звичайний пробіл
-    .replace(/[\uFF0B\u2795]/g,'+')   // повноширинний плюс, heavy plus → '+'
-    .replace(/\s*\+\s*/g,'+')         // прибрати пробіли навколо '+'
-    .replace(/\s+/g,' ')
-    .toUpperCase()
-    .trim();
-}
-
-function ageCategoryFor(textOrEl){
-  // з елемента беремо пріоритетно атрибути, потім текст
-  var t = '';
-  if (textOrEl && textOrEl.nodeType === 1){
-    t = normalizePg(
-      textOrEl.getAttribute('data-age') || textOrEl.getAttribute('data-pg') ||
-      (textOrEl.dataset ? (textOrEl.dataset.age || textOrEl.dataset.pg) : '') ||
-      textOrEl.textContent
-    );
-  } else {
-    t = normalizePg(textOrEl);
-  }
-  if (!t) return '';
-
-  if (/^(G|TV-Y|TV-G|0\+|3\+)$/.test(t)) return 'kids';
-  if (/^(PG|TV-PG|TV-Y7|6\+|7\+)$/.test(t)) return 'children';
-  if (/^(PG-13|TV-14|12\+|13\+|14\+)$/.test(t)) return 'teens';
-  if (/^(R|TV-MA|16\+|17\+)$/.test(t)) return 'almostAdult';
-  if (/^(NC-17|18\+|21\+|X)$/.test(t)) return 'adult';
-
-  // запасний варіант: просто число з опціональним '+'
-  var m = t.match(/(\d{1,2})\+?$/);
-  if (m){
-    var n = +m[1];
-    if (n <= 3)  return 'kids';
-    if (n <= 7)  return 'children';
-    if (n <= 14) return 'teens';
-    if (n <= 17) return 'almostAdult';
-    return 'adult';
-  }
-  return '';
-}
-
-
-function applyAgeOnceIn(elRoot){
-  if (!getBool('interface_mod_new_colored_age', false)) return;
-
-  var $root = $(elRoot || document);
-  $root.find(AGE_BASE_SEL).each(function(){
-    var el = this;
-
-    // беремо атрибути або текст
-    var tAttr = el.getAttribute('data-age') || el.getAttribute('data-pg') ||
-                (el.dataset ? (el.dataset.age || el.dataset.pg) : '') || '';
-    var tText = (el.textContent || '').replace(/[\u00A0\u202F]/g,' ').trim();
-    var t = tAttr || tText;
-
-    // порожнє — ховаємо повністю
-    if (!t){
-      el.classList.add('ifx-empty');
-      el.style.setProperty('display','none','important');
-      el.style.setProperty('border','0','important');
-      el.style.setProperty('background','transparent','important');
-      el.style.setProperty('color','inherit','important');
-      el.style.setProperty('padding','0','important');
-      el.style.setProperty('margin','0','important');
-      return;
-    } else {
-      el.classList.remove('ifx-empty');
-      el.style.removeProperty('display');
-      el.style.removeProperty('border');
-      el.style.removeProperty('background');
-      el.style.removeProperty('color');
-      el.style.removeProperty('padding');
-      el.style.removeProperty('margin');
+  function ageCategoryFor(text){
+    for (var k in __ageGroups){
+      if (__ageGroups[k].some(function(mark){ return text.indexOf(mark) !== -1; })) return k;
     }
-
-    // фарбуємо
-    var grp = ageCategoryFor(el);
-    if (grp){
-      var c = __ageColors[grp];
-      $(el).css({ 'background-color': c.bg, color: c.text, 'border-color':'transparent', 'display':'inline-block' });
-    } else {
-      // невідоме значення — простий текст, без рамки
-      $(el).css({ 'background-color':'transparent', color:'inherit', 'border-color':'transparent', 'display':'inline-block' });
+    var m = text.match(/(^|\D)(\d{1,2})\s*\+(?=\D|$)/);
+    if (m){
+      var n = parseInt(m[2],10);
+      if (n <= 3)  return 'kids';
+      if (n <= 7)  return 'children';
+      if (n <= 14) return 'teens';
+      if (n <= 17) return 'almostAdult';
+      return 'adult';
     }
-  });
-}
-  
-  /*function applyAgeOnceIn(elRoot){
+    return '';
+  }
+
+  function applyAgeOnceIn(elRoot){
     if (!getBool('interface_mod_new_colored_age', false)) return;
 
     var $root = $(elRoot || document);
@@ -1133,29 +906,9 @@ function applyAgeOnceIn(elRoot){
         el.style.setProperty('color','inherit','important');
       }
     });
-  }*/
+  }
 
-  
   function enableAgeColoring(){
-  document.body.classList.add('ifx-age-colored');    // ← додано
-  applyAgeOnceIn(document);
-  // ... далі як у вас
-}
-
-function disableAgeColoring(clearInline){
-  document.body.classList.remove('ifx-age-colored'); // ← додано
-  if (__ageObserver) { __ageObserver.disconnect(); __ageObserver = null; }
-  if (clearInline) $(AGE_BASE_SEL).each(function(){
-    this.classList.remove('ifx-age-fallback');
-    this.style.removeProperty('border-width');
-    this.style.removeProperty('border-style');
-    this.style.removeProperty('border-color');
-    this.style.removeProperty('background-color');
-    this.style.removeProperty('color');
-  }).css({ 'background-color':'', color:'', border:'1px solid #fff', 'display':'inline-block' });
-}
-  
-  /*function enableAgeColoring(){
     applyAgeOnceIn(document);
 
     if (__ageObserver) __ageObserver.disconnect();
@@ -1204,7 +957,7 @@ function disableAgeColoring(clearInline){
         }
       });
     }
-  }*/
+  }
 
   function disableAgeColoring(clearInline){
     if (__ageObserver) { __ageObserver.disconnect(); __ageObserver = null; }

@@ -80,7 +80,7 @@
 
         // ⚡⚡⚡ ТВОЙ GITHUB URL ДЛЯ SVG ⚡⚡⚡
         //var svgUrl = "https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/logo.svg";
-        var svgUrl = "https://ko3ik.github.io/LMP/wwwroot/logo.svg";
+        var svgUrl = "https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/logo.gif";
         
         
         // Создаем новый стиль
@@ -943,6 +943,7 @@ border: 0.2em solid #f6a5b0;
     // Экспортируем объект плагина для внешнего доступа
     window.maxsm_themes = maxsm_themes;
 })();
+
 
 
 

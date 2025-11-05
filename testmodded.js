@@ -189,7 +189,7 @@
     },
     interface_mod_new_all_buttons_desc: {
       en: 'Show all buttons in the card. Order: Online → Torrents → Trailers',
-      uk: 'Показує всі кнопки у картці (Потрібне перезавантаження).'
+      uk: 'Показує всі кнопки у картці (Потрібне перезавантаження)'
     },
 
     interface_mod_new_icon_only: {
@@ -198,7 +198,7 @@
     },
     interface_mod_new_icon_only_desc: {
       en: 'Hide button labels, keep only icons',
-      uk: 'Ховає підписи на кнопках, лишає тільки іконки'
+      uk: 'Ховає підписи на кнопках, лишає тільки іконки \n(Потрібне перезавантаження)'
     },
 
     interface_mod_new_colored_buttons: {
@@ -207,7 +207,7 @@
     },
     interface_mod_new_colored_buttons_desc: {
       en: 'Colorize card buttons and update icons',
-      uk: 'Розфарбовує кнопки в картці та оновлює іконки'
+      uk: 'Розфарбовує кнопки в картці та оновлює іконки \n(Потрібне перезавантаження)'
     },
 
     // ТОРЕНТИ (з torrents+mod)
@@ -232,7 +232,7 @@
       en: 'Seeder count coloring'
     },
     torr_mod_seeds_desc: {
-      uk: 'Підсвічувати кількість сідерів на роздачі: \n"0–4" — червоний, "5–14" — жовтий, "15 і більше" — зелений',
+      uk: 'Підсвічувати кількість сідерів на роздачі: \n"0–4" — червоний, "5–14" — жовтий, "15 і вище" — зелений',
       en: 'Seeders: 0–4 red, 5–14 yellow, 15+ green'
     },
   });

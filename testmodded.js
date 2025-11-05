@@ -1329,7 +1329,35 @@
   /**
    * Визначає вікову категорію за текстом
    */
-  function ageCategoryFor(text) {
+  
+    function ageCategoryFor(text) {
+    var t = (text || '').trim();
+
+    // 1) Спочатку числовий формат N+
+    var mm = t.match(/(^|\D)(\d{1,2})\s*\+(?=\D|$)/);
+    if (mm) {
+      var n = parseInt(mm[2], 10);
+      if (n >= 18) return 'adult';
+      if (n >= 17) return 'almostAdult';
+      if (n >= 13) return 'teens';      // ← тут 14+ автоматично піде в teens (жовтий)
+      if (n >= 6)  return 'children';
+      return 'kids';
+    }
+
+    // 2) Маркери (дорослі → дитячі) з точними межами
+    var ORDER = ['adult', 'almostAdult', 'teens', 'children', 'kids'];
+    for (var oi = 0; oi < ORDER.length; oi++) {
+      var k = ORDER[oi];
+      if (__ageGroups[k] && __ageGroups[k].some(function (mark) {
+        var mEsc = (mark || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\+/g, '\\+');
+        var re = new RegExp('(^|\\D)' + mEsc + '(?=\\D|$)', 'i');
+        return re.test(t);
+      })) return k;
+    }
+    return '';
+   }
+  
+  /*function ageCategoryFor(text) {
     for (var k in __ageGroups) {
       if (__ageGroups[k].some(function (mark) {
           return text.indexOf(mark) !== -1;
@@ -1345,7 +1373,7 @@
       return 'adult';
     }
     return '';
-  }
+  }*/
 
   /**
    * Застосовує кольори до вікових рейтингів (PG)

@@ -2368,20 +2368,20 @@
 
 /* ============================================================
  *  YEAR PILL + ALT EPISODE CARDS — FINAL (NO MENU REORDER)
+ *  + hide year in titles when "Year on cards" is ON
  * ============================================================ */
 (function(){
   // ---------- i18n ----------
   Lampa.Lang.add({
-    ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Year on cards' },
-    ifx_year_on_cards_desc:    { uk:'Рік відображається тільки на постері', en:'Bottom-right: rating above year; tiny gap' },
+    ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Show year on card' },
+    ifx_year_on_cards_desc:    { uk:'Рік відображається тільки на постері', en:'Year displayed on the poster only' },
 
-    ifx_episode_alt_cards:     { uk:'Альтернативні "Найближчі епізоди"', en:'Alternative episode cards' },
-    ifx_episode_alt_cards_desc:{ uk:'Компактний вигляд блоку "Найближчі епізоди"', en:'Same look as loader.js (full-episode), theme-independent' },
+    ifx_episode_alt_cards:     { uk:'Альтернативні "Найближчі епізоди"', en:'Alternative "Upcoming Episodes"' },
+    ifx_episode_alt_cards_desc:{ uk:'Компактний вигляд блоку "Найближчі епізоди"', en:'Compact view for the "Upcoming Episodes" block' },
 
     ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
-    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Hide big numeral, replace title with “Episode N”' }
+    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' }
   });
-
   // ---------- keys (усі дефолт: false) ----------
   var KEY_YEAR = 'interface_mod_new_year_on_cards';
   var KEY_ALT  = 'interface_mod_new_episode_alt_cards';
@@ -2424,7 +2424,7 @@
       .ifx-pill{
         background: rgba(0,0,0,.5);
         color:#fff; font-size:1.3em; font-weight:700;
-        padding:.2em .5em; border-radius:1em; line-height:1;
+        padding:.2em .5ем; border-radius:1ем; line-height:1;
         white-space:nowrap;
       }
       /* Стек у правому нижньому, мінімальна щілина */
@@ -2524,6 +2524,35 @@
     if (!$stack.length) $stack = $('<div class="ifx-corner-stack"></div>').appendTo($anchor);
     return $stack;
   }
+  // видалити рік у кінці назви (- 2021, · 2021, (2021), [2021], / 2021)
+  function stripYear(txt){
+    var s = String(txt||'');
+    s = s.replace(/\s*\((19|20)\d{2}\)\s*$/,'');
+    s = s.replace(/\s*\[(19|20)\d{2}\]\s*$/,'');
+    s = s.replace(/\s*[–—\-·]\s*(19|20)\d{2}\s*$/,'');
+    s = s.replace(/\s*\/\s*(19|20)\d{2}\s*$/,'');
+    return s;
+  }
+  // підмінити/повернути заголовки без року, коли S.year_on
+  function applyTitleYearHide($scope){
+    $scope = $scope || $(document.body);
+    var sel = '.card .card__title, .card-episode .full-episode .card__title';
+    $(sel).each(function(){
+      var $t = $(this);
+      // не чіпаємо повні картки/деталі
+      if ($t.closest('.full-start, .full-start-new, .full, .details').length) return;
+
+      var orig = $t.data('ifx-title-orig');
+      if (S.year_on){
+        if (!orig) $t.data('ifx-title-orig', $t.text());
+        var base = orig || $t.text();
+        var stripped = stripYear(base);
+        if (stripped !== $t.text()) $t.text(stripped);
+      } else {
+        if (typeof orig === 'string'){ $t.text(orig); $t.removeData('ifx-title-orig'); }
+      }
+    });
+  }
 
   // ---------- інʼєкції ----------
   function applyListCard($card){
@@ -2557,6 +2586,7 @@
       $scope.find('.card-episode').each(function(){ applyEpisodeCard($(this)); });
     }
     applyNumberOnly($scope);
+    applyTitleYearHide($scope); // <<< ХОВАЄМО РІК У НАЗВАХ, КОЛИ S.year_on
   }
 
   // ---------- логіка «лише номер серії» (та ALT) ----------
@@ -2610,8 +2640,11 @@
         if (k===KEY_YEAR){
           S.year_on = (v===true || v==='true' || Lampa.Storage.get(KEY_YEAR,'false')==='true');
           document.body.classList.toggle('ifx-year-on', S.year_on);
-          if (S.year_on){ ensureCss(); injectAll($(document.body)); enableObserver(); }
-          else { $('.ifx-corner-stack').remove(); disableObserver(); }
+          ensureCss();
+          injectAll($(document.body));
+          if (S.year_on) enableObserver(); else disableObserver();
+          // окремо — щоб відразу повернути/прибрати рік у назвах
+          applyTitleYearHide($(document.body));
         }
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
@@ -2637,6 +2670,7 @@
     document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
     if (S.year_on) enableObserver(); else disableObserver();
     injectAll($(document.body));
+    applyTitleYearHide($(document.body)); // <<< одразу почистимо назви від року
   }
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });

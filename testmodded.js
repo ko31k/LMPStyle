@@ -2366,4 +2366,276 @@
     setTimeout(apply, 0); // Перший запуск
   })();
 
+/* ============================================================
+ *  YEAR PILL + ALT EPISODE CARDS (drop-in block for testmodded.js)
+ * ============================================================ */
+(function(){
+  // ---- i18n ----
+  Lampa.Lang.add({
+    ifx_year_on_cards:         { uk:'Рік на картках (списки + епізоди)', en:'Year on cards (lists + episodes)' },
+    ifx_year_on_cards_desc:    { uk:'Правий низ: рік у чорній капсулі; рейтинг піднімається над роком з мінімальним зазором', en:'Bottom-right pill; rating stacked above year' },
+
+    ifx_episode_alt_cards:     { uk:'Альтернативні картки епізодів', en:'Alternative episode cards' },
+    ifx_episode_alt_cards_desc:{ uk:'Вигляд як у loader.js (full-episode), незалежно від вибраної теми', en:'Same look as in loader.js (full-episode), independent of theme' },
+
+    ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
+    ifx_episode_num_only_desc: { uk:'Якщо в епізоду є назва — ховати її і показувати лише «Серія N»', en:'Hide title if present and show only "Episode N"' }
+  });
+
+  // ---- settings (default = false) ----
+  var KEY_YEAR   = 'interface_mod_new_year_on_cards';
+  var KEY_ALT    = 'interface_mod_new_episode_alt_cards';
+  var KEY_NUM    = 'interface_mod_new_episode_numbers_only';
+
+  var _settings_extra = {
+    year_on_cards:  Lampa.Storage.get(KEY_YEAR, false) === true || Lampa.Storage.get(KEY_YEAR, 'false') === 'true',
+    ep_alt_cards:   Lampa.Storage.get(KEY_ALT,  false) === true || Lampa.Storage.get(KEY_ALT,  'false') === 'true',
+    ep_num_only:    Lampa.Storage.get(KEY_NUM,  false) === true || Lampa.Storage.get(KEY_NUM,  'false') === 'true'
+  };
+
+  // ---- UI items (into existing "Interface +" group) ----
+  (function addSettings(){
+    var add = Lampa.SettingsApi.addParam;
+
+    add({
+      component:'interface_mod_new',
+      param:{ name: KEY_YEAR, type:'trigger', values:true, default: false },
+      field:{ name:Lampa.Lang.translate('ifx_year_on_cards'),
+              description:Lampa.Lang.translate('ifx_year_on_cards_desc') }
+    });
+
+    add({
+      component:'interface_mod_new',
+      param:{ name: KEY_ALT, type:'trigger', values:true, default: false },
+      field:{ name:Lampa.Lang.translate('ifx_episode_alt_cards'),
+              description:Lampa.Lang.translate('ifx_episode_alt_cards_desc') }
+    });
+
+    add({
+      component:'interface_mod_new',
+      param:{ name: KEY_NUM, type:'trigger', values:true, default: false },
+      field:{ name:Lampa.Lang.translate('ifx_episode_num_only'),
+              description:Lampa.Lang.translate('ifx_episode_num_only_desc') }
+    });
+  })();
+
+  // ---- CSS (rating pill style = як .card_vote/.card__vote) ----
+  function ensureYearCss(){
+    if (document.getElementById('ifx_year_vote_css')) return;
+    var st = document.createElement('style');
+    st.id = 'ifx_year_vote_css';
+    st.textContent = `
+      /* контейнер-мітка для режиму "рік на картках" */
+      body.ifx-year-on .ifx-year-pill,
+      body.ifx-year-on .ifx-vote-pill{
+        background: rgba(0,0,0,0.5);
+        color:#fff; font-size:1.3em; font-weight:700;
+        padding: .2em .5em; border-radius:1em; line-height:1;
+        z-index:1;
+      }
+      /* стек в правому нижньому куті з мінімальним зазором */
+      body.ifx-year-on .ifx-corner-stack{
+        position:absolute; right:.3em; bottom:.3em;
+        display:flex; flex-direction:column-reverse; gap:2px; align-items:flex-end;
+        pointer-events:none;
+      }
+      body.ifx-year-on .ifx-corner-stack > *{ pointer-events:auto; }
+
+      /* робимо місце кріплення */
+      body.ifx-year-on .card__view{ position:relative; }
+      body.ifx-year-on .card-episode .full-episode{ position:relative; }
+      
+      /* переносимо поточний .card__vote в низ, коли він НЕ в нашому стеку */
+      body.ifx-year-on .card__view > .card__vote{
+        top:auto !important; bottom: calc(0.3em + 1.9em + 2px) !important; right:.3em !important;
+        background: rgba(0,0,0,0.5); color:#fff; font-size:1.3em; font-weight:700;
+        padding:.2em .5em; border-radius:1em;
+      }
+
+      /* alt episode cards: показати/сховати назву/номер за тумблером */
+      body.ifx-ep-num-only .card-episode .full-episode__name{ display:none !important; }
+      body.ifx-ep-num-only .card-episode .full-episode__num{ display:block !important; }
+      /* якщо alt не ввімкнено, але хочемо рік на епізодах — додаємо капсулу на превʼю у футері */
+      body.ifx-year-on .card-episode__footer .card__view{ position:relative; }
+    `;
+    document.head.appendChild(st);
+  }
+
+  // ---- шаблони (беремо з loader.js) ----
+  var __ifx_tpl_card_episode_orig = null;
+  var __ifx_tpl_card_episode_alt =
+    "<div class=\"card-episode selector layer--visible layer--render\">\
+      <div class=\"card-episode__body\">\
+        <div class=\"full-episode\">\
+          <div class=\"full-episode__img\">\
+            <img />\
+          </div>\
+          <div class=\"full-episode__body\">\
+            <div class=\"card__title\">{title}</div>\
+            <div class=\"card__age\">{release_year}</div>\
+            <div class=\"full-episode__num hide\">{num}</div>\
+            <div class=\"full-episode__name\">{name}</div>\
+            <div class=\"full-episode__date\">{date}</div>\
+          </div>\
+        </div>\
+      </div>\
+      <div class=\"card-episode__footer hide\">\
+        <div class=\"card__imgbox\">\
+          <div class=\"card__view\">\
+            <img class=\"card__img\" />\
+          </div>\
+        </div>\
+        <div class=\"card__left\">\
+          <div class=\"card__title\">{title}</div>\
+          <div class=\"card__age\">{release_year}</div>\
+        </div>\
+      </div>\
+    </div>";
+
+  function setEpisodeAltCardsEnabled(on){
+    // запамʼятовуємо та підміняємо шаблон
+    if (__ifx_tpl_card_episode_orig === null){
+      try { __ifx_tpl_card_episode_orig = Lampa.Template.get('card_episode', {}, true); } catch(e){ __ifx_tpl_card_episode_orig = null; }
+    }
+    if (on){
+      Lampa.Template.add('card_episode', __ifx_tpl_card_episode_alt);
+      document.body.classList.toggle('ifx-ep-num-only', _settings_extra.ep_num_only);
+    } else if (__ifx_tpl_card_episode_orig){
+      Lampa.Template.add('card_episode', __ifx_tpl_card_episode_orig);
+      document.body.classList.remove('ifx-ep-num-only');
+    }
+    // перерендер — достатньо оновити Settings, далі нові списки вже підхоплять шаблон
+    try{ Lampa.Settings.update(); }catch(e){}
+  }
+
+  // ---- рік на картках: DOM-інʼєкція ----
+  function extractYear($card){
+    // 1) є готовий .card__age – беремо з нього цифри
+    var t = ($card.find('.card__age').first().text() || '').trim();
+    var y = (t.match(/\d{4}/) || [])[0];
+    if (y) return y;
+    // 2) data-атрибути
+    y = $card.data('release_year') || $card.data('year');
+    if (y && /^\d{4}$/.test(String(y))) return String(y);
+    return '';
+  }
+
+  function injectYearPill($scope){
+    $scope = $scope || $(document.body);
+
+    // звичайні картки у списках
+    $scope.find('.card').each(function(){
+      var $card = $(this);
+      if ($card.closest('.full-start, .full-start-new').length) return; // не у повній картці
+      var $view = $card.find('.card__view').first();
+      if (!$view.length) return;
+
+      // створюємо стек кутових капсул (рейтинг + рік)
+      var $stack = $view.children('.ifx-corner-stack');
+      if (!$stack.length) $stack = $('<div class="ifx-corner-stack"></div>').appendTo($view);
+
+      // рік
+      if (!$stack.children('.ifx-year-pill').length){
+        var y = extractYear($card);
+        if (y) $('<div class="ifx-year-pill"></div>').text(y).appendTo($stack);
+      }
+
+      // якщо існує .card__vote у цій картці і він НЕ в стеку — нічого не робимо (CSS сам піджене вниз)
+      // якщо хочеш прям фізично перенести в стек:
+      var $vote = $view.children('.card__vote');
+      if ($vote.length && !$vote.parent().is($stack)){
+        // залишаємо як є — CSS already moves it to bottom-right when .ifx-year-on is set
+      }
+    });
+
+    // «Найближчі епізоди» (коли alt вимкнено — капсула на превʼюшці у футері)
+    $scope.find('.card-episode').each(function(){
+      var $ep = $(this);
+      var $view = $ep.find('.card-episode__footer .card__view').first();
+      if (!$view.length) return;
+      var $stack = $view.children('.ifx-corner-stack');
+      if (!$stack.length) $stack = $('<div class="ifx-corner-stack"></div>').appendTo($view);
+      if (!$stack.children('.ifx-year-pill').length){
+        var y = extractYear($ep);
+        if (y) $('<div class="ifx-year-pill"></div>').text(y).appendTo($stack);
+      }
+    });
+  }
+
+  function removeAllYearPills(){
+    $('.ifx-corner-stack, .ifx-year-pill').remove();
+  }
+
+  function setYearOnCardsEnabled(on){
+    ensureYearCss();
+    document.body.classList.toggle('ifx-year-on', !!on);
+    if (on) injectYearPill($(document.body));
+    else removeAllYearPills();
+  }
+
+  // ---- «показувати лише номер серії» ----
+  function setEpisodeNumbersOnlyEnabled(on){
+    document.body.classList.toggle('ifx-ep-num-only', !!on);
+  }
+
+  // ---- live observers ----
+  var mo = null;
+  function enableObserver(){
+    if (mo) return;
+    mo = new MutationObserver(function(muts){
+      if (!_settings_extra.year_on_cards) return;
+      var need = false;
+      for (var i=0;i<muts.length;i++){
+        var m = muts[i];
+        if (m.addedNodes && m.addedNodes.length){
+          need = true; break;
+        }
+      }
+      if (need) setTimeout(function(){ injectYearPill($(document.body)); }, 50);
+    });
+    try { mo.observe(document.body, {subtree:true, childList:true}); } catch(e){}
+  }
+  function disableObserver(){
+    if (mo){ try{ mo.disconnect(); }catch(e){} mo = null; }
+  }
+
+  // ---- react on Settings changes (safe wrapper chained after existing one) ----
+  if (!window.__ifx_extra_storage_patch){
+    window.__ifx_extra_storage_patch = true;
+    var _set_prev = Lampa.Storage.set;
+    Lampa.Storage.set = function(k,v){
+      var r = _set_prev.apply(this, arguments);
+
+      if (typeof k === 'string' && k.indexOf('interface_mod_new_') === 0){
+        if (k === KEY_YEAR){
+          _settings_extra.year_on_cards = (v===true || v==='true' || Lampa.Storage.get(KEY_YEAR,'false')==='true');
+          setYearOnCardsEnabled(_settings_extra.year_on_cards);
+          if (_settings_extra.year_on_cards) enableObserver(); else disableObserver();
+        }
+        if (k === KEY_ALT){
+          _settings_extra.ep_alt_cards = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
+          setEpisodeAltCardsEnabled(_settings_extra.ep_alt_cards);
+        }
+        if (k === KEY_NUM){
+          _settings_extra.ep_num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
+          setEpisodeNumbersOnlyEnabled(_settings_extra.ep_num_only);
+        }
+      }
+      return r;
+    };
+  }
+
+  // ---- initial apply on plugin start ----
+  function bootExtras(){
+    ensureYearCss();
+    setYearOnCardsEnabled(_settings_extra.year_on_cards);
+    setEpisodeAltCardsEnabled(_settings_extra.ep_alt_cards);
+    setEpisodeNumbersOnlyEnabled(_settings_extra.ep_num_only);
+    if (_settings_extra.year_on_cards) enableObserver();
+  }
+
+  if (window.appready) bootExtras();
+  else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') bootExtras(); });
+})();
+
 })();

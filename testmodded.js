@@ -2367,7 +2367,7 @@
   })();
 
 /* ============================================================
- *  YEAR PILL + ALT EPISODE CARDS — FIXED STACK & TITLE LOGIC
+ *  YEAR PILL + ALT EPISODE CARDS — FINAL TUNING
  * ============================================================ */
 (function(){
   // ---------- i18n ----------
@@ -2379,10 +2379,10 @@
     ifx_episode_alt_cards_desc:{ uk:'Вигляд як у loader.js (full-episode), незалежно від теми', en:'Same look as loader.js (full-episode), theme-independent' },
 
     ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
-    ifx_episode_num_only_desc: { uk:'Якщо є назва — замінити її на «Серія N» / «Episode N»', en:'If title exists — replace with “Episode N”' }
+    ifx_episode_num_only_desc: { uk:'Велику цифру ховати, назву підмінити на «Серія N» / «Episode N»', en:'Hide big numeral, replace title with “Episode N”' }
   });
 
-  // ---------- keys & defaults (усі = false) ----------
+  // ---------- keys (усі дефолт: false) ----------
   var KEY_YEAR = 'interface_mod_new_year_on_cards';
   var KEY_ALT  = 'interface_mod_new_episode_alt_cards';
   var KEY_NUM  = 'interface_mod_new_episode_numbers_only';
@@ -2415,22 +2415,19 @@
 
   // ---------- CSS ----------
   function ensureCss(){
-    if (document.getElementById('ifx_fix_css')) return;
+    var id = 'ifx_css_final';
+    if (document.getElementById(id)) return;
     var st = document.createElement('style');
-    st.id = 'ifx_fix_css';
+    st.id = id;
     st.textContent = `
-      /* базові стилі капсул (як у .card_vote) */
+      /* Пігулка (як .card_vote) */
       .ifx-pill{
         background: rgba(0,0,0,.5);
-        color:#fff;
-        font-size:1.3em;
-        font-weight:700;
-        padding:.2em .5em;
-        border-radius:1em;
-        line-height:1;
+        color:#fff; font-size:1.3em; font-weight:700;
+        padding:.2em .5em; border-radius:1em; line-height:1;
         white-space:nowrap;
       }
-      /* стек у правому нижньому з мінімальною щілиною */
+      /* Стек у правому нижньому, мінімальна щілина */
       .ifx-corner-stack{
         position:absolute; right:.3em; bottom:.3em;
         display:flex; flex-direction:column; align-items:flex-end;
@@ -2438,28 +2435,33 @@
       }
       .ifx-corner-stack > *{ pointer-events:auto; }
 
-      /* коли переносимо існуючий рейтинг у стек — дістаємо його з absolute */
-      .ifx-corner-stack .card__vote,
-      .ifx-corner-stack .card_vote{
-        position: static !important;
-        right:auto !important; bottom:auto !important; left:auto !important; top:auto !important;
-      }
-      .ifx-corner-stack .card__vote,
-      .ifx-corner-stack .card_vote{ /* додамо йому вигляд пігулки, як у тебе */
+      /* Якщо переносимо рейтинґ у стек — робимо його «пігулкою» без absolute */
+      .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{
+        position:static !important; right:auto !important; bottom:auto !important; top:auto !important; left:auto !important;
         background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700;
         padding:.2em .5em; border-radius:1em; line-height:1;
       }
 
-      /* місця кріплення */
+      /* Точки кріплення */
       .card .card__view{ position:relative; }
-      .card-episode .full-episode{ position:relative; } /* і alt, і стандарт */
+      .card-episode .full-episode{ position:relative; }
 
-      /* alt шаблон — нічого не фіксуємо по темах, лише те, що потрібно */
+      /* ALT mode: ховаємо ВЕЛИКУ цифру та текстовий рік у тілі */
+      body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
+      body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
+
+      /* NUM-ONLY: завжди ховаємо ВЕЛИКУ цифру (і в alt, і в стандарті) */
+      body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
+
+      /* YEAR-ON: ховаємо текстовий рік під назвою у списках/епізодах (щоб не дублювався з бейджем) */
+      body.ifx-year-on .card .card__left .card__age,
+      body.ifx-year-on .card-episode__footer .card__left .card__age,
+      body.ifx-year-on .card .full-episode__body > .card__age{ display:none !important; }
     `;
     document.head.appendChild(st);
   }
 
-  // ---------- шаблон alt episode ----------
+  // ---------- ALT episode template ----------
   var tplEpisodeOriginal = null;
   var tplEpisodeAlt =
     '<div class="card-episode selector layer--visible layer--render">\
@@ -2491,22 +2493,22 @@
       try { tplEpisodeOriginal = Lampa.Template.get('card_episode', {}, true); } catch(e){ tplEpisodeOriginal = null; }
     }
     Lampa.Template.add('card_episode', on ? tplEpisodeAlt : (tplEpisodeOriginal || tplEpisodeAlt));
+    document.body.classList.toggle('ifx-ep-alt', !!on);
+    // alt завжди ховає велику цифру → вмикаємо системний клас
+    document.body.classList.toggle('ifx-num-only', !!on || S.num_only);
     try{ Lampa.Settings.update(); }catch(e){}
   }
 
   // ---------- helpers ----------
-  function langEpisodeWord(){
-    var cur = (Lampa.Lang && Lampa.Lang.code) || 'uk';
-    if (cur.indexOf('en')===0) return 'Episode';
-    return 'Серія';
+  function episodeWord(){
+    var code = (Lampa.Lang && Lampa.Lang.code) || 'uk';
+    return code.indexOf('en')===0 ? 'Episode' : 'Серія';
   }
 
-  function getYearFrom($root){
-    // 1) готовий .card__age
+  function getYear($root){
     var t = ($root.find('.card__age').first().text()||'').trim();
     var y = (t.match(/\d{4}/)||[])[0];
     if (y) return y;
-    // 2) data-атрибути jQuery
     var d = $root.data()||{};
     y = d.release_year || (d.release_date||'').slice(0,4) || (d.first_air_date||'').slice(0,4) || '';
     if (y && /^\d{4}$/.test(String(y))) return String(y);
@@ -2519,41 +2521,38 @@
     return $stack;
   }
 
-  // переносимо рейтинг + додаємо рік у СПИСКАХ
+  // ---------- інʼєкції ----------
   function applyListCard($card){
     var $view = $card.find('.card__view').first();
     if (!$view.length) return;
 
-    var $vote = $view.find('> .card__vote, > .card_vote').first(); // тільки верхній, «правильний»
+    var $vote = $view.find('> .card__vote, > .card_vote').first();
     var $stack = ensureStack($view);
 
-    // якщо рейтинг ще не в стеку — переносимо
     if ($vote.length && !$vote.parent().is($stack)){
       $stack.prepend($vote); // рейтинг зверху
     }
 
-    // рік
     if (!$stack.children('.ifx-year-pill').length){
-      var y = getYearFrom($card);
+      var y = getYear($card);
       if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
   }
 
-  // додаємо рік на ЕПІЗОДАХ — завжди у великій області full-episode (і для alt, і для стандарту)
   function applyEpisodeCard($ep){
     var $full = $ep.find('.full-episode').first();
     if (!$full.length) return;
-    var $stack = ensureStack($full);
 
-    // лише рік (на епізодах зазвичай немає рейтингу)
+    var $stack = ensureStack($full);
     if (!$stack.children('.ifx-year-pill').length){
-      var y = getYearFrom($ep);
+      var y = getYear($ep);
       if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
   }
 
   function injectAll($scope){
     $scope = $scope || $(document.body);
+
     if (S.year_on){
       // списки тайтлів (не повні картки)
       $scope.find('.card').each(function(){
@@ -2561,23 +2560,25 @@
         if ($c.closest('.full-start, .full-start-new').length) return;
         applyListCard($c);
       });
-      // епізоди
+      // епізоди (і alt, і стандарт)
       $scope.find('.card-episode').each(function(){ applyEpisodeCard($(this)); });
     }
-    // режим "лише номер" для епізодів
-    applyNumOnly($scope);
+
+    applyNumberOnly($scope); // підміна «назви» на «Серія N»
   }
 
-  // ---------- "лише номер серії": заміна назви, а не приховування ----------
-  function applyNumOnly($scope){
+  // ---------- логіка «лише номер серії» (підміна назви, а не приховування) ----------
+  function applyNumberOnly($scope){
     $scope = $scope || $(document.body);
+
+    var force = (S.alt_ep || S.num_only); // у ALT режимі завжди замінюємо
     $scope.find('.card-episode .full-episode').each(function(){
       var $root = $(this);
       var $name = $root.find('.full-episode__name').first();
       if (!$name.length) return;
 
-      // якщо вимкнено — повертаємо оригінальну назву, якщо зберігали
-      if (!S.num_only){
+      if (!force){
+        // повертаємо оригінал, якщо збережений
         var orig = $name.data('ifx-orig');
         if (typeof orig === 'string'){
           $name.text(orig);
@@ -2586,18 +2587,18 @@
         return;
       }
 
-      // УВІМКНЕНО: беремо номер
+      // дістати номер
       var $num = $root.find('.full-episode__num').first();
       var n = ($num.text()||'').trim();
-      if (!n){ // спробуємо дістати цифри з поточної назви (може там вже "Серія 7")
+      if (!n){
         var m = ($name.text()||'').match(/\d+/);
         if (m) n = m[0];
       }
-      if (!n) return; // немає номера — не чіпаємо
+      if (!n) return;
 
-      // зберегти оригінал і підмінити
+      // зберегти оригінал і підмінити текст
       if (!$name.data('ifx-orig')) $name.data('ifx-orig', $name.text());
-      $name.text(langEpisodeWord() + ' ' + String(parseInt(n,10)));
+      $name.text(episodeWord() + ' ' + String(parseInt(n,10)));
     });
   }
 
@@ -2606,23 +2607,24 @@
   function enableObserver(){
     if (mo) return;
     mo = new MutationObserver(function(muts){
-      var need = false;
       for (var i=0;i<muts.length;i++){
-        if (muts[i].addedNodes && muts[i].addedNodes.length){ need = true; break; }
+        if (muts[i].addedNodes && muts[i].addedNodes.length){
+          setTimeout(function(){ injectAll($(document.body)); }, 30);
+          break;
+        }
       }
-      if (need) setTimeout(function(){ injectAll($(document.body)); }, 30);
     });
     try { mo.observe(document.body, {subtree:true, childList:true}); } catch(e){}
   }
   function disableObserver(){ if (mo){ try{ mo.disconnect(); }catch(e){} mo=null; } }
 
   // ---------- react to settings ----------
-  if (!window.__ifx_storage_fix2){
-    window.__ifx_storage_fix2 = true;
+  if (!window.__ifx_storage_final){
+    window.__ifx_storage_final = true;
     var _prev = Lampa.Storage.set;
     Lampa.Storage.set = function(k,v){
       var r = _prev.apply(this, arguments);
-      if (typeof k === 'string' && k.indexOf('interface_mod_new_')===0){
+      if (typeof k==='string' && k.indexOf('interface_mod_new_')===0){
         if (k===KEY_YEAR){
           S.year_on = (v===true || v==='true' || Lampa.Storage.get(KEY_YEAR,'false')==='true');
           document.body.classList.toggle('ifx-year-on', S.year_on);
@@ -2632,12 +2634,14 @@
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
           setEpisodeAlt(S.alt_ep);
-          // після зміни шаблону — перезапустимо інʼєкцію року/текста для нових карток
+          // alt → теж сховати велику цифру
+          document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
           setTimeout(function(){ injectAll($(document.body)); }, 50);
         }
         if (k===KEY_NUM){
           S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
-          applyNumOnly($(document.body));
+          document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+          applyNumberOnly($(document.body));
         }
       }
       return r;
@@ -2649,6 +2653,7 @@
     ensureCss();
     document.body.classList.toggle('ifx-year-on', S.year_on);
     setEpisodeAlt(S.alt_ep);
+    document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
     if (S.year_on) enableObserver(); else disableObserver();
     injectAll($(document.body));
   }

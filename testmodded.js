@@ -2373,13 +2373,13 @@
   // ---------- i18n ----------
   Lampa.Lang.add({
     ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Year on cards' },
-    ifx_year_on_cards_desc:    { uk:' рік відображається тільки на постері', en:'Bottom-right: rating above year; tiny gap' },
+    ifx_year_on_cards_desc:    { uk:'Рік відображається тільки на постері', en:'Bottom-right: rating above year; tiny gap' },
 
     ifx_episode_alt_cards:     { uk:'Альтернативні "Найближчі епізоди"', en:'Alternative episode cards' },
-    ifx_episode_alt_cards_desc:{ uk:'компактний вигляд блоку "Найближчі епізоди"', en:'Same look as loader.js (full-episode), theme-independent' },
+    ifx_episode_alt_cards_desc:{ uk:'Компактний вигляд блоку "Найближчі епізоди"', en:'Same look as loader.js (full-episode), theme-independent' },
 
     ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
-    ifx_episode_num_only_desc: { uk:'номер серії у вигляді "Серія N" замість назви', en:'Hide big numeral, replace title with “Episode N”' }
+    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Hide big numeral, replace title with “Episode N”' }
   });
 
   // ---------- keys (усі дефолт: false) ----------

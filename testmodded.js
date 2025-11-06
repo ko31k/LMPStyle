@@ -2367,7 +2367,7 @@
   })();
 
 /* ============================================================
- *  YEAR PILL + ALT EPISODE CARDS — FINAL TUNING
+ *  YEAR PILL + ALT EPISODE CARDS — TITLE TOP-LEFT & MENU ORDER
  * ============================================================ */
 (function(){
   // ---------- i18n ----------
@@ -2411,11 +2411,48 @@
       field:{ name:Lampa.Lang.translate('ifx_episode_num_only'),
               description:Lampa.Lang.translate('ifx_episode_num_only_desc') }
     });
+
+    // Переставляємо наші пункти одразу після «Нова інфо-панель»
+    function moveAfterInfoPanel(){
+      var $dlg = $('.settings'); if (!$dlg.length) return;
+      var names = {
+        anchor: ['Нова інфо-панель','Нова інфо панель','New info panel'],
+        year:   Lampa.Lang.translate('ifx_year_on_cards'),
+        alt:    Lampa.Lang.translate('ifx_episode_alt_cards'),
+        num:    Lampa.Lang.translate('ifx_episode_num_only')
+      };
+      // шукаємо контейнер пункту за текстом назви
+      function findItemByName(txt){
+        var $it = $dlg.find('.settings-param').filter(function(){
+          return ($(this).text()||'').trim().indexOf(txt) !== -1;
+        }).first();
+        return $it;
+      }
+      var $anchor = null;
+      for (var i=0;i<names.anchor.length;i++){
+        $anchor = findItemByName(names.anchor[i]);
+        if ($anchor && $anchor.length) break;
+      }
+      if (!$anchor || !$anchor.length) return;
+      var $year = findItemByName(names.year);
+      var $alt  = findItemByName(names.alt);
+      var $num  = findItemByName(names.num);
+      // порядок: YEAR → ALT → NUM одразу за anchor
+      if ($num && $num.length)  $anchor.after($num);
+      if ($alt && $alt.length)  $anchor.after($alt);
+      if ($year && $year.length)$anchor.after($year);
+    }
+
+    // коли відкривають налаштування — робимо перестановку
+    var moMenu = new MutationObserver(function(m){
+      if ($('.settings').length) setTimeout(moveAfterInfoPanel, 50);
+    });
+    moMenu.observe(document.body, {subtree:true, childList:true});
   })();
 
   // ---------- CSS ----------
   function ensureCss(){
-    var id = 'ifx_css_final';
+    var id = 'ifx_css_final2';
     if (document.getElementById(id)) return;
     var st = document.createElement('style');
     st.id = id;
@@ -2446,14 +2483,20 @@
       .card .card__view{ position:relative; }
       .card-episode .full-episode{ position:relative; }
 
-      /* ALT mode: ховаємо ВЕЛИКУ цифру та текстовий рік у тілі */
+      /* ALT mode: заголовок у ВЕРХНЬОМУ ЛІВОМУ куті */
+      body.ifx-ep-alt .card-episode .full-episode .card__title{
+        position:absolute; left:.7em; top:.7em; right:.7em; margin:0;
+        z-index:2; text-shadow:0 1px 2px rgba(0,0,0,.35);
+      }
+
+      /* ALT mode: ховаємо велику цифру та текстовий рік у тілі */
       body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
       body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
 
-      /* NUM-ONLY: завжди ховаємо ВЕЛИКУ цифру (і в alt, і в стандарті) */
+      /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
       body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
 
-      /* YEAR-ON: ховаємо текстовий рік під назвою у списках/епізодах (щоб не дублювався з бейджем) */
+      /* YEAR-ON: ховаємо текстовий рік під назвою (щоб не дублювався з бейджем) */
       body.ifx-year-on .card .card__left .card__age,
       body.ifx-year-on .card-episode__footer .card__left .card__age,
       body.ifx-year-on .card .full-episode__body > .card__age{ display:none !important; }
@@ -2494,7 +2537,7 @@
     }
     Lampa.Template.add('card_episode', on ? tplEpisodeAlt : (tplEpisodeOriginal || tplEpisodeAlt));
     document.body.classList.toggle('ifx-ep-alt', !!on);
-    // alt завжди ховає велику цифру → вмикаємо системний клас
+    // ALT також вимагає "без великої цифри" і підміни назви на «Серія N»
     document.body.classList.toggle('ifx-num-only', !!on || S.num_only);
     try{ Lampa.Settings.update(); }catch(e){}
   }
@@ -2504,7 +2547,6 @@
     var code = (Lampa.Lang && Lampa.Lang.code) || 'uk';
     return code.indexOf('en')===0 ? 'Episode' : 'Серія';
   }
-
   function getYear($root){
     var t = ($root.find('.card__age').first().text()||'').trim();
     var y = (t.match(/\d{4}/)||[])[0];
@@ -2514,7 +2556,6 @@
     if (y && /^\d{4}$/.test(String(y))) return String(y);
     return '';
   }
-
   function ensureStack($anchor){
     var $stack = $anchor.children('.ifx-corner-stack');
     if (!$stack.length) $stack = $('<div class="ifx-corner-stack"></div>').appendTo($anchor);
@@ -2525,69 +2566,49 @@
   function applyListCard($card){
     var $view = $card.find('.card__view').first();
     if (!$view.length) return;
-
     var $vote = $view.find('> .card__vote, > .card_vote').first();
     var $stack = ensureStack($view);
-
-    if ($vote.length && !$vote.parent().is($stack)){
-      $stack.prepend($vote); // рейтинг зверху
-    }
-
+    if ($vote.length && !$vote.parent().is($stack)) $stack.prepend($vote); // рейтинг зверху
     if (!$stack.children('.ifx-year-pill').length){
       var y = getYear($card);
       if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
   }
-
   function applyEpisodeCard($ep){
     var $full = $ep.find('.full-episode').first();
     if (!$full.length) return;
-
     var $stack = ensureStack($full);
     if (!$stack.children('.ifx-year-pill').length){
       var y = getYear($ep);
       if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
   }
-
   function injectAll($scope){
     $scope = $scope || $(document.body);
-
     if (S.year_on){
-      // списки тайтлів (не повні картки)
       $scope.find('.card').each(function(){
         var $c = $(this);
-        if ($c.closest('.full-start, .full-start-new').length) return;
+        if ($c.closest('.full-start, .full-start-new').length) return; // не в повній картці
         applyListCard($c);
       });
-      // епізоди (і alt, і стандарт)
       $scope.find('.card-episode').each(function(){ applyEpisodeCard($(this)); });
     }
-
-    applyNumberOnly($scope); // підміна «назви» на «Серія N»
+    applyNumberOnly($scope);
   }
 
-  // ---------- логіка «лише номер серії» (підміна назви, а не приховування) ----------
+  // ---------- логіка «лише номер серії» (та ALT) ----------
   function applyNumberOnly($scope){
     $scope = $scope || $(document.body);
-
-    var force = (S.alt_ep || S.num_only); // у ALT режимі завжди замінюємо
+    var force = (S.alt_ep || S.num_only); // у ALT завжди
     $scope.find('.card-episode .full-episode').each(function(){
       var $root = $(this);
       var $name = $root.find('.full-episode__name').first();
       if (!$name.length) return;
-
       if (!force){
-        // повертаємо оригінал, якщо збережений
         var orig = $name.data('ifx-orig');
-        if (typeof orig === 'string'){
-          $name.text(orig);
-          $name.removeData('ifx-orig');
-        }
+        if (typeof orig === 'string'){ $name.text(orig); $name.removeData('ifx-orig'); }
         return;
       }
-
-      // дістати номер
       var $num = $root.find('.full-episode__num').first();
       var n = ($num.text()||'').trim();
       if (!n){
@@ -2595,14 +2616,12 @@
         if (m) n = m[0];
       }
       if (!n) return;
-
-      // зберегти оригінал і підмінити текст
       if (!$name.data('ifx-orig')) $name.data('ifx-orig', $name.text());
       $name.text(episodeWord() + ' ' + String(parseInt(n,10)));
     });
   }
 
-  // ---------- MutationObserver ----------
+  // ---------- observers ----------
   var mo = null;
   function enableObserver(){
     if (mo) return;
@@ -2619,8 +2638,8 @@
   function disableObserver(){ if (mo){ try{ mo.disconnect(); }catch(e){} mo=null; } }
 
   // ---------- react to settings ----------
-  if (!window.__ifx_storage_final){
-    window.__ifx_storage_final = true;
+  if (!window.__ifx_storage_final2){
+    window.__ifx_storage_final2 = true;
     var _prev = Lampa.Storage.set;
     Lampa.Storage.set = function(k,v){
       var r = _prev.apply(this, arguments);
@@ -2634,7 +2653,6 @@
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
           setEpisodeAlt(S.alt_ep);
-          // alt → теж сховати велику цифру
           document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
           setTimeout(function(){ injectAll($(document.body)); }, 50);
         }

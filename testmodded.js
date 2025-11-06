@@ -2367,19 +2367,19 @@
   })();
 
 /* ============================================================
- *  YEAR PILL + ALT EPISODE CARDS — TITLE TOP-LEFT & MENU ORDER
+ *  YEAR PILL + ALT EPISODE CARDS — FINAL (NO MENU REORDER)
  * ============================================================ */
 (function(){
   // ---------- i18n ----------
   Lampa.Lang.add({
-    ifx_year_on_cards:         { uk:'Рік на картках (списки + епізоди)', en:'Year on cards (lists + episodes)' },
-    ifx_year_on_cards_desc:    { uk:'Правий низ: рейтинг ↑, рік ↓; мінімальна щілина', en:'Bottom-right: rating above year; tiny gap' },
+    ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Year on cards' },
+    ifx_year_on_cards_desc:    { uk:' рік відображається тільки на постері', en:'Bottom-right: rating above year; tiny gap' },
 
-    ifx_episode_alt_cards:     { uk:'Альтернативні картки епізодів', en:'Alternative episode cards' },
-    ifx_episode_alt_cards_desc:{ uk:'Вигляд як у loader.js (full-episode), незалежно від теми', en:'Same look as loader.js (full-episode), theme-independent' },
+    ifx_episode_alt_cards:     { uk:'Альтернативні "Найближчі епізоди"', en:'Alternative episode cards' },
+    ifx_episode_alt_cards_desc:{ uk:'компактний вигляд блоку "Найближчі епізоди"', en:'Same look as loader.js (full-episode), theme-independent' },
 
     ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
-    ifx_episode_num_only_desc: { uk:'Велику цифру ховати, назву підмінити на «Серія N» / «Episode N»', en:'Hide big numeral, replace title with “Episode N”' }
+    ifx_episode_num_only_desc: { uk:'номер серії у вигляді "Серія N" замість назви', en:'Hide big numeral, replace title with “Episode N”' }
   });
 
   // ---------- keys (усі дефолт: false) ----------
@@ -2393,7 +2393,7 @@
     num_only: (Lampa.Storage.get(KEY_NUM,  false)===true || Lampa.Storage.get(KEY_NUM, 'false')==='true')
   };
 
-  // ---------- settings UI ----------
+  // ---------- settings UI (без перестановок) ----------
   (function addSettings(){
     var add = Lampa.SettingsApi.addParam;
     add({ component:'interface_mod_new',
@@ -2411,48 +2411,11 @@
       field:{ name:Lampa.Lang.translate('ifx_episode_num_only'),
               description:Lampa.Lang.translate('ifx_episode_num_only_desc') }
     });
-
-    // Переставляємо наші пункти одразу після «Нова інфо-панель»
-    function moveAfterInfoPanel(){
-      var $dlg = $('.settings'); if (!$dlg.length) return;
-      var names = {
-        anchor: ['Нова інфо-панель','Нова інфо панель','New info panel'],
-        year:   Lampa.Lang.translate('ifx_year_on_cards'),
-        alt:    Lampa.Lang.translate('ifx_episode_alt_cards'),
-        num:    Lampa.Lang.translate('ifx_episode_num_only')
-      };
-      // шукаємо контейнер пункту за текстом назви
-      function findItemByName(txt){
-        var $it = $dlg.find('.settings-param').filter(function(){
-          return ($(this).text()||'').trim().indexOf(txt) !== -1;
-        }).first();
-        return $it;
-      }
-      var $anchor = null;
-      for (var i=0;i<names.anchor.length;i++){
-        $anchor = findItemByName(names.anchor[i]);
-        if ($anchor && $anchor.length) break;
-      }
-      if (!$anchor || !$anchor.length) return;
-      var $year = findItemByName(names.year);
-      var $alt  = findItemByName(names.alt);
-      var $num  = findItemByName(names.num);
-      // порядок: YEAR → ALT → NUM одразу за anchor
-      if ($num && $num.length)  $anchor.after($num);
-      if ($alt && $alt.length)  $anchor.after($alt);
-      if ($year && $year.length)$anchor.after($year);
-    }
-
-    // коли відкривають налаштування — робимо перестановку
-    var moMenu = new MutationObserver(function(m){
-      if ($('.settings').length) setTimeout(moveAfterInfoPanel, 50);
-    });
-    moMenu.observe(document.body, {subtree:true, childList:true});
   })();
 
   // ---------- CSS ----------
   function ensureCss(){
-    var id = 'ifx_css_final2';
+    var id = 'ifx_css_final_nomove';
     if (document.getElementById(id)) return;
     var st = document.createElement('style');
     st.id = id;
@@ -2638,8 +2601,8 @@
   function disableObserver(){ if (mo){ try{ mo.disconnect(); }catch(e){} mo=null; } }
 
   // ---------- react to settings ----------
-  if (!window.__ifx_storage_final2){
-    window.__ifx_storage_final2 = true;
+  if (!window.__ifx_storage_final_nomove){
+    window.__ifx_storage_final_nomove = true;
     var _prev = Lampa.Storage.set;
     Lampa.Storage.set = function(k,v){
       var r = _prev.apply(this, arguments);
@@ -2678,5 +2641,5 @@
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });
 })();
-
+  
 })();

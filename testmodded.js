@@ -2367,8 +2367,9 @@
   })();
 
 /* ============================================================
- *  YEAR PILL + ALT EPISODE CARDS — FINAL (NO MENU REORDER)
- *  + hide year in titles when "Year on cards" is ON
+ *  YEAR PILL + ALT EPISODE CARDS — STABLE FINAL (NO MENU REORDER)
+ *  - keeps year pill styles intact
+ *  - hides year in titles only when "Year on card" is ON
  * ============================================================ */
 (function(){
   // ---------- i18n ----------
@@ -2382,6 +2383,7 @@
     ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
     ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' }
   });
+
   // ---------- keys (усі дефолт: false) ----------
   var KEY_YEAR = 'interface_mod_new_year_on_cards';
   var KEY_ALT  = 'interface_mod_new_episode_alt_cards';
@@ -2415,16 +2417,16 @@
 
   // ---------- CSS ----------
   function ensureCss(){
-    var id = 'ifx_css_final_nomove';
+    var id = 'ifx_css_stable_final';
     if (document.getElementById(id)) return;
     var st = document.createElement('style');
     st.id = id;
     st.textContent = `
-      /* Пігулка (як .card_vote) */
+      /* Пігулка (як .card_vote) — наш власний бейдж року */
       .ifx-pill{
         background: rgba(0,0,0,.5);
         color:#fff; font-size:1.3em; font-weight:700;
-        padding:.2em .5ем; border-radius:1ем; line-height:1;
+        padding:.2em .5em; border-radius:1em; line-height:1;
         white-space:nowrap;
       }
       /* Стек у правому нижньому, мінімальна щілина */
@@ -2435,14 +2437,14 @@
       }
       .ifx-corner-stack > *{ pointer-events:auto; }
 
-      /* Якщо переносимо рейтинґ у стек — робимо його «пігулкою» без absolute */
+      /* Коли переносимо рейтинґ у стек — робимо його пігулкою без absolute */
       .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{
         position:static !important; right:auto !important; bottom:auto !important; top:auto !important; left:auto !important;
         background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700;
         padding:.2em .5em; border-radius:1em; line-height:1;
       }
 
-      /* Точки кріплення */
+      /* Точки кріплення (для списків і епізодів) */
       .card .card__view{ position:relative; }
       .card-episode .full-episode{ position:relative; }
 
@@ -2452,17 +2454,21 @@
         z-index:2; text-shadow:0 1px 2px rgba(0,0,0,.35);
       }
 
-      /* ALT mode: ховаємо велику цифру та текстовий рік у тілі */
+      /* ALT mode: ховаємо ВЕЛИКУ цифру та текстовий рік у тілі */
       body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
       body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
 
       /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
       body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
 
-      /* YEAR-ON: ховаємо текстовий рік під назвою (щоб не дублювався з бейджем) */
-      body.ifx-year-on .card .card__left .card__age,
-      body.ifx-year-on .card-episode__footer .card__left .card__age,
-      body.ifx-year-on .card .full-episode__body > .card__age{ display:none !important; }
+      /* YEAR-ON: ховаємо ВСІ текстові роки у списках/епізодах, щоб не дублювати наш бейдж.
+         ВАЖЛИВО: .ifx-year-pill НЕ чіпаємо (інший клас). Повні картки (деталі) не ховаємо. */
+      body.ifx-year-on .items-cards .card .card__age,
+      body.ifx-year-on .items-line  .card .card__age,
+      body.ifx-year-on .card-episode .full-episode__body > .card__age,
+      body.ifx-year-on .card-episode__footer .card__left .card__age{
+        display:none !important;
+      }
     `;
     document.head.appendChild(st);
   }
@@ -2510,21 +2516,24 @@
     var code = (Lampa.Lang && Lampa.Lang.code) || 'uk';
     return code.indexOf('en')===0 ? 'Episode' : 'Серія';
   }
+
+  // ВАЖЛИВО: спершу пробуємо взяти рік із ДАНИХ, а не з DOM (щоб не залежати від прихованих .card__age)
   function getYear($root){
-    var t = ($root.find('.card__age').first().text()||'').trim();
-    var y = (t.match(/\d{4}/)||[])[0];
-    if (y) return y;
     var d = $root.data()||{};
-    y = d.release_year || (d.release_date||'').slice(0,4) || (d.first_air_date||'').slice(0,4) || '';
-    if (y && /^\d{4}$/.test(String(y))) return String(y);
-    return '';
+    var y = d.release_year || (d.release_date||'').slice(0,4) || (d.first_air_date||'').slice(0,4) || '';
+    if (/^(19|20)\d{2}$/.test(String(y))) return String(y);
+    var t = ($root.find('.card__age').first().text()||'').trim();
+    var m = t.match(/(19|20)\d{2}/);
+    return m ? m[0] : '';
   }
+
   function ensureStack($anchor){
     var $stack = $anchor.children('.ifx-corner-stack');
     if (!$stack.length) $stack = $('<div class="ifx-corner-stack"></div>').appendTo($anchor);
     return $stack;
   }
-  // видалити рік у кінці назви (- 2021, · 2021, (2021), [2021], / 2021)
+
+  // Акуратно прибираємо рік у кінці назви: (2021) [2021] – 2021 · 2021 / 2021
   function stripYear(txt){
     var s = String(txt||'');
     s = s.replace(/\s*\((19|20)\d{2}\)\s*$/,'');
@@ -2533,23 +2542,33 @@
     s = s.replace(/\s*\/\s*(19|20)\d{2}\s*$/,'');
     return s;
   }
-  // підмінити/повернути заголовки без року, коли S.year_on
+
+  // Підчищаємо/повертаємо рік у заголовках (лише коли не повна картка)
   function applyTitleYearHide($scope){
     $scope = $scope || $(document.body);
-    var sel = '.card .card__title, .card-episode .full-episode .card__title';
+    var sel = '.items-cards .card .card__title, .items-line .card .card__title, .card-episode .full-episode .card__title';
+
     $(sel).each(function(){
       var $t = $(this);
       // не чіпаємо повні картки/деталі
       if ($t.closest('.full-start, .full-start-new, .full, .details').length) return;
 
-      var orig = $t.data('ifx-title-orig');
+      // якщо всередині є дочірній вузол .card__age — його ховає CSS; текст не змінюємо
+      if ($t.find('.card__age').length){
+        var saved = $t.data('ifx-title-orig');
+        if (typeof saved === 'string'){ $t.text(saved); $t.removeData('ifx-title-orig'); }
+        return;
+      }
+
       if (S.year_on){
+        var orig = $t.data('ifx-title-orig');
         if (!orig) $t.data('ifx-title-orig', $t.text());
         var base = orig || $t.text();
         var stripped = stripYear(base);
-        if (stripped !== $t.text()) $t.text(stripped);
+        if (stripped !== $t.text()) $t.text(stripped.trim());
       } else {
-        if (typeof orig === 'string'){ $t.text(orig); $t.removeData('ifx-title-orig'); }
+        var sv = $t.data('ifx-title-orig');
+        if (typeof sv === 'string'){ $t.text(sv); $t.removeData('ifx-title-orig'); }
       }
     });
   }
@@ -2558,50 +2577,73 @@
   function applyListCard($card){
     var $view = $card.find('.card__view').first();
     if (!$view.length) return;
+
     var $vote = $view.find('> .card__vote, > .card_vote').first();
     var $stack = ensureStack($view);
-    if ($vote.length && !$vote.parent().is($stack)) $stack.prepend($vote); // рейтинг зверху
+
+    // Переносимо рейтинґ у стек (зверху), не змінюючи його стилі (їх задає CSS для стеку)
+    if ($vote.length && !$vote.parent().is($stack)){
+      $stack.prepend($vote);
+    }
+
+    // Додаємо наш бейдж року, якщо ще не додали
     if (!$stack.children('.ifx-year-pill').length){
       var y = getYear($card);
       if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
   }
+
   function applyEpisodeCard($ep){
     var $full = $ep.find('.full-episode').first();
     if (!$full.length) return;
+
     var $stack = ensureStack($full);
+
     if (!$stack.children('.ifx-year-pill').length){
       var y = getYear($ep);
       if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
   }
+
   function injectAll($scope){
     $scope = $scope || $(document.body);
+
     if (S.year_on){
+      // Списки тайтлів (не повні картки)
       $scope.find('.card').each(function(){
         var $c = $(this);
-        if ($c.closest('.full-start, .full-start-new').length) return; // не в повній картці
+        if ($c.closest('.full-start, .full-start-new').length) return;
         applyListCard($c);
       });
+      // Епізоди (alt і стандарт)
       $scope.find('.card-episode').each(function(){ applyEpisodeCard($(this)); });
     }
+
     applyNumberOnly($scope);
-    applyTitleYearHide($scope); // <<< ХОВАЄМО РІК У НАЗВАХ, КОЛИ S.year_on
+    applyTitleYearHide($scope);
   }
 
-  // ---------- логіка «лише номер серії» (та ALT) ----------
+  // ---------- «лише номер серії» (та ALT) ----------
+  function episodeWord(){
+    var code = (Lampa.Lang && Lampa.Lang.code) || 'uk';
+    return code.indexOf('en')===0 ? 'Episode' : 'Серія';
+  }
+
   function applyNumberOnly($scope){
     $scope = $scope || $(document.body);
     var force = (S.alt_ep || S.num_only); // у ALT завжди
+
     $scope.find('.card-episode .full-episode').each(function(){
       var $root = $(this);
       var $name = $root.find('.full-episode__name').first();
       if (!$name.length) return;
+
       if (!force){
         var orig = $name.data('ifx-orig');
         if (typeof orig === 'string'){ $name.text(orig); $name.removeData('ifx-orig'); }
         return;
       }
+
       var $num = $root.find('.full-episode__num').first();
       var n = ($num.text()||'').trim();
       if (!n){
@@ -2609,6 +2651,7 @@
         if (m) n = m[0];
       }
       if (!n) return;
+
       if (!$name.data('ifx-orig')) $name.data('ifx-orig', $name.text());
       $name.text(episodeWord() + ' ' + String(parseInt(n,10)));
     });
@@ -2631,8 +2674,8 @@
   function disableObserver(){ if (mo){ try{ mo.disconnect(); }catch(e){} mo=null; } }
 
   // ---------- react to settings ----------
-  if (!window.__ifx_storage_final_nomove){
-    window.__ifx_storage_final_nomove = true;
+  if (!window.__ifx_storage_stable_final){
+    window.__ifx_storage_stable_final = true;
     var _prev = Lampa.Storage.set;
     Lampa.Storage.set = function(k,v){
       var r = _prev.apply(this, arguments);
@@ -2643,8 +2686,7 @@
           ensureCss();
           injectAll($(document.body));
           if (S.year_on) enableObserver(); else disableObserver();
-          // окремо — щоб відразу повернути/прибрати рік у назвах
-          applyTitleYearHide($(document.body));
+          applyTitleYearHide($(document.body)); // одразу в назвах прибрати/повернути рік
         }
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
@@ -2670,7 +2712,7 @@
     document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
     if (S.year_on) enableObserver(); else disableObserver();
     injectAll($(document.body));
-    applyTitleYearHide($(document.body)); // <<< одразу почистимо назви від року
+    applyTitleYearHide($(document.body)); // одразу прибрати рік у назвах, якщо треба
   }
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });

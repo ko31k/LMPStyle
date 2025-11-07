@@ -2369,13 +2369,13 @@
 
 
 /* ============================================================
- *  CARDS LOOK — AGREED STYLE (REVERTED) + YEAR FIX
- *  - вигляд як домовлялись: рейтинг ↑, рік ↓, мін. щілина, правий низ
- *  - стандартні епізоди: лише бейдж року в куті (не текст), інше як було
- *  - ALT епізоди: заголовок зверху-ліворуч; велика цифра прихована
- *  - ховати рік у назві тільки на оброблених картках; повні картки не чіпаємо
- *  - фолбек року з .full-episode__date, якщо в data/DOM його нема
- *  - без перестановок меню; швидкий rAF-observer
+ *  CARDS LOOK — AGREED STYLE + ALT TEMPLATE SWITCH (FIXED)
+ *  - рейтинг ↑, рік ↓ у правому нижньому куті (мін. щілина)
+ *  - ALT епізоди: підміна шаблону (як у loader.js), заголовок зверху-ліворуч
+ *  - «Серія N» за тумблером або в ALT
+ *  - рік у назві ховаємо лише на спискових/епізодних картках
+ *  - фолбек року з .full-episode__date
+ *  - легкий rAF-обсервер
  * ============================================================ */
 (function(){
   // ---------- i18n ----------
@@ -2421,39 +2421,33 @@
     });
   })();
 
-  // ---------- CSS (вигляд як у твоєї .card_vote) ----------
+  // ---------- CSS (вигляд як домовлялись) ----------
   function ensureCss(){
-    var id = 'ifx_css_agreed_revert';
+    var id = 'ifx_css_alt_tpl_switch';
     if (document.getElementById(id)) return;
     var st = document.createElement('style');
     st.id = id;
     st.textContent = `
-      /* Пігулка (капсула) — стиль максимально сумісний із .card_vote */
+      /* Пігулка (капсула) */
       .ifx-pill{
         background: rgba(0,0,0,.5);
-        color:#fff;
-        font-size:1.3em;
-        font-weight:700;
-        padding:.2em .5em;
-        border-radius:1em;
-        line-height:1;
+        color:#fff; font-size:1.3em; font-weight:700;
+        padding:.2em .5em; border-radius:1em; line-height:1;
         white-space:nowrap;
       }
-      /* Стек у правому нижньому куті з мінімальною «щілиною» */
+      /* Стек у правому нижньому (мін. щілина) */
       .ifx-corner-stack{
-        position:absolute;
-        right:.3em; bottom:.3em;
+        position:absolute; right:.3em; bottom:.3ем;
         display:flex; flex-direction:column; align-items:flex-end;
         gap:2px; z-index:10; pointer-events:none;
       }
       .ifx-corner-stack > *{ pointer-events:auto; }
 
-      /* Рейтинг у стеку — без absolute, вигляд як у .card_vote */
+      /* Рейтинг у стеку — як .card_vote, без absolute */
       .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{
         position:static !important;
         right:auto !important; bottom:auto !important; top:auto !important; left:auto !important;
-        background: rgba(0,0,0,.5);
-        color:#fff; font-size:1.3em; font-weight:700;
+        background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700;
         padding:.2em .5em; border-radius:1em; line-height:1;
       }
 
@@ -2461,23 +2455,50 @@
       .card .card__view{ position:relative; }
       .card-episode .full-episode{ position:relative; }
 
-      /* ALT епізоди: заголовок зверху-ліворуч */
+      /* ALT: заголовок зверху-ліворуч (вид як у loader.js) */
       body.ifx-ep-alt .card-episode .full-episode .card__title{
         position:absolute; left:.7em; top:.7em; right:.7em; margin:0;
         z-index:2; text-shadow:0 1px 2px rgba(0,0,0,.35);
       }
 
-      /* ALT: ховаємо велику цифру та текстовий рік у тілі */
+      /* ALT: сховати велику цифру та текстовий рік у тілі */
       body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
       body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
 
-      /* NUM-ONLY: ховаємо «велику цифру» завжди */
+      /* NUM-ONLY: ховаємо велику цифру завжди */
       body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
 
-      /* ЛОКАЛЬНО ховаємо текстові роки лише там, де ми це ввімкнули (щоб не чіпати повні картки) */
+      /* ЛОКАЛЬНЕ ховання текстових років тільки на наших картках */
       .ifx-hide-age .card__age{ display:none !important; }
     `;
     document.head.appendChild(st);
+  }
+
+  // ---------- episode templates (оригінал + ALT) ----------
+  var tplEpisodeOriginal = null;
+  var tplEpisodeAlt =
+    '<div class="card-episode selector layer--visible layer--render">\
+      <div class="card-episode__body">\
+        <div class="full-episode">\
+          <div class="full-episode__img"><img/></div>\
+          <div class="ifx-corner-stack"></div>\
+          <div class="full-episode__body">\
+            <div class="card__title">{title}</div>\
+            <div class="full-episode__num">{num}</div>\
+            <div class="full-episode__name">{name}</div>\
+            <div class="full-episode__date">{date}</div>\
+          </div>\
+        </div>\
+      </div>\
+    </div>';
+
+  function setEpisodeAlt(on){
+    if (tplEpisodeOriginal === null){
+      try { tplEpisodeOriginal = Lampa.Template.get('card_episode', {}, true); } catch(e){ tplEpisodeOriginal = null; }
+    }
+    Lampa.Template.add('card_episode', on ? tplEpisodeAlt : (tplEpisodeOriginal || tplEpisodeAlt));
+    document.body.classList.toggle('ifx-ep-alt', !!on);
+    try{ Lampa.Settings.update(); }catch(e){}
   }
 
   // ---------- helpers ----------
@@ -2485,17 +2506,13 @@
     var code = (Lampa.Lang && Lampa.Lang.code) || 'uk';
     return code.indexOf('en')===0 ? 'Episode' : 'Серія';
   }
-
-  // Рік: спершу з даних, потім із .card__age, потім з .full-episode__date, інакше — з будь-якого тексту
   function getYear($root){
     var d = $root.data()||{};
-    var y = d.release_year
-         || d.year
+    var y = d.release_year || d.year
          || (d.release_date||'').slice(0,4)
          || (d.first_air_date||'').slice(0,4)
          || (d.air_date||'').slice(0,4)
-         || (d.next_episode_date||'').slice(0,4)
-         || '';
+         || (d.next_episode_date||'').slice(0,4) || '';
     if (/^(19|20)\d{2}$/.test(String(y))) return String(y);
 
     var ageTxt = ($root.find('.card__age').first().text()||'').trim();
@@ -2508,29 +2525,23 @@
       var m2 = dateTxt.match(/(19|20)\d{2}/);
       if (m2) return m2[0];
     }
-
     var anyTxt = ($root.text()||'');
     var m3 = anyTxt.match(/(19|20)\d{2}/);
     return m3 ? m3[0] : '';
   }
-
   function ensureStack($anchor){
     var $stack = $anchor.children('.ifx-corner-stack');
     if (!$stack.length) $stack = $('<div class="ifx-corner-stack"></div>').appendTo($anchor);
     return $stack;
   }
-
-  // Прибрати рік у кінці назви: (2021) [2021] – 2021 · 2021 / 2021
   function stripYear(txt){
     var s = String(txt||'');
-    s = s.replace(/\s*\((19|20)\d{2}\)\s*$/,'');
-    s = s.replace(/\s*\[(19|20)\d{2}\]\s*$/,'');
-    s = s.replace(/\s*[–—\-·]\s*(19|20)\d{2}\s*$/,'');
-    s = s.replace(/\s*\/\s*(19|20)\d{2}\s*$/,'');
+    s = s.replace(/\s*\((19|20)\d{2}\)\s*$/,'')
+         .replace(/\s*\[(19|20)\d{2}\]\s*$/,'')
+         .replace(/\s*[–—\-·]\s*(19|20)\d{2}\s*$/,'')
+         .replace(/\s*\/\s*(19|20)\d{2}\s*$/,'');
     return s;
   }
-
-  // Підчищати рік у назві ТІЛЬКИ на наших картках (із класом .ifx-hide-age)
   function applyTitleYearForTitle($title){
     if (!S.year_on){
       var sv = $title.data('ifx-title-orig');
@@ -2549,7 +2560,7 @@
     if (stripped !== $title.text()) $title.text(stripped.trim());
   }
 
-  // ---------- обробка картки списку ----------
+  // ---------- процесинг карток ----------
   function processCard($card){
     if ($card.closest('.full-start, .full-start-new, .full, .details').length) return;
 
@@ -2560,32 +2571,28 @@
       $card.addClass('ifx-hide-age');
       var $stack = ensureStack($view);
 
-      // рейтинг у стек (зверху), вигляд як у .card_vote
       var $vote = $view.find('> .card__vote, > .card_vote').first();
       if ($vote.length && !$vote.parent().is($stack)) $stack.prepend($vote);
 
-      // рік пігулкою під рейтингом
       if (!$stack.children('.ifx-year-pill').length){
         var y = getYear($card);
         if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
       }
     } else {
-      // вимкнено — повернути все як було
       $card.removeClass('ifx-hide-age');
       var $stack2 = $view.children('.ifx-corner-stack');
       if ($stack2.length){
         var $vote2 = $stack2.children('.card__vote, .card_vote').first();
-        if ($vote2.length) $view.append($vote2); // назад у card__view
+        if ($vote2.length) $view.append($vote2);
         $stack2.find('.ifx-year-pill').remove();
         if ($stack2.children().length===0) $stack2.remove();
       }
     }
-
     applyTitleYearForTitle($card.find('> .card__title').first());
   }
 
-  // ---------- обробка картки епізоду ----------
   function processEpisode($ep){
+    // і для стандартного, і для ALT шаблону — шукаємо контейнер full-episode
     var $full = $ep.find('> .card-episode__body .full-episode, > .full-episode').first();
     if (!$full.length) return;
 
@@ -2594,16 +2601,22 @@
     var $stack = ensureStack($full);
 
     if (S.year_on){
+      // рейтинг у стек (зверху)
+      var $vote = $full.find('> .card__vote, > .card_vote').first();
+      if ($vote.length && !$vote.parent().is($stack)) $stack.prepend($vote);
+
       if (!$stack.children('.ifx-year-pill').length){
         var y = getYear($ep);
         if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
       }
     } else {
+      var $vote2 = $stack.children('.card__vote, .card_vote').first();
+      if ($vote2.length) $full.append($vote2);
       $stack.find('.ifx-year-pill').remove();
       if ($stack.children().length===0) $stack.remove();
     }
 
-    // Назва епізоду → «Серія N» у ALT або при "лише номер"
+    // «Серія N» у ALT або при "лише номер"
     var forceNum = (S.alt_ep || S.num_only);
     var $name = $full.find('.full-episode__name').first();
     if ($name.length){
@@ -2624,17 +2637,15 @@
       }
     }
 
-    // у ALT режимі — заголовок уже зверху-ліворуч через CSS
     applyTitleYearForTitle($full.find('.card__title').first());
   }
 
-  // ---------- пакетна обробка ----------
   function injectScope($scope){
     $scope.find('.card').each(function(){ processCard($(this)); });
     $scope.find('.card-episode').each(function(){ processEpisode($(this)); });
   }
 
-  // ---------- observer (легкий, rAF batched) ----------
+  // ---------- observer ----------
   var mo = null, scheduled = false, pending = [];
   function schedule(){
     if (scheduled) return;
@@ -2652,8 +2663,7 @@
     if (n.nodeType!==1) return;
     var el = n;
     if (el.matches?.('.card, .card-episode') || el.querySelector?.('.card, .card-episode')){
-      pending.push(el);
-      schedule();
+      pending.push(el); schedule();
     }
   }
   function enableObserver(){
@@ -2668,9 +2678,9 @@
   }
   function disableObserver(){ if (mo){ try{ mo.disconnect(); }catch(e){} mo=null; } }
 
-  // ---------- реакція на налаштування ----------
-  if (!window.__ifx_agreed_revert){
-    window.__ifx_agreed_revert = true;
+  // ---------- react to settings ----------
+  if (!window.__ifx_alt_tpl_switch){
+    window.__ifx_alt_tpl_switch = true;
     var _set = Lampa.Storage.set;
     Lampa.Storage.set = function(k,v){
       var r = _set.apply(this, arguments);
@@ -2683,14 +2693,13 @@
         }
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
-          document.body.classList.toggle('ifx-ep-alt', S.alt_ep);
-          // ALT змінює компоновку — дамо DOM змонтуватися і застосуємо правила
+          setEpisodeAlt(S.alt_ep);
+          document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
           setTimeout(function(){ ensureCss(); injectScope($(document.body)); }, 50);
         }
         if (k===KEY_NUM){
           S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
           document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
-          // підмінимо назви на вже змонтованих епізодах
           $(document.body).find('.card-episode').each(function(){ processEpisode($(this)); });
         }
       }
@@ -2701,6 +2710,7 @@
   // ---------- boot ----------
   function boot(){
     ensureCss();
+    setEpisodeAlt(S.alt_ep);                  // <<< ВАЖЛИВО: підміняємо шаблон при старті, якщо ALT увімкнено
     document.body.classList.toggle('ifx-ep-alt', S.alt_ep);
     document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
     if (S.year_on) enableObserver(); else disableObserver();
@@ -2709,6 +2719,7 @@
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });
 })();
+
 
   
   

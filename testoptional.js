@@ -2503,63 +2503,58 @@
   }
 
 
-  // Підтягуємо активні стилі з .card__quality (як у Quality+Mod) і кладемо в CSS-перемінні
-// Підтягуємо активні стилі з Quality+ (сезонні мітки або card__quality)
-// і кладемо їх у CSS-змінні для "Альтернативних міток".
+// Підтягуємо активні стилі з .card__quality (як у Quality+Mod) і кладемо в CSS-перемінні
+// Синхронізуємо ТІЛЬКИ кольори з Quality+ (фон/текст).
+// Якщо нічого не знайдено — дефолт як у твоєму прикладі.
 function ifxSyncAltBadgeThemeFromQuality(){
   try{
-    // Порядок пошуку: сезонні мітки Quality+ -> card__quality
-    var q = document.querySelector('.card--season-complete, .card--season-progress') 
+    // Спершу сезонні мітки Quality+, потім card__quality
+    var q = document.querySelector('.card--season-complete, .card--season-progress')
          || document.querySelector('.card__quality');
     var inner = q ? (q.querySelector('div') || q) : null;
-    var root  = document.documentElement;
 
-    if (q && inner){
+    var bg = 'rgba(61,161,141,0.9)'; // дефолтний зелений фон
+    var fg = '#FFFFFF';              // дефолтний білий текст
+
+    if (q){
       var csQ = getComputedStyle(q);
-      var csI = getComputedStyle(inner);
-
-      // фон/текст
-      root.style.setProperty('--ifx-badge-bg',    csQ.backgroundColor || 'rgba(61,161,141,0.9)');
-      root.style.setProperty('--ifx-badge-color', csI.color || '#FFFFFF');
-
-      // розмір шрифту
-      root.style.setProperty('--ifx-badge-font-size', csI.fontSize || '1.0em');
-
-      // нове: падінги з Quality+ (або дефолт 0.39em)
-      var padY = csI.paddingTop    || '0.39em';
-      var padX = csI.paddingLeft   || '0.39em';
-      root.style.setProperty('--ifx-badge-pad-y', padY);
-      root.style.setProperty('--ifx-badge-pad-x', padX);
-    } else {
-      // ДЕФОЛТИ як у Quality+
-      root.style.setProperty('--ifx-badge-bg',        'rgba(61,161,141,0.9)');
-      root.style.setProperty('--ifx-badge-color',     '#FFFFFF');
-      root.style.setProperty('--ifx-badge-font-size', '1.0em');
-      root.style.setProperty('--ifx-badge-pad-y',     '0.39em');
-      root.style.setProperty('--ifx-badge-pad-x',     '0.39em');
+      if (csQ.backgroundColor) bg = csQ.backgroundColor;
     }
+    if (inner){
+      var csI = getComputedStyle(inner);
+      if (csI.color) fg = csI.color;
+    }
+
+    var root = document.documentElement;
+    root.style.setProperty('--ifx-badge-bg', bg);
+    root.style.setProperty('--ifx-badge-color', fg);
   }catch(e){}
 }
 
 // Ввімкнення CSS (ідентичний вигляд якості, але справа і з «виступом»)
 // Вмикає/оновлює CSS для "Альтернативних міток" у стилі Quality+
 // ✅ Нижче є КОНСТАНТИ, які можна вручну змінювати за потреби.
+// Альтернативні мітки у фіксованому стилі (як у твоєму прикладі).
+// ✅ Можеш змінювати значення у КОНСТАНТАХ нижче.
 function ensureAltBadgesCss(){
   var st = document.getElementById('ifx_alt_badges_css');
 
-  // === НАЛАШТОВАНІ ЗНАЧЕННЯ (змінюй тут при потребі) ===
+  /* ====== КОНСТАНТИ ДЛЯ ШВИДКОГО ТЮНІНГУ ====== */
   var RIGHT_OFFSET  = '.3em';   // правий відступ (як у стандартного рейтингу/року)
-  var BOTTOM_OFFSET = '.50em';  // нижній відступ (залишили як у твоєму прикладі)
-  var RADIUS        = '0.3em';  // радіус як у Quality+
-  // Шрифт/розмір/падінги беруться з CSS-змінних, які ставить ifxSyncAltBadgeThemeFromQuality():
-  // --ifx-badge-font-size (def 1.0em), --ifx-badge-pad-y (def 0.39em), --ifx-badge-pad-x (def 0.39em)
-  // Колір/фон: --ifx-badge-bg, --ifx-badge-color
+  var BOTTOM_OFFSET = '.50em';  // нижній відступ (залишаємо як у твоєму прикладі)
+  var RADIUS        = '0.3em';  // радіус заокруглення як у Quality+
+  var FONT_FAMILY   = "'Roboto Condensed','Arial Narrow',Arial,sans-serif";
+  var FONT_WEIGHT   = '700';
+  var FONT_SIZE     = '1.0em';  // РОЗМІР ШРИФТУ (твій приклад)
+  var PAD_Y         = '.39em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
+  var PAD_X         = '.39em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
+  var UPPERCASE     = true;     // true => uppercase, false => як є
+  /* ============================================ */
 
   var css = `
-    /* Активується, коли body має клас .ifx-alt-badges */
     body.ifx-alt-badges .card .card__view{ position:relative; }
 
-    /* Стек бейджів: праворуч БЕЗ виступу, мінімальна «щілина» між рейтингом і роком */
+    /* Стек праворуч БЕЗ виступу; мінімальна «щілина» між рейтингом і роком */
     body.ifx-alt-badges .ifx-corner-stack{
       position:absolute; right:${RIGHT_OFFSET}; bottom:${BOTTOM_OFFSET};
       margin-right:0;
@@ -2568,7 +2563,7 @@ function ensureAltBadgesCss(){
     }
     body.ifx-alt-badges .ifx-corner-stack > *{ pointer-events:auto; }
 
-    /* Рейтинг у стеку та «пігулка» року — ідентичний вигляд Quality+ */
+    /* Рейтинг у стеку та рік — однаковий вигляд */
     body.ifx-alt-badges .ifx-corner-stack .card__vote,
     body.ifx-alt-badges .ifx-corner-stack .card_vote,
     body.ifx-alt-badges .ifx-corner-stack .ifx-year-pill{
@@ -2576,13 +2571,16 @@ function ensureAltBadgesCss(){
       background: var(--ifx-badge-bg, rgba(61,161,141,0.9)) !important;
       color: var(--ifx-badge-color, #FFFFFF) !important;
       border-radius: ${RADIUS};
-      padding: var(--ifx-badge-pad-y, .39em) var(--ifx-badge-pad-x, .39em);
-      font-family: 'Roboto Condensed','Arial Narrow',Arial,sans-serif;
-      font-weight: 700;
-      font-size: var(--ifx-badge-font-size, 1.0em);
+      padding: ${PAD_Y} ${PAD_X} !important;         /* внутрішні відступи */
+      font-family: ${FONT_FAMILY};
+      font-weight: ${FONT_WEIGHT};
+      font-size: ${FONT_SIZE} !important;            /* розмір шрифту */
       line-height: 1.2;
-      text-transform: uppercase;
+      ${ UPPERCASE ? 'text-transform: uppercase;' : '' }
       text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
+      box-sizing: border-box;
+      display: inline-flex; align-items: center;
+      white-space: nowrap;
     }
 
     /* Якщо року немає в стеку — стилізуємо окремо рейтинг у .card__view */
@@ -2595,25 +2593,22 @@ function ensureAltBadgesCss(){
       background: var(--ifx-badge-bg, rgba(61,161,141,0.9)) !important;
       color: var(--ifx-badge-color, #FFFFFF) !important;
       border-radius: ${RADIUS};
-      padding: var(--ifx-badge-pad-y, .39em) var(--ifx-badge-pad-x, .39em) !important;
-      font-family: 'Roboto Condensed','Arial Narrow',Arial,sans-serif !important;
-      font-weight: 700 !important;
-      font-size: var(--ifx-badge-font-size, 1.0em) !important;
+      padding: ${PAD_Y} ${PAD_X} !important;         /* внутрішні відступи */
+      font-family: ${FONT_FAMILY} !important;
+      font-weight: ${FONT_WEIGHT} !important;
+      font-size: ${FONT_SIZE} !important;            /* розмір шрифту */
       line-height: 1.2;
-      text-transform: uppercase;
+      ${ UPPERCASE ? 'text-transform: uppercase;' : '' }
       text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3);
       z-index: 11;
+      box-sizing: border-box;
+      display: inline-flex; align-items: center;
+      white-space: nowrap;
     }
   `;
 
-  if (st){
-    st.textContent = css;     // якщо стиль уже був — оновимо
-  } else {
-    st = document.createElement('style');
-    st.id = 'ifx_alt_badges_css';
-    st.textContent = css;
-    document.head.appendChild(st);
-  }
+  if (st){ st.textContent = css; }
+  else { st = document.createElement('style'); st.id = 'ifx_alt_badges_css'; st.textContent = css; document.head.appendChild(st); }
 }
   // ---------- ALT episode template ----------
   var tplEpisodeOriginal = null;

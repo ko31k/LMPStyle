@@ -2399,7 +2399,7 @@
     ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' },
 
     ifx_alt_badges:      { uk:'Альтернативні мітки', en:'Alternative badges' },
-    ifx_alt_badges_desc: { uk:'Мітки рік і рейтингу у іншому стилі', en:'Year & Rating  alternative style' }
+    ifx_alt_badges_desc: { uk:'Мітки "рік" і "рейтинг" у іншому стилі', en:'Year & Rating  alternative style' }
 
     });
 

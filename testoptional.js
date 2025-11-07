@@ -2503,12 +2503,12 @@
   }
 
 
-// Підтягуємо активні стилі з .card__quality (як у Quality+Mod) і кладемо в CSS-перемінні
-// Синхронізуємо ТІЛЬКИ кольори з Quality+ (фон/текст).
+
+// Синхронізуємо ТІЛЬКИ кольори з якості (фон/текст).
 // Якщо нічого не знайдено — дефолт як у твоєму прикладі.
 function ifxSyncAltBadgeThemeFromQuality(){
   try{
-    // Спершу сезонні мітки Quality+, потім card__quality
+    // Спершу сезонні мітки Quality, потім card__quality
     var q = document.querySelector('.card--season-complete, .card--season-progress')
          || document.querySelector('.card__quality');
     var inner = q ? (q.querySelector('div') || q) : null;
@@ -2531,10 +2531,8 @@ function ifxSyncAltBadgeThemeFromQuality(){
   }catch(e){}
 }
 
-// Ввімкнення CSS (ідентичний вигляд якості, але справа і з «виступом»)
-// Вмикає/оновлює CSS для "Альтернативних міток" у стилі Quality+
-// ✅ Нижче є КОНСТАНТИ, які можна вручну змінювати за потреби.
-// Альтернативні мітки у фіксованому стилі (як у твоєму прикладі).
+// Ввімкнення CSS
+// Альтернативні мітки у фіксованому стилі.
 // ✅ Можеш змінювати значення у КОНСТАНТАХ нижче.
 function ensureAltBadgesCss(){
   var st = document.getElementById('ifx_alt_badges_css');
@@ -2546,7 +2544,7 @@ function ensureAltBadgesCss(){
   var FONT_FAMILY   = "'Roboto Condensed','Arial Narrow',Arial,sans-serif";
   var FONT_WEIGHT   = '700';
   var FONT_SIZE     = '1.0em';  // РОЗМІР ШРИФТУ (твій приклад)
-  var PAD_Y         = '.39em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
+  var PAD_Y         = '.19em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
   var PAD_X         = '.39em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
   var UPPERCASE     = true;     // true => uppercase, false => як є
   /* ============================================ */

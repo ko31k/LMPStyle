@@ -2396,8 +2396,16 @@
     ifx_episode_alt_cards_desc:{ uk:'Компактний вигляд блоку "Найближчі епізоди"', en:'Compact view for the "Upcoming Episodes" block' },
 
     ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
-    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' }
-  });
+    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' },
+
+    ifx_alt_badges:      { uk:'Альтернативні мітки', en:'Alternative badges' },
+    ifx_alt_badges_desc: { uk:'Мітки рік і рейтингу у іншому стилі', en:'Year & Rating  alternative style' }
+
+    });
+
+
+
+  
 
   // ---------- keys (усі дефолт: false) ----------
   var KEY_YEAR = 'interface_mod_new_year_on_cards';
@@ -2428,6 +2436,15 @@
       field:{ name:Lampa.Lang.translate('ifx_episode_num_only'),
               description:Lampa.Lang.translate('ifx_episode_num_only_desc') }
     });
+
+
+    add({  component: 'interface_mod_new',
+      param: { name: 'interface_mod_new_alt_badges', type: 'trigger', values: true, default: false },
+      field: { name: Lampa.Lang.translate('ifx_alt_badges'),
+               description: Lampa.Lang.translate('ifx_alt_badges_desc') }
+    });
+  
+  
   })();
 
   // ---------- CSS ----------
@@ -2485,6 +2502,76 @@
     document.head.appendChild(st);
   }
 
+
+  // Підтягуємо активні стилі з .card__quality (як у Quality+Mod) і кладемо в CSS-перемінні
+function ifxSyncAltBadgeThemeFromQuality(){
+  try{
+    var q = document.querySelector('.card__quality');
+    var inner = q ? (q.querySelector('div') || q) : null;
+    var root = document.documentElement;
+    if (q && inner){
+      var csQ = getComputedStyle(q);
+      var csI = getComputedStyle(inner);
+      root.style.setProperty('--ifx-badge-bg',        csQ.backgroundColor || 'rgba(61,161,141,0.9)');
+      root.style.setProperty('--ifx-badge-color',     csI.color || '#FFFFFF');
+      root.style.setProperty('--ifx-badge-font-size', csI.fontSize || '1.10em');
+    } else {
+      root.style.setProperty('--ifx-badge-bg',        'rgba(61,161,141,0.9)'); // як у Quality+Mod
+      root.style.setProperty('--ifx-badge-color',     '#FFFFFF');
+      root.style.setProperty('--ifx-badge-font-size', '1.10em');
+    }
+  }catch(e){}
+}
+
+// Ввімкнення CSS (ідентичний вигляд якості, але справа і з «виступом»)
+function ensureAltBadgesCss(){
+  if (document.getElementById('ifx_alt_badges_css')) return;
+  var st = document.createElement('style');
+  st.id = 'ifx_alt_badges_css';
+  st.textContent = `
+    /* Активується, коли body має клас .ifx-alt-badges */
+    body.ifx-alt-badges .card .card__view{ position:relative; }
+
+    /* Якщо рік у стеку — сам стек підганяємо під "праворуч із виступом" */
+    body.ifx-alt-badges .ifx-corner-stack{
+      position:absolute; right:0; bottom:0.50em; margin-right:-0.78em; /* як у Quality+ зліва: 0/-0.78em, але дзеркально справа */
+      display:flex; flex-direction:column; align-items:flex-end; gap:0.25em; z-index:10; pointer-events:none;
+    }
+    body.ifx-alt-badges .ifx-corner-stack > *{ pointer-events:auto; }
+
+    /* Типографіка та фон — з якості (див. Quality+Mod) */
+    body.ifx-alt-badges .ifx-corner-stack .card__vote,
+    body.ifx-alt-badges .ifx-corner-stack .ifx-year-pill{
+      position:static !important;
+      background: var(--ifx-badge-bg, rgba(61,161,141,0.9)) !important;
+      color: var(--ifx-badge-color, #FFFFFF) !important;
+      border-radius: .3em;
+      padding: .1em .1em .08em .1em;
+      font-family: 'Roboto Condensed','Arial Narrow',Arial,sans-serif;
+      font-weight: 700; letter-spacing: .1px;
+      font-size: var(--ifx-badge-font-size, 1.10em);
+      line-height: 1.2em; text-transform: uppercase;
+      text-shadow: .5px .5px 1px rgba(0,0,0,.3);
+    }
+
+    /* Якщо року немає (опція вимкнена) і рейтинг НЕ в стеку — стилізуємо його напряму */
+    body.ifx-alt-badges .card__view > .card__vote,
+    body.ifx-alt-badges .card__view > .card_vote{
+      position:absolute !important; right:0 !important; bottom:0.50em !important; margin-right:-0.78em !important;
+      background: var(--ifx-badge-bg, rgba(61,161,141,0.9)) !important;
+      color: var(--ifx-badge-color, #FFFFFF) !important;
+      border-radius: .3em;
+      padding: .1em .1em .08em .1em !important;
+      font-family: 'Roboto Condensed','Arial Narrow',Arial,sans-serif !important;
+      font-weight: 700 !important; letter-spacing: .1px;
+      font-size: var(--ifx-badge-font-size, 1.10em) !important;
+      line-height: 1.2em; text-transform: uppercase;
+      text-shadow: .5px .5px 1px rgba(0,0,0,.3);
+      z-index: 11;
+    }
+  `;
+  document.head.appendChild(st);
+}
   // ---------- ALT episode template ----------
   var tplEpisodeOriginal = null;
   var tplEpisodeAlt =
@@ -2766,6 +2853,13 @@
           document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
           applyNumberOnly($(document.body));
         }
+        if (k==='interface_mod_new_alt_badges'){
+        var on = (v===true || v==='true' || Lampa.Storage.get('interface_mod_new_alt_badges','false')==='true');
+        ensureAltBadgesCss();
+        document.body.classList.toggle('ifx-alt-badges', on);
+        if (on) ifxSyncAltBadgeThemeFromQuality();
+        }
+        
       }
       return r;
     };
@@ -2778,6 +2872,15 @@
     document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
     if (S.year_on) enableObserver(); else disableObserver();
     injectAll($(document.body));
+   
+  // ALT badges: підключаємо CSS і застосовуємо стан тумблера
+  ensureAltBadgesCss();
+  var altOn = (Lampa.Storage.get('interface_mod_new_alt_badges', false)===true
+            || Lampa.Storage.get('interface_mod_new_alt_badges','false')==='true');
+  document.body.classList.toggle('ifx-alt-badges', altOn);
+  if (altOn) ifxSyncAltBadgeThemeFromQuality();
+
+    
   }
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });

@@ -2557,7 +2557,7 @@ function ensureAltBadgesCss(){
       position:absolute; right:${RIGHT_OFFSET}; bottom:${BOTTOM_OFFSET};
       margin-right:0;
       display:flex; flex-direction:column; align-items:flex-end;
-      gap:2px; z-index:10; pointer-events:none;
+      gap:1px; z-index:10; pointer-events:none;
     }
     body.ifx-alt-badges .ifx-corner-stack > *{ pointer-events:auto; }
 

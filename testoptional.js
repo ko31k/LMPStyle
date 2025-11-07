@@ -2530,53 +2530,59 @@
   }
 
   // ВАЖЛИВО: спершу з даних, потім — з DOM (щоб не залежати від прихованих .card__age)
-  /* --- ОПТИМІЗАЦІЯ: Кешування року (WeakMap) + Резервний пошук --- */
-  var __ifx_yearCache = new WeakMap();
+  /* --- ОПТИМІЗАЦІЯ: Кешування року (WeakMap) + ПРАВИЛЬНИЙ рік серіалу --- */
+  var __ifx_yearCache = window.__ifx_yearCache || new WeakMap();
+  window.__ifx_yearCache = __ifx_yearCache;
 
   /**
-   * Оригінальна логіка getYear (тепер з резервним пошуком у назві)
-   * Вона буде викликана лише 1 раз для кожної картки, а результат збережеться в кеш.
+   * Оригінальна логіка getYear (Тепер пріоритезує рік СЕРІАЛУ, ігноруючи рік ЕПІЗОДУ)
+   * Викликається щонайбільше 1 раз для кожної картки; результат кешується.
    */
   function __ifx_getYear_orig($root){
-    var d = $root.data()||{};
-    var y = d.release_year || (d.release_date||'').slice(0,4) || (d.first_air_date||'').slice(0,4) || '';
+    var d = $root.data() || {};
     
-    // 1. Перевірка даних Lampa (найшвидший спосіб)
+    // 1) Дані Lampa: Пріоритет - рік виходу СЕРІАЛУ або ФІЛЬМУ
+    // (Ми свідомо ігноруємо d.air_date та d.next_episode_date, бо це дати епізодів)
+    var y = (d.first_air_date || '').slice(0,4) // << Пріоритет #1: Рік виходу серіалу
+         || (d.release_date || '').slice(0,4) // << Пріоритет #2: Рік виходу фільму
+         || d.release_year // << Резерв
+         || d.year; // << Резерв
     if (/^(19|20)\d{2}$/.test(String(y))) return String(y);
+
+    // 2) Текстовий рік з .card__age
+    //    (Lampa зазвичай ставить сюди рік СЕРІАЛУ, навіть на картках епізодів)
+    var ageTxt = ($root.find('.card__age').first().text() || '').trim();
+    var mAge = ageTxt.match(/(19|20)\d{2}/);
+    if (mAge) return mAge[0];
+
+    // 3) Назва: (2023) / [2023] або "— 2023" (як і було)
+    //    Це фолбек, якщо .card__age порожній, але в назві рік є.
+    var title = ($root.find('.card__title').first().text() || '').trim();
+    var mTitle =
+      title.match(/[\[\(]\s*((?:19|20)\d{2})\s*[\]\)]\s*$/) ||
+      title.match(/(?:[–—·\/-]\s*)((?:19|20)\d{2})\s*$/);
+    if (mTitle) return mTitle[1];
     
-    // 2. Перевірка текстового поля '.card__age'
-    var t = ($root.find('.card__age').first().text()||'').trim();
-    var m = t.match(/(19|20)\d{2}/);
-    if (m) return m[0];
+    // МИ ПРИБРАЛИ ПОШУК .full-episode__date, оскільки він дає рік ЕПІЗОДУ.
 
-    // 3. [НОВИЙ РЕЗЕРВНИЙ СПОСІБ] Пошук у назві, (напр. "Фільм (2023)")
-    var title = ($root.find('.card__title').first().text()||'').trim();
-    var m_title = title.match(/[\[\(](19|20)\d{2}[\]\)]\s*$/);
-    if (m_title) {
-        // Витягуємо чистий рік, прибираючи дужки
-        return m_title[0].replace(/[\[\]\(\)]/g, '');
-    }
-
-    return ''; // Повертаємо пустий рядок, якщо нічого не знайдено
+    return '';
   }
 
   /**
-   * Головна функція 'getYear', яка тепер використовує кешування
+   * Головна функція 'getYear' із кешуванням
    */
   function getYear($root){
     try{
       var el = $root && $root[0];
-      // 1. Спробувати миттєво взяти з кешу
+      // 1) З кешу (миттєво)
       if (el && __ifx_yearCache.has(el)) return __ifx_yearCache.get(el);
-      
-      // 2. Якщо в кеші немає, обчислити рік (викликавши оригінальну функцію)
+
+      // 2) Обчислення + кеш
       var y = __ifx_getYear_orig($root) || '';
-      
-      // 3. Зберегти в кеш для майбутніх викликів і повернути
       if (el) __ifx_yearCache.set(el, y);
       return y;
     }catch(e){
-      // У випадку будь-якої помилки, просто викликати оригінал без кешування
+      // У випадку помилки, просто викликати оригінал без кешування
       return __ifx_getYear_orig($root);
     }
   }

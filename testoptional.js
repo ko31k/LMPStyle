@@ -130,7 +130,7 @@
     },
     interface_mod_new_colored_ratings_desc: {
       en: 'Enable colored rating highlight',
-      uk: 'Увімкнути кольорове виділення рейтингу'
+      uk: 'Увімкнути кольорове виділення рейтингу в повній картці'
     },
 
     interface_mod_new_colored_status: {
@@ -139,16 +139,16 @@
     },
     interface_mod_new_colored_status_desc: {
       en: 'Colorize series status',
-      uk: 'Підсвічувати статус серіалу'
+      uk: 'Підсвічувати статус фільму/серіалу в повній картці'
     },
 
     interface_mod_new_colored_age: {
       en: 'Colored age rating',
-      uk: 'Кольоровий віковий рейтинг'
+      uk: 'Кольоровий віковий рейтинг '
     },
     interface_mod_new_colored_age_desc: {
       en: 'Colorize age rating',
-      uk: 'Підсвічувати віковий рейтинг'
+      uk: 'Підсвічувати віковий рейтинг в повній картці'
     },
 
     interface_mod_new_theme_select_title: {
@@ -207,7 +207,7 @@
     },
     interface_mod_new_colored_buttons_desc: {
       en: 'Colorize card buttons and update icons',
-      uk: 'Розфарбовує кнопки в картці та оновлює іконки'
+      uk: 'Оновлює іконки та кольори кнопок онлайн, торенти, трейлери'
     },
 
     // ТОРЕНТИ (з torrents+mod)

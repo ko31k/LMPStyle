@@ -2392,16 +2392,23 @@
     ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Show year on card' },
     ifx_year_on_cards_desc:    { uk:'Рік відображається тільки на постері', en:'Year displayed on the poster only' },
 
+    ifx_show_rating_on_cards:      { uk:'Показувати рейтинг на картці', en:'Show rating on card' },
+    ifx_show_rating_on_cards_desc: { uk:'Увімкнути/вимкнути стандартний рейтинг на постері у списках',
+                                   en:'Toggle the built-in rating badge on list posters' },
+      
+    ifx_alt_badges:      { uk:'Альтернативні мітки', en:'Alternative badges' },
+    ifx_alt_badges_desc: { uk:'Мітки "рік" і "рейтинг" у іншому стилі', en:'Year & Rating  alternative style' },
+      
+
+    
     ifx_episode_alt_cards:     { uk:'Альтернативні "Найближчі епізоди"', en:'Alternative "Upcoming Episodes"' },
     ifx_episode_alt_cards_desc:{ uk:'Компактний вигляд блоку "Найближчі епізоди"', en:'Compact view for the "Upcoming Episodes" block' },
 
     ifx_episode_num_only:      { uk:'Показувати лише номер серії', en:'Show episode number only' },
-    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' },
+    ifx_episode_num_only_desc: { uk:'Завжди показувати номер серії у вигляді "Серія N" замість назви', en:'Always show "Episode N" instead of the title' }
 
-    ifx_alt_badges:      { uk:'Альтернативні мітки', en:'Alternative badges' },
-    ifx_alt_badges_desc: { uk:'Мітки "рік" і "рейтинг" у іншому стилі', en:'Year & Rating  alternative style' }
-
-    });
+  
+  });
 
 
 
@@ -2411,11 +2418,15 @@
   var KEY_YEAR = 'interface_mod_new_year_on_cards';
   var KEY_ALT  = 'interface_mod_new_episode_alt_cards';
   var KEY_NUM  = 'interface_mod_new_episode_numbers_only';
+  var KEY_RATING = 'interface_mod_new_rating_on_cards';
 
+  
   var S = {
     year_on:  (Lampa.Storage.get(KEY_YEAR, false)===true || Lampa.Storage.get(KEY_YEAR,'false')==='true'),
     alt_ep:   (Lampa.Storage.get(KEY_ALT,  false)===true || Lampa.Storage.get(KEY_ALT, 'false')==='true'),
-    num_only: (Lampa.Storage.get(KEY_NUM,  false)===true || Lampa.Storage.get(KEY_NUM, 'false')==='true')
+    num_only: (Lampa.Storage.get(KEY_NUM,  false)===true || Lampa.Storage.get(KEY_NUM, 'false')==='true'),
+    show_rate:(Lampa.Storage.get(KEY_RATING,true)===true  || Lampa.Storage.get(KEY_RATING,'true')==='true')
+  
   };
 
   // ---------- settings UI (без перестановок) ----------
@@ -2427,6 +2438,18 @@
               description:Lampa.Lang.translate('ifx_year_on_cards_desc') }
     });
     add({ component:'interface_mod_new',
+      param:{ name: KEY_RATING, type:'trigger', values:true, default:true },
+      field:{ name: Lampa.Lang.translate('ifx_show_rating_on_cards'),
+              description: Lampa.Lang.translate('ifx_show_rating_on_cards_desc') }
+    });
+    add({  component: 'interface_mod_new',
+      param: { name: 'interface_mod_new_alt_badges', type: 'trigger', values: true, default: false },
+      field: { name: Lampa.Lang.translate('ifx_alt_badges'),
+               description: Lampa.Lang.translate('ifx_alt_badges_desc') }
+    });
+    
+    
+    add({ component:'interface_mod_new',
       param:{ name: KEY_ALT, type:'trigger', values:true, default:false },
       field:{ name:Lampa.Lang.translate('ifx_episode_alt_cards'),
               description:Lampa.Lang.translate('ifx_episode_alt_cards_desc') }
@@ -2437,14 +2460,7 @@
               description:Lampa.Lang.translate('ifx_episode_num_only_desc') }
     });
 
-
-    add({  component: 'interface_mod_new',
-      param: { name: 'interface_mod_new_alt_badges', type: 'trigger', values: true, default: false },
-      field: { name: Lampa.Lang.translate('ifx_alt_badges'),
-               description: Lampa.Lang.translate('ifx_alt_badges_desc') }
-    });
-  
-  
+    
   })();
 
   // ---------- CSS ----------
@@ -2758,27 +2774,39 @@ function ensureAltBadgesCss(){
   }
 
   // ---------- інʼєкції ----------
-  function applyListCard($card){
-    var $view = $card.find('.card__view').first();
-    if (!$view.length) return;
+  /* === PATCH: applyListCard — керування видимістю рейтингу в списках === */
+function applyListCard($card){
+  var $view = $card.find('.card__view').first();
+  if (!$view.length) return;
 
-    var $vote = $view.find('> .card__vote, > .card_vote').first();
-    var $stack = ensureStack($view);
+  // Шукаємо рейтинг незалежно від того, чи він ще у .card__view, чи вже в стеку
+  var $vote  = $view.find('.card__vote, .card_vote').first();
+  var $stack = ensureStack($view);
 
-    // Переносимо рейтинґ у стек (зверху)
-    if ($vote.length && !$vote.parent().is($stack)){
-      $stack.prepend($vote);
+  // NEW: глобальне ввімк/вимк рейтингу в списках
+  if ($vote.length){
+    if (!S.show_rate){
+      $vote.addClass('ifx-vote-hidden').hide();
+    } else {
+      $vote.removeClass('ifx-vote-hidden').show();
+      // Рейтинг має бути вище за рік → кладемо його першим у стек
+      if (!$vote.parent().is($stack)) $stack.prepend($vote);
     }
-
-    // Додаємо наш бейдж року, якщо ще не додали
-    if (!$stack.children('.ifx-year-pill').length){
-      var y = getYear($card);
-      if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
-    }
-
-    // ЛОКАЛЬНО ховаємо текстові роки та підчищаємо назву лише для цієї картки
-    if (S.year_on) $card.addClass('ifx-hide-age'); else $card.removeClass('ifx-hide-age');
   }
+
+  // Додаємо наш бейдж року, якщо ще не додали
+  if (!$stack.children('.ifx-year-pill').length){
+    var y = getYear($card);
+    if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
+  }
+
+  // ЛОКАЛЬНО ховаємо текстові роки та підчищаємо назву лише для цієї картки
+  if (S.year_on) $card.addClass('ifx-hide-age');
+  else           $card.removeClass('ifx-hide-age');
+}
+
+
+  
 
   function applyEpisodeCard($ep){
     var $full = $ep.find('.full-episode').first();
@@ -2895,7 +2923,12 @@ function ensureAltBadgesCss(){
         document.body.classList.toggle('ifx-alt-badges', on);
         if (on) ifxSyncAltBadgeThemeFromQuality();
         }
-        
+        if (k===KEY_RATING){
+          S.show_rate = (v===true || v==='true' || Lampa.Storage.get(KEY_RATING,'true')==='true');
+          // Перемальовуємо всі видимі картки списків із новим станом
+          injectAll($(document.body));
+        }
+
       }
       return r;
     };

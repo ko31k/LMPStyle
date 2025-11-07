@@ -2774,37 +2774,42 @@ function ensureAltBadgesCss(){
   }
 
   // ---------- інʼєкції ----------
-  /* === PATCH: applyListCard — керування видимістю рейтингу в списках === */
+  /* === керування видимістю рейтингу в списках === */
+  /* === рейтинг працює незалежно від "року" === */
 function applyListCard($card){
   var $view = $card.find('.card__view').first();
   if (!$view.length) return;
 
-  // Шукаємо рейтинг незалежно від того, чи він ще у .card__view, чи вже в стеку
   var $vote  = $view.find('.card__vote, .card_vote').first();
   var $stack = ensureStack($view);
 
-  // NEW: глобальне ввімк/вимк рейтингу в списках
+  // 1) Показ/приховування рейтингу
   if ($vote.length){
     if (!S.show_rate){
       $vote.addClass('ifx-vote-hidden').hide();
     } else {
       $vote.removeClass('ifx-vote-hidden').show();
-      // Рейтинг має бути вище за рік → кладемо його першим у стек
-      if (!$vote.parent().is($stack)) $stack.prepend($vote);
+
+      // Переносимо в стек ТІЛЬКИ коли використовуємо стек:
+      // - або вмикнено рік
+      // - або увімкнено альтернативні мітки (щоб мати єдиний вигляд кутика)
+      var useStack = S.year_on || document.body.classList.contains('ifx-alt-badges');
+      if (useStack && !$vote.parent().is($stack)) $stack.prepend($vote);
     }
   }
 
-  // Додаємо наш бейдж року, якщо ще не додали
-  if (!$stack.children('.ifx-year-pill').length){
-    var y = getYear($card);
-    if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
+  // 2) Рік на картці (додаємо/прибираємо бейдж та локальне приховування)
+  if (S.year_on){
+    if (!$stack.children('.ifx-year-pill').length){
+      var y = getYear($card);
+      if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
+    }
+    $card.addClass('ifx-hide-age');
+  } else {
+    $stack.children('.ifx-year-pill').remove(); // при вимкненні року прибираємо наш бейдж
+    $card.removeClass('ifx-hide-age');
   }
-
-  // ЛОКАЛЬНО ховаємо текстові роки та підчищаємо назву лише для цієї картки
-  if (S.year_on) $card.addClass('ifx-hide-age');
-  else           $card.removeClass('ifx-hide-age');
 }
-
 
   
 
@@ -2823,7 +2828,35 @@ function applyListCard($card){
     if (S.year_on) $full.addClass('ifx-hide-age'); else $full.removeClass('ifx-hide-age');
   }
 
-  function injectAll($scope){
+function injectAll($scope){
+  $scope = $scope || $(document.body);
+
+  // 1) Списки тайтлів: завжди проганяємо, щоб рейтинг працював незалежно від року
+  $scope.find('.card').each(function(){
+    var $c = $(this);
+    if ($c.closest('.full-start, .full-start-new, .full, .details').length) return; // не чіпаємо повну картку
+    applyListCard($c);
+  });
+
+  // 2) Картки епізодів: рік — тільки коли увімкнено; інакше чистимо
+  $scope.find('.card-episode').each(function(){
+    var $ep   = $(this);
+    var $full = $ep.find('.full-episode').first();
+
+    if (S.year_on){
+      applyEpisodeCard($ep);
+    } else {
+      $full.removeClass('ifx-hide-age');
+      $full.find('.ifx-year-pill').remove();
+    }
+  });
+
+  // 3) Інше
+  applyNumberOnly($scope);
+  applyTitleYearHide($scope);
+}   
+  
+  /*function injectAll($scope){
     $scope = $scope || $(document.body);
 
     if (S.year_on){
@@ -2843,7 +2876,7 @@ function applyListCard($card){
 
     applyNumberOnly($scope);
     applyTitleYearHide($scope);
-  }
+  }*/
 
   // ---------- «лише номер серії» (та ALT) ----------
   function applyNumberOnly($scope){

@@ -2367,11 +2367,14 @@
   })();
 
 
- /* ============================================================
- *  YEAR PILL + ALT EPISODE CARDS — STABLE FINAL v2 (NO MENU REORDER)
- *  - year pill styles intact
- *  - hide year ONLY on processed list/episode cards (not in full view)
+
+/* ============================================================
+ *  YEAR PILL + ALT EPISODE CARDS — FAST & STABLE
+ *  - year pill styles intact (stack: rating ↑, year ↓)
+ *  - hide textual year only on processed list/episode cards
  *  - strip year from titles only on processed cards
+ *  - optimized MutationObserver (rAF batched, per-node)
+ *  - no menu reorder
  * ============================================================ */
 (function(){
   // ---------- i18n ----------
@@ -2419,7 +2422,7 @@
 
   // ---------- CSS ----------
   function ensureCss(){
-    var id = 'ifx_css_stable_final_v2';
+    var id = 'ifx_css_fast_stable';
     if (document.getElementById(id)) return;
     var st = document.createElement('style');
     st.id = id;
@@ -2464,9 +2467,7 @@
       /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
       body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
 
-      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток.
-         Додаємо клас .ifx-hide-age саме на картки списків та епізодів.
-         Повні картки НЕ мають цього класу — там нічого не ховаємо. */
+      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток */
       .ifx-hide-age .card__age{ display:none !important; }
     `;
     document.head.appendChild(st);
@@ -2516,7 +2517,7 @@
     return code.indexOf('en')===0 ? 'Episode' : 'Серія';
   }
 
-  // ВАЖЛИВО: спершу з даних, потім — з DOM (щоб не залежати від прихованих .card__age)
+  // Спершу з даних, потім — з DOM (.card__age), щоб не залежати від прихованого елемента
   function getYear($root){
     var d = $root.data()||{};
     var y = d.release_year || (d.release_date||'').slice(0,4) || (d.first_air_date||'').slice(0,4) || '';
@@ -2542,134 +2543,157 @@
     return s;
   }
 
-  // Підчищаємо/повертаємо рік у заголовках ТІЛЬКИ для оброблених карток (які мають .ifx-hide-age)
-  function applyTitleYearHide($scope){
-    $scope = $scope || $(document.body);
-    // працюємо тільки в межах карток, де ми сховали текстові роки
-    var sel = '.ifx-hide-age .card__title';
-
-    $(sel).each(function(){
-      var $t = $(this);
-
-      // якщо всередині є .card__age — його вже ховає локальний клас; текст не чіпаємо
-      if ($t.find('.card__age').length){
-        var saved = $t.data('ifx-title-orig');
-        if (typeof saved === 'string'){ $t.text(saved); $t.removeData('ifx-title-orig'); }
-        return;
-      }
-
-      if (S.year_on){
-        var orig = $t.data('ifx-title-orig');
-        if (!orig) $t.data('ifx-title-orig', $t.text());
-        var base = orig || $t.text();
-        var stripped = stripYear(base);
-        if (stripped !== $t.text()) $t.text(stripped.trim());
-      } else {
-        var sv = $t.data('ifx-title-orig');
-        if (typeof sv === 'string'){ $t.text(sv); $t.removeData('ifx-title-orig'); }
-      }
-    });
+  function applyTitleYearForTitle($title){
+    if (!S.year_on) {
+      var sv = $title.data('ifx-title-orig');
+      if (typeof sv === 'string'){ $title.text(sv); $title.removeData('ifx-title-orig'); }
+      return;
+    }
+    // якщо в заголовку є дочірній .card__age — не чіпаємо текст (його сховає CSS)
+    if ($title.find('.card__age').length) {
+      var saved = $title.data('ifx-title-orig');
+      if (typeof saved === 'string'){ $title.text(saved); $title.removeData('ifx-title-orig'); }
+      return;
+    }
+    var orig = $title.data('ifx-title-orig');
+    if (!orig) $title.data('ifx-title-orig', $title.text());
+    var base = orig || $title.text();
+    var stripped = stripYear(base);
+    if (stripped !== $title.text()) $title.text(stripped.trim());
   }
 
-  // ---------- інʼєкції ----------
-  function applyListCard($card){
-    var $view = $card.find('.card__view').first();
+  // ---------- перелікові картки (title cards) ----------
+  function processCard($card){
+    // не чіпаємо повні картки/деталі
+    if ($card.closest('.full-start, .full-start-new, .full, .details').length) return;
+
+    var $view = $card.find('> .card__view').first();
     if (!$view.length) return;
 
-    var $vote = $view.find('> .card__vote, > .card_vote').first();
-    var $stack = ensureStack($view);
+    if (S.year_on){
+      $card.addClass('ifx-hide-age');
 
-    // Переносимо рейтинґ у стек (зверху)
-    if ($vote.length && !$vote.parent().is($stack)){
-      $stack.prepend($vote);
+      var $stack = ensureStack($view);
+
+      // рейтинг → в стек (зверху)
+      var $vote = $view.find('> .card__vote, > .card_vote').first();
+      if ($vote.length && !$vote.parent().is($stack)) $stack.prepend($vote);
+
+      // рік → пігулкою під рейтингом
+      if (!$stack.children('.ifx-year-pill').length){
+        var y = getYear($card);
+        if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
+      }
+    } else {
+      // вимкнено: повертаємо все назад
+      $card.removeClass('ifx-hide-age');
+      var $stack = $view.children('.ifx-corner-stack');
+      if ($stack.length){
+        var $vote = $stack.children('.card__vote, .card_vote').first();
+        if ($vote.length) $view.append($vote); // повернути в .card__view (рейтинг має власні absolute-стилі)
+        $stack.find('.ifx-year-pill').remove();
+        if ($stack.children().length===0) $stack.remove();
+      }
     }
 
-    // Додаємо наш бейдж року, якщо ще не додали
-    if (!$stack.children('.ifx-year-pill').length){
-      var y = getYear($card);
-      if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
-    }
-
-    // ЛОКАЛЬНО ховаємо текстові роки та підчищаємо назву лише для цієї картки
-    if (S.year_on) $card.addClass('ifx-hide-age'); else $card.removeClass('ifx-hide-age');
+    // заголовок без року (локально для цієї картки)
+    applyTitleYearForTitle($card.find('> .card__title').first());
   }
 
-  function applyEpisodeCard($ep){
-    var $full = $ep.find('.full-episode').first();
+  // ---------- картки епізодів ----------
+  function processEpisode($ep){
+    var $full = $ep.find('> .card-episode__body .full-episode, > .full-episode').first();
     if (!$full.length) return;
+
+    if (S.year_on) $full.addClass('ifx-hide-age'); else $full.removeClass('ifx-hide-age');
 
     var $stack = ensureStack($full);
 
-    if (!$stack.children('.ifx-year-pill').length){
+    if (S.year_on && !$stack.children('.ifx-year-pill').length){
       var y = getYear($ep);
       if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
-
-    // ЛОКАЛЬНО ховаємо текстові роки й підчищаємо назву лише для цієї картки епізоду
-    if (S.year_on) $full.addClass('ifx-hide-age'); else $full.removeClass('ifx-hide-age');
-  }
-
-  function injectAll($scope){
-    $scope = $scope || $(document.body);
-
-    if (S.year_on){
-      // Списки тайтлів (не повні картки)
-      $scope.find('.card').each(function(){
-        var $c = $(this);
-        if ($c.closest('.full-start, .full-start-new, .full, .details').length) return;
-        applyListCard($c);
-      });
-      // Епізоди (alt і стандарт)
-      $scope.find('.card-episode').each(function(){ applyEpisodeCard($(this)); });
-    } else {
-      // якщо вимкнено — прибираємо локальні класи
-      $scope.find('.card.ifx-hide-age').removeClass('ifx-hide-age');
-      $scope.find('.card-episode .full-episode.ifx-hide-age').removeClass('ifx-hide-age');
+    if (!S.year_on){
+      $stack.find('.ifx-year-pill').remove();
+      if ($stack.children().length===0) $stack.remove();
     }
 
-    applyNumberOnly($scope);
-    applyTitleYearHide($scope);
-  }
-
-  // ---------- «лише номер серії» (та ALT) ----------
-  function applyNumberOnly($scope){
-    $scope = $scope || $(document.body);
-    var force = (S.alt_ep || S.num_only); // у ALT завжди
-
-    $scope.find('.card-episode .full-episode').each(function(){
-      var $root = $(this);
-      var $name = $root.find('.full-episode__name').first();
-      if (!$name.length) return;
-
-      if (!force){
+    // «лише номер серії» (або ALT)
+    var forceNum = (S.alt_ep || S.num_only);
+    var $name = $full.find('.full-episode__name').first();
+    if ($name.length){
+      if (!forceNum){
         var orig = $name.data('ifx-orig');
         if (typeof orig === 'string'){ $name.text(orig); $name.removeData('ifx-orig'); }
-        return;
+      } else {
+        var $num = $full.find('.full-episode__num').first();
+        var n = ($num.text()||'').trim();
+        if (!n){
+          var m = ($name.text()||'').match(/\d+/);
+          if (m) n = m[0];
+        }
+        if (n){
+          if (!$name.data('ifx-orig')) $name.data('ifx-orig', $name.text());
+          $name.text(episodeWord() + ' ' + String(parseInt(n,10)));
+        }
       }
+    }
 
-      var $num = $root.find('.full-episode__num').first();
-      var n = ($num.text()||'').trim();
-      if (!n){
-        var m = ($name.text()||'').match(/\d+/);
-        if (m) n = m[0];
-      }
-      if (!n) return;
-
-      if (!$name.data('ifx-orig')) $name.data('ifx-orig', $name.text());
-      $name.text(episodeWord() + ' ' + String(parseInt(n,10)));
-    });
+    // заголовок без року (локально для цієї картки)
+    applyTitleYearForTitle($full.find('.card__title').first());
   }
 
-  // ---------- observers ----------
-  var mo = null;
+  // ---------- batch обробка ----------
+  function injectScope($scope){
+    if (S.year_on){
+      $scope.find('.card').each(function(){ processCard($(this)); });
+      $scope.find('.card-episode').each(function(){ processEpisode($(this)); });
+    } else {
+      // При вимкненні все одно повернемо стани коректно
+      $scope.find('.card').each(function(){ processCard($(this)); });
+      $scope.find('.card-episode').each(function(){ processEpisode($(this)); });
+    }
+  }
+
+  // ---------- observers (rAF batched) ----------
+  var mo = null, scheduled = false, pendingNodes = [];
+  function scheduleProcess(){
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function(){
+      scheduled = false;
+      if (pendingNodes.length){
+        // створюємо тимчасовий scope з унікальних батьків-панелей
+        var $scope = $(pendingNodes);
+        injectScope($scope);
+        pendingNodes = [];
+      }
+    });
+  }
+  function handleAddedNode(n){
+    if (n.nodeType !== 1) return;
+    var el = n;
+
+    if (el.matches && (el.matches('.card') || el.matches('.card-episode'))) {
+      pendingNodes.push(el);
+      scheduleProcess();
+      return;
+    }
+    // якщо всередині є потрібні елементи
+    if (el.querySelector){
+      var inner = el.querySelector('.card, .card-episode');
+      if (inner){
+        pendingNodes.push(el);
+        scheduleProcess();
+      }
+    }
+  }
   function enableObserver(){
     if (mo) return;
     mo = new MutationObserver(function(muts){
       for (var i=0;i<muts.length;i++){
-        if (muts[i].addedNodes && muts[i].addedNodes.length){
-          setTimeout(function(){ injectAll($(document.body)); }, 30);
-          break;
-        }
+        var a = muts[i].addedNodes || [];
+        for (var j=0;j<a.length;j++) handleAddedNode(a[j]);
       }
     });
     try { mo.observe(document.body, {subtree:true, childList:true}); } catch(e){}
@@ -2677,8 +2701,8 @@
   function disableObserver(){ if (mo){ try{ mo.disconnect(); }catch(e){} mo=null; } }
 
   // ---------- react to settings ----------
-  if (!window.__ifx_storage_stable_final_v2){
-    window.__ifx_storage_stable_final_v2 = true;
+  if (!window.__ifx_storage_fast_stable){
+    window.__ifx_storage_fast_stable = true;
     var _prev = Lampa.Storage.set;
     Lampa.Storage.set = function(k,v){
       var r = _prev.apply(this, arguments);
@@ -2686,19 +2710,22 @@
         if (k===KEY_YEAR){
           S.year_on = (v===true || v==='true' || Lampa.Storage.get(KEY_YEAR,'false')==='true');
           ensureCss();
-          injectAll($(document.body));
+          // переобробити поточні елементи
+          injectScope($(document.body));
           if (S.year_on) enableObserver(); else disableObserver();
         }
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
           setEpisodeAlt(S.alt_ep);
           document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
-          setTimeout(function(){ injectAll($(document.body)); }, 50);
+          // ALT міняє шаблон → дадимo час на перерендер
+          setTimeout(function(){ injectScope($(document.body)); }, 50);
         }
         if (k===KEY_NUM){
           S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
           document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
-          applyNumberOnly($(document.body));
+          // підмінимо назви на вже змонтованих епізодах
+          $(document.body).find('.card-episode').each(function(){ processEpisode($(this)); });
         }
       }
       return r;
@@ -2711,10 +2738,11 @@
     setEpisodeAlt(S.alt_ep);
     document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
     if (S.year_on) enableObserver(); else disableObserver();
-    injectAll($(document.body));
+    injectScope($(document.body));
   }
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });
-})(); 
+})();
+  
   
 })();

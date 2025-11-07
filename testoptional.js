@@ -2390,10 +2390,10 @@
   // ---------- i18n ----------
   Lampa.Lang.add({
     ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Show year on card' },
-    ifx_year_on_cards_desc:    { uk:'Рік відображається тільки на постері', en:'Year displayed on the poster only' },
+    ifx_year_on_cards_desc:    { uk:'Увімкнути/Вимкнути відображення року на постері', en:'Year displayed on the poster only' },
 
     ifx_show_rating_on_cards:      { uk:'Показувати рейтинг на картці', en:'Show rating on card' },
-    ifx_show_rating_on_cards_desc: { uk:'Увімкнути/вимкнути стандартний рейтинг на постері у списках',
+    ifx_show_rating_on_cards_desc: { uk:'Увімкнути/Вимкнути стандартний рейтинг на постері',
                                    en:'Toggle the built-in rating badge on list posters' },
       
     ifx_alt_badges:      { uk:'Альтернативні мітки', en:'Alternative badges' },

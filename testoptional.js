@@ -2514,6 +2514,14 @@
          Додаємо клас .ifx-hide-age саме на картки списків та епізодів.
          Повні картки НЕ мають цього класу — там нічого не ховаємо. */
       .ifx-hide-age .card__age{ display:none !important; }
+
+      /* Ховаємо штатний рейтинг повністю, коли вимкнено */
+      body.ifx-no-rate .card__view > .card__vote,
+      body.ifx-no-rate .card__view > .card_vote,
+      body.ifx-no-rate .ifx-corner-stack > .card__vote,
+      body.ifx-no-rate .ifx-corner-stack > .card_vote {
+      display: none !important;}
+
     `;
     document.head.appendChild(st);
   }
@@ -2783,20 +2791,21 @@ function applyListCard($card){
   var $vote  = $view.find('.card__vote, .card_vote').first();
   var $stack = ensureStack($view);
 
-  // 1) Показ/приховування рейтингу
-  if ($vote.length){
-    if (!S.show_rate){
-      $vote.addClass('ifx-vote-hidden').hide();
-    } else {
-      $vote.removeClass('ifx-vote-hidden').show();
+// 1) Показ/приховування рейтингу — ЖОРСТКО
+var hardHide = !S.show_rate || document.body.classList.contains('ifx-no-rate');
 
-      // Переносимо в стек ТІЛЬКИ коли використовуємо стек:
-      // - або вмикнено рік
-      // - або увімкнено альтернативні мітки (щоб мати єдиний вигляд кутика)
-      var useStack = S.year_on || document.body.classList.contains('ifx-alt-badges');
-      if (useStack && !$vote.parent().is($stack)) $stack.prepend($vote);
-    }
+if ($vote.length){
+  if (hardHide){
+    // нічого не переносимо, просто ховаємо
+    $vote.addClass('ifx-vote-hidden').hide();
+  } else {
+    $vote.removeClass('ifx-vote-hidden').show();
+
+    // Переносимо в стек тільки якщо він використовується
+    var useStack = S.year_on || document.body.classList.contains('ifx-alt-badges');
+    if (useStack && !$vote.parent().is($stack)) $stack.prepend($vote);
   }
+}
 
   // 2) Рік на картці (додаємо/прибираємо бейдж та локальне приховування)
   if (S.year_on){
@@ -2955,10 +2964,17 @@ function injectAll($scope){
         ensureAltBadgesCss();
         document.body.classList.toggle('ifx-alt-badges', on);
         if (on) ifxSyncAltBadgeThemeFromQuality();
+        
+
         }
         if (k===KEY_RATING){
           S.show_rate = (v===true || v==='true' || Lampa.Storage.get(KEY_RATING,'true')==='true');
           // Перемальовуємо всі видимі картки списків із новим станом
+          // NEW: синхронізуємо клас для жорсткого приховування
+          document.body.classList.toggle('ifx-no-rate', !S.show_rate);
+
+          // Перемальовуємо всі видимі картки списків із новим станом
+  
           injectAll($(document.body));
         }
 
@@ -2982,7 +2998,9 @@ function injectAll($scope){
   document.body.classList.toggle('ifx-alt-badges', altOn);
   if (altOn) ifxSyncAltBadgeThemeFromQuality();
 
-    
+  document.body.classList.toggle('ifx-no-rate', !S.show_rate);
+           
+  
   }
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });

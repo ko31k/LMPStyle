@@ -2380,7 +2380,7 @@
   })();
 
 
- /* ============================================================
+/* ============================================================
  * YEAR PILL + ALT EPISODE CARDS — STABLE FINAL v2 (NO MENU REORDER)
  * - year pill styles intact
  * - hide year ONLY on processed list/episode cards (not in full view)
@@ -2390,7 +2390,7 @@
   // ---------- i18n ----------
   Lampa.Lang.add({
     ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Show year on card' },
-    ifx_year_on_cards_desc:    { uk:'Увімкнути/Вимкнути відображення року на постері', en:'Year displayed on the poster only' },
+    ifx_year_on_cards_desc:    { uk:'Увімкнути/Вimкнути відображення року на постері', en:'Year displayed on the poster only' },
 
     ifx_show_rating_on_cards:      { uk:'Показувати рейтинг на картці', en:'Show rating on card' },
     ifx_show_rating_on_cards_desc: { uk:'Увімкнути/Вимкнути стандартний рейтинг на постері',
@@ -2665,10 +2665,9 @@ function ensureAltBadgesCss(){
     }
     Lampa.Template.add('card_episode', on ? tplEpisodeAlt : (tplEpisodeOriginal || tplEpisodeAlt));
     document.body.classList.toggle('ifx-ep-alt', !!on);
-
-    // [!!!] ЗМІНЕНО:
-    // Раніше тут було: document.body.classList.toggle('ifx-num-only', !!on || S.num_only);
-    // Тепер 'ifx-num-only' керується незалежно, базуючись лише на S.num_only
+    
+    // [!!!] ВИПРАВЛЕНО (з минулого разу):
+    // 'ifx-num-only' керується незалежно, базуючись лише на S.num_only
     document.body.classList.toggle('ifx-num-only', S.num_only);
     
     try{ Lampa.Settings.update(); }catch(e){}
@@ -2895,8 +2894,7 @@ function injectAll($scope){
   function applyNumberOnly($scope){
     $scope = $scope || $(document.body);
     
-    // [!!!] ЗМІНЕНО:
-    // Раніше було: var force = (S.alt_ep || S.num_only); // у ALT завжди
+    // [!!!] ВИПРАВЛЕНО (з минулого разу):
     // Тепер 'force' залежить ТІЛЬКИ від S.num_only
     var force = S.num_only;
 
@@ -2954,13 +2952,16 @@ function injectAll($scope){
           S.year_on = (v===true || v==='true' || Lampa.Storage.get(KEY_YEAR,'false')==='true');
           ensureCss();
           injectAll($(document.body));
-          if (S.year_on) enableObserver(); else disableObserver();
+          
+          // [!!!] ВИПРАВЛЕНО:
+          // Умовне ввімкнення/вимкнення обсервера видалено.
+          // if (S.year_on) enableObserver(); else disableObserver(); // <--- ВИДАЛЕНО
         }
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
           setEpisodeAlt(S.alt_ep);
           
-          // [!!!] ЗМІНЕНО:
+          // [!!!] ВИПРАВЛЕНО (з минулого разу):
           // Рядок document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
           // ВИДАЛЕНО, оскільки setEpisodeAlt() тепер робить це коректно.
           
@@ -2969,8 +2970,7 @@ function injectAll($scope){
         if (k===KEY_NUM){
           S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
 
-          // [!!!] ЗМІНЕНО:
-          // Раніше було: document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+          // [!!!] ВИПРАВЛЕНО (з минулого разу):
           // Тепер логіка незалежна:
           document.body.classList.toggle('ifx-num-only', S.num_only);
           
@@ -3005,11 +3005,11 @@ function injectAll($scope){
     ensureCss();
     setEpisodeAlt(S.alt_ep);
     
-    // [!!!] ЗМІНЕНО:
-    // Рядок document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
-    // ВИДАЛЕНО, оскільки setEpisodeAlt() вище вже робить це коректно.
+    // [!!!] ВИПРАВЛЕНО:
+    // Обсервер (MutationObserver) тепер вмикається ЗАВЖДИ,
+    // а не тільки коли S.year_on === true.
+    enableObserver(); // <--- ЗАМІНЕНО (було: if (S.year_on) ... else ...)
     
-    if (S.year_on) enableObserver(); else disableObserver();
     injectAll($(document.body));
    
   // ALT badges: підключаємо CSS і застосовуємо стан тумблера

@@ -284,6 +284,34 @@
     		},*/
 		}
     };
+
+
+
+	/* === [OtherPlus Bridge for Quality+Mod] ======================= */
+(function () {
+  // Підтягнути збережені значення з "Інше +"
+  try {
+    var _op = (Lampa && Lampa.Storage && Lampa.Storage.get('other_plus_settings')) || {};
+    if (typeof _op.lqe_show_series === 'boolean') LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = _op.lqe_show_series;
+    if (typeof _op.lqe_simple_labels === 'boolean') LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = _op.lqe_simple_labels;
+    if (typeof _op.lqe_show_full_label === 'boolean') {
+      document.body.classList.toggle('lqe-hide-full', !_op.lqe_show_full_label);
+    }
+  } catch (e) {}
+
+  // Експортуємо «місток» для живого оновлення з хоста «Інше +»
+  window.OtherPlusBridge = window.OtherPlusBridge || {};
+  window.OtherPlusBridge.updateLQE = function (opts) {
+    if (opts && typeof opts.show_series === 'boolean') LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = opts.show_series;
+    if (opts && typeof opts.simple_labels === 'boolean') LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = opts.simple_labels;
+    if (opts && typeof opts.show_full_label === 'boolean') {
+      document.body.classList.toggle('lqe-hide-full', !opts.show_full_label);
+    }
+  };
+})();
+
+
+	
     var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
 
     // ===================== МАПИ ДЛЯ ПАРСИНГУ ЯКОСТІ =====================
@@ -1785,3 +1813,220 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
     }
 
 })();
+
+/* === [OtherPlus Host in Quality+Mod] ===================================== */
+(function(){
+  'use strict';
+
+  if (window.__OtherPlusHost) return;
+  window.__OtherPlusHost = true;
+
+  var STORE_KEY = 'other_plus_settings';
+  function load(){ try{ return (Lampa && Lampa.Storage && Lampa.Storage.get(STORE_KEY)) || {}; }catch(e){ return {}; } }
+  function save(p){ var cur = load(); var next = Object.assign({}, cur, p||{}); try{ Lampa.Storage.set(STORE_KEY, next);}catch(e){} return next; }
+  function t(v){ return v ? 'Так' : 'Ні'; }
+
+  // CSS: ховання мітки якості у повній картці
+  (function ensureCSS(){
+    if (document.getElementById('op-css')) return;
+    var st = document.createElement('style'); st.id='op-css';
+    st.textContent = "body.lqe-hide-full .full-start__status.lqe-quality{display:none!important}";
+    document.head.appendChild(st);
+  })();
+
+  // ——— UI helpers ———
+  function select(title, items, onSelect){
+    if (window.Lampa && Lampa.Select && Lampa.Select.show){
+      Lampa.Select.show({
+        title: title, items: items.map(function(it){ return {title: it.title, selected: !!it.selected, value: it.value}; }),
+        onSelect: function(it){ onSelect && onSelect(it.value); }
+      });
+    } else {
+      var s = prompt(title + "\n" + items.map(function(i){return (i.selected?'* ':'  ')+i.title;}).join('\n'));
+      onSelect && onSelect((items[0]||{}).value);
+    }
+  }
+  function notify(msg){ try{ if (Lampa && Lampa.Flash) Lampa.Flash.show(msg); else console.log('[Other+]', msg); }catch(e){} }
+
+  // ——— ДІЇ ———
+  function clearQualityCache(){ try{ var key = (window.LQE_CONFIG && LQE_CONFIG.CACHE_KEY) || 'lampa_quality_cache'; Lampa.Storage.set(key, {}); notify('Кеш якості очищено'); }catch(e){} }
+  function clearTracksCache(){ try{ var key = (window.LTF_CONFIG && LTF_CONFIG.CACHE_KEY) || 'lampa_ukr_tracks_cache'; Lampa.Storage.set(key, {}); notify('Кеш доріжок очищено'); }catch(e){} }
+  function clearSeasonsCache(){ try{ (window.safeStorage||localStorage).setItem('seasonBadgeCache','{}'); notify('Кеш сезонів очищено'); }catch(e){} }
+
+  // ——— РЕНДЕР СТОРІНКИ ———
+  function renderPage(root){
+    var s = load();
+
+    var html = '';
+    html += '<div class="settings__content">';
+    html += '  <div class="settings-param"><div class="settings-param__name" style="font-weight:700">Інше +</div></div>';
+
+    // — A) Налаштування якості
+    html += '<div class="settings-param"><div class="settings-param__name">Налаштування якості</div></div>';
+
+    html += '<div class="settings-param selector" id="op-lqe-show-series"><div class="settings-param__name">Якість для серіалів</div><div class="settings-param__value">'+t(s.lqe_show_series!==false)+'</div><div class="settings-param__descr">Показувати мітку якості на картках і сторінках серіалів</div></div>';
+
+    html += '<div class="settings-param selector" id="op-lqe-format"><div class="settings-param__name">Формат мітки якості</div><div class="settings-param__value">'+((s.lqe_simple_labels!==false)?'Спрощений':'Повний')+'</div><div class="settings-param__descr">Оберіть вигляд бейджа якості</div></div>';
+
+    html += '<div class="settings-param selector" id="op-lqe-fullcard"><div class="settings-param__name">Мітка якості у повній картці</div><div class="settings-param__value">'+t(s.lqe_show_full_label!==false)+'</div><div class="settings-param__descr">Показувати бейдж на сторінці тайтлу (повна картка)</div></div>';
+
+    html += '<div class="settings-param selector" id="op-lqe-clear"><div class="settings-param__name">Очистити кеш якості</div><div class="settings-param__descr">Видалити збережені результати визначення якості. Пошук виконається заново</div></div>';
+
+    // — B) Налаштування мітки UA доріжок
+    html += '<div class="settings-param"><div class="settings-param__name">Налаштування мітки UA доріжок</div></div>';
+
+    var ltf_mode = s.ltf_display_mode || 'flag_count';
+    html += '<div class="settings-param selector" id="op-ltf-style"><div class="settings-param__name">Стиль мітки</div><div class="settings-param__value">'+(
+      ltf_mode==='text'?'Текстова мітка: “Ukr”, “2xUkr”.': ltf_mode==='flag_only'?'Лише прапорець без тексту.':'Прапорець із лічильником'
+    )+'</div><div class="settings-param__descr">Як відображати наявність українських доріжок.</div></div>';
+
+    html += '<div class="settings-param selector" id="op-ltf-show-series"><div class="settings-param__name">Показувати для серіалів</div><div class="settings-param__value">'+t(s.ltf_show_series!==false)+'</div><div class="settings-param__descr">Відображати мітку UA на картках і сторінках серіалів.</div></div>';
+
+    html += '<div class="settings-param selector" id="op-ltf-clear"><div class="settings-param__name">Очистити кеш доріжок</div><div class="settings-param__descr">Скинути збережені дані про доріжки. Перевірка виконається заново.</div></div>';
+
+    // — C) Статус/Прогрес сезонів
+    html += '<div class="settings-param"><div class="settings-param__name">Статус/Прогрес сезонів для серіалів</div></div>';
+
+    html += '<div class="settings-param selector" id="op-seasons-key"><div class="settings-param__name">TMDB API ключ</div><div class="settings-param__value">'+(s.seasons_tmdb_key?('•••'+String(s.seasons_tmdb_key).slice(-4)):'(не задано)')+'</div><div class="settings-param__descr">Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org</div></div>';
+
+    html += '<div class="settings-param selector" id="op-seasons-save"><div class="settings-param__name">Зберегти ключ</div><div class="settings-param__descr">Застосувати й зберегти TMDB ключ.</div></div>';
+
+    html += '<div class="settings-param selector" id="op-seasons-clear"><div class="settings-param__name">Очистити кеш</div><div class="settings-param__descr">Скинути локальний кеш прогресу сезонів.</div></div>';
+
+    html += '</div>';
+
+    var content = root.querySelector('.settings__content') || root.querySelector('.settings-content') || root;
+    content.innerHTML = html;
+
+    // ——— BIND ———
+    var el;
+
+    // A) Quality
+    (el = content.querySelector('#op-lqe-show-series')).addEventListener('click', function(){
+      var cur = load(); var v = !(cur.lqe_show_series===false);
+      cur = save({ lqe_show_series: !v });
+      if (window.OtherPlusBridge && OtherPlusBridge.updateLQE) OtherPlusBridge.updateLQE({ show_series: !v });
+      this.querySelector('.settings-param__value').textContent = t(!v);
+      notify('Збережено');
+    });
+
+    (el = content.querySelector('#op-lqe-format')).addEventListener('click', function(){
+      var cur = load(); var simple = !(cur.lqe_simple_labels===false);
+      select('Формат мітки якості', [
+        { title:'Спрощений', value:'simple', selected:simple },
+        { title:'Повний', value:'full', selected:!simple }
+      ], function(val){
+        var isSimple = (val==='simple'); var next = save({ lqe_simple_labels: isSimple });
+        if (window.OtherPlusBridge && OtherPlusBridge.updateLQE) OtherPlusBridge.updateLQE({ simple_labels: isSimple });
+        el.querySelector('.settings-param__value').textContent = isSimple?'Спрощений':'Повний';
+        notify('Збережено');
+      });
+    });
+
+    (el = content.querySelector('#op-lqe-fullcard')).addEventListener('click', function(){
+      var cur = load(); var v = !(cur.lqe_show_full_label===false);
+      cur = save({ lqe_show_full_label: !v });
+      if (window.OtherPlusBridge && OtherPlusBridge.updateLQE) OtherPlusBridge.updateLQE({ show_full_label: !v });
+      this.querySelector('.settings-param__value').textContent = t(!v);
+      notify('Збережено');
+    });
+
+    content.querySelector('#op-lqe-clear').addEventListener('click', clearQualityCache);
+
+    // B) UA-Finder
+    (el = content.querySelector('#op-ltf-style')).addEventListener('click', function(){
+      var cur = load(); var mode = cur.ltf_display_mode || 'flag_count';
+      select('Стиль мітки', [
+        { title:'Текстова мітка: “Ukr”, “2xUkr”.', value:'text', selected: mode==='text' },
+        { title:'Прапорець із лічильником', value:'flag_count', selected: mode==='flag_count' },
+        { title:'Лише прапорець без тексту.', value:'flag_only', selected: mode==='flag_only' }
+      ], function(val){
+        save({ ltf_display_mode: val });
+        if (window.OtherPlusBridge && OtherPlusBridge.updateLTF) OtherPlusBridge.updateLTF({ display_mode: val });
+        el.querySelector('.settings-param__value').textContent =
+          val==='text' ? 'Текстова мітка: “Ukr”, “2xUkr”.'
+        : val==='flag_only' ? 'Лише прапорець без тексту.'
+        : 'Прапорець із лічильником';
+        notify('Збережено');
+      });
+    });
+
+    (el = content.querySelector('#op-ltf-show-series')).addEventListener('click', function(){
+      var cur = load(); var v = !(cur.ltf_show_series===false);
+      save({ ltf_show_series: !v });
+      if (window.OtherPlusBridge && OtherPlusBridge.updateLTF) OtherPlusBridge.updateLTF({ show_series: !v });
+      this.querySelector('.settings-param__value').textContent = t(!v);
+      notify('Збережено');
+    });
+
+    content.querySelector('#op-ltf-clear').addEventListener('click', clearTracksCache);
+
+    // C) Seasons
+    content.querySelector('#op-seasons-key').addEventListener('click', function(){
+      var cur = load(); var curKey = cur.seasons_tmdb_key || '';
+      var val = (window.prompt && prompt('Встав ключ TMDB', curKey)) || curKey;
+      if (val !== null) {
+        save({ seasons_tmdb_key: String(val).trim() });
+        if (window.OtherPlusBridge && OtherPlusBridge.updateSeasons) OtherPlusBridge.updateSeasons({ tmdb_key: String(val).trim() });
+        this.querySelector('.settings-param__value').textContent = val ? ('•••'+String(val).slice(-4)) : '(не задано)';
+        notify('Ключ TMDB збережено');
+      }
+    });
+    content.querySelector('#op-seasons-save').addEventListener('click', function(){
+      var cur = load(); if (window.OtherPlusBridge && OtherPlusBridge.updateSeasons) OtherPlusBridge.updateSeasons({ tmdb_key: String(cur.seasons_tmdb_key||'').trim() });
+      notify('Ключ TMDB збережено');
+    });
+    content.querySelector('#op-seasons-clear').addEventListener('click', clearSeasonsCache);
+  }
+
+  // ——— ДОДАТИ ПУНКТ «Інше +» У МЕНЮ НАЛАШТУВАНЬ ———
+  function injectIntoSettings(settingsRoot){
+    if (!settingsRoot || settingsRoot.__op_patched) return;
+    settingsRoot.__op_patched = true;
+
+    var menuList = settingsRoot.querySelector('.settings__menu .settings-menu__list, .settings__menu, .settings-menu__list') || settingsRoot;
+    if (!menuList) return;
+
+    // знайти стандартний «Інше»
+    var items = Array.from(menuList.querySelectorAll('.selector, a, div, li')).filter(Boolean);
+    var otherItem = items.find(function(el){ var tx=(el.textContent||'').trim().toLowerCase(); return tx==='інше' || tx==='other'; });
+
+    var btn = document.createElement('div');
+    btn.className = otherItem ? otherItem.className : 'selector';
+    btn.textContent = 'Інше +';
+    btn.addEventListener('click', function(){
+      renderPage(settingsRoot);
+      // виділити активний пункт
+      Array.from(menuList.querySelectorAll('.selector')).forEach(function(x){ x.classList && x.classList.remove('active'); });
+      btn.classList && btn.classList.add('active');
+    });
+
+    if (otherItem && otherItem.parentNode) {
+      otherItem.parentNode.insertBefore(btn, otherItem.nextSibling);
+    } else {
+      menuList.appendChild(btn);
+    }
+  }
+
+  // ——— СПОСТЕРЕЖЕННЯ ЗА ВІДКРИТТЯМ СТОРІНКИ НАЛАШТУВАНЬ ———
+  function observeSettings(){
+    var mo = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        m.addedNodes && Array.from(m.addedNodes).forEach(function(n){
+          if (n.nodeType===1 && (n.classList && (n.classList.contains('settings') || n.matches('.settings,.settings-container,[data-component="settings"]')))){
+            injectIntoSettings(n);
+          }
+          if (n.querySelector) {
+            var s = n.querySelector('.settings') || n.querySelector('[data-component="settings"]');
+            if (s) injectIntoSettings(s);
+          }
+        });
+      });
+    });
+    mo.observe(document.body, {childList:true, subtree:true});
+  }
+
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', observeSettings);
+  else observeSettings();
+})();
+

@@ -1815,273 +1815,230 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
 })();
 
 /* ✅[OtherPlus Host in Quality+Mod]✅ */
-
-/* === [OtherPlus via SettingsApi — легкий та безпечний] ================== */
+/* === [OtherPlus (standalone) — меню «Інше +»] ============================ */
 (function(){
   'use strict';
   if (window.__OtherPlusHost) return;
   window.__OtherPlusHost = true;
 
-  var STORE_KEY = 'other_plus_settings';
-  function load(){ try{ return (Lampa.Storage.get(STORE_KEY)) || {}; }catch(e){ return {}; } }
-  function save(p){ var cur = load(); var next = Object.assign({}, cur, p||{}); try{ Lampa.Storage.set(STORE_KEY, next);}catch(e){} return next; }
-  function notify(msg){ try{ if (Lampa.Flash) Lampa.Flash.show(msg); }catch(e){} }
+  var STORE = 'other_plus_settings';
+  function read(){ try { return Lampa.Storage.get(STORE) || {}; } catch(e){ return {}; } }
+  function write(p){ var cur=read(); var next=Object.assign({},cur,p||{}); try{ Lampa.Storage.set(STORE,next); }catch(e){} return next; }
+  function toast(m){ try{ Lampa.Flash && Lampa.Flash.show(m);}catch(e){} }
+  function yn(v){ return v ? 'Так' : 'Ні'; }
 
-  // містки в твої плагіни (живе оновлення без перезавантаження)
+  // Містки для живого оновлення (якщо відповідні плагіни підключені)
   window.OtherPlusBridge = window.OtherPlusBridge || {};
   OtherPlusBridge.updateLQE = function (opts) {
     try {
       if (typeof opts.show_series === 'boolean') LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = opts.show_series;
       if (typeof opts.simple_labels === 'boolean') LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = opts.simple_labels;
-      if (typeof opts.show_full_label === 'boolean') {
-        document.body.classList.toggle('lqe-hide-full', !opts.show_full_label);
-      }
+      if (typeof opts.show_full_label === 'boolean') document.body.classList.toggle('lqe-hide-full', !opts.show_full_label);
     } catch(e){}
   };
-  OtherPlusBridge.updateLTF = function (opts) {
-    // залишено «гачок» для UA-Finder (за потреби підчепиш свої поля)
-  };
-  OtherPlusBridge.updateSeasons = function (opts) {
-    // залишено «гачок» для SeasonsInfo (напр., прийняти tmdb_key)
-  };
+  OtherPlusBridge.updateLTF = function (opts) { /* hook для UA-Finder */ };
+  OtherPlusBridge.updateSeasons = function (opts) { /* hook для SeasonsInfo */ };
 
-  // утиліти дій
-  function clearQualityCache(){ try{ var key = (window.LQE_CONFIG && LQE_CONFIG.CACHE_KEY) || 'lampa_quality_cache'; Lampa.Storage.set(key, {}); notify('Кеш якості очищено'); }catch(e){} }
-  function clearTracksCache(){ try{ var key = (window.LTF_CONFIG && LTF_CONFIG.CACHE_KEY) || 'lampa_ukr_tracks_cache'; Lampa.Storage.set(key, {}); notify('Кеш доріжок очищено'); }catch(e){} }
-  function clearSeasonsCache(){ try{ (window.safeStorage||localStorage).setItem('seasonBadgeCache','{}'); notify('Кеш сезонів очищено'); }catch(e){} }
+  // Дії
+  function clearQualityCache(){ try{ var k=(window.LQE_CONFIG&&LQE_CONFIG.CACHE_KEY)||'lampa_quality_cache'; Lampa.Storage.set(k,{}); toast('Кеш якості очищено'); }catch(e){} }
+  function clearTracksCache(){ try{ var k=(window.LTF_CONFIG&&LTF_CONFIG.CACHE_KEY)||'lampa_ukr_tracks_cache'; Lampa.Storage.set(k,{}); toast('Кеш доріжок очищено'); }catch(e){} }
+  function clearSeasonsCache(){ try{ (window.safeStorage||localStorage).setItem('seasonBadgeCache','{}'); toast('Кеш сезонів очищено'); }catch(e){} }
 
-  // невеличка SVG-іконка (контур квадрата)
-  var ICON_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" style="flex:0 0 auto"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+  var ICON = '<svg width="18" height="18" viewBox="0 0 24 24" style="flex:0 0 auto"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 
-  // ХЕДЕР «Інше +» — додаємо параметр і переносимо його одразу під «Інше»
-  Lampa.SettingsApi.addParam({
-    component: 'other',                                     // кладемо у стандартну секцію Other
-    param: { name: 'op_header', type: 'select', values:{noop:'—'}, "default": 'noop' },
-    field: {
-      name: '<div class="settings-folder" style="padding:0!important">' +
-            '<div style="display:flex;align-items:center;gap:.5em">'+ICON_SVG+'<span>Інше +</span></div></div>',
-      description: ''
-    },
-    onRender: function(item){
-      // як у твоєму прикладі з парсерами — акуратне позиціонування через onRender
-      // переносимо наш «хедер» відразу після стандартного розділу «Інше»
-      $('div[data-name="op_header"]').insertAfter('div[data-children="other"]'); /* позиціонування */ /* ⇐ прикладовий підхід */ 
-      item.hide(); // сам «select» не показуємо, він лише як якір/хедер
-    }
-  });
-  // підказка: вище ми застосували саме той підхід, що в еталоні — через onRender/insertAfter. :contentReference[oaicite:3]{index=3}
+  function register(){
+    var s = read();
 
-  // ===== A) Налаштування якості ===================================================
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: { name:'op_q_hdr', type:'select', values:{noop:'—'}, "default":"noop" },
-    field: { name:'<div class="settings-folder" style="padding:0!important"><div>Налаштування якості</div></div>',
-             description:'' },
-    onRender: function(item){ item.show(); } // просто вивести заголовок групи
-  });
-
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_lqe_show_series',
-      type: 'select',
-      values: { 'true':'Так', 'false':'Ні' },
-      "default": String((load().lqe_show_series!==false))
-    },
-    field: {
-      name: 'Якість для серіалів',
-      description: 'Показувати мітку якості на картках і сторінках серіалів'
-    },
-    onChange: function(v){
-      var val = (String(v)==='true');
-      save({ lqe_show_series: val });
-      if (OtherPlusBridge.updateLQE) OtherPlusBridge.updateLQE({ show_series: val });
-      notify('Збережено');
-    }
-  });
-
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_lqe_format',
-      type: 'select',
-      values: { 'simple':'Спрощений — «4K, FHD…»', 'full':'Повний — «2160p, 1080p…»' },
-      "default": (load().lqe_simple_labels===false ? 'full' : 'simple')
-    },
-    field: {
-      name: 'Формат мітки якості',
-      description: 'Оберіть вигляд бейджа якості'
-    },
-    onChange: function(v){
-      var isSimple = (v==='simple');
-      save({ lqe_simple_labels: isSimple });
-      if (OtherPlusBridge.updateLQE) OtherPlusBridge.updateLQE({ simple_labels: isSimple });
-      notify('Збережено');
-    }
-  });
-
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_lqe_fullcard',
-      type: 'select',
-      values: { 'true':'Так', 'false':'Ні' },
-      "default": String((load().lqe_show_full_label!==false))
-    },
-    field: {
-      name: 'Мітка якості у повній картці',
-      description: 'Показувати бейдж на сторінці тайтлу (повна картка)'
-    },
-    onChange: function(v){
-      var val = (String(v)==='true');
-      save({ lqe_show_full_label: val });
-      if (OtherPlusBridge.updateLQE) OtherPlusBridge.updateLQE({ show_full_label: val });
-      notify('Збережено');
-    }
-  });
-
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_lqe_clear',
-      type: 'select',
-      values: { 'noop':'—', 'clear':'Очистити кеш якості' },
-      "default": 'noop'
-    },
-    field: {
-      name: 'Очистити кеш якості',
-      description: 'Видалити збережені результати визначення якості. Пошук виконається заново'
-    },
-    onChange: function(v){
-      if (v==='clear') clearQualityCache();
-      // повернемо значення назад у «—», щоб пункт знову був готовий
-      setTimeout(function(){ Lampa.Storage.set('op_lqe_clear', 'noop'); Lampa.Settings.update(); }, 50);
-    }
-  });
-
-  // ===== B) Налаштування мітки UA доріжок =========================================
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: { name:'op_ltf_hdr', type:'select', values:{noop:'—'}, "default":"noop" },
-    field: { name:'<div class="settings-folder" style="padding:0!important"><div>Налаштування мітки UA доріжок</div></div>',
-             description:'' },
-    onRender: function(item){ item.show(); }
-  });
-
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_ltf_style',
-      type: 'select',
-      values: {
-        'text':'Текстова мітка: “Ukr”, “2xUkr”.',
-        'flag_count':'Прапорець із лічильником',
-        'flag_only':'Лише прапорець без тексту.'
+    // 0) Створюємо окремий компонент "other_plus" і позиціонуємо його під «Інше»
+    Lampa.SettingsApi.addParam({
+      component: 'other_plus',
+      param: { name:'op_header', type:'select', values:{noop:'—'}, "default":'noop' },
+      field: {
+        name: '<div class="settings-folder" style="padding:0!important"><div style="display:flex;align-items:center;gap:.5em">'+ICON+'<span>Інше +</span></div></div>',
+        description: ''
       },
-      "default": (load().ltf_display_mode || 'flag_count')
-    },
-    field: {
-      name: 'Стиль мітки',
-      description: 'Як відображати наявність українських доріжок.'
-    },
-    onChange: function(v){
-      save({ ltf_display_mode: v });
-      if (OtherPlusBridge.updateLTF) OtherPlusBridge.updateLTF({ display_mode: v });
-      notify('Збережено');
-    }
-  });
+      onRender: function(item){
+        item.show();
+        // Після побудови меню — перейменувати і пересунути лівий пункт
+        setTimeout(function(){
+          var left = $('div[data-children="other_plus"]');
+          if (left.length){
+            // підпис і іконка в лівому меню
+            var title = left.find('.settings-menu__title, .settings-menu__name');
+            if (title.length) title.html(ICON+'<span style="margin-left:.5em">Інше +</span>');
+            // поставити одразу після стандартного «Інше»
+            var anchor = $('div[data-children="other"]');
+            if (anchor.length) left.insertAfter(anchor);
+          }
+        },0);
+      }
+    });
 
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_ltf_show_series',
-      type: 'select',
-      values: { 'true':'Так', 'false':'Ні' },
-      "default": String((load().ltf_show_series!==false))
-    },
-    field: {
-      name: 'Показувати для серіалів',
-      description: 'Відображати мітку UA на картках і сторінках серіалів.'
-    },
-    onChange: function(v){
-      var val = (String(v)==='true');
-      save({ ltf_show_series: val });
-      if (OtherPlusBridge.updateLTF) OtherPlusBridge.updateLTF({ show_series: val });
-      notify('Збережено');
-    }
-  });
+    /* === A) Налаштування якості ===================================== */
+    Lampa.SettingsApi.addParam({
+      component: 'other_plus',
+      param:{ name:'op_q_hdr', type:'select', values:{noop:'—'}, "default":'noop' },
+      field:{ name:'<div class="settings-folder" style="padding:0!important"><div>Налаштування якості</div></div>', description:'' },
+      onRender:function(i){ i.show(); }
+    });
 
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_ltf_clear',
-      type: 'select',
-      values: { 'noop':'—', 'clear':'Очистити кеш доріжок' },
-      "default": 'noop'
-    },
-    field: {
-      name: 'Очистити кеш доріжок',
-      description: 'Скинути збережені дані про доріжки. Перевірка виконається заново.'
-    },
-    onChange: function(v){
-      if (v==='clear') clearTracksCache();
-      setTimeout(function(){ Lampa.Storage.set('op_ltf_clear', 'noop'); Lampa.Settings.update(); }, 50);
-    }
-  });
+    Lampa.SettingsApi.addParam({
+      component: 'other_plus',
+      param:{
+        name:'op_lqe_show_series',
+        type:'select',
+        values:{ 'true':'Так','false':'Ні' },
+        "default": String(s.lqe_show_series!==false)
+      },
+      field:{ name:'Якість для серіалів', description:'Показувати мітку якості на картках і сторінках серіалів' },
+      onChange:function(v){
+        var val = (String(v)==='true'); write({ lqe_show_series: val });
+        OtherPlusBridge.updateLQE && OtherPlusBridge.updateLQE({ show_series: val });
+        toast('Збережено');
+      }
+    });
 
-  // ===== C) Статус/Прогрес сезонів ================================================
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: { name:'op_seas_hdr', type:'select', values:{noop:'—'}, "default":"noop" },
-    field: { name:'<div class="settings-folder" style="padding:0!important"><div>Статус/Прогрес сезонів для серіалів</div></div>',
-             description:'' },
-    onRender: function(item){ item.show(); }
-  });
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{
+        name:'op_lqe_format',
+        type:'select',
+        values:{ 'simple':'Спрощений — «4K, FHD…»','full':'Повний — «2160p, 1080p…»' },
+        "default": (s.lqe_simple_labels===false ? 'full' : 'simple')
+      },
+      field:{ name:'Формат мітки якості', description:'Оберіть вигляд бейджа якості' },
+      onChange:function(v){
+        var simple = (v==='simple'); write({ lqe_simple_labels: simple });
+        OtherPlusBridge.updateLQE && OtherPlusBridge.updateLQE({ simple_labels: simple });
+        toast('Збережено');
+      }
+    });
 
-  // «Поле вводу»: зробимо клік-пункт, що відкриває prompt і зберігає ключ
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_seasons_key',
-      type: 'select',
-      values: { 'edit':'Редагувати ключ…' },
-      "default": 'edit'
-    },
-    field: {
-      name: 'TMDB API ключ',
-      description: 'Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org'
-    },
-    onRender: function(item){
-      // показати маскований ключ у значенні
-      var s = load(); var masked = s.seasons_tmdb_key ? ('•••'+String(s.seasons_tmdb_key).slice(-4)) : '(не задано)';
-      $('.settings-param__value', item).text(masked);
-      // на клік — prompt
-      $(item).on('hover:enter', function(){
-        var cur = (load().seasons_tmdb_key||'');
-        var val = (window.prompt && prompt('Встав ключ TMDB', cur)) || cur;
-        if (val !== null) {
-          save({ seasons_tmdb_key: String(val).trim() });
-          if (OtherPlusBridge.updateSeasons) OtherPlusBridge.updateSeasons({ tmdb_key: String(val).trim() });
-          $('.settings-param__value', item).text(val ? ('•••'+String(val).slice(-4)) : '(не задано)');
-          notify('Ключ TMDB збережено');
-        }
-      });
-    }
-  });
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{
+        name:'op_lqe_fullcard',
+        type:'select',
+        values:{ 'true':'Так','false':'Ні' },
+        "default": String(s.lqe_show_full_label!==false)
+      },
+      field:{ name:'Мітка якості у повній картці', description:'Показувати бейдж на сторінці тайтлу (повна картка)' },
+      onChange:function(v){
+        var val = (String(v)==='true'); write({ lqe_show_full_label: val });
+        OtherPlusBridge.updateLQE && OtherPlusBridge.updateLQE({ show_full_label: val });
+        toast('Збережено');
+      }
+    });
 
-  Lampa.SettingsApi.addParam({
-    component: 'other',
-    param: {
-      name: 'op_seasons_clear',
-      type: 'select',
-      values: { 'noop':'—', 'clear':'Очистити кеш' },
-      "default": 'noop'
-    },
-    field: { name: 'Очистити кеш', description: 'Скинути локальний кеш прогресу сезонів.' },
-    onChange: function(v){
-      if (v==='clear') clearSeasonsCache();
-      setTimeout(function(){ Lampa.Storage.set('op_seasons_clear', 'noop'); Lampa.Settings.update(); }, 50);
-    }
-  });
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{ name:'op_lqe_clear', type:'select', values:{ 'noop':'—','clear':'Очистити кеш якості' }, "default":'noop' },
+      field:{ name:'Очистити кеш якості', description:'Видалити збережені результати визначення якості. Пошук виконається заново' },
+      onChange:function(v){
+        if (v==='clear') clearQualityCache();
+        setTimeout(function(){ Lampa.Storage.set('op_lqe_clear','noop'); Lampa.Settings.update(); }, 50);
+      }
+    });
 
+    /* === B) Налаштування мітки UA доріжок =========================== */
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{ name:'op_ltf_hdr', type:'select', values:{noop:'—'}, "default":'noop' },
+      field:{ name:'<div class="settings-folder" style="padding:0!important"><div>Налаштування мітки UA доріжок</div></div>', description:'' },
+      onRender:function(i){ i.show(); }
+    });
+
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{
+        name:'op_ltf_style',
+        type:'select',
+        values:{ 'text':'Текстова мітка: “Ukr”, “2xUkr”.','flag_count':'Прапорець із лічильником','flag_only':'Лише прапорець без тексту.' },
+        "default": (s.ltf_display_mode || 'flag_count')
+      },
+      field:{ name:'Стиль мітки', description:'Як відображати наявність українських доріжок.' },
+      onChange:function(v){
+        write({ ltf_display_mode: v });
+        OtherPlusBridge.updateLTF && OtherPlusBridge.updateLTF({ display_mode: v });
+        toast('Збережено');
+      }
+    });
+
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{
+        name:'op_ltf_show_series',
+        type:'select',
+        values:{ 'true':'Так','false':'Ні' },
+        "default": String(s.ltf_show_series!==false)
+      },
+      field:{ name:'Показувати для серіалів', description:'Відображати мітку UA на картках і сторінках серіалів.' },
+      onChange:function(v){
+        var val=(String(v)==='true'); write({ ltf_show_series: val });
+        OtherPlusBridge.updateLTF && OtherPlusBridge.updateLTF({ show_series: val });
+        toast('Збережено');
+      }
+    });
+
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{ name:'op_ltf_clear', type:'select', values:{ 'noop':'—','clear':'Очистити кеш доріжок' }, "default":'noop' },
+      field:{ name:'Очистити кеш доріжок', description:'Скинути збережені дані про доріжки. Перевірка виконається заново.' },
+      onChange:function(v){
+        if (v==='clear') clearTracksCache();
+        setTimeout(function(){ Lampa.Storage.set('op_ltf_clear','noop'); Lampa.Settings.update(); }, 50);
+      }
+    });
+
+    /* === C) Статус/Прогрес сезонів для серіалів ===================== */
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{ name:'op_seas_hdr', type:'select', values:{noop:'—'}, "default":'noop' },
+      field:{ name:'<div class="settings-folder" style="padding:0!important"><div>Статус/Прогрес сезонів для серіалів</div></div>', description:'' },
+      onRender:function(i){ i.show(); }
+    });
+
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{ name:'op_seasons_key', type:'select', values:{ edit:'Редагувати ключ…' }, "default":'edit' },
+      field:{ name:'TMDB API ключ', description:'Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org' },
+      onRender:function(item){
+        var s = read(); var masked = s.seasons_tmdb_key ? ('•••'+String(s.seasons_tmdb_key).slice(-4)) : '(не задано)';
+        $('.settings-param__value', item).text(masked);
+        $(item).on('hover:enter', function(){
+          var cur = (read().seasons_tmdb_key||'');
+          var val = (window.prompt && prompt('Встав ключ TMDB', cur)) || cur;
+          if (val !== null) {
+            write({ seasons_tmdb_key: String(val).trim() });
+            OtherPlusBridge.updateSeasons && OtherPlusBridge.updateSeasons({ tmdb_key: String(val).trim() });
+            $('.settings-param__value', item).text(val ? ('•••'+String(val).slice(-4)) : '(не задано)');
+            toast('Ключ TMDB збережено');
+          }
+        });
+      }
+    });
+
+    Lampa.SettingsApi.addParam({
+      component:'other_plus',
+      param:{ name:'op_seasons_clear', type:'select', values:{ 'noop':'—','clear':'Очистити кеш' }, "default":'noop' },
+      field:{ name:'Очистити кеш', description:'Скинути локальний кеш прогресу сезонів.' },
+      onChange:function(v){
+        if (v==='clear') clearSeasonsCache();
+        setTimeout(function(){ Lampa.Storage.set('op_seasons_clear','noop'); Lampa.Settings.update(); }, 50);
+      }
+    });
+  }
+
+  // Чекаємо готовність Lampa, як у прикладі з парсерами
+  function start(){
+    try{ register(); }catch(e){}
+  }
+  if (window.appready) start();
+  else if (window.Lampa && Lampa.Listener){
+    Lampa.Listener.follow('app', function(e){ if (e.type==='ready') start(); });
+  } else {
+    setTimeout(start, 1500);
+  }
 })();
+
+

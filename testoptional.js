@@ -2665,8 +2665,12 @@ function ensureAltBadgesCss(){
     }
     Lampa.Template.add('card_episode', on ? tplEpisodeAlt : (tplEpisodeOriginal || tplEpisodeAlt));
     document.body.classList.toggle('ifx-ep-alt', !!on);
-    // ALT також вимагає "без великої цифри" і підміни назви на «Серія N»
-    document.body.classList.toggle('ifx-num-only', !!on || S.num_only);
+
+    // [!!!] ЗМІНЕНО:
+    // Раніше тут було: document.body.classList.toggle('ifx-num-only', !!on || S.num_only);
+    // Тепер 'ifx-num-only' керується незалежно, базуючись лише на S.num_only
+    document.body.classList.toggle('ifx-num-only', S.num_only);
+    
     try{ Lampa.Settings.update(); }catch(e){}
   }
 
@@ -2890,7 +2894,11 @@ function injectAll($scope){
   // ---------- «лише номер серії» (та ALT) ----------
   function applyNumberOnly($scope){
     $scope = $scope || $(document.body);
-    var force = (S.alt_ep || S.num_only); // у ALT завжди
+    
+    // [!!!] ЗМІНЕНО:
+    // Раніше було: var force = (S.alt_ep || S.num_only); // у ALT завжди
+    // Тепер 'force' залежить ТІЛЬКИ від S.num_only
+    var force = S.num_only;
 
     $scope.find('.card-episode .full-episode').each(function(){
       var $root = $(this);
@@ -2951,12 +2959,21 @@ function injectAll($scope){
         if (k===KEY_ALT){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
           setEpisodeAlt(S.alt_ep);
-          document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+          
+          // [!!!] ЗМІНЕНО:
+          // Рядок document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+          // ВИДАЛЕНО, оскільки setEpisodeAlt() тепер робить це коректно.
+          
           setTimeout(function(){ injectAll($(document.body)); }, 50);
         }
         if (k===KEY_NUM){
           S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
-          document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+
+          // [!!!] ЗМІНЕНО:
+          // Раніше було: document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+          // Тепер логіка незалежна:
+          document.body.classList.toggle('ifx-num-only', S.num_only);
+          
           applyNumberOnly($(document.body));
         }
         if (k==='interface_mod_new_alt_badges'){
@@ -2987,7 +3004,11 @@ function injectAll($scope){
   function boot(){
     ensureCss();
     setEpisodeAlt(S.alt_ep);
-    document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+    
+    // [!!!] ЗМІНЕНО:
+    // Рядок document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
+    // ВИДАЛЕНО, оскільки setEpisodeAlt() вище вже робить це коректно.
+    
     if (S.year_on) enableObserver(); else disableObserver();
     injectAll($(document.body));
    
@@ -3005,5 +3026,8 @@ function injectAll($scope){
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });
 })(); 
+  
+})();
+  
   
 })();

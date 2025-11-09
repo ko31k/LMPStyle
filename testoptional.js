@@ -3027,7 +3027,7 @@ function injectAll($scope){
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });
 })(); 
   
-})();
+
   
-  
+
 })();

@@ -1010,16 +1010,28 @@ function reprocessVisibleCardsChunked(){
     ltfToast('Кеш доріжок очищено');
   }
 
-  // 1) зареєструвати шаблон сторінки підменю `settings_ltf`
-  try {
-    Lampa.Template.add('settings_ltf', Lampa.Template.get('settings', {}, true));
-  } catch(e) {
-    // fallback
-    Lampa.Template.add('settings_ltf',
-      '<div class="settings"><div class="settings__head">'+
-        '<div class="settings__title">Мітки "UA" доріжок</div>'+
-      '</div><div class="settings__body"></div></div>');
-  }
+// 1) Чистий шаблон підменю LTF (без клонування базового "settings")
+if (!window.ltfTemplateReady) {
+  window.ltfTemplateReady = true;
+
+  Lampa.Template.add(
+    'settings_ltf',
+    '<div class="settings ltf-settings">' +
+      '<div class="settings__head">' +
+        '<div class="settings__title">Мітки "UA" доріжок</div>' +
+      '</div>' +
+      '<div class="settings__body"></div>' +
+    '</div>'
+  );
+
+  // невелике підправлення відступів/переносу заголовка
+  var css = document.createElement('style');
+  css.id = 'ltf_settings_fix';
+  css.textContent =
+    '.ltf-settings .settings__head{margin-bottom:.6em}' +
+    '.ltf-settings .settings__title{white-space:normal}';
+  document.head.appendChild(css);
+}
 
   function registerUI(){
     // 2) кнопка-вхід у "Інтерфейс" -> відкриває наше підменю `ltf`

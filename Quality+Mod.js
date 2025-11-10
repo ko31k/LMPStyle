@@ -454,63 +454,26 @@
     	"}" +
 		"</style>";
 
+// === LQE: пошук якості всередині rate-line (оновлені стилі) ===
+var lqeLoaderCss = "<style id=\"lqe_search_loader_css\">" +
+"#lqe-search-loader.loading-dots-container{display:inline-flex;align-items:center;gap:.4em;color:#ccc;font-size:.85em;background:rgba(0,0,0,.3);padding:.6em 1em;border-radius:.5em;pointer-events:none;}" +
+"#lqe-search-loader .loading-dots__text{margin-right:.6em;}" +
+"#lqe-search-loader .loading-dots__dot{width:.5em;height:.5em;border-radius:50%;background:currentColor;animation:lqe-dots-bounce 1.4s infinite ease-in-out both;}" +
+"#lqe-search-loader .loading-dots__dot:nth-child(2){animation-delay:-.16s;}" +
+"#lqe-search-loader .loading-dots__dot:nth-child(3){animation-delay:-.32s;}" +
+"@keyframes lqe-dots-bounce{0%,80%,100%{transform:translateY(0);opacity:.6;}40%{transform:translateY(-.5em);opacity:1;}}" +
+".full-start-new__rate-line.lqe-is-loading>:not(#lqe-search-loader),.full-start__rate-line.lqe-is-loading>:not(#lqe-search-loader){opacity:0!important;pointer-events:none!important;transition:opacity .15s;}" +
+"@media (max-width:600px){#lqe-search-loader.loading-dots-container{font-size:.8em;padding:.4em .8em;}}" +
+"</style>";
+Lampa.Template.add('lqe_search_loader_css', lqeLoaderCss);
+$('body').append(Lampa.Template.get('lqe_search_loader_css', {}, true));
+
+
     Lampa.Template.add('lampa_quality_fade', fadeStyles);
     $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
 
-    // Стилі для анімації завантаження (крапки)
-    var loadingStylesLQE = "<style id=\"lampa_quality_loading_animation\">" +
-        ".loading-dots-container {" + // Контейнер для анімації завантаження
-        "    position: absolute;" + // Абсолютне позиціонування
-        "    top: 50%;" + // По центру вертикалі
-        "    left: 0;" + // Лівий край
-        "    right: 0;" + // Правий край
-        "    text-align: left;" + // Вирівнювання тексту ліворуч
-        "    transform: translateY(-50%);" + // Центрування по вертикалі
-        "    z-index: 10;" + // Поверх інших елементів
-		"    pointer-events: none;" +
-        "}" +
-        ".full-start-new__rate-line {" + // Лінія рейтингу
-        "    position: relative;" + // Відносне позиціонування для абсолютних дітей
-        "}" +
-        ".loading-dots {" + // Контейнер крапок завантаження
-        "    display: inline-flex;" + // Inline-flex для вирівнювання
-        "    align-items: center;" + // Центрування по вертикалі
-        "    gap: 0.4em;" + // Відступи між елементами
-        "    color: #ffffff;" + // Колір тексту
-        "    font-size: 0.7em;" + // Розмір шрифту
-        "    background: rgba(0, 0, 0, 0.3);" + // Напівпрозорий фон
-        "    padding: 0.6em 1em;" + // Внутрішні відступи
-        "    border-radius: 0.5em;" + // Закруглення кутів
-        "}" +
-        ".loading-dots__text {" + // Текст "Пошук..."
-        "    margin-right: 1em;" + // Відступ праворуч
-        "}" +
-        ".loading-dots__dot {" + // Окремі крапки
-        "    width: 0.5em;" + // Ширина крапки
-        "    height: 0.5em;" + // Висота крапки
-        "    border-radius: 50%;" + // Кругла форма
-        "    background-color: currentColor;" + // Колір як у тексту
-        "    opacity: 0.3;" + // Напівпрозорість
-        "    animation: loading-dots-fade 1.5s infinite both;" + // Анімація
-        "}" +
-        ".loading-dots__dot:nth-child(2) {" + // Перша крапка
-        "    animation-delay: 0s;" + // Без затримки
-        "}" +
-        ".loading-dots__dot:nth-child(3) {" + // Друга крапка
-        "    animation-delay: 0.5s;" + // Затримка 0.5с
-        "}" +
-        ".loading-dots__dot:nth-child(4) {" + // Третя крапка
-        "    animation-delay: 1s;" + // Затримка 1с
-        "}" +
-        "@keyframes loading-dots-fade {" + // Анімація миготіння крапок
-        "    0%, 90%, 100% { opacity: 0.3; }" + // Низька прозорість
-        "    35% { opacity: 1; }" + // Пік видимості
-        "}" +
-        "@media screen and (max-width: 480px) { .loading-dots-container { -webkit-justify-content: center; justify-content: center; text-align: center; max-width: 100%; }}" + // Адаптація для мобільних
-        "</style>";
 
-    Lampa.Template.add('lampa_quality_loading_animation_css', loadingStylesLQE);
-    $('body').append(Lampa.Template.get('lampa_quality_loading_animation_css', {}, true));
+
 
 // ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
 
@@ -600,49 +563,78 @@
  * - Не додає дублікат, якщо анімація вже є
  * - Поважає налаштування: якщо мітку вимкнено — анімацію не показуємо
  */
-function addLoadingAnimation(cardId, renderElement) {
-    if (!renderElement) return;
+// === LQE loader (порт із ratingsmod) ===
+var __lqeRateLineObs = null;
 
-    // Якщо мітка у повній картці вимкнена — анімація не потрібна
-    if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) return;
+function addLoadingAnimation(cardId, renderElement){
+  if (!renderElement) return;
+  if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) return;
 
-    var rateLine = $('.full-start-new__rate-line', renderElement);
-    if (!rateLine.length) return;
+  var render = $(renderElement);
+  if (!render.length) return;
 
-    // Якщо анімація вже є — не дублюємо
-    if ($('.loading-dots-container', rateLine).length) return;
+  if ($('#lqe-search-loader', render).length) return; // вже є
 
-    // Вставляємо легку накладку "Пошук..." (без впливу на кліки)
-    rateLine.append(
-        '<div class="loading-dots-container" aria-hidden="true">' +
-            '<div class="loading-dots" aria-live="polite">' +
-                '<span class="loading-dots__text">Пошук...</span>' +
-                '<span class="loading-dots__dot"></span>' +
-                '<span class="loading-dots__dot"></span>' +
-                '<span class="loading-dots__dot"></span>' +
-            '</div>' +
-        '</div>'
-    );
+  var loaderHtml =
+    '<div id="lqe-search-loader" class="loading-dots-container">' +
+      '<span class="loading-dots__text">Пошук…</span>' +
+      '<span class="loading-dots__dot"></span>' +
+      '<span class="loading-dots__dot"></span>' +
+      '<span class="loading-dots__dot"></span>' +
+    '</div>';
 
-    // Робимо видимою (на випадок кастомних тем)
-    $('.loading-dots-container', rateLine).css({
-        opacity: '1',
-        visibility: 'visible'
-    });
+  var realSel = '.full-start-new__rate-line:not([data-lqe-fake]), .full-start__rate-line:not([data-lqe-fake])';
+  var rateLine = $(realSel, render).first();
+
+  if (rateLine.length){
+    rateLine.append(loaderHtml).addClass('lqe-is-loading');
+    return;
+  }
+
+  // якщо реального рядка ще немає — ставимо тимчасовий
+  var fake = $(
+    '<div class="full-start-new__rate-line" id="lqe-loader-fake" data-lqe-fake="1" '+
+    '     style="min-height:28px; display:flex; align-items:center;"></div>'
+  );
+  var anchor = $('.full-start-new__title, .full-start__title', render).first();
+  if (anchor.length) anchor.after(fake); else render.append(fake);
+  fake.append(loaderHtml);
+
+  try { if (__lqeRateLineObs) __lqeRateLineObs.disconnect(); } catch(_){}
+  __lqeRateLineObs = new MutationObserver(function(){
+    var rl = $(realSel, render).first();
+    var loader = $('#lqe-search-loader', render);
+    if (rl.length && loader.length){
+      rl.append(loader).addClass('lqe-is-loading');
+      $('#lqe-loader-fake', render).remove();
+      try { __lqeRateLineObs.disconnect(); } catch(_){}
+      __lqeRateLineObs = null;
+    }
+  });
+  if (render[0]) __lqeRateLineObs.observe(render[0], {childList:true, subtree:true});
+
+  setTimeout(function(){
+    if (__lqeRateLineObs){ try { __lqeRateLineObs.disconnect(); } catch(_){}
+      __lqeRateLineObs = null;
+    }
+  }, 6000);
 }
 
+function removeLoadingAnimation(cardId, renderElement){
+  if (!renderElement) return;
+  var render = $(renderElement);
+  if (!render.length) return;
 
-    /**
-     * Видаляє анімацію завантаження
-     * @param {string} cardId - ID картки
-     * @param {Element} renderElement - DOM елемент
-     */
-    function removeLoadingAnimation(cardId, renderElement) {
-        if (!renderElement) return;
-        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Remove loading animation");
-        // Видаляємо контейнер з анімацією
-        $('.loading-dots-container', renderElement).remove();
-    }
+  $('#lqe-search-loader', render).remove();
+  $('#lqe-loader-fake', render).remove();
+
+  var rl = $('.full-start-new__rate-line:not([data-lqe-fake]), .full-start__rate-line:not([data-lqe-fake])', render).first();
+  if (rl.length) rl.removeClass('lqe-is-loading');
+
+  try { if (__lqeRateLineObs) __lqeRateLineObs.disconnect(); } catch(_){}
+  __lqeRateLineObs = null;
+}
+
 
     // ===================== УТІЛІТИ =====================
     
@@ -1279,32 +1271,6 @@ function simplifyQualityLabel(fullLabel, originalTitle) {
         }
     }
 
-    /**
-     * Показує заглушку завантаження якості
-     * @param {string} cardId - ID картки
-     * @param {Element} renderElement - DOM елемент
-     */
-    function showFullCardQualityPlaceholder(cardId, renderElement) {
-        if (!renderElement) return;
-        var rateLine = $('.full-start-new__rate-line', renderElement);
-        if (!rateLine.length) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cannot show placeholder, .full-start-new__rate-line not found.");
-            return;
-        }
-        
-        // Перевіряємо, чи немає вже плейсхолдера якості
-        if (!$('.full-start__status.lqe-quality', rateLine).length) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Adding quality placeholder on full card.");
-            var placeholder = document.createElement('div');
-            placeholder.className = 'full-start__status lqe-quality';
-            placeholder.textContent = 'Пошук...';
-            placeholder.style.opacity = '0.7';
-            
-            rateLine.append(placeholder); // Додаємо плейсхолдер
-        } else {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Placeholder already exists on full card, skipping.");
-        }
-    }
 
     /**
      * Оновлює елемент якості на повній картці
@@ -1445,13 +1411,11 @@ function processFullCardQuality(cardData, renderElement) {
     }
 
     // Рядок із рейтингами та статусами (НЕ ховаємо його ніколи)
-    var rateLine = $('.full-start-new__rate-line', renderElement);
-    if (rateLine.length) {
-        // Можна ставити свій state-клас, але без приховування всього рядка
-        rateLine.addClass('done');
-        // Додаємо лише нашу локальну анімацію "Пошук..." (в середині рядка)
-        addLoadingAnimation(cardId, renderElement);
-    } else {
+
+	var rateLine = $('.full-start-new__rate-line', renderElement);
+		if (rateLine.length) {
+    		rateLine.addClass('done');
+		} else {
         if (LQE_CONFIG.LOGGING_GENERAL) {
             console.log("LQE-LOG", "card: " + cardId + ", .full-start-new__rate-line not found, skipping loading animation.");
         }
@@ -1541,51 +1505,23 @@ function processFullCardQuality(cardData, renderElement) {
     }
 
     // Кешу нема — робимо свіжий пошук
-    clearFullCardQualityElements(cardId, renderElement);      // очищаємо старі мітки (якщо були)
-    showFullCardQualityPlaceholder(cardId, renderElement);    // показуємо "Пошук..." саме для нашої мітки
+clearFullCardQualityElements(cardId, renderElement);
 
-    getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
-        if (LQE_CONFIG.LOGGING_QUALITY) {
-            console.log('LQE-QUALITY', 'card: ' + cardId + ', JacRed callback received for full card. Result:', jrResult);
-        }
+// показуємо лоадер рівно на час запиту
+addLoadingAnimation(cardId, renderElement);
 
-        var qualityCode = (jrResult && jrResult.quality) || null;
-        var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
+getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
+  var qualityCode = (jrResult && jrResult.quality) || null;
+  var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
 
-        if (LQE_CONFIG.LOGGING_QUALITY) {
-            console.log(
-                "LQE-QUALITY: JacRed returned - qualityCode: \"" +
-                qualityCode +
-                "\", full label: \"" +
-                fullTorrentTitle +
-                "\""
-            );
-        }
-
-        if (qualityCode && qualityCode !== 'NO') {
-            // Зберігаємо і малюємо
-            saveQualityCache(cacheKey, {
-                quality_code: qualityCode,
-                full_label: fullTorrentTitle
-            }, cardId);
-
-            updateFullCardQualityElement(
-                qualityCode,
-                fullTorrentTitle,
-                cardId,
-                renderElement
-            );
-        } else {
-            // Нічого не знайшли — просто прибираємо нашу мітку (інші елементи рядка не чіпаємо)
-            if (LQE_CONFIG.LOGGING_QUALITY) {
-                console.log("LQE-QUALITY", 'card: ' + cardId + ', No quality found from JacRed or it was "NO". Clearing quality elements.');
-            }
-            clearFullCardQualityElements(cardId, renderElement);
-        }
-
-        // Прибираємо індикатор завантаження для нашої мітки
-        removeLoadingAnimation(cardId, renderElement);
-    });
+  if (qualityCode && qualityCode !== 'NO'){
+    saveQualityCache(cacheKey, { quality_code: qualityCode, full_label: fullTorrentTitle }, cardId);
+    updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement);
+  } else {
+    clearFullCardQualityElements(cardId, renderElement);
+  }
+  removeLoadingAnimation(cardId, renderElement);
+});
 
     if (LQE_CONFIG.LOGGING_GENERAL) {
         console.log("LQE-LOG", "card: " + cardId + ", Full card quality processing initiated.");

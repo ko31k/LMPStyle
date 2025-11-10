@@ -205,7 +205,168 @@
 })();
 
 
+// ============================================================
+// ===  СПІЛЬНИЙ API КЕРУВАННЯ МЕНЮ НАЛАШТУВАНЬ (ModSettings) ===
+// ============================================================
+(function () {
+  'use strict';
+  if (window.LampaModSettingsApi) return;
 
+  var storage_key = 'mod_settings_storage';
+  var ICON_SQUARE = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+
+  function initStorage(pluginDefaults){
+    var stored = Lampa.Storage.get(storage_key, {}) || {};
+    var updated = false;
+    for (var k in pluginDefaults){
+      if (typeof stored[k] === 'undefined'){
+        stored[k] = pluginDefaults[k];
+        updated = true;
+      }
+    }
+    if (updated) Lampa.Storage.set(storage_key, stored);
+  }
+
+  window.LampaModSettingsApi = {
+    storage_key: storage_key,
+    tabs: [],
+    registerTab: function(tab){ this.tabs.push(tab); },
+    initPluginStorage: function(pluginDefaults){ initStorage(pluginDefaults); },
+
+    // Інлайн-додавання кнопки «Інше +» поруч з «Інше»
+    addSettingsButton: function(){
+      Lampa.Listener.follow('settings', function(e){
+        if (e.type !== 'open') return;
+        if (e.body.find(function(x){ return x && x.name === 'Інше +'; })) return;
+
+        var other = e.body.find(function(x){ return x && (x.name==='Інше' || x.name==='Other'); });
+        var btn = {
+          name: 'Інше +',
+          svg: ICON_SQUARE,
+          onSelect: function(){
+            Lampa.Activity.push({ component: 'mod_settings_component', type: 'settings', name: 'Інше +' });
+          }
+        };
+        var idx = other ? e.body.indexOf(other) : -1;
+        if (idx >= 0) e.body.splice(idx+1, 0, btn);
+        else e.body.push(btn);
+      });
+    }
+  };
+
+  // Реєструємо компонент екрана «Інше +»
+  (function registerOtherPlusComponent(){
+    if (window.__OtherPlusComponent) return;
+    window.__OtherPlusComponent = true;
+
+    Lampa.Component.add('mod_settings_component', function(){
+      var $root = null;
+
+      function renderItems(items){
+        var $box = $('<div/>');
+        (items||[]).forEach(function(it){
+          var $row = $('<div class="settings-param selector"></div>');
+          $row.append('<div class="settings-param__name">'+Lampa.Utils.escape(it.name)+'</div>');
+          if (it.descr) $row.append('<div class="settings-param__descr">'+Lampa.Utils.escape(it.descr)+'</div>');
+
+          if (it.type === 'trigger'){
+            var cur = Lampa.Storage.get(storage_key, {}) || {};
+            var val = typeof cur[it.field] !== 'undefined' ? !!cur[it.field] : !!it.default;
+            $row.append('<div class="settings-param__value">'+(val?'Так':'Ні')+'</div>');
+            $row.on('click', function(){
+              val = !val;
+              cur[it.field] = val;
+              Lampa.Storage.set(storage_key, cur);
+              $('.settings-param__value', $row).text(val?'Так':'Ні');
+              it.onChange && it.onChange(val);
+              Lampa.Flash.show('Збережено');
+            });
+          }
+          else if (it.type === 'select'){
+            var cur = Lampa.Storage.get(storage_key, {}) || {};
+            var curVal = (typeof cur[it.field] === 'boolean') ? (cur[it.field] ? 'true' : 'false') : (cur[it.field] || it.default || '');
+            $row.append('<div class="settings-param__value">'+ getTitle(curVal, it.values) +'</div>');
+            $row.on('click', function(){
+              Lampa.Select.show({
+                title: it.name,
+                items: it.values.map(function(v){ return { title:v.title, subtitle:v.descr, value:v.value, selected: v.value===curVal }; }),
+                onSelect: function(sel){
+                  curVal = sel.value;
+                  var stored = Lampa.Storage.get(storage_key, {}) || {};
+                  // якщо поле булеве — конвертуємо
+                  stored[it.field] = (curVal === 'true') ? true : (curVal === 'false' ? false : curVal);
+                  Lampa.Storage.set(storage_key, stored);
+                  $('.settings-param__value', $row).text(getTitle(curVal, it.values));
+                  it.onSelect && it.onSelect(curVal);
+                  Lampa.Flash.show('Збережено');
+                }
+              });
+            });
+          }
+          else if (it.type === 'input'){
+            var cur = Lampa.Storage.get(storage_key, {}) || {};
+            var curVal = (typeof cur[it.field] !== 'undefined' ? cur[it.field] : (it.default||''));
+            $row.append('<div class="settings-param__value">'+ (curVal ? '•••'+String(curVal).slice(-4) : '(не задано)') +'</div>');
+            $row.on('click', function(){
+              var nv = prompt(it.placeholder || '', curVal) || curVal;
+              cur[it.field] = nv;
+              Lampa.Storage.set(storage_key, cur);
+              $('.settings-param__value', $row).text(nv ? '•••'+String(nv).slice(-4) : '(не задано)');
+              it.onChange && it.onChange(nv);
+              Lampa.Flash.show('Збережено');
+            });
+          }
+          else if (it.type === 'button'){
+            $row.on('click', function(){ it.onSelect && it.onSelect(); });
+          }
+          $box.append($row);
+        });
+        return $box;
+      }
+
+      function getTitle(v, options){
+        var f = (options||[]).find(function(o){ return o.value===v; });
+        return f ? f.title : String(v);
+      }
+
+      function buildBody(){
+        var tabs = (window.LampaModSettingsApi.tabs || []).map(function(tab){
+          return { name: tab.name, body: tab.build() };
+        });
+
+        var $root = $('<div class="settings settings--mod"></div>');
+        var $head = $('<div class="settings__head"><div class="settings__title">Інше +</div></div>');
+        var $menu = $('<div class="settings__menu"></div>');
+        var $content = $('<div class="settings__content"></div>');
+        var $tabs = $('<div class="settings__tabs"></div>');
+
+        tabs.forEach(function(t,i){
+          var $btn = $('<div class="selector">'+Lampa.Utils.escape(t.name)+'</div>');
+          $btn.on('click', function(){
+            $('.settings__tabs .selector', $tabs).removeClass('active');
+            $btn.addClass('active');
+            $content.empty().append(renderItems(t.body));
+          });
+          if (i===0) $btn.addClass('active');
+          $tabs.append($btn);
+        });
+
+        $menu.append($tabs);
+        $root.append($head).append($menu).append($content);
+        if (tabs[0]) $content.append(renderItems(tabs[0].body));
+        return $root;
+      }
+
+      this.create = () => { $root = buildBody(); this.html($root); this.start(); };
+      this.render = () => $root || $('<div/>');
+      this._destroy = () => {};
+    });
+
+    // Додаємо кнопку в «Налаштування»
+    window.LampaModSettingsApi.addSettingsButton();
+  })();
+
+})();
 
 
 (function() {
@@ -284,6 +445,88 @@
     		},*/
 		}
     };
+
+// Прочитати збережені налаштування і застосувати до конфіга
+(function applyStoredLqeSettings(){
+  var modSettings = Lampa.Storage.get('mod_settings_storage', {}) || {};
+  if (typeof modSettings.quality_simple_labels === 'boolean'){
+    LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = modSettings.quality_simple_labels;
+  }
+  if (typeof modSettings.quality_for_tv === 'boolean'){
+    LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = modSettings.quality_for_tv;
+  }
+  if (typeof modSettings.quality_full_card === 'boolean'){
+    LQE_CONFIG.quality_full_card = modSettings.quality_full_card;
+  }
+})();
+
+
+// Реєстрація вкладки «Налаштування якості»
+(function registerQualityTab(){
+  if (!window.LampaModSettingsApi) return;
+
+  // Значення за замовчуванням для цього плагіна
+  var qualityDefaults = {
+    quality_for_tv: true,
+    quality_simple_labels: true,
+    quality_full_card: true
+  };
+  window.LampaModSettingsApi.initPluginStorage(qualityDefaults);
+
+  function buildQualityTab(){
+    return [
+      {
+        name: 'Якість для серіалів',
+        type: 'trigger',
+        field: 'quality_for_tv',
+        default: true,
+        descr: 'Показувати мітку якості на картках і сторінках серіалів',
+        onChange: function(v){ LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = !!v; }
+      },
+      {
+        name: 'Мітка якості у повній картці',
+        type: 'trigger',
+        field: 'quality_full_card',
+        default: true,
+        descr: 'Показувати бейдж на сторінці тайтлу (повна картка)',
+        onChange: function(v){ LQE_CONFIG.quality_full_card = !!v; }
+      },
+      {
+        name: 'Формат мітки якості',
+        type: 'select',
+        field: 'quality_simple_labels',
+        default: 'true',
+        descr: 'Оберіть вигляд бейджа якості',
+        values: [
+          { title: 'Спрощений', descr: '4K, FHD, HD…', value: 'true' },
+          { title: 'Повний',    descr: '2160p, 1080p, 720p…', value: 'false' }
+        ],
+        onSelect: function(val){
+          var isSimple = (val === 'true');
+          var s = Lampa.Storage.get('mod_settings_storage', {}) || {};
+          s.quality_simple_labels = isSimple;
+          Lampa.Storage.set('mod_settings_storage', s);
+          LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = isSimple;
+        }
+      },
+      {
+        name: 'Очистити кеш якості',
+        type: 'button',
+        descr: 'Видалити збережені результати визначення якості',
+        onSelect: function(){
+          Lampa.Storage.set(LQE_CONFIG.CACHE_KEY, {});
+          Lampa.Noty.show('Кеш якості очищено');
+        }
+      }
+    ];
+  }
+
+  window.LampaModSettingsApi.registerTab({
+    name: 'Налаштування якості',
+    build: buildQualityTab
+  });
+})();
+	
     var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
 
     // ===================== МАПИ ДЛЯ ПАРСИНГУ ЯКОСТІ =====================

@@ -229,7 +229,10 @@
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
-        MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
+        SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
+        SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
+		
+		MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
         
         USE_SIMPLE_QUALITY_LABELS: true, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
         
@@ -1415,8 +1418,23 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
             console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
             return;
         }
+
+
+		// NEW: вимкнення мітки у повній картці через налаштування
+        if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
+        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "Full-card quality label disabled by setting");
+        return;
+        }
         
         var cardId = cardData.id;
+           if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
+           if (LQE_CONFIG.LOGGING_GENERAL) console.log('LQE-LOG','Full-card quality label disabled by setting');
+           // опційно прибрати сліди, якщо вже є плейсхолдер:
+           // clearFullCardQualityElements(cardId, renderElement);
+        return;
+        }
+
+		
         if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Processing full card. Data: ", cardData);
         // Нормалізуємо дані картки
         var normalizedCard = {
@@ -1784,4 +1802,127 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
         }
     }
 
+
+
+
+/* ===== LQE: Settings (Interface -> "Мітки якості") ===== */
+(function(){
+  'use strict';
+
+  var SETTINGS_KEY = 'lqe_user_settings_v1';
+  var st;
+
+  function load(){
+    var s = (Lampa.Storage.get(SETTINGS_KEY) || {});
+    return {
+      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true,
+      show_full_card: (typeof s.show_full_card === 'boolean') ? s.show_full_card : true,
+      label_style: s.label_style || 'short'
+    };
+  }
+
+  function apply(){
+    window.LQE_CONFIG = window.LQE_CONFIG || {};
+    // Відображати мітки якості для серіалів
+    LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = !!st.show_tv;
+    // Відображати мітку якості у повній картці
+    if (typeof LQE_CONFIG.SHOW_FULL_CARD_LABEL !== 'boolean') LQE_CONFIG.SHOW_FULL_CARD_LABEL = true;
+    LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
+    // Стиль мітки: short = "4K/FHD", full = "2160/1080"
+    LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = (st.label_style === 'short');
+  }
+
+  function save(){
+    Lampa.Storage.set(SETTINGS_KEY, st);
+    apply();
+    if (typeof Lampa.Noty === 'function') Lampa.Noty('Збережено');
+  }
+
+  // Кнопка "Очистити кеш"
+  function lqeClearCache(){
+    try{
+      var key = (window.LQE_CONFIG && LQE_CONFIG.CACHE_KEY) ? LQE_CONFIG.CACHE_KEY : 'lampa_quality_cache';
+      Lampa.Storage.set(key, {}); // повне очищення кеш-об’єкта
+      if (typeof Lampa.Noty === 'function') Lampa.Noty('Кеш очищено');
+    }catch(e){
+      console.error('LQE clear cache error:', e);
+    }
+  }
+
+  function registerUI(){
+    // 1) Кнопка в «Інтерфейс», що відкриває нашу сторінку
+    Lampa.Template.add('settings_lqe', '<div></div>');
+    Lampa.SettingsApi.addParam({
+      component: 'interface',
+      param: { type: 'button', component: 'lqe' },
+      field: {
+        name: 'Мітки якості',
+        description: 'Керування відображенням міток якості'
+      },
+      onChange: function(){
+        Lampa.Settings.create('lqe', {
+          template: 'settings_lqe',
+          onBack: function(){ Lampa.Settings.create('interface'); }
+        });
+      }
+    });
+
+    // 2) Перемикач: мітки для серіалів
+    Lampa.SettingsApi.addParam({
+      component: 'lqe',
+      param: { name: 'lqe_show_tv', type: 'switch', default: st.show_tv },
+      field: { name: 'Відображати мітки якості для серіалів' },
+      onChange: function(v){ st.show_tv = !!v; save(); }
+    });
+
+    // 3) Перемикач: мітка у повній картці
+    Lampa.SettingsApi.addParam({
+      component: 'lqe',
+      param: { name: 'lqe_show_full_card', type: 'switch', default: st.show_full_card },
+      field: { name: 'Відображати мітку якості у повній картці' },
+      onChange: function(v){ st.show_full_card = !!v; save(); }
+    });
+
+    // 4) Селектор стилю мітки
+    Lampa.SettingsApi.addParam({
+      component: 'lqe',
+      param: {
+        name: 'lqe_label_style',
+        type: 'select',
+        values: {
+          short: 'Скорочене відображення (4K, FHD)',
+          full: 'Повне відображення (2160, 1080)'
+        },
+        default: st.label_style
+      },
+      field: { name: 'Стиль мітки якості' },
+      onChange: function(v){ st.label_style = v; save(); }
+    });
+
+    // 5) Кнопка "Очистити кеш"
+    Lampa.SettingsApi.addParam({
+      component: 'lqe',
+      param: { type: 'button', component: 'lqe_clear_cache' },
+      field: { name: 'Очистити кеш' },
+      onChange: function(){ lqeClearCache(); }
+    });
+  }
+
+  function start(){
+    st = load();
+    apply();
+    if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
+      registerUI();
+    }
+  }
+
+  // Реєструємо після готовності застосунку (як у TMDB-Networks)
+  if (window.appready) start();
+  else if (Lampa && Lampa.Listener) Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
+
+// при застосуванні/збереженні:
+LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
+	
+})();
+	
 })();

@@ -1410,8 +1410,17 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
      * @param {object} cardData - Дані картки
      * @param {Element} renderElement - DOM елемент
      */
-    function processFullCardQuality(cardData, renderElement) {
-        if (!renderElement) {
+
+	function processFullCardQuality(cardData, renderElement) {
+        // [НОВИЙ КОД] Перевірка, чи ввімкнено показ на повній картці
+        if (LQE_CONFIG.quality_full_card === false) {
+            removeLoadingAnimation(cardData.id, renderElement); // Прибираємо "Пошук..."
+            $('.full-start-new__rate-line', renderElement).css('visibility', 'visible'); // Показуємо лінію
+            return; // Не обробляємо
+        }
+        // [КІНЕЦЬ НОВОГО КОДУ]
+		
+		if (!renderElement) {
             console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
             return;
         }

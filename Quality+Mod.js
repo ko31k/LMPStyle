@@ -208,6 +208,7 @@
 // ============================================================
 // ===  СПІЛЬНИЙ API КЕРУВАННЯ МЕНЮ НАЛАШТУВАНЬ (ModSettings) ===
 // ============================================================
+// Цей API додає вкладку "Інше +" в налаштування і забезпечує сумісність.
 (function () {
   'use strict';
   if (window.LampaModSettingsApi) return;
@@ -307,13 +308,23 @@
             var cur = Lampa.Storage.get(storage_key, {}) || {};
             var curVal = (typeof cur[it.field] !== 'undefined' ? cur[it.field] : (it.default||''));
             $row.append('<div class="settings-param__value">'+ (curVal ? '•••'+String(curVal).slice(-4) : '(не задано)') +'</div>');
+            
+            // [ВИПРАВЛЕНО] Використовуємо Lampa.Input.open замість prompt(), який не працює на ТВ-приставках
             $row.on('click', function(){
-              var nv = prompt(it.placeholder || '', curVal) || curVal;
-              cur[it.field] = nv;
-              Lampa.Storage.set(storage_key, cur);
-              $('.settings-param__value', $row).text(nv ? '•••'+String(nv).slice(-4) : '(не задано)');
-              it.onChange && it.onChange(nv);
-              Lampa.Flash.show('Збережено');
+                Lampa.Input.open({
+                    title: it.name,
+                    value: curVal,
+                    placeholder: it.placeholder || '',
+                    onEnter: function(nv){
+                        if (nv === undefined) nv = curVal; 
+                        var s = Lampa.Storage.get(storage_key, {}) || {};
+                        s[it.field] = nv;
+                        Lampa.Storage.set(storage_key, s);
+                        $('.settings-param__value', $row).text(nv ? '•••'+String(nv).slice(-4) : '(не задано)');
+                        it.onChange && it.onChange(nv);
+                        Lampa.Flash.show('Збережено');
+                    }
+                });
             });
           }
           else if (it.type === 'button'){

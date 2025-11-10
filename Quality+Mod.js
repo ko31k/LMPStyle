@@ -396,7 +396,7 @@
     // Основні стилі для відображення якості
     var styleLQE = "<style id=\"lampa_quality_styles\">" +
         ".full-start-new__rate-line {" + // Контейнер для лінії рейтингу повної картки
-        "visibility: hidden;" + // Приховано під час завантаження
+        /* visibility: hidden;  // ← прибрано, бо ховало весь рядок назавжди */ // Приховано під час завантаження
         "flex-wrap: wrap;" + // Дозволити перенос елементів
         "gap: 0.4em 0;" + // Відступи між елементами
         "}" +
@@ -480,6 +480,7 @@
         "    text-align: left;" + // Вирівнювання тексту ліворуч
         "    transform: translateY(-50%);" + // Центрування по вертикалі
         "    z-index: 10;" + // Поверх інших елементів
+		"    pointer-events: none;"
         "}" +
         ".full-start-new__rate-line {" + // Лінія рейтингу
         "    position: relative;" + // Відносне позиціонування для абсолютних дітей
@@ -605,30 +606,44 @@
      * @param {string} cardId - ID картки
      * @param {Element} renderElement - DOM елемент
      */
-    function addLoadingAnimation(cardId, renderElement) {
-        if (!renderElement) return; // Перевірка наявності елемента
-        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Add loading animation");
-        // Знаходимо лінію рейтингу в контексті renderElement
-        var rateLine = $('.full-start-new__rate-line', renderElement);
-        // Перевіряємо наявність лінії та відсутність вже доданої анімації
-        if (!rateLine.length || $('.loading-dots-container', rateLine).length) return;
-        // Додаємо HTML структуру анімації
-        rateLine.append(
-            '<div class="loading-dots-container">' +
-            '<div class="loading-dots">' +
-            '<span class="loading-dots__text">Пошук...</span>' + // Текст завантаження
-            '<span class="loading-dots__dot"></span>' + // Крапка 1
-            '<span class="loading-dots__dot"></span>' + // Крапка 2
-            '<span class="loading-dots__dot"></span>' + // Крапка 3
+/**
+ * Додає анімацію завантаження всЕРЕДИНІ рядка рейтингів,
+ * не змінюючи видимість самого рядка.
+ * - НІКОЛИ не ховає .full-start-new__rate-line
+ * - Не додає дублікат, якщо анімація вже є
+ * - Поважає налаштування: якщо мітку вимкнено — анімацію не показуємо
+ */
+function addLoadingAnimation(cardId, renderElement) {
+    if (!renderElement) return;
+
+    // Якщо мітка у повній картці вимкнена — анімація не потрібна
+    if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) return;
+
+    var rateLine = $('.full-start-new__rate-line', renderElement);
+    if (!rateLine.length) return;
+
+    // Якщо анімація вже є — не дублюємо
+    if ($('.loading-dots-container', rateLine).length) return;
+
+    // Вставляємо легку накладку "Пошук..." (без впливу на кліки)
+    rateLine.append(
+        '<div class="loading-dots-container" aria-hidden="true">' +
+            '<div class="loading-dots" aria-live="polite">' +
+                '<span class="loading-dots__text">Пошук...</span>' +
+                '<span class="loading-dots__dot"></span>' +
+                '<span class="loading-dots__dot"></span>' +
+                '<span class="loading-dots__dot"></span>' +
             '</div>' +
-            '</div>'
-        );
-        // Робимо анімацію видимою
-        $('.loading-dots-container', rateLine).css({
-            'opacity': '1',
-            'visibility': 'visible'
-        });
-    }
+        '</div>'
+    );
+
+    // Робимо видимою (на випадок кастомних тем)
+    $('.loading-dots-container', rateLine).css({
+        opacity: '1',
+        visibility: 'visible'
+    });
+}
+
 
     /**
      * Видаляє анімацію завантаження

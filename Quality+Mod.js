@@ -362,12 +362,36 @@
       this._destroy = () => {};
     });
 
-    // Додаємо кнопку в «Налаштування»
-    window.LampaModSettingsApi.addSettingsButton();
-  })();
-
 })();
 
+
+// === [ВИПРАВЛЕННЯ] ЗАПУСК ІНІЦІАЛІЗАЦІЇ МЕНЮ ===
+// Цей код чекає, поки Lampa буде готова, і ТІЛЬКИ ТОДІ додає кнопку
+(function() {
+    'use strict';
+    
+    function runModSettingsInit() {
+        if (window.LampaModSettingsApi && !window.LampaModSettingsApi.buttonAdded) {
+            // Ця функція тепер викликається вчасно
+            window.LampaModSettingsApi.addSettingsButton();
+            window.LampaModSettingsApi.buttonAdded = true; // Прапорець, щоб додати кнопку лише один раз
+        }
+    }
+    
+    // Чекаємо на подію Lampa 'app' 'ready'
+    if (window.Lampa && Lampa.Listener) {
+        Lampa.Listener.follow('app', function(e) {
+            if (e.type === 'ready') {
+                runModSettingsInit();
+            }
+        });
+    } 
+    // Fallback для старих версій або якщо щось пішло не так
+    else {
+        document.addEventListener('DOMContentLoaded', runModSettingsInit);
+    }
+})();
+// === КІНЕЦЬ БЛОКУ ВИПРАВЛЕННЯ ===
 
 (function() {
     'use strict'; // Використання суворого режиму для запобігання помилок
@@ -1653,7 +1677,7 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
      * @param {object} cardData - Дані картки
      * @param {Element} renderElement - DOM елемент
      */
-
+	
 	function processFullCardQuality(cardData, renderElement) {
         // [НОВИЙ КОД] Перевірка, чи ввімкнено показ на повній картці
         if (LQE_CONFIG.quality_full_card === false) {

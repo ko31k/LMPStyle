@@ -1990,8 +1990,8 @@ function lqeClearCache(){
         name: 'lqe_label_style',
         type: 'select',
         values: {
-          short: 'Скорочене відображення (4K, FHD, тощо )',
-          full: 'Повне відображення (4K WEB-DLRIP, 1080P BRRIP, тощо )'
+          short: 'Скорочене відображення (4K, FHD)',
+          full: 'Повне відображення (4K WEB-DL, 1080P BRRIP)'
         },
         default: st.label_style
       },

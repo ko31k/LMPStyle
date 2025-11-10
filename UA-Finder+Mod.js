@@ -952,28 +952,23 @@ function reprocessVisibleCardsChunked(){
 
 /* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
 
+/* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
 (function(){
   'use strict';
 
   var SETTINGS_KEY = 'ltf_user_settings_v1';
   var st;
 
-  // простий тост із fallback
   function ltfToast(msg){
-    try {
-      if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
-      if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
-    } catch(e){}
-    var id='ltf_toast';
-    var el=document.getElementById(id);
+    try { if (Lampa?.Noty) return Lampa.Noty(msg); } catch(e){}
+    var id='ltf_toast', el=document.getElementById(id);
     if(!el){
       el=document.createElement('div');
       el.id=id;
       el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
       document.body.appendChild(el);
     }
-    el.textContent=msg;
-    el.style.opacity='1';
+    el.textContent=msg; el.style.opacity='1';
     setTimeout(function(){ el.style.opacity='0'; }, 1300);
   }
 
@@ -982,17 +977,16 @@ function reprocessVisibleCardsChunked(){
   function load(){
     var s = Lampa.Storage.get(SETTINGS_KEY) || {};
     return {
-      badge_style: s.badge_style || 'text',     // 'text' | 'flag_count' | 'flag_only'
+      badge_style: s.badge_style || 'text',           // 'text' | 'flag_count' | 'flag_only'
       show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
     };
   }
 
   function apply(){
-    LTF_CONFIG.DISPLAY_MODE  = st.badge_style;     // читає formatTrackLabel()
-    LTF_CONFIG.BADGE_STYLE   = st.badge_style;     // сумісність
+    LTF_CONFIG.DISPLAY_MODE  = st.badge_style;
+    LTF_CONFIG.BADGE_STYLE   = st.badge_style;        // сумісність
     LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
     LTF_CONFIG.SHOW_FOR_TV               = !!st.show_tv;
-
     try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
   }
 
@@ -1002,7 +996,6 @@ function reprocessVisibleCardsChunked(){
     ltfToast('Збережено');
   }
 
-  // очистка кешу доріжок
   function clearTracks(){
     try { if (typeof clearTracksCache === 'function') clearTracksCache(); } catch(e){}
     try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
@@ -1010,31 +1003,20 @@ function reprocessVisibleCardsChunked(){
     ltfToast('Кеш доріжок очищено');
   }
 
-// 1) Чистий шаблон підменю LTF (без клонування базового "settings")
-if (!window.ltfTemplateReady) {
-  window.ltfTemplateReady = true;
+  // 1) Реєструємо шаблон ПІДМЕНЮ як клон базового "settings"
+  if (!window.ltfTemplateReady) {
+    window.ltfTemplateReady = true;
+    Lampa.Template.add('settings_ltf', Lampa.Template.get('settings', {}, true));
+  }
 
-  Lampa.Template.add(
-    'settings_ltf',
-    '<div class="settings ltf-settings">' +
-      '<div class="settings__head">' +
-        '<div class="settings__title">Мітки "UA" доріжок</div>' +
-      '</div>' +
-      '<div class="settings__body"></div>' +
-    '</div>'
-  );
-
-  // невелике підправлення відступів/переносу заголовка
-  var css = document.createElement('style');
-  css.id = 'ltf_settings_fix';
-  css.textContent =
-    '.ltf-settings .settings__head{margin-bottom:.6em}' +
-    '.ltf-settings .settings__title{white-space:normal}';
-  document.head.appendChild(css);
-}
-
+  Lampa.SettingsApi.addComponent({
+  component: 'ltf',
+  name: 'Мітки "UA" доріжок'
+  });
+    
+    
   function registerUI(){
-    // 2) кнопка-вхід у "Інтерфейс" -> відкриває наше підменю `ltf`
+    // 2) Кнопка-вхід у розділі "Інтерфейс" -> відкриває наше підменю з власним шаблоном
     Lampa.SettingsApi.addParam({
       component: 'interface',
       param: { type: 'button', component: 'ltf' },
@@ -1044,13 +1026,13 @@ if (!window.ltfTemplateReady) {
       },
       onChange: function(){
         Lampa.Settings.create('ltf', {
+          template: 'settings_ltf',
           onBack: function(){ Lampa.Settings.create('interface'); }
         });
       }
     });
 
-    // 3) реальні пункти налаштувань — реєструємо у КОМПОНЕНТІ `ltf`
-    // стиль мітки
+    // 3) Реальні пункти (реєструємо у компоненті `ltf`)
     Lampa.SettingsApi.addParam({
       component: 'ltf',
       param: {
@@ -1067,7 +1049,6 @@ if (!window.ltfTemplateReady) {
       onChange: function(v){ st.badge_style = v; save(); }
     });
 
-    // показувати для серіалів
     Lampa.SettingsApi.addParam({
       component: 'ltf',
       param: {
@@ -1080,7 +1061,6 @@ if (!window.ltfTemplateReady) {
       onChange: function(v){ st.show_tv = toBool(v); save(); }
     });
 
-    // очистити кеш доріжок
     Lampa.SettingsApi.addParam({
       component: 'ltf',
       param: { type: 'button', component: 'ltf_clear_cache' },
@@ -1092,16 +1072,13 @@ if (!window.ltfTemplateReady) {
   function start(){
     st = load();
     apply();
-    if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
-      registerUI();
-    }
+    if (Lampa?.SettingsApi?.addParam) registerUI();
   }
 
   if (window.appready) start();
-  else if (Lampa && Lampa.Listener) {
+  else if (Lampa?.Listener) {
     Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
   }
 })();
-
 
 })();

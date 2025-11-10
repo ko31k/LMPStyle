@@ -229,7 +229,6 @@
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
-        SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
 		
 		MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
@@ -1427,12 +1426,12 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
         }
         
         var cardId = cardData.id;
-           if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
+        /* if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
            if (LQE_CONFIG.LOGGING_GENERAL) console.log('LQE-LOG','Full-card quality label disabled by setting');
            // опційно прибрати сліди, якщо вже є плейсхолдер:
            // clearFullCardQualityElements(cardId, renderElement);
         return;
-        }
+        } */
 
 		
         if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Processing full card. Data: ", cardData);
@@ -1921,7 +1920,7 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
   else if (Lampa && Lampa.Listener) Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
 
 // при застосуванні/збереженні:
-LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
+//LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
 	
 })();
 	

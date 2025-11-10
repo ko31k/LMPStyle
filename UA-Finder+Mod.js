@@ -699,13 +699,28 @@ function updateCardListTracksElement(cardView, trackCount) {
   cardView.appendChild(newWrapper);
 }
 
-    
+ // додай десь поруч із іншими утилітами
+function reprocessVisibleCardsChunked(){
+  const cards = Array.from(document.querySelectorAll('.card'))
+    .filter(c => c.isConnected && document.body.contains(c));
+  const BATCH = 20, DELAY = 25;
+  let i = 0;
+  (function tick(){
+    const part = cards.slice(i, i + BATCH);
+    part.forEach(card => processListCard(card));
+    i += BATCH;
+    if (i < cards.length) setTimeout(tick, DELAY);
+  })();
+}
+   
 
-    function clearTracksCache(){
-          try{
-            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); // повне очищення об’єкта кешу
-          }catch(e){}
-    }    
+function clearTracks(){
+  try { if (typeof clearTracksCache === 'function') clearTracksCache(); } catch(e){}
+  try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
+  reprocessVisibleCardsChunked(); // ⬅️ одразу перезапускаємо пошук для видимих карток
+  ltfToast('Кеш доріжок очищено');
+}
+  
    
     
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
@@ -1011,60 +1026,48 @@ function clearTracks(){
 }
 
 
-  function registerUI(){
-    // Кнопка входу в підменю
-    Lampa.SettingsApi.addParam({
-      component: 'interface',
-      param: { type: 'button', component: 'ltf' },
-      field: {
-        name: 'Мітки "UA" доріжок',
-        description: 'Стиль мітки, показ для серіалів, очищення кешу доріжок'
-      },
-      onChange: function(){
-        Lampa.Settings.create('ltf', {
-          onBack: function(){ Lampa.Settings.create('interface'); }
-        });
-      }
-    });
+function registerUI(){
+  var section = 'interface';
 
-    // Стиль мітки
-    Lampa.SettingsApi.addParam({
-      component: 'ltf',
-      param: {
-        name: 'ltf_badge_style',
-        type: 'select',
-        values: {
-          text: 'Текстова мітка (“Ukr”, “2xUkr”)',
-          flag_count: 'Прапорець із лічильником',
-          flag_only: 'Лише прапорець'
-        },
-        default: st.badge_style
+  // Стиль мітки
+  Lampa.SettingsApi.addParam({
+    component: section,
+    param: {
+      name: 'ltf_badge_style',
+      type: 'select',
+      values: {
+        text: 'Текстова мітка (“Ukr”, “2xUkr”)',
+        flag_count: 'Прапорець із лічильником',
+        flag_only: 'Лише прапорець'
       },
-      field: { name: 'Стиль мітки' },
-      onChange: function(v){ st.badge_style = v; save(); }
-    });
+      default: st.badge_style
+    },
+    field: { name: 'Мітки "UA" доріжок — стиль' },
+    onChange: function(v){ st.badge_style = v; save(); }
+  });
 
-    // Показувати для серіалів
-    Lampa.SettingsApi.addParam({
-      component: 'ltf',
-      param: {
-        name: 'ltf_show_tv',
-        type: 'select',
-        values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
-        default: String(st.show_tv)
-      },
-      field: { name: 'Показувати для серіалів' },
-      onChange: function(v){ st.show_tv = toBool(v); save(); }
-    });
+  // Показувати для серіалів
+  Lampa.SettingsApi.addParam({
+    component: section,
+    param: {
+      name: 'ltf_show_tv',
+      type: 'select',
+      values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
+      default: String(st.show_tv)
+    },
+    field: { name: 'Мітки "UA" доріжок — показувати для серіалів' },
+    onChange: function(v){ st.show_tv = toBool(v); save(); }
+  });
 
-    // Очистити кеш доріжок
-    Lampa.SettingsApi.addParam({
-      component: 'ltf',
-      param: { type: 'button', component: 'ltf_clear_cache' },
-      field: { name: 'Очистити кеш доріжок' },
-      onChange: function(){ clearTracks(); }
-    });
-  }
+  // Очистити кеш доріжок
+  Lampa.SettingsApi.addParam({
+    component: section,
+    param: { type: 'button', component: 'ltf_clear_cache' },
+    field: { name: 'Мітки "UA" доріжок — очистити кеш доріжок' },
+    onChange: function(){ clearTracks(); }
+  });
+}
+
 
   function start(){
     st = load();

@@ -286,7 +286,10 @@
     		},*/
 		}
     };
-    var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
+    
+	
+    window.LQE_CONFIG = LQE_CONFIG;
+	var currentGlobalMovieId = null; // Змінна для відстеження поточного ID фільму
 
     // ===================== МАПИ ДЛЯ ПАРСИНГУ ЯКОСТІ =====================
     
@@ -1810,6 +1813,27 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
 
   var SETTINGS_KEY = 'lqe_user_settings_v1';
   var st;
+// Простий тост з fallback, якщо Lampa.Noty недоступний
+function lqeToast(msg){
+  try {
+    if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
+    if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
+  } catch(e){}
+  var id='lqe_toast';
+  var el=document.getElementById(id);
+  if(!el){
+    el=document.createElement('div');
+    el.id=id;
+    el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg;
+  el.style.opacity='1';
+  setTimeout(function(){ el.style.opacity='0'; }, 1300);
+}
+ 
+	
+  
 
   function load(){
     var s = (Lampa.Storage.get(SETTINGS_KEY) || {});
@@ -1820,33 +1844,29 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
     };
   }
 
-  function apply(){
-    window.LQE_CONFIG = window.LQE_CONFIG || {};
-    // Відображати мітки якості для серіалів
-    LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = !!st.show_tv;
-    // Відображати мітку якості у повній картці
-    if (typeof LQE_CONFIG.SHOW_FULL_CARD_LABEL !== 'boolean') LQE_CONFIG.SHOW_FULL_CARD_LABEL = true;
-    LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
-    // Стиль мітки: short = "4K/FHD", full = "2160/1080"
-    LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = (st.label_style === 'short');
-  }
+function apply(){
+  LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = !!st.show_tv;
+  if (typeof LQE_CONFIG.SHOW_FULL_CARD_LABEL !== 'boolean') LQE_CONFIG.SHOW_FULL_CARD_LABEL = true;
+  LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
+  LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = (st.label_style === 'short');
+}
 
-  function save(){
-    Lampa.Storage.set(SETTINGS_KEY, st);
-    apply();
-    if (typeof Lampa.Noty === 'function') Lampa.Noty('Збережено');
-  }
+function save(){
+  Lampa.Storage.set(SETTINGS_KEY, st);
+  apply();
+  lqeToast('Збережено');
+}
 
   // Кнопка "Очистити кеш"
-  function lqeClearCache(){
-    try{
-      var key = (window.LQE_CONFIG && LQE_CONFIG.CACHE_KEY) ? LQE_CONFIG.CACHE_KEY : 'lampa_quality_cache';
-      Lampa.Storage.set(key, {}); // повне очищення кеш-об’єкта
-      if (typeof Lampa.Noty === 'function') Lampa.Noty('Кеш очищено');
-    }catch(e){
-      console.error('LQE clear cache error:', e);
-    }
+function lqeClearCache(){
+  try{
+    var key = (window.LQE_CONFIG && LQE_CONFIG.CACHE_KEY) ? LQE_CONFIG.CACHE_KEY : 'lampa_quality_cache';
+    Lampa.Storage.set(key, {}); // повне очищення кеш-об’єкта
+    lqeToast('Кеш очищено');
+  }catch(e){
+    console.error('LQE clear cache error:', e);
   }
+}
 
   function registerUI(){
     // 1) Кнопка в «Інтерфейс», що відкриває нашу сторінку
@@ -1866,21 +1886,35 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
       }
     });
 
-    // 2) Перемикач: мітки для серіалів
-    Lampa.SettingsApi.addParam({
-      component: 'lqe',
-      param: { name: 'lqe_show_tv', type: 'switch', default: st.show_tv },
-      field: { name: 'Відображати мітки якості для серіалів' },
-      onChange: function(v){ st.show_tv = !!v; save(); }
-    });
 
-    // 3) Перемикач: мітка у повній картці
-    Lampa.SettingsApi.addParam({
-      component: 'lqe',
-      param: { name: 'lqe_show_full_card', type: 'switch', default: st.show_full_card },
-      field: { name: 'Відображати мітку якості у повній картці' },
-      onChange: function(v){ st.show_full_card = !!v; save(); }
-    });
+
+ // 2) Перемикач (через select): мітки для серіалів
+ Lampa.SettingsApi.addParam({
+   component: 'lqe',
+   param: {
+     name: 'lqe_show_tv',
+     type: 'select',
+     values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
+     default: String(st.show_tv)
+   },
+   field: { name: 'Відображати мітки якості для серіалів' },
+   onChange: function(v){ st.show_tv = (String(v) === 'true'); save(); }
+ });
+
+
+ // 3) Перемикач (через select): мітка у повній картці
+ Lampa.SettingsApi.addParam({
+   component: 'lqe',
+   param: {
+     name: 'lqe_show_full_card',
+     type: 'select',
+     values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
+     default: String(st.show_full_card)
+   },
+   field: { name: 'Відображати мітку якості у повній картці' },
+   onChange: function(v){ st.show_full_card = (String(v) === 'true'); save(); }
+ });
+
 
     // 4) Селектор стилю мітки
     Lampa.SettingsApi.addParam({
@@ -1889,8 +1923,8 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
         name: 'lqe_label_style',
         type: 'select',
         values: {
-          short: 'Скорочене відображення (4K, FHD)',
-          full: 'Повне відображення (2160, 1080)'
+          short: 'Скорочене відображення (4K, FHD, тощо )',
+          full: 'Повне відображення (4K WEB-DLRIP, 1080P BRRIP, тощо )'
         },
         default: st.label_style
       },

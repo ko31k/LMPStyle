@@ -32,10 +32,11 @@
     // ✅ використовуємо CSS для швидкості відмальовки прапора 
     var ukraineFlagSVG = '<i class="flag-css"></i>';
     
-
    
     // Головний об'єкт конфігурації
-    var LTF_CONFIG = {
+    var LTF_CONFIG = window.LTF_CONFIG || {
+        BADGE_STYLE: 'text',        // 'text' | 'flag_count' | 'flag_only'
+        SHOW_FOR_TV: true,          // показувати на серіалах
         // --- Налаштування кешу ---
         CACHE_VERSION: 4, // ❗ Змініть це число (напр. 5), якщо хочете примусово скинути весь кеш у користувачів.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
@@ -81,6 +82,9 @@
     
     };
 
+    window.LTF_CONFIG = LTF_CONFIG;
+
+    
     // ======== АВТОМАТИЧНЕ СКИДАННЯ СТАРОГО КЕШУ ПРИ ОНОВЛЕННІ ========
     // Ця IIFE (Immediately Invoked Function Expression) виконується один раз при старті.
     // Вона перевіряє, чи є в кеші записи від старої версії (без префікса версії),
@@ -169,9 +173,8 @@ var styleTracks = "<style id=\"lampa_tracks_styles\">" +
     
     "}" +
     
-    "}" +
-
-    "</style>";
+     "</style>";
+    
 // Додаємо стилі в DOM один раз при завантаженні плагіна.
 Lampa.Template.add('lampa_tracks_css', styleTracks);
 $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
@@ -603,6 +606,39 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
         };
         Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
     }
+
+document.addEventListener('ltf:settings-changed', function(){
+  // проходимо видимі картки та оновлюємо без нових мережевих запитів
+  document.querySelectorAll('.card').forEach(function(card){
+    var view = card.querySelector('.card__view');
+    var data = card.card_data;
+    if (!view || !data) return;
+
+    // якщо серіали вимкнено — просто прибираємо бейдж і далі нічого
+    var type = (data.media_type || data.type || (data.name || data.original_name ? 'tv' : 'movie'));
+    if (type === 'tv' && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES){
+      var ex = view.querySelector('.card__tracks');
+      if (ex) ex.remove();
+      return;
+    }
+
+    var id = data.id || '';
+    // ручне перевизначення має пріоритет
+    var manual = LTF_CONFIG.MANUAL_OVERRIDES && LTF_CONFIG.MANUAL_OVERRIDES[id];
+    if (manual){
+      updateCardListTracksElement(view, manual.track_count || 0);
+      return;
+    }
+
+    var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + type + '_' + id;
+    var cached = getTracksCache(cacheKey);
+    var count = cached ? (cached.track_count || 0) : 0;
+
+    updateCardListTracksElement(view, count);
+  });
+});
+
+
     
 // ===================== ОНОВЛЕННЯ ІНТЕРФЕЙСУ (UI) =====================
 /**
@@ -611,54 +647,67 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
  * @param {number} trackCount - Кількість доріжок (0, 1, 2...).
  */
 function updateCardListTracksElement(cardView, trackCount) {
-    // Отримуємо HTML-рядок для мітки (або null)
-    const displayLabel = formatTrackLabel(trackCount); 
-    const existingElement = cardView.querySelector('.card__tracks');
-    
-    // --- Логіка видалення ---
-    // Якщо мітки не має бути (displayLabel=null), а вона є - видаляємо.
-    if (!displayLabel) {
-        if (existingElement) existingElement.remove();
-        return;
-    }
-    
-    // --- Логіка оптимізації ---
-    // Якщо мітка вже є і її ВМІСТ той самий - нічого не робимо.
-    // ❗ Використовуємо .innerHTML, бо ми порівнюємо SVG-рядки.
-    if (existingElement && existingElement.innerHTML === displayLabel) {
-        return;
-    }
-    
-    // --- Логіка малювання/оновлення ---
-    // В інших випадках - видаляємо стару (якщо є) і малюємо нову.
-    if (existingElement) existingElement.remove();
-    
-    // Створюємо елементи
-    const trackDiv = document.createElement('div');
-    trackDiv.className = 'card__tracks';
+  // 1) готуємо мітку
+  const displayLabel = formatTrackLabel(trackCount);
+  const wrapper = cardView.querySelector('.card__tracks');
 
-    // Перевірка сумісності з RatingUp
+  // допоміжна: правильно розмістити під рейтингом (RatingUp)
+  function ensurePositionClass(el){
     const parentCard = cardView.closest('.card');
-    if (parentCard) {
-        const voteElement = parentCard.querySelector('.card__vote');
-        if (voteElement) {
-             const topStyle = getComputedStyle(voteElement).top;
-             // Якщо 'top' < 100px - значить, рейтинг у верхньому куті.
-             if (topStyle !== 'auto' && parseInt(topStyle) < 100) {
-                 trackDiv.classList.add('positioned-below-rating'); // Зміщуємо нашу мітку
-             }
-        }
+    if (!parentCard) return;
+    const vote = parentCard.querySelector('.card__vote');
+    if (!vote) { el.classList.remove('positioned-below-rating'); return; }
+    const topStyle = getComputedStyle(vote).top;
+    if (topStyle !== 'auto' && parseInt(topStyle) < 100) el.classList.add('positioned-below-rating');
+    else el.classList.remove('positioned-below-rating');
+  }
+
+  // 2) якщо мітка не потрібна — прибираємо існуючу та виходимо
+  if (!displayLabel) {
+    if (wrapper) wrapper.remove();
+    return;
+  }
+
+  // 3) якщо контейнер уже є — оновлюємо тільки вміст (без видалення вузла)
+  if (wrapper) {
+    let inner = wrapper.firstElementChild;
+    if (!inner) {
+      inner = document.createElement('div');
+      wrapper.appendChild(inner);
     }
-    
-    // ❗ Важливо: використовуємо innerHTML, щоб SVG коректно відобразився як HTML,
-    // а не просто як текст.
-    const innerElement = document.createElement('div');
-    innerElement.innerHTML = displayLabel;
-    
-    // Додаємо в DOM
-    trackDiv.appendChild(innerElement);
-    cardView.appendChild(trackDiv);
+
+    // нічого не робимо, якщо текст/HTML збіглися
+    if (inner.innerHTML === displayLabel) {
+      ensurePositionClass(wrapper);
+      return;
+    }
+
+    inner.innerHTML = displayLabel;
+    ensurePositionClass(wrapper);
+    return;
+  }
+
+  // 4) інакше — створюємо новий контейнер
+  const newWrapper = document.createElement('div');
+  newWrapper.className = 'card__tracks';
+
+  const inner = document.createElement('div');
+  inner.innerHTML = displayLabel;
+
+  newWrapper.appendChild(inner);
+  ensurePositionClass(newWrapper);
+  cardView.appendChild(newWrapper);
 }
+
+    
+
+    function clearTracksCache(){
+          try{
+            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); // повне очищення об’єкта кешу
+          }catch(e){}
+    }    
+   
+    
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
     /**
      * 🟩 ІДЕМПОТЕНТНА ЛОГІКА
@@ -895,13 +944,14 @@ function updateCardListTracksElement(cardView, trackCount) {
     
 
 /* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
+
 (function(){
   'use strict';
 
   var SETTINGS_KEY = 'ltf_user_settings_v1';
   var st;
 
-  // Легка "тост"-нотифікація з fallback, якщо Lampa.Noty недоступний
+  // Простий тост із fallback
   function ltfToast(msg){
     try {
       if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
@@ -917,115 +967,84 @@ function updateCardListTracksElement(cardView, trackCount) {
     }
     el.textContent=msg;
     el.style.opacity='1';
-    setTimeout(function(){ el.style.opacity='0'; }, 1200);
+    setTimeout(function(){ el.style.opacity='0'; }, 1300);
   }
 
-  // Завантажити збережені налаштування (або дефолти)
+  // Надійна конверсія у boolean
+  function toBool(v){ return v === true || String(v) === 'true'; }
+
   function load(){
-    var s = (Lampa.Storage.get(SETTINGS_KEY) || {});
+    var s = Lampa.Storage.get(SETTINGS_KEY) || {};
     return {
-      display_mode: s.display_mode || 'flag_count',                  // text | flag_count | flag_only
-      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true  // Показ для серіалів
+      badge_style: s.badge_style || 'text',          // 'text' | 'flag_count' | 'flag_only'
+      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
     };
   }
 
-  // Застосувати до живої конфігурації плагіна
-  function apply(){
-    // Безпека: якщо LTF_CONFIG ще не існує — тихо вийти
-    if (!window.LTF_CONFIG) return;
+function apply(){
+  // стиль мітки — синхронно в обидва поля
+  LTF_CONFIG.DISPLAY_MODE  = st.badge_style; // читає formatTrackLabel()
+  LTF_CONFIG.BADGE_STYLE   = st.badge_style; // лишаємо для сумісності, якщо десь використаєш
 
-    // Налаштування відображення
-    var okModes = { text:1, flag_count:1, flag_only:1 };
-    LTF_CONFIG.DISPLAY_MODE = okModes[st.display_mode] ? st.display_mode : 'flag_count';
+  // показ для серіалів — синхронно в обидва поля
+  LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv; // читає processListCard()
+  LTF_CONFIG.SHOW_FOR_TV               = !!st.show_tv; // на майбутнє / сумісність
 
-    // Показ для серіалів
-    LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
-  }
+  // «живе» оновлення вже намальованих карток
+  try {
+    document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } }));
+  } catch(e){}
+}
 
-  // Допоміжне: м’яко оновити мітки на вже видимих картках
-  function refreshVisibleCards(){
-    try{
-      var cards = document.querySelectorAll('.card');
-      if (!cards || !cards.length) return;
 
-      cards.forEach(function(card){
-        var cardView = card.querySelector('.card__view');
-        if (!cardView) return;
-
-        // Якщо серіали вимкнені — знімаємо UA-мітку для таких карток
-        if (!st.show_tv && card.card_data){
-          var type = (card.card_data.media_type || card.card_data.type);
-          // Додаткова евристика
-          if (type !== 'movie') {
-            var t = cardView.querySelector('.card__tracks');
-            if (t) t.remove();
-            return;
-          }
-        }
-        // Використовуємо штатну логіку плагіна, щоб перемалювати під нові налаштування
-        if (typeof processListCard === 'function') processListCard(card);
-      });
-    }catch(e){}
-  }
-
-  // Зберегти → застосувати → оновити екран
   function save(){
     Lampa.Storage.set(SETTINGS_KEY, st);
     apply();
-    refreshVisibleCards();
     ltfToast('Збережено');
   }
 
-  // Кнопка «Очистити кеш доріжок»
-  function clearTracksCache(){
-    try{
-      var key = (window.LTF_CONFIG && LTF_CONFIG.CACHE_KEY) ? LTF_CONFIG.CACHE_KEY : 'lampa_ukr_tracks_cache';
-      Lampa.Storage.set(key, {}); // повне очищення кеш-об’єкта
-      // Прибрати всі видимі мітки
-      document.querySelectorAll('.card__tracks').forEach(function(el){ el.remove(); });
-      ltfToast('Кеш доріжок очищено');
-    }catch(e){
-      console.error('LTF clear cache error:', e);
-    }
-  }
+  // Очистка кешу доріжок (твій існуючий clearTracksCache() викликаємо звідси)
+function clearTracks(){
+  try { if (typeof clearTracksCache === 'function') clearTracksCache(); } catch(e){}
+  try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
+  ltfToast('Кеш доріжок очищено');
+}
 
-  // Реєстрація пунктів у розділі «Інтерфейс»
+
   function registerUI(){
-    // Кнопка, що відкриває нашу сторінку
-    Lampa.Template.add('settings_ltf', '<div></div>');
+    // Кнопка входу в підменю
     Lampa.SettingsApi.addParam({
       component: 'interface',
       param: { type: 'button', component: 'ltf' },
       field: {
         name: 'Мітки "UA" доріжок',
-        description: 'Керування відображенням міток українських аудіодоріжок'
+        description: 'Стиль мітки, показ для серіалів, очищення кешу доріжок'
       },
       onChange: function(){
         Lampa.Settings.create('ltf', {
-          template: 'settings_ltf',
           onBack: function(){ Lampa.Settings.create('interface'); }
         });
       }
     });
 
-    // Селектор: Стиль мітки
+    // Стиль мітки
     Lampa.SettingsApi.addParam({
       component: 'ltf',
       param: {
-        name: 'ltf_display_mode',
+        name: 'ltf_badge_style',
         type: 'select',
         values: {
           text: 'Текстова мітка (“Ukr”, “2xUkr”)',
           flag_count: 'Прапорець із лічильником',
           flag_only: 'Лише прапорець'
         },
-        default: st.display_mode
+        default: st.badge_style
       },
       field: { name: 'Стиль мітки' },
-      onChange: function(v){ st.display_mode = v; save(); }
+      onChange: function(v){ st.badge_style = v; save(); }
     });
 
-    // Селектор: Показувати для серіалів
+    // Показувати для серіалів
     Lampa.SettingsApi.addParam({
       component: 'ltf',
       param: {
@@ -1035,19 +1054,18 @@ function updateCardListTracksElement(cardView, trackCount) {
         default: String(st.show_tv)
       },
       field: { name: 'Показувати для серіалів' },
-      onChange: function(v){ st.show_tv = (String(v) === 'true'); save(); }
+      onChange: function(v){ st.show_tv = toBool(v); save(); }
     });
 
-    // Кнопка: Очистити кеш доріжок
+    // Очистити кеш доріжок
     Lampa.SettingsApi.addParam({
       component: 'ltf',
       param: { type: 'button', component: 'ltf_clear_cache' },
       field: { name: 'Очистити кеш доріжок' },
-      onChange: function(){ clearTracksCache(); }
+      onChange: function(){ clearTracks(); }
     });
   }
 
-  // Старт: завантажити налаштування, застосувати, зареєструвати UI
   function start(){
     st = load();
     apply();
@@ -1056,11 +1074,12 @@ function updateCardListTracksElement(cardView, trackCount) {
     }
   }
 
-  // Запустити після готовності застосунку
   if (window.appready) start();
-  else if (Lampa && Lampa.Listener) Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
-
+  else if (Lampa && Lampa.Listener) {
+    Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
+  }
 })();
+
 
 
 })();

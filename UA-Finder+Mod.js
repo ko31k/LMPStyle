@@ -713,14 +713,6 @@ function reprocessVisibleCardsChunked(){
   })();
 }
    
-
-function clearTracks(){
-  try { if (typeof clearTracksCache === 'function') clearTracksCache(); } catch(e){}
-  try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
-  reprocessVisibleCardsChunked(); // ⬅️ одразу перезапускаємо пошук для видимих карток
-  ltfToast('Кеш доріжок очищено');
-}
-  
    
     
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
@@ -1022,8 +1014,10 @@ function apply(){
 function clearTracks(){
   try { if (typeof clearTracksCache === 'function') clearTracksCache(); } catch(e){}
   try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
+  try { if (typeof reprocessVisibleCardsChunked === 'function') reprocessVisibleCardsChunked(); } catch(e){}
   ltfToast('Кеш доріжок очищено');
 }
+
 
 
 function registerUI(){

@@ -448,7 +448,8 @@
         " white-space: nowrap;" + // Заборонити перенос тексту
         " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); " + // Тінь тексту
         "}" +
-        "</style>";
+        ".lqe-hide-full .full-start__status.lqe-quality { display: none !important; }" +
+		"</style>";
     // Додаємо стилі до DOM
     Lampa.Template.add('lampa_quality_css', styleLQE);
     $('body').append(Lampa.Template.get('lampa_quality_css', {}, true));
@@ -1415,134 +1416,180 @@ function updateCardListQualityElement(cardView, qualityCode, fullTorrentTitle, b
      * @param {object} cardData - Дані картки
      * @param {Element} renderElement - DOM елемент
      */
-    function processFullCardQuality(cardData, renderElement) {
-        if (!renderElement) {
-            console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
-            return;
-        }
-
-
-		// NEW: вимкнення мітки у повній картці через налаштування
-        if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
-        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "Full-card quality label disabled by setting");
+function processFullCardQuality(cardData, renderElement) {
+    // Захист від некоректного виклику
+    if (!renderElement) {
+        console.error("LQE-LOG", "Render element is null in processFullCardQuality. Aborting.");
         return;
-        }
-        
-        var cardId = cardData.id;
-        /* if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
-           if (LQE_CONFIG.LOGGING_GENERAL) console.log('LQE-LOG','Full-card quality label disabled by setting');
-           // опційно прибрати сліди, якщо вже є плейсхолдер:
-           // clearFullCardQualityElements(cardId, renderElement);
-        return;
-        } */
-
-		
-        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Processing full card. Data: ", cardData);
-        // Нормалізуємо дані картки
-        var normalizedCard = {
-            id: cardData.id,
-            title: cardData.title || cardData.name || '',
-            original_title: cardData.original_title || cardData.original_name || '',
-            type: getCardType(cardData),
-            release_date: cardData.release_date || cardData.first_air_date || ''
-        };
-        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Normalized full card data: ", normalizedCard);
-        
-        var rateLine = $('.full-start-new__rate-line', renderElement);
-        if (rateLine.length) {
-            // Ховаємо оригінальну лінію та додаємо анімацію завантаження
-            rateLine.css('visibility', 'hidden');
-            rateLine.addClass('done');
-            addLoadingAnimation(cardId, renderElement);
-        } else {
-            if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", .full-start-new__rate-line not found, skipping loading animation.");
-        }
-        
-        // Визначаємо тип контенту та створюємо ключ кешу
-        var isTvSeries = (normalizedCard.type === 'tv' || normalizedCard.name);
-        var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + (isTvSeries ? 'tv_' : 'movie_') + normalizedCard.id;
-        // Перевіряємо ручні налаштування (найвищий пріоритет)
-        var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
-        if (manualOverrideData) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override:", manualOverrideData);
-            updateFullCardQualityElement(null, manualOverrideData.full_label, cardId, renderElement, true);
-            removeLoadingAnimation(cardId, renderElement);
-            rateLine.css('visibility', 'visible');
-            return;
-        }
-
-        // Отримуємо дані з кешу
-        var cachedQualityData = getQualityCache(cacheKey);
-        // Перевіряємо, чи не вимкнено якість для серіалів
-        if (!(isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature enabled for this content, starting processing.');
-            if (cachedQualityData) {
-                // Використовуємо кешовані дані
-                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
-                updateFullCardQualityElement(cachedQualityData.quality_code, cachedQualityData.full_label, cardId, renderElement);
-                
-                // Фонове оновлення застарілого кешу
-                if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
-                    getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
-                        if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
-                            saveQualityCache(cacheKey, {
-                                quality_code: jrResult.quality,
-                                full_label: jrResult.full_label
-                            }, cardId);
-                            updateFullCardQualityElement(jrResult.quality, jrResult.full_label, cardId, renderElement);
-                            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed.");
-                        }
-                    });
-                }
-                
-                removeLoadingAnimation(cardId, renderElement);
-                rateLine.css('visibility', 'visible');
-            } else {
-                // Новий пошук якості
-                clearFullCardQualityElements(cardId, renderElement);
-                showFullCardQualityPlaceholder(cardId, renderElement);
-                
-                getBestReleaseFromJacred(normalizedCard, cardId, function(jrResult) {
-                    if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', JacRed callback received for full card. Result:', jrResult);
-                    var qualityCode = (jrResult && jrResult.quality) || null;
-                    var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
-                     
-					if (LQE_CONFIG.LOGGING_QUALITY) {
-    					console.log(
-        					"LQE-QUALITY: JacRed returned - qualityCode: \"" +
-        					qualityCode +
-        					"\", full label: \"" +
-        					fullTorrentTitle +
-        					"\""
-    					);
-					}
-                    
-                    if (qualityCode && qualityCode !== 'NO') {
-                        saveQualityCache(cacheKey, {
-                            quality_code: qualityCode,
-                            full_label: fullTorrentTitle
-                        }, cardId);
-                        updateFullCardQualityElement(qualityCode, fullTorrentTitle, cardId, renderElement);
-                    } else {
-                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", 'card: ' + cardId + ', No quality found from JacRed or it was "NO". Clearing quality elements.');
-                        clearFullCardQualityElements(cardId, renderElement);
-                    }
-                    
-                    removeLoadingAnimation(cardId, renderElement);
-                    rateLine.css('visibility', 'visible');
-                });
-            }
-        } else {
-            // Якість вимкнено для серіалів
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature disabled for TV series (as configured), skipping quality fetch.');
-            clearFullCardQualityElements(cardId, renderElement);
-            removeLoadingAnimation(cardId, renderElement);
-            rateLine.css('visibility', 'visible');
-        }
-        
-        if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", Full card quality processing initiated.");
     }
+
+    var cardId = cardData && cardData.id;
+
+    if (LQE_CONFIG.LOGGING_GENERAL) {
+        console.log("LQE-LOG", "card: " + cardId + ", Processing full card. Data: ", cardData);
+    }
+
+    // Нормалізуємо дані картки (єдине джерело правди для пошуку/кешу)
+    var normalizedCard = {
+        id: cardData.id,
+        title: cardData.title || cardData.name || '',
+        original_title: cardData.original_title || cardData.original_name || '',
+        type: getCardType(cardData),
+        release_date: cardData.release_date || cardData.first_air_date || ''
+    };
+
+    if (LQE_CONFIG.LOGGING_GENERAL) {
+        console.log("LQE-LOG", "card: " + cardId + ", Normalized full card data: ", normalizedCard);
+    }
+
+    // Рядок із рейтингами та статусами (НЕ ховаємо його ніколи)
+    var rateLine = $('.full-start-new__rate-line', renderElement);
+    if (rateLine.length) {
+        // Можна ставити свій state-клас, але без приховування всього рядка
+        rateLine.addClass('done');
+        // Додаємо лише нашу локальну анімацію "Пошук..." (в середині рядка)
+        addLoadingAnimation(cardId, renderElement);
+    } else {
+        if (LQE_CONFIG.LOGGING_GENERAL) {
+            console.log("LQE-LOG", "card: " + cardId + ", .full-start-new__rate-line not found, skipping loading animation.");
+        }
+    }
+
+    // Якщо вимкнено показ мітки якості у повній картці:
+    // - прибираємо можливі попередні мітки
+    // - знімаємо анімацію завантаження
+    // - і виходимо (рядок із IMDb/віком/статусом лишається)
+    if (window.LQE_CONFIG && LQE_CONFIG.SHOW_FULL_CARD_LABEL === false) {
+        if (LQE_CONFIG.LOGGING_GENERAL) {
+            console.log("LQE-LOG", "Full-card quality label disabled by setting");
+        }
+        clearFullCardQualityElements(cardId, renderElement);
+        removeLoadingAnimation(cardId, renderElement);
+        return;
+    }
+
+    // Тип контенту та ключ кешу
+    var isTvSeries = (normalizedCard.type === 'tv' || normalizedCard.name);
+    var cacheKey = LQE_CONFIG.CACHE_VERSION + '_' + (isTvSeries ? 'tv_' : 'movie_') + normalizedCard.id;
+
+    // Ручне перевизначення має найвищий пріоритет
+    var manualOverrideData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
+    if (manualOverrideData) {
+        if (LQE_CONFIG.LOGGING_QUALITY) {
+            console.log("LQE-QUALITY", "card: " + cardId + ", Found manual override:", manualOverrideData);
+        }
+        // bypassTranslation=true — показати саме наш напис (із можливим спрощенням через apply())
+        updateFullCardQualityElement(null, manualOverrideData.full_label, cardId, renderElement, true);
+        removeLoadingAnimation(cardId, renderElement);
+        return;
+    }
+
+    // Якщо вимкнено мітки для серіалів — прибираємо лише нашу мітку/анімацію і виходимо
+    if (isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false) {
+        if (LQE_CONFIG.LOGGING_QUALITY) {
+            console.log('LQE-QUALITY', 'card: ' + cardId + ', Quality feature disabled for TV series (as configured), skipping quality fetch.');
+        }
+        clearFullCardQualityElements(cardId, renderElement);
+        removeLoadingAnimation(cardId, renderElement);
+        return;
+    }
+
+    // Спроба взяти дані з кешу
+    var cachedQualityData = getQualityCache(cacheKey);
+    if (cachedQualityData) {
+        if (LQE_CONFIG.LOGGING_QUALITY) {
+            console.log("LQE-QUALITY", "card: " + cardId + ", Quality data found in cache:", cachedQualityData);
+        }
+
+        // Миттєво малюємо мітку з кешу
+        updateFullCardQualityElement(
+            cachedQualityData.quality_code,
+            cachedQualityData.full_label,
+            cardId,
+            renderElement
+        );
+
+        // Якщо кеш застаріває — тихо оновимо у фоні, без впливу на інші елементи рядка
+        if (Date.now() - cachedQualityData.timestamp > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+            if (LQE_CONFIG.LOGGING_QUALITY) {
+                console.log("LQE-QUALITY", "card: " + cardId + ", Cache is old, scheduling background refresh AND UI update.");
+            }
+            getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
+                if (jrResult && jrResult.quality && jrResult.quality !== 'NO') {
+                    saveQualityCache(cacheKey, {
+                        quality_code: jrResult.quality,
+                        full_label: jrResult.full_label
+                    }, cardId);
+                    updateFullCardQualityElement(
+                        jrResult.quality,
+                        jrResult.full_label,
+                        cardId,
+                        renderElement
+                    );
+                    if (LQE_CONFIG.LOGGING_QUALITY) {
+                        console.log("LQE-QUALITY", "card: " + cardId + ", Background cache and UI refresh completed.");
+                    }
+                }
+            });
+        }
+
+        // Анімацію прибираємо (рядок рейтингу завжди видимий)
+        removeLoadingAnimation(cardId, renderElement);
+        return;
+    }
+
+    // Кешу нема — робимо свіжий пошук
+    clearFullCardQualityElements(cardId, renderElement);      // очищаємо старі мітки (якщо були)
+    showFullCardQualityPlaceholder(cardId, renderElement);    // показуємо "Пошук..." саме для нашої мітки
+
+    getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
+        if (LQE_CONFIG.LOGGING_QUALITY) {
+            console.log('LQE-QUALITY', 'card: ' + cardId + ', JacRed callback received for full card. Result:', jrResult);
+        }
+
+        var qualityCode = (jrResult && jrResult.quality) || null;
+        var fullTorrentTitle = (jrResult && jrResult.full_label) || null;
+
+        if (LQE_CONFIG.LOGGING_QUALITY) {
+            console.log(
+                "LQE-QUALITY: JacRed returned - qualityCode: \"" +
+                qualityCode +
+                "\", full label: \"" +
+                fullTorrentTitle +
+                "\""
+            );
+        }
+
+        if (qualityCode && qualityCode !== 'NO') {
+            // Зберігаємо і малюємо
+            saveQualityCache(cacheKey, {
+                quality_code: qualityCode,
+                full_label: fullTorrentTitle
+            }, cardId);
+
+            updateFullCardQualityElement(
+                qualityCode,
+                fullTorrentTitle,
+                cardId,
+                renderElement
+            );
+        } else {
+            // Нічого не знайшли — просто прибираємо нашу мітку (інші елементи рядка не чіпаємо)
+            if (LQE_CONFIG.LOGGING_QUALITY) {
+                console.log("LQE-QUALITY", 'card: ' + cardId + ', No quality found from JacRed or it was "NO". Clearing quality elements.');
+            }
+            clearFullCardQualityElements(cardId, renderElement);
+        }
+
+        // Прибираємо індикатор завантаження для нашої мітки
+        removeLoadingAnimation(cardId, renderElement);
+    });
+
+    if (LQE_CONFIG.LOGGING_GENERAL) {
+        console.log("LQE-LOG", "card: " + cardId + ", Full card quality processing initiated.");
+    }
+}
+
 
     // ===================== ОБРОБКА СПИСКОВИХ КАРТОК =====================
     
@@ -1848,6 +1895,11 @@ function apply(){
   LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES = !!st.show_tv;
   if (typeof LQE_CONFIG.SHOW_FULL_CARD_LABEL !== 'boolean') LQE_CONFIG.SHOW_FULL_CARD_LABEL = true;
   LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
+// Відображення саме повної мітки (не всього рядка)
+if (document && document.body) {
+  document.body.classList.toggle('lqe-hide-full', !LQE_CONFIG.SHOW_FULL_CARD_LABEL);
+}
+
   LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS = (st.label_style === 'short');
 }
 

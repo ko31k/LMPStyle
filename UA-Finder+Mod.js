@@ -889,4 +889,178 @@ function updateCardListTracksElement(cardView, trackCount) {
     } else {
         document.addEventListener('DOMContentLoaded', initializeLampaTracksPlugin);
     }
+
+
+
+    
+
+/* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
+(function(){
+  'use strict';
+
+  var SETTINGS_KEY = 'ltf_user_settings_v1';
+  var st;
+
+  // Легка "тост"-нотифікація з fallback, якщо Lampa.Noty недоступний
+  function ltfToast(msg){
+    try {
+      if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
+      if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
+    } catch(e){}
+    var id='ltf_toast';
+    var el=document.getElementById(id);
+    if(!el){
+      el=document.createElement('div');
+      el.id=id;
+      el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+      document.body.appendChild(el);
+    }
+    el.textContent=msg;
+    el.style.opacity='1';
+    setTimeout(function(){ el.style.opacity='0'; }, 1200);
+  }
+
+  // Завантажити збережені налаштування (або дефолти)
+  function load(){
+    var s = (Lampa.Storage.get(SETTINGS_KEY) || {});
+    return {
+      display_mode: s.display_mode || 'flag_count',                  // text | flag_count | flag_only
+      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true  // Показ для серіалів
+    };
+  }
+
+  // Застосувати до живої конфігурації плагіна
+  function apply(){
+    // Безпека: якщо LTF_CONFIG ще не існує — тихо вийти
+    if (!window.LTF_CONFIG) return;
+
+    // Налаштування відображення
+    var okModes = { text:1, flag_count:1, flag_only:1 };
+    LTF_CONFIG.DISPLAY_MODE = okModes[st.display_mode] ? st.display_mode : 'flag_count';
+
+    // Показ для серіалів
+    LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
+  }
+
+  // Допоміжне: м’яко оновити мітки на вже видимих картках
+  function refreshVisibleCards(){
+    try{
+      var cards = document.querySelectorAll('.card');
+      if (!cards || !cards.length) return;
+
+      cards.forEach(function(card){
+        var cardView = card.querySelector('.card__view');
+        if (!cardView) return;
+
+        // Якщо серіали вимкнені — знімаємо UA-мітку для таких карток
+        if (!st.show_tv && card.card_data){
+          var type = (card.card_data.media_type || card.card_data.type);
+          // Додаткова евристика
+          if (type !== 'movie') {
+            var t = cardView.querySelector('.card__tracks');
+            if (t) t.remove();
+            return;
+          }
+        }
+        // Використовуємо штатну логіку плагіна, щоб перемалювати під нові налаштування
+        if (typeof processListCard === 'function') processListCard(card);
+      });
+    }catch(e){}
+  }
+
+  // Зберегти → застосувати → оновити екран
+  function save(){
+    Lampa.Storage.set(SETTINGS_KEY, st);
+    apply();
+    refreshVisibleCards();
+    ltfToast('Збережено');
+  }
+
+  // Кнопка «Очистити кеш доріжок»
+  function clearTracksCache(){
+    try{
+      var key = (window.LTF_CONFIG && LTF_CONFIG.CACHE_KEY) ? LTF_CONFIG.CACHE_KEY : 'lampa_ukr_tracks_cache';
+      Lampa.Storage.set(key, {}); // повне очищення кеш-об’єкта
+      // Прибрати всі видимі мітки
+      document.querySelectorAll('.card__tracks').forEach(function(el){ el.remove(); });
+      ltfToast('Кеш доріжок очищено');
+    }catch(e){
+      console.error('LTF clear cache error:', e);
+    }
+  }
+
+  // Реєстрація пунктів у розділі «Інтерфейс»
+  function registerUI(){
+    // Кнопка, що відкриває нашу сторінку
+    Lampa.Template.add('settings_ltf', '<div></div>');
+    Lampa.SettingsApi.addParam({
+      component: 'interface',
+      param: { type: 'button', component: 'ltf' },
+      field: {
+        name: 'Мітки "UA" доріжок',
+        description: 'Керування відображенням міток українських аудіодоріжок'
+      },
+      onChange: function(){
+        Lampa.Settings.create('ltf', {
+          template: 'settings_ltf',
+          onBack: function(){ Lampa.Settings.create('interface'); }
+        });
+      }
+    });
+
+    // Селектор: Стиль мітки
+    Lampa.SettingsApi.addParam({
+      component: 'ltf',
+      param: {
+        name: 'ltf_display_mode',
+        type: 'select',
+        values: {
+          text: 'Текстова мітка (“Ukr”, “2xUkr”)',
+          flag_count: 'Прапорець із лічильником',
+          flag_only: 'Лише прапорець'
+        },
+        default: st.display_mode
+      },
+      field: { name: 'Стиль мітки' },
+      onChange: function(v){ st.display_mode = v; save(); }
+    });
+
+    // Селектор: Показувати для серіалів
+    Lampa.SettingsApi.addParam({
+      component: 'ltf',
+      param: {
+        name: 'ltf_show_tv',
+        type: 'select',
+        values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
+        default: String(st.show_tv)
+      },
+      field: { name: 'Показувати для серіалів' },
+      onChange: function(v){ st.show_tv = (String(v) === 'true'); save(); }
+    });
+
+    // Кнопка: Очистити кеш доріжок
+    Lampa.SettingsApi.addParam({
+      component: 'ltf',
+      param: { type: 'button', component: 'ltf_clear_cache' },
+      field: { name: 'Очистити кеш доріжок' },
+      onChange: function(){ clearTracksCache(); }
+    });
+  }
+
+  // Старт: завантажити налаштування, застосувати, зареєструвати UI
+  function start(){
+    st = load();
+    apply();
+    if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
+      registerUI();
+    }
+  }
+
+  // Запустити після готовності застосунку
+  if (window.appready) start();
+  else if (Lampa && Lampa.Listener) Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
+
+})();
+
+
 })();

@@ -25,71 +25,6 @@
  * - 🟩 Додано разову перевірку кешу при старті.
  */
 
-// ---- ЗАВЖДИ ПРИБИВАТИ КНОПКУ В КІНЕЦЬ "Інтерфейс" (надійна версія) ----
-(function () {
-  if (window.__pinInterfaceBottom) return;
-
-  function safeGetEl(item){
-    if (!item) return null;
-    // jQuery або HTMLElement
-    return item[0] || item;
-  }
-
-  window.__pinInterfaceBottom = function(item){
-    try{
-      var el = safeGetEl(item);
-      if (!el) return;
-
-      function moveOnce(){
-        try{
-          var parent =
-            (el.closest && el.closest('.settings__body')) ||
-            document.querySelector('.settings__body') ||
-            el.parentNode;
-
-        if (!parent) return false;
-          parent.appendChild(el);
-          return true;
-        }catch(e){ return false; }
-      }
-
-      // 1) Спробувати одразу
-      if (moveOnce()) return;
-
-      // 2) Декілька коротких ретраїв
-      var tries = [16, 50, 120, 240, 500];
-      tries.forEach(function(t){ setTimeout(moveOnce, t); });
-
-      // 3) RAF як бонус
-      if (typeof requestAnimationFrame === 'function'){
-        requestAnimationFrame(moveOnce);
-      }
-
-      // 4) Якщо ще нема контейнера — підпишемось на появу .settings__body
-      var mo;
-      try{
-        var Obs = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
-        if (Obs){
-          mo = new Obs(function(muts){
-            for (var i=0;i<muts.length;i++){
-              var m = muts[i];
-              if (m.addedNodes && m.addedNodes.length){
-                if (document.querySelector('.settings__body') && moveOnce()){
-                  try{ mo.disconnect(); }catch(_){}
-                  mo = null;
-                  break;
-                }
-              }
-            }
-          });
-          mo.observe(document.body, {childList:true, subtree:true});
-          // safety timeout — вимкнути спостереження через 5с
-          setTimeout(function(){ try{ mo && mo.disconnect(); }catch(_){ } mo=null; }, 5000);
-        }
-      }catch(_){}
-    }catch(_){}
-  };
-})();
 
 
 (function() {
@@ -1075,7 +1010,6 @@ function reprocessVisibleCardsChunked(){
       component:'interface',
       param:{ type:'button', component:'ltf' },
       field:{ name:'Мітки "UA" доріжок', description:'Керування відображенням міток українських доріжок' },
-      onRender: __pinInterfaceBottom,
       onChange:function(){
         Lampa.Settings.create('ltf', {
           template:'settings_ltf',

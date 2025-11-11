@@ -951,6 +951,7 @@ function reprocessVisibleCardsChunked(){
     
 
 /* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
+/* ===== UA-Finder — Settings (Інтерфейс → "Мітки 'UA' доріжок") ===== */
 (function(){
   'use strict';
 
@@ -958,7 +959,7 @@ function reprocessVisibleCardsChunked(){
   var st;
 
   function ltfToast(msg){
-    try{ if (Lampa?.Noty) return Lampa.Noty(msg); }catch(e){}
+    try { if (Lampa && Lampa.Noty) return Lampa.Noty(msg); } catch(e){}
     var id='ltf_toast', el=document.getElementById(id);
     if(!el){
       el=document.createElement('div');
@@ -973,19 +974,19 @@ function reprocessVisibleCardsChunked(){
   function toBool(v){ return v===true || String(v)==='true'; }
 
   function load(){
-    var s=Lampa.Storage.get(SETTINGS_KEY)||{};
+    var s = Lampa.Storage.get(SETTINGS_KEY) || {};
     return {
-      badge_style: s.badge_style || 'text', // text | flag_count | flag_only
-      show_tv: (typeof s.show_tv==='boolean') ? s.show_tv : true
+      badge_style: s.badge_style || 'text',     // text | flag_count | flag_only
+      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
     };
   }
 
   function apply(){
     LTF_CONFIG.DISPLAY_MODE  = st.badge_style;
-    LTF_CONFIG.BADGE_STYLE   = st.badge_style;              // сумісність
+    LTF_CONFIG.BADGE_STYLE   = st.badge_style;            // сумісність
     LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
     LTF_CONFIG.SHOW_FOR_TV               = !!st.show_tv;
-    try{ document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); }catch(e){}
+    try { document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); } catch(e){}
   }
 
   function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); ltfToast('Збережено'); }
@@ -997,14 +998,11 @@ function reprocessVisibleCardsChunked(){
     ltfToast('Кеш доріжок очищено');
   }
 
-  // Шаблон сторінки підменю (клон базового екрана налаштувань)
-  if(!window.ltfTemplateReady){
-    window.ltfTemplateReady = true;
-    Lampa.Template.add('settings_ltf', Lampa.Template.get('settings', {}, true));
-  }
+  // ❗ Порожній шаблон як у LQE — щоб не дублювати контейнер налаштувань
+  Lampa.Template.add('settings_ltf','<div></div>');
 
   function registerUI(){
-    // Кнопка-вхід у «Інтерфейс»
+    // Вхід у підменю в розділі «Інтерфейс»
     Lampa.SettingsApi.addParam({
       component:'interface',
       param:{ type:'button', component:'ltf' },
@@ -1017,11 +1015,10 @@ function reprocessVisibleCardsChunked(){
       }
     });
 
-    // Пункти підменю `ltf`
+    // Пункти підменю ltf
     Lampa.SettingsApi.addParam({
       component:'ltf',
-      param:{
-        name:'ltf_badge_style', type:'select',
+      param:{ name:'ltf_badge_style', type:'select',
         values:{ text:'Текстова мітка (“Ukr”, “2xUkr”)', flag_count:'Прапорець із лічильником', flag_only:'Лише прапорець' },
         default: st.badge_style
       },
@@ -1033,7 +1030,7 @@ function reprocessVisibleCardsChunked(){
       component:'ltf',
       param:{ name:'ltf_show_tv', type:'select', values:{'true':'Увімкнено','false':'Вимкнено'}, default:String(st.show_tv) },
       field:{ name:'Показувати для серіалів' },
-      onChange:function(v){ st.show_tv=toBool(v); save(); }
+      onChange:function(v){ st.show_tv = toBool(v); save(); }
     });
 
     Lampa.SettingsApi.addParam({
@@ -1044,11 +1041,7 @@ function reprocessVisibleCardsChunked(){
     });
   }
 
-  function start(){
-    st = load(); apply();
-    if (Lampa?.SettingsApi?.addParam) registerUI();
-  }
-
+  function start(){ st=load(); apply(); if (Lampa?.SettingsApi?.addParam) registerUI(); }
   if (window.appready) start();
   else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
 })();

@@ -1077,6 +1077,7 @@
 
 
 /* ===== Seasons Progress Badges — Settings (Інтерфейс → "Мітки прогресу серій/сезонів") ===== */
+/* ===== Seasons Progress Badges — Settings (Інтерфейс → "Мітки прогресу серій/сезонів") ===== */
 (function(){
   'use strict';
 
@@ -1084,7 +1085,7 @@
   var st;
 
   function sbToast(msg){
-    try{ if (Lampa?.Noty) return Lampa.Noty(msg); }catch(e){}
+    try{ if (Lampa && Lampa.Noty) return Lampa.Noty(msg); }catch(e){}
     var id='sbadger_toast', el=document.getElementById(id);
     if(!el){
       el=document.createElement('div');
@@ -1097,25 +1098,22 @@
   }
 
   function load(){ var s=Lampa.Storage.get(SETTINGS_KEY)||{}; return { tmdb_key: s.tmdb_key || '' }; }
-  function apply(){ if (st.tmdb_key) CONFIG.tmdbApiKey = st.tmdb_key.trim(); }
+  function apply(){ if (st.tmdb_key) CONFIG.tmdbApiKey = String(st.tmdb_key).trim(); }
   function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); sbToast('Збережено'); }
 
   function clearCache(){
     try{
-      if (window.safeStorage && typeof safeStorage.removeItem==='function') safeStorage.removeItem('seasonBadgeCache');
+      if (window.safeStorage?.removeItem) safeStorage.removeItem('seasonBadgeCache');
       else if (window.localStorage) localStorage.removeItem('seasonBadgeCache');
     }catch(e){}
     sbToast('Кеш очищено');
   }
 
-  // Шаблон сторінки підменю (клон базового екрана)
-  if(!window.sbadgerTemplateReady){
-    window.sbadgerTemplateReady = true;
-    Lampa.Template.add('settings_sbadger', Lampa.Template.get('settings', {}, true));
-  }
+  // ❗ Порожній шаблон — як у LQE
+  Lampa.Template.add('settings_sbadger','<div></div>');
 
   function registerUI(){
-    // Кнопка-вхід у «Інтерфейс»
+    // Кнопка-вхід у підменю
     Lampa.SettingsApi.addParam({
       component:'interface',
       param:{ type:'button', component:'sbadger' },
@@ -1128,7 +1126,7 @@
       }
     });
 
-    // Єдине поле вводу TMDB API ключа — одразу зберігає й застосовує
+    // Поле TMDB API ключа — одразу зберігає й застосовує
     Lampa.SettingsApi.addParam({
       component:'sbadger',
       param:{ name:'sbadger_tmdb_key', type:'input', values:'', "default": (st.tmdb_key||'') },
@@ -1146,11 +1144,7 @@
     });
   }
 
-  function start(){
-    st=load(); apply();
-    if (Lampa?.SettingsApi?.addParam) registerUI();
-  }
-
+  function start(){ st=load(); apply(); if (Lampa?.SettingsApi?.addParam) registerUI(); }
   if (window.appready) start();
   else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
 })();

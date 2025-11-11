@@ -1938,10 +1938,22 @@ function lqeClearCache(){
   function start(){
     st = load();
     apply();
+    
     if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
-      registerUI();
+      // !!! ЗАСТОСУВАТИ ЗМІНУ ТУТ: обгортаємо виклик у setTimeout(..., 0)
+      setTimeout(registerUI, 0); 
     }
   }
+
+  // Реєструємо після готовності застосунку (як у TMDB-Networks)
+  if (window.appready) start();
+  else if (Lampa && Lampa.Listener) Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
+
+// при застосуванні/збереженні:
+//LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
+	
+})();
+
 
   // Реєструємо після готовності застосунку (як у TMDB-Networks)
   if (window.appready) start();

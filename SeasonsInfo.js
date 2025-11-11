@@ -1077,20 +1077,19 @@
 
 
 /* ===== Seasons Progress Badges — Settings UI (меню) ===== */
+/* ===== Seasons Progress Badges — Settings UI (меню) ===== */
 (function(){
   'use strict';
 
   var SETTINGS_KEY = 'sbadger_settings_v1';
-  var st, draft_key = '';
+  var st;
 
-  // тост
   function sbToast(msg){
     try {
       if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
       if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
     } catch(e){}
-    var id='sbadger_toast';
-    var el=document.getElementById(id);
+    var id='sbadger_toast', el=document.getElementById(id);
     if(!el){
       el=document.createElement('div');
       el.id=id;
@@ -1119,17 +1118,15 @@
     sbToast('Кеш очищено');
   }
 
-  // 1) Клонуємо базовий шаблон "settings" (як у якості/доріжках)
+  // шаблон сторінки підменю
   try {
     Lampa.Template.add('settings_sbadger', Lampa.Template.get('settings', {}, true));
   } catch(e) {
-    // fallback на випадок нестандартної збірки
     Lampa.Template.add('settings_sbadger',
       '<div class="settings"><div class="settings__head">'+
         '<div class="settings__title">Мітки прогресу серій/сезонів</div>'+
       '</div><div class="settings__body"></div></div>');
   }
-  // дрібний фікс переносу заголовка (як у інших підменю)
   if (!document.getElementById('sbadger_settings_fix')) {
     var css = document.createElement('style');
     css.id = 'sbadger_settings_fix';
@@ -1137,13 +1134,13 @@
     document.head.appendChild(css);
   }
 
-  // 2) Реєструємо компонент (сайдбар-етикетка підменю)
+  // компонент у списку
   if (Lampa && Lampa.SettingsApi && Lampa.SettingsApi.addComponent) {
     Lampa.SettingsApi.addComponent({ component: 'sbadger', name: 'Мітки прогресу серій/сезонів' });
   }
 
   function registerUI(){
-    // 3) Кнопка в "Інтерфейс" -> відкрити наше підменю (точно як у попередніх)
+    // кнопка-вхід у підменю
     Lampa.SettingsApi.addParam({
       component: 'interface',
       param: { type: 'button', component: 'sbadger' },
@@ -1159,44 +1156,25 @@
       }
     });
 
-    // Поле вводу: TMDB API ключ
+    // ЄДИНЕ поле вводу TMDB API ключа — одразу зберігає й застосовує
     Lampa.SettingsApi.addParam({
       component: 'sbadger',
       param: {
         name: 'sbadger_tmdb_key',
         type: 'input',
-        placeholder: 'встав ключ TMDB',
-        default: st.tmdb_key || ''
+        values: '',                                // важливо для стабільності ядра
+        "default": (st.tmdb_key || '')
       },
       field: {
         name: 'TMDB API ключ',
         description: 'Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org'
       },
-      onChange: function(v){ draft_key = (v || '').trim(); }
-    });
-
-    // Зберегти ключ
-    Lampa.SettingsApi.addParam({
-      component: 'sbadger',
-      param: { type: 'button', component: 'sbadger_save_key' },
-      field: { name: 'Зберегти ключ' },
-      onChange: function(){
-        if (draft_key) st.tmdb_key = draft_key;
-        save();
-      }
-    });
-
-    // Застосувати й зберегти ключ
-    Lampa.SettingsApi.addParam({
-      component: 'sbadger',
-      param: { type: 'button', component: 'sbadger_apply_key' },
-      field: { name: 'Застосувати й зберегти ключ' },
-      onChange: function(){
-        if (draft_key) st.tmdb_key = draft_key;
-        save();
-        clearCache();
-        // якщо треба одразу перерахувати бейджі на екрані:
-        // try { if (typeof reprocessVisibleCardsChunked === 'function') reprocessVisibleCardsChunked(); } catch(e){}
+      onRender: function(item){
+        try { $(item).find('input').attr('placeholder','встав ключ TMDB'); } catch(e){}
+      },
+      onChange: function(v){
+        st.tmdb_key = String(v || '').trim();
+        save();                                    // зберегти + застосувати
       }
     });
 

@@ -1044,9 +1044,22 @@ function reprocessVisibleCardsChunked(){
     });
   }
 
-  function start(){ st=load(); apply(); if (Lampa?.SettingsApi?.addParam) registerUI(); }
+  function start(){ 
+      st=load(); 
+      apply(); 
+      
+      if (Lampa?.SettingsApi?.addParam) {
+          // !!! ЗАСТОСУВАТИ ЗМІНУ ТУТ: обгортаємо виклик у setTimeout(..., 0)
+          setTimeout(registerUI, 0); 
+      }
+  }
+  
   if (window.appready) start();
   else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
 })();
+
+
+
+    
 
 })();

@@ -288,7 +288,7 @@
     // - language:    мова запитів до TMDB (наприклад 'uk', 'ru', 'en')
     //
     var CONFIG = {
-        tmdbApiKey: '1ad1fd4b4938e876aa6c96d0cded9395',     //✅ API ключ для доступу до TMDB
+        tmdbApiKey: '',     //✅ API ключ для доступу до TMDB
         cacheTime: 12 * 60 * 60 * 1000,                     //✅ Час зберігання кешу (12 годин)
         enabled: true,                                      // Активувати/деактивувати плагін
         language: 'uk'                                      // Мова для запитів до TMDB
@@ -1071,4 +1071,176 @@
         setTimeout(initPlugin, 2000);
     }
 
+
+
+
+
+
+/* ===== Seasons Progress Badges — Settings UI (меню) ===== */
+(function(){
+  'use strict';
+
+  var SETTINGS_KEY = 'sbadger_settings_v1';
+  var st, draft_key = '';
+
+  // простий тост із fallback
+  function sbToast(msg){
+    try {
+      if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
+      if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
+    } catch(e){}
+    var id='sbadger_toast';
+    var el=document.getElementById(id);
+    if(!el){
+      el=document.createElement('div');
+      el.id=id;
+      el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+      document.body.appendChild(el);
+    }
+    el.textContent=msg;
+    el.style.opacity='1';
+    setTimeout(function(){ el.style.opacity='0'; }, 1300);
+  }
+
+  function load(){
+    var s = Lampa.Storage.get(SETTINGS_KEY) || {};
+    return {
+      tmdb_key: s.tmdb_key || ''
+    };
+  }
+
+  function apply(){
+    // якщо ключ задано — використовуємо його у плагіні
+    if (st.tmdb_key) CONFIG.tmdbApiKey = st.tmdb_key.trim();
+  }
+
+  function save(){
+    Lampa.Storage.set(SETTINGS_KEY, st);
+    apply();
+    sbToast('Збережено');
+  }
+
+  function applyAndSave(){
+    // збереження + застосування + очистка кешу
+    Lampa.Storage.set(SETTINGS_KEY, st);
+    apply();
+    try { safeStorage.removeItem('seasonBadgeCache'); } catch(e){}
+    sbToast('Застосовано і кеш очищено');
+    // за бажанням можна перезапустити обробку видимих карток:
+    // try { if (typeof reprocessVisibleCardsChunked === 'function') reprocessVisibleCardsChunked(); } catch(e){}
+  }
+
+  function clearCache(){
+    try { safeStorage.removeItem('seasonBadgeCache'); } catch(e){}
+    sbToast('Кеш прогрес-бейджів очищено');
+  }
+
+  // --- Шаблон підменю (контейнер сторінки) ---
+  if (!document.getElementById('sbadger_settings_fix')) {
+    Lampa.Template.add(
+      'settings_sbadger',
+      '<div class="settings sbadger-settings">' +
+        '<div class="settings__head">' +
+          '<div class="settings__title">Мітки прогресу серій/сезонів</div>' +
+        '</div>' +
+        '<div class="settings__body"></div>' +
+      '</div>'
+    );
+    var css = document.createElement('style');
+    css.id = 'sbadger_settings_fix';
+    css.textContent =
+      '.sbadger-settings .settings__head{margin-bottom:.6em}' +
+      '.sbadger-settings .settings__title{white-space:normal}';
+    document.head.appendChild(css);
+  }
+
+  // зареєструвати компонент, щоб виглядав як окреме підменю
+  if (Lampa && Lampa.SettingsApi && Lampa.SettingsApi.addComponent) {
+    Lampa.SettingsApi.addComponent({ component: 'sbadger', name: 'Мітки прогресу серій/сезонів' });
+  }
+
+  function registerUI(){
+    // Кнопка-вхід у "Інтерфейс" -> відкриває наше підменю `sbadger`
+    Lampa.SettingsApi.addParam({
+      component: 'interface',
+      param: { type: 'button', component: 'sbadger' },
+      field: {
+        name: 'Мітки прогресу серій/сезонів',
+        description: 'Налаштування бейджів прогресу серій та сезонів'
+      },
+      onChange: function(){
+        Lampa.Settings.create('sbadger', {
+          template: 'settings_sbadger',
+          onBack: function(){ Lampa.Settings.create('interface'); }
+        });
+      }
+    });
+
+    // Поле вводу: TMDB API ключ
+    Lampa.SettingsApi.addParam({
+      component: 'sbadger',
+      param: {
+        name: 'sbadger_tmdb_key',
+        type: 'input',                     // якщо у вашій збірці input не підтримується — все одно працює через onChange
+        placeholder: 'встав ключ TMDB',
+        default: st.tmdb_key || ''
+      },
+      field: {
+        name: 'TMDB API ключ',
+        description: 'Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org'
+      },
+      onChange: function(v){
+        // зберігаємо у "чернетку"; сам запис — під кнопки нижче
+        draft_key = (v || '').trim();
+      }
+    });
+
+    // Зберегти ключ
+    Lampa.SettingsApi.addParam({
+      component: 'sbadger',
+      param: { type: 'button', component: 'sbadger_save_key' },
+      field: { name: 'Зберегти ключ' },
+      onChange: function(){
+        if (typeof draft_key === 'string' && draft_key.length) st.tmdb_key = draft_key;
+        save();
+      }
+    });
+
+    // Застосувати й зберегти ключ
+    Lampa.SettingsApi.addParam({
+      component: 'sbadger',
+      param: { type: 'button', component: 'sbadger_apply_key' },
+      field: { name: 'Застосувати й зберегти ключ' },
+      onChange: function(){
+        if (typeof draft_key === 'string' && draft_key.length) st.tmdb_key = draft_key;
+        applyAndSave();
+      }
+    });
+
+    // Очистити кеш
+    Lampa.SettingsApi.addParam({
+      component: 'sbadger',
+      param: { type: 'button', component: 'sbadger_clear_cache' },
+      field: { name: 'Очистити кеш' },
+      onChange: function(){ clearCache(); }
+    });
+  }
+
+  function start(){
+    st = load();
+    // одразу підхоплюємо збережений ключ при старті
+    apply();
+    if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
+      registerUI();
+    }
+  }
+
+  if (window.appready) start();
+  else if (Lampa && Lampa.Listener) {
+    Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
+  }
+})();
+
+
+    
 })();

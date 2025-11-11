@@ -951,8 +951,6 @@ function reprocessVisibleCardsChunked(){
     
 
 /* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
-
-/* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
 (function(){
   'use strict';
 
@@ -960,7 +958,7 @@ function reprocessVisibleCardsChunked(){
   var st;
 
   function ltfToast(msg){
-    try { if (Lampa?.Noty) return Lampa.Noty(msg); } catch(e){}
+    try{ if (Lampa?.Noty) return Lampa.Noty(msg); }catch(e){}
     var id='ltf_toast', el=document.getElementById(id);
     if(!el){
       el=document.createElement('div');
@@ -969,116 +967,90 @@ function reprocessVisibleCardsChunked(){
       document.body.appendChild(el);
     }
     el.textContent=msg; el.style.opacity='1';
-    setTimeout(function(){ el.style.opacity='0'; }, 1300);
+    setTimeout(function(){ el.style.opacity='0'; },1300);
   }
 
-  function toBool(v){ return v === true || String(v) === 'true'; }
+  function toBool(v){ return v===true || String(v)==='true'; }
 
   function load(){
-    var s = Lampa.Storage.get(SETTINGS_KEY) || {};
+    var s=Lampa.Storage.get(SETTINGS_KEY)||{};
     return {
-      badge_style: s.badge_style || 'text',           // 'text' | 'flag_count' | 'flag_only'
-      show_tv: (typeof s.show_tv === 'boolean') ? s.show_tv : true
+      badge_style: s.badge_style || 'text', // text | flag_count | flag_only
+      show_tv: (typeof s.show_tv==='boolean') ? s.show_tv : true
     };
   }
 
   function apply(){
     LTF_CONFIG.DISPLAY_MODE  = st.badge_style;
-    LTF_CONFIG.BADGE_STYLE   = st.badge_style;        // сумісність
+    LTF_CONFIG.BADGE_STYLE   = st.badge_style;              // сумісність
     LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES = !!st.show_tv;
     LTF_CONFIG.SHOW_FOR_TV               = !!st.show_tv;
-    try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
+    try{ document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); }catch(e){}
   }
 
-  function save(){
-    Lampa.Storage.set(SETTINGS_KEY, st);
-    apply();
-    ltfToast('Збережено');
-  }
+  function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); ltfToast('Збережено'); }
 
   function clearTracks(){
-    try { if (typeof clearTracksCache === 'function') clearTracksCache(); } catch(e){}
-    try { document.dispatchEvent(new CustomEvent('ltf:settings-changed', { detail: { ...st } })); } catch(e){}
-    try { if (typeof reprocessVisibleCardsChunked === 'function') reprocessVisibleCardsChunked(); } catch(e){}
+    try{ if(typeof clearTracksCache==='function') clearTracksCache(); }catch(e){}
+    try{ document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); }catch(e){}
+    try{ if(typeof reprocessVisibleCardsChunked==='function') reprocessVisibleCardsChunked(); }catch(e){}
     ltfToast('Кеш доріжок очищено');
   }
 
-  // 1) Реєструємо шаблон ПІДМЕНЮ як клон базового "settings"
-  if (!window.ltfTemplateReady) {
+  // Шаблон сторінки підменю (клон базового екрана налаштувань)
+  if(!window.ltfTemplateReady){
     window.ltfTemplateReady = true;
     Lampa.Template.add('settings_ltf', Lampa.Template.get('settings', {}, true));
   }
 
-  Lampa.SettingsApi.addComponent({
-  component: 'ltf',
-  name: 'Мітки "UA" доріжок'
-  });
-    
-    
   function registerUI(){
-    // 2) Кнопка-вхід у розділі "Інтерфейс" -> відкриває наше підменю з власним шаблоном
+    // Кнопка-вхід у «Інтерфейс»
     Lampa.SettingsApi.addParam({
-      component: 'interface',
-      param: { type: 'button', component: 'ltf' },
-      field: {
-        name: 'Мітки "UA" доріжок',
-        description: 'Керування відображенням міток українських доріжок'
-      },
-      onChange: function(){
+      component:'interface',
+      param:{ type:'button', component:'ltf' },
+      field:{ name:'Мітки "UA" доріжок', description:'Керування відображенням міток українських доріжок' },
+      onChange:function(){
         Lampa.Settings.create('ltf', {
-          template: 'settings_ltf',
-          onBack: function(){ Lampa.Settings.create('interface'); }
+          template:'settings_ltf',
+          onBack:function(){ Lampa.Settings.create('interface'); }
         });
       }
     });
 
-    // 3) Реальні пункти (реєструємо у компоненті `ltf`)
+    // Пункти підменю `ltf`
     Lampa.SettingsApi.addParam({
-      component: 'ltf',
-      param: {
-        name: 'ltf_badge_style',
-        type: 'select',
-        values: {
-          text: 'Текстова мітка (“Ukr”, “2xUkr”)',
-          flag_count: 'Прапорець із лічильником',
-          flag_only: 'Лише прапорець'
-        },
+      component:'ltf',
+      param:{
+        name:'ltf_badge_style', type:'select',
+        values:{ text:'Текстова мітка (“Ukr”, “2xUkr”)', flag_count:'Прапорець із лічильником', flag_only:'Лише прапорець' },
         default: st.badge_style
       },
-      field: { name: 'Стиль мітки' },
-      onChange: function(v){ st.badge_style = v; save(); }
+      field:{ name:'Стиль мітки' },
+      onChange:function(v){ st.badge_style=v; save(); }
     });
 
     Lampa.SettingsApi.addParam({
-      component: 'ltf',
-      param: {
-        name: 'ltf_show_tv',
-        type: 'select',
-        values: { 'true': 'Увімкнено', 'false': 'Вимкнено' },
-        default: String(st.show_tv)
-      },
-      field: { name: 'Показувати для серіалів' },
-      onChange: function(v){ st.show_tv = toBool(v); save(); }
+      component:'ltf',
+      param:{ name:'ltf_show_tv', type:'select', values:{'true':'Увімкнено','false':'Вимкнено'}, default:String(st.show_tv) },
+      field:{ name:'Показувати для серіалів' },
+      onChange:function(v){ st.show_tv=toBool(v); save(); }
     });
 
     Lampa.SettingsApi.addParam({
-      component: 'ltf',
-      param: { type: 'button', component: 'ltf_clear_cache' },
-      field: { name: 'Очистити кеш доріжок' },
-      onChange: function(){ clearTracks(); }
+      component:'ltf',
+      param:{ type:'button', component:'ltf_clear_cache' },
+      field:{ name:'Очистити кеш доріжок' },
+      onChange: clearTracks
     });
   }
 
   function start(){
-    st = load();
-    apply();
+    st = load(); apply();
     if (Lampa?.SettingsApi?.addParam) registerUI();
   }
 
   if (window.appready) start();
-  else if (Lampa?.Listener) {
-    Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
-  }
+  else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
 })();
 
 })();

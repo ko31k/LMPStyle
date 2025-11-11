@@ -1791,6 +1791,26 @@ getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
 
 
 
+// ---- ЗАВЖДИ ПРИБИВАТИ КНОПКУ В КІНЕЦЬ "Інтерфейс" ----
+(function(){
+  if (window.__pinInterfaceBottom) return;
+  window.__pinInterfaceBottom = function(item){
+    try{
+      var el = item && (item[0] || item); // jQuery або HTMLElement
+      if (!el) return;
+      var parent = el.closest?.('.settings__body') || el.parentNode;
+      if (!parent) return;
+
+      function move(){ try{ parent.appendChild(el); }catch(e){} }
+      move();
+      [50,150,300].forEach(function(t){ setTimeout(move, t); });
+    }catch(e){}
+  };
+})();
+
+
+
+	
 
 /* ===== LQE: Settings (Interface -> "Мітки якості") ===== */
 (function(){
@@ -1868,7 +1888,8 @@ function lqeClearCache(){
         name: 'Мітки якості',
         description: 'Керування відображенням міток якості'
       },
-      onChange: function(){
+      onRender: __pinInterfaceBottom,
+	  onChange: function(){
         Lampa.Settings.create('lqe', {
           template: 'settings_lqe',
           onBack: function(){ Lampa.Settings.create('interface'); }

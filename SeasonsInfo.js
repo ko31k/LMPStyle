@@ -1076,19 +1076,15 @@
 
 
 
-/* ===== Seasons Progress Badges — Settings UI (меню) ===== */
-/* ===== Seasons Progress Badges — Settings UI (меню) ===== */
+/* ===== Seasons Progress Badges — Settings (Інтерфейс → "Мітки прогресу серій/сезонів") ===== */
 (function(){
   'use strict';
 
-  var SETTINGS_KEY = 'sbadger_settings_v1';
+  var SETTINGS_KEY='sbadger_settings_v1';
   var st;
 
   function sbToast(msg){
-    try {
-      if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
-      if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
-    } catch(e){}
+    try{ if (Lampa?.Noty) return Lampa.Noty(msg); }catch(e){}
     var id='sbadger_toast', el=document.getElementById(id);
     if(!el){
       el=document.createElement('div');
@@ -1096,111 +1092,68 @@
       el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
       document.body.appendChild(el);
     }
-    el.textContent=msg;
-    el.style.opacity='1';
-    setTimeout(function(){ el.style.opacity='0'; }, 1300);
+    el.textContent=msg; el.style.opacity='1';
+    setTimeout(function(){ el.style.opacity='0'; },1300);
   }
 
-  function load(){
-    var s = Lampa.Storage.get(SETTINGS_KEY) || {};
-    return { tmdb_key: s.tmdb_key || '' };
-  }
-  function apply(){
-    if (st.tmdb_key) CONFIG.tmdbApiKey = st.tmdb_key.trim();
-  }
-  function save(){
-    Lampa.Storage.set(SETTINGS_KEY, st);
-    apply();
-    sbToast('Збережено');
-  }
+  function load(){ var s=Lampa.Storage.get(SETTINGS_KEY)||{}; return { tmdb_key: s.tmdb_key || '' }; }
+  function apply(){ if (st.tmdb_key) CONFIG.tmdbApiKey = st.tmdb_key.trim(); }
+  function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); sbToast('Збережено'); }
+
   function clearCache(){
-    try { safeStorage.removeItem('seasonBadgeCache'); } catch(e){}
+    try{
+      if (window.safeStorage && typeof safeStorage.removeItem==='function') safeStorage.removeItem('seasonBadgeCache');
+      else if (window.localStorage) localStorage.removeItem('seasonBadgeCache');
+    }catch(e){}
     sbToast('Кеш очищено');
   }
 
-  // шаблон сторінки підменю
-  try {
+  // Шаблон сторінки підменю (клон базового екрана)
+  if(!window.sbadgerTemplateReady){
+    window.sbadgerTemplateReady = true;
     Lampa.Template.add('settings_sbadger', Lampa.Template.get('settings', {}, true));
-  } catch(e) {
-    Lampa.Template.add('settings_sbadger',
-      '<div class="settings"><div class="settings__head">'+
-        '<div class="settings__title">Мітки прогресу серій/сезонів</div>'+
-      '</div><div class="settings__body"></div></div>');
-  }
-  if (!document.getElementById('sbadger_settings_fix')) {
-    var css = document.createElement('style');
-    css.id = 'sbadger_settings_fix';
-    css.textContent = '.settings .settings__title{white-space:normal}';
-    document.head.appendChild(css);
-  }
-
-  // компонент у списку
-  if (Lampa && Lampa.SettingsApi && Lampa.SettingsApi.addComponent) {
-    Lampa.SettingsApi.addComponent({ component: 'sbadger', name: 'Мітки прогресу серій/сезонів' });
   }
 
   function registerUI(){
-    // кнопка-вхід у підменю
+    // Кнопка-вхід у «Інтерфейс»
     Lampa.SettingsApi.addParam({
-      component: 'interface',
-      param: { type: 'button', component: 'sbadger' },
-      field: {
-        name: 'Мітки прогресу серій/сезонів',
-        description: 'Налаштування бейджів прогресу серій та сезонів'
-      },
-      onChange: function(){
+      component:'interface',
+      param:{ type:'button', component:'sbadger' },
+      field:{ name:'Мітки прогресу серій/сезонів', description:'Налаштування бейджів прогресу серій та сезонів' },
+      onChange:function(){
         Lampa.Settings.create('sbadger', {
-          template: 'settings_sbadger',
-          onBack: function(){ Lampa.Settings.create('interface'); }
+          template:'settings_sbadger',
+          onBack:function(){ Lampa.Settings.create('interface'); }
         });
       }
     });
 
-    // ЄДИНЕ поле вводу TMDB API ключа — одразу зберігає й застосовує
+    // Єдине поле вводу TMDB API ключа — одразу зберігає й застосовує
     Lampa.SettingsApi.addParam({
-      component: 'sbadger',
-      param: {
-        name: 'sbadger_tmdb_key',
-        type: 'input',
-        values: '',                                // важливо для стабільності ядра
-        "default": (st.tmdb_key || '')
-      },
-      field: {
-        name: 'TMDB API ключ',
-        description: 'Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org'
-      },
-      onRender: function(item){
-        try { $(item).find('input').attr('placeholder','встав ключ TMDB'); } catch(e){}
-      },
-      onChange: function(v){
-        st.tmdb_key = String(v || '').trim();
-        save();                                    // зберегти + застосувати
-      }
+      component:'sbadger',
+      param:{ name:'sbadger_tmdb_key', type:'input', values:'', "default": (st.tmdb_key||'') },
+      field:{ name:'TMDB API ключ', description:'Потрібен для отримання даних про сезони. Можна отримати на themoviedb.org' },
+      onRender:function(item){ try{ $(item).find('input').attr('placeholder','встав ключ TMDB'); }catch(e){} },
+      onChange:function(v){ st.tmdb_key = String(v||'').trim(); save(); }
     });
 
     // Очистити кеш
     Lampa.SettingsApi.addParam({
-      component: 'sbadger',
-      param: { type: 'button', component: 'sbadger_clear_cache' },
-      field: { name: 'Очистити кеш' },
+      component:'sbadger',
+      param:{ type:'button', component:'sbadger_clear_cache' },
+      field:{ name:'Очистити кеш' },
       onChange: clearCache
     });
   }
 
   function start(){
-    st = load();
-    apply();
-    if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
-      registerUI();
-    }
+    st=load(); apply();
+    if (Lampa?.SettingsApi?.addParam) registerUI();
   }
 
   if (window.appready) start();
-  else if (Lampa && Lampa.Listener) {
-    Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') start(); });
-  }
+  else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
 })();
-
 
     
 })();

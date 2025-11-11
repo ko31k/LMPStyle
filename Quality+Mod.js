@@ -12,6 +12,29 @@
  */
 
 
+// ---- ЗАВЖДИ ПРИБИВАТИ КНОПКУ В КІНЕЦЬ "Інтерфейс" ----
+(function () {
+  if (window.__pinInterfaceBottom) return;
+
+  window.__pinInterfaceBottom = function (item) {
+    try {
+      var el = item && (item[0] || item);                // jQuery або HTMLElement
+      if (!el) return;
+      var parent = (el.closest && el.closest('.settings__body')) || el.parentNode;
+      if (!parent) return;
+
+      function move(){ try { parent.appendChild(el); } catch (e) {} }
+      // одразу + кілька повторів, щоб “перебити” пізні додавання інших плагінів
+      move();
+      [50, 150, 300, 600].forEach(function (t) { setTimeout(move, t); });
+      // додатково — один кадр після рендеру
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(move);
+      }
+    } catch (e) {}
+  };
+})();
+
 // --- LQE TV-BOX COMPAT LAYER ---------------------------------
 // Цей блок робить плагін життєздатним у старих WebView без fetch/Promise/localStorage/CORS
 (function () {
@@ -1791,22 +1814,6 @@ getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
 
 
 
-// ---- ЗАВЖДИ ПРИБИВАТИ КНОПКУ В КІНЕЦЬ "Інтерфейс" ----
-(function(){
-  if (window.__pinInterfaceBottom) return;
-  window.__pinInterfaceBottom = function(item){
-    try{
-      var el = item && (item[0] || item); // jQuery або HTMLElement
-      if (!el) return;
-      var parent = el.closest?.('.settings__body') || el.parentNode;
-      if (!parent) return;
-
-      function move(){ try{ parent.appendChild(el); }catch(e){} }
-      move();
-      [50,150,300].forEach(function(t){ setTimeout(move, t); });
-    }catch(e){}
-  };
-})();
 
 
 

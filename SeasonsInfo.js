@@ -1139,12 +1139,23 @@
       field:{ name:'Очистити кеш' },
       onChange: clearCache
     });
+  }  
+  function start(){ 
+      st=load(); 
+      apply(); 
+      
+      if (Lampa?.SettingsApi?.addParam) {
+          // !!! ЗАСТОСУВАТИ ЗМІНУ ТУТ: обгортаємо виклик у setTimeout(..., 0)
+          setTimeout(registerUI, 0); 
+      }
   }
-
-  function start(){ st=load(); apply(); if (Lampa?.SettingsApi?.addParam) registerUI(); }
+  
   if (window.appready) start();
   else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
 })();
 
+
+
+    
     
 })();

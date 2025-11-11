@@ -948,6 +948,24 @@ function reprocessVisibleCardsChunked(){
 
 
 
+// ---- ЗАВЖДИ ПРИБИВАТИ КНОПКУ В КІНЕЦЬ "Інтерфейс" ----
+(function(){
+  if (window.__pinInterfaceBottom) return;
+  window.__pinInterfaceBottom = function(item){
+    try{
+      var el = item && (item[0] || item); // jQuery або HTMLElement
+      if (!el) return;
+      var parent = el.closest?.('.settings__body') || el.parentNode;
+      if (!parent) return;
+
+      function move(){ try{ parent.appendChild(el); }catch(e){} }
+      move();
+      [50,150,300].forEach(function(t){ setTimeout(move, t); });
+    }catch(e){}
+  };
+})();
+
+    
     
 
 /* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
@@ -1003,10 +1021,11 @@ function reprocessVisibleCardsChunked(){
 
   function registerUI(){
     // Вхід у підменю в розділі «Інтерфейс»
-    Lampa.SettingsApi.addParam({
+      Lampa.SettingsApi.addParam({
       component:'interface',
       param:{ type:'button', component:'ltf' },
       field:{ name:'Мітки "UA" доріжок', description:'Керування відображенням міток українських доріжок' },
+      onRender: __pinInterfaceBottom,
       onChange:function(){
         Lampa.Settings.create('ltf', {
           template:'settings_ltf',

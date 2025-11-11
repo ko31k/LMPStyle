@@ -1073,7 +1073,22 @@
 
 
 
+// ---- ЗАВЖДИ ПРИБИВАТИ КНОПКУ В КІНЕЦЬ "Інтерфейс" ----
+(function(){
+  if (window.__pinInterfaceBottom) return;
+  window.__pinInterfaceBottom = function(item){
+    try{
+      var el = item && (item[0] || item); // jQuery або HTMLElement
+      if (!el) return;
+      var parent = el.closest?.('.settings__body') || el.parentNode;
+      if (!parent) return;
 
+      function move(){ try{ parent.appendChild(el); }catch(e){} }
+      move();
+      [50,150,300].forEach(function(t){ setTimeout(move, t); });
+    }catch(e){}
+  };
+})();
 
 
 /* ===== Seasons Progress Badges — Settings (Інтерфейс → "Мітки прогресу серій/сезонів") ===== */
@@ -1118,6 +1133,7 @@
       component:'interface',
       param:{ type:'button', component:'sbadger' },
       field:{ name:'Мітки прогресу серій/сезонів', description:'Налаштування бейджів прогресу серій та сезонів' },
+      onRender: __pinInterfaceBottom,
       onChange:function(){
         Lampa.Settings.create('sbadger', {
           template:'settings_sbadger',

@@ -530,13 +530,30 @@ function posterCacheKeyForCard(card){
  * Прибирає тільки ті рейтинги, у яких немає значення (value).
  * * ЦЯ ВЕРСІЯ НЕ БУДЕ ПРИБИРАТИ TMDB чи IMDB.
  */
-function filterMdblistLike(arr) {
-    if (!Array.isArray(arr)) return [];
+function lmpRawVal(it){
+  if(!it || typeof it!=='object') return null;
+  var v = it.value;
+  if (v==null) v = it.score;
+  if (v==null) v = it.rating;
+  if (v==null) v = it.percent;
+  if (v==null && typeof it.display==='string') v = it.display;
+  return v==null ? null : v;
+}
+  
+function filterMdblistLike(arr){
+  if (!Array.isArray(arr)) return [];
+  var isCub = (Lampa.Storage.get('source') || '').toLowerCase() === 'cub';
 
-    return arr.filter(function(x) {
-        // Показувати будь-який рейтинг, якщо він існує і має значення
-        return x && x.value != null;
-    });
+  return arr.filter(function(x){
+    if (!x) return false;
+    var val = lmpRawVal(x);
+    if (val == null) return false;
+
+    var s = String(x.source || '').toLowerCase();
+    if (s === 'tmdb') return false;
+    if (isCub && s === 'imdb') return false;
+    return true;
+  });
 }
 
 
@@ -603,13 +620,14 @@ function renderPosterBadgesFromRaw(rawRatings, $cardView){
 
   ensurePosterBadgeStylesOnce();
 
-  var topStartEm = 0.6;
-  var stepEm     = 2.0;
-
+  var topStartEm = 0.6, stepEm = 2.0;
   items.forEach(function(it, i){
+    var val = lmpRawVal(it); if (val==null) return;
+    var txt = String((it.source||'').toUpperCase()) + ': ' + String(val);
+    if (it.votes != null) txt += ' /' + String(it.votes);   // як у скріні
+
     var $b = $('<div class="card__lmerating"></div>');
-    $b.css('top', 'calc(' + topStartEm + 'em + ' + (i*stepEm) + 'em)');
-    $b.text(String(it.source || '').toUpperCase() + ': ' + String(it.value));
+    $b.css('top','calc('+topStartEm+'em + '+(i*stepEm)+'em)').text(txt);
     $cardView.append($b);
   });
 }

@@ -419,7 +419,7 @@
     /* --- CSS Змінні (розміри іконок) --- */
     ":root{" +
     "  --lmp-h-imdb:24px;" +
-    "  --lmp-h-mc:26px;" +
+    "  --lmp-h-mc:24px;" +
     "  --lmp-h-rt:26px;" +
     "  --lmp-h-popcorn:26px;" +
     "  --lmp-h-tmdb:26px;" +

@@ -505,7 +505,7 @@ function posterCacheKeyForCard(card){
 }
 
 // Фільтр «як у Enchanser»: ніколи не показуємо TMDB; на джерелі cub ще й IMDb прибираємо
-function filterMdblistLike(arr){
+/*function filterMdblistLike(arr){
   if (!Array.isArray(arr)) return [];
   var isCub = (Lampa.Storage.get('source') || '').toLowerCase() === 'cub';
 
@@ -522,7 +522,23 @@ function filterMdblistLike(arr){
 
     return true;
   });
+}*/
+
+
+/**
+ * Фільтр для стікерів на постері.
+ * Прибирає тільки ті рейтинги, у яких немає значення (value).
+ * * ЦЯ ВЕРСІЯ НЕ БУДЕ ПРИБИРАТИ TMDB чи IMDB.
+ */
+function filterMdblistLike(arr) {
+    if (!Array.isArray(arr)) return [];
+
+    return arr.filter(function(x) {
+        // Показувати будь-який рейтинг, якщо він існує і має значення
+        return x && x.value != null;
+    });
 }
+
 
 // Спробувати взяти «сирий» mdblist з currentRatingsData; якщо нема — синтезуємо з уже підготовлених полів
 function buildMdblistLikeArray(data){

@@ -508,11 +508,18 @@ function posterCacheKeyForCard(card){
 function filterMdblistLike(arr){
   if (!Array.isArray(arr)) return [];
   var isCub = (Lampa.Storage.get('source') || '').toLowerCase() === 'cub';
+
   return arr.filter(function(x){
     if (!x || x.value == null) return false;
-    var s = String(x.source||'').toLowerCase();
+
+    var s = String(x.source || '').toLowerCase();
+
+    // 1) завжди прибираємо TMDB
     if (s === 'tmdb') return false;
+
+    // 2) якщо джерело — cub, також прибираємо IMDb
     if (isCub && s === 'imdb') return false;
+
     return true;
   });
 }

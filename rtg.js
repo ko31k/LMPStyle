@@ -1620,10 +1620,14 @@
 
       var mcText = mcVal.toFixed(1);
 
-      // Визначаємо джерело (user чи critic) і обираємо відповідну іконку
+
+      // Визначаємо джерело (user чи critic/загальне) і обираємо відповідну іконку
       var usedIsUser   = (data.mc_user_for_avg && !isNaN(data.mc_user_for_avg)) && Math.abs(mcVal - parseFloat(data.mc_user_for_avg)) < 0.051;
       var usedIsCritic = !usedIsUser && (data.mc_critic_for_avg && !isNaN(data.mc_critic_for_avg)) && Math.abs(mcVal - parseFloat(data.mc_critic_for_avg)) < 0.051;
-      var mcIconUrl = ICONS.metacritic;
+
+      // за замовчуванням вважаємо Metascore (critics/generic) -> нове лого
+      var mcIconUrl = ICONS.metascore;
+      if (usedIsUser) mcIconUrl = ICONS.metacritic;
       if (usedIsCritic) mcIconUrl = ICONS.metascore;
 
       if (!cont.length) {

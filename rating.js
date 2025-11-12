@@ -1218,7 +1218,9 @@ function getImdbIdFromTmdb(tmdbId, type, callback) {
             ageRating: omdb.ageRating || null,
             oscars: omdb.oscars || 0,
             emmy: omdb.emmy || 0,
-            awards: omdb.awards || 0
+            awards: omdb.awards || 0,
+            // 🔧 не загубити сирі рейтинги для постера
+            _mdblist_ratings: Array.isArray(mdb._mdblist_ratings) ? mdb._mdblist_ratings.slice() : []
         };
 
         return merged;

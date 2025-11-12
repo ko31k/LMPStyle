@@ -622,16 +622,22 @@ function renderPosterBadgesFromRaw(rawRatings, $cardView){
 
   var topStartEm = 0.6, stepEm = 2.0;
   items.forEach(function(it, i){
-    var val = lmpRawVal(it); if (val==null) return;
+    var val = lmpRawVal(it); if (val == null) return;
     var txt = String((it.source||'').toUpperCase()) + ': ' + String(val);
-    if (it.votes != null) txt += ' /' + String(it.votes);   // як у скріні
+    if (it.votes != null) txt += ' /' + String(it.votes);
 
     var $b = $('<div class="card__lmerating"></div>');
-    $b.css('top','calc('+topStartEm+'em + '+(i*stepEm)+'em)').text(txt);
-    $cardView.append($b);
+    $b.css('top', 'calc(' + topStartEm + 'em + ' + (i*stepEm) + 'em)').text(txt);
+    $poster.append($b);
   });
 }
 
+
+
+
+
+
+  
 function wirePosterBadgesListener(){
   Lampa.Listener.follow('line', function(e){
     if (e.type !== 'append') return;

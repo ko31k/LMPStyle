@@ -1001,6 +1001,53 @@
     };
   })();
 
+  /* --- ДОДАНО: Функція для сповіщень (Toast) --- */
+  /**
+   * Показує коротке сповіщення (Toast)
+   * @param {string} msg - Текст повідомлення
+   */
+  function lmpToast(msg) {
+    try {
+      if (Lampa && typeof Lampa.Noty === 'function') {
+        Lampa.Noty(msg);
+        return;
+      }
+      if (Lampa && Lampa.Noty && Lampa.Noty.show) {
+        Lampa.Noty.show(msg);
+        return;
+      }
+    } catch (e) {}
+    var id = 'lmp_toast';
+    var el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    setTimeout(function() {
+      el.style.opacity = '0';
+    }, 1300);
+  }
+
+  /* --- ДОДАНО: Функція очищення кешу --- */
+  /**
+   * Очищує кеш рейтингів та ID
+   */
+  function lmpRatingsClearCache() {
+    try {
+      // RATING_CACHE_KEY та ID_MAPPING_CACHE визначені у Секції 2
+      Lampa.Storage.set(RATING_CACHE_KEY, {});
+      Lampa.Storage.set(ID_MAPPING_CACHE, {});
+      lmpToast('Кеш рейтингів очищено');
+    } catch (e) {
+      console.error('LMP Ratings: clear cache error', e);
+      lmpToast('Помилка очищення кешу');
+    }
+  }
+
   /*
   |==========================================================================
   | 4. МЕРЕЖА (NETWORK)
@@ -2583,6 +2630,22 @@
         description: 'Показувати наявні та додаткові рейтинги на постері'
       },
     });
+
+    /* --- ДОДАНО: Кнопка очищення кешу --- */
+    Lampa.SettingsApi.addParam({
+      component: 'lmp_ratings',
+      param: {
+        type: 'button',
+        component: 'lmp_clear_cache'
+      },
+      field: {
+        name: 'Очистити кеш рейтингів'
+      },
+      onChange: function() {
+        lmpRatingsClearCache();
+      }
+    });
+
   }
 
   /**

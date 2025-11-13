@@ -725,7 +725,7 @@
             case 'interface_mod_new_theme_select':
               settings.theme = (val || 'default'); // Use 'val' directly from arguments
               applyTheme(settings.theme);
-              closeOpenSelects(); // This is the only one that needs this
+              //closeOpenSelects(); // This is the only one that needs this
               break;
               
             case 'interface_mod_new_en_data':

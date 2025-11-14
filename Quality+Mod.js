@@ -200,11 +200,11 @@
 	
     // ===================== КОНФІГУРАЦІЯ =====================
     var LQE_CONFIG = {
-        CACHE_VERSION: 2, // Версія кешу для інвалідації старих даних
+        CACHE_VERSION: 3, // Версія кешу для інвалідації старих даних
         LOGGING_GENERAL: false, // Загальне логування для налагодження
         LOGGING_QUALITY: false, // Логування процесу визначення якості
         LOGGING_CARDLIST: false, // Логування для спискових карток
-        CACHE_VALID_TIME_MS: 72 * 60 * 60 * 1000, // Час життя кешу (72 години)
+        CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000, // Час життя кешу (48 години)
         CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
         JACRED_PROTOCOL: 'http://', // Протокол для API JacRed
@@ -218,7 +218,7 @@
         SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
 		
-		MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість паралельних запитів
+		MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
         
         USE_SIMPLE_QUALITY_LABELS: true, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
         

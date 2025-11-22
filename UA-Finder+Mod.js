@@ -610,6 +610,17 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
         Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
     }
 
+    /**
+     * Примусове очищення кешу (для налаштувань)
+     */
+    function clearTracksCache() {
+        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {});
+        console.log('UA-Finder: Кеш повністю очищено користувачем.');
+        // Скидаємо версію кешу, щоб гарантувати перезапис
+        var cache = {}; 
+        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, cache);
+    }
+    
 document.addEventListener('ltf:settings-changed', function(){
   // проходимо видимі картки та оновлюємо без нових мережевих запитів
   document.querySelectorAll('.card').forEach(function(card){
@@ -994,11 +1005,44 @@ function reprocessVisibleCardsChunked(){
 
   function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); ltfToast('Збережено'); }
 
-  function clearTracks(){
-    try{ if(typeof clearTracksCache==='function') clearTracksCache(); }catch(e){}
+function clearTracks(){
+    // 1. Очищуємо пам'ять
+    try {
+        if(typeof clearTracksCache === 'function') {
+            clearTracksCache();
+        } else {
+            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); 
+        }
+    } catch(e) {}
+
+    // 2. Миттєво візуально прибираємо старі мітки (через подію)
     try{ document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); }catch(e){}
-    try{ if(typeof reprocessVisibleCardsChunked==='function') reprocessVisibleCardsChunked(); }catch(e){}
-    ltfToast('Кеш доріжок очищено');
+    
+    ltfToast('Кеш очищено. Оновлюю дані...');
+
+    // 3. БЕЗПЕЧНЕ ОНОВЛЕННЯ: Запускаємо пересканування по черзі, щоб не "повісити" інтерфейс
+    var cards = Array.from(document.querySelectorAll('.card')); // Беремо всі картки
+    var index = 0;
+
+    function processNext() {
+        if (index >= cards.length) return; // Кінець списку
+
+        var card = cards[index];
+        // Перевіряємо, чи картка видима, щоб не витрачати ресурси даремно
+        if (card.isConnected && card.getBoundingClientRect().top < window.innerHeight) {
+            // Викликаємо головну функцію. Оскільки кеш пустий, вона сама піде в мережу шукати дані
+            if(typeof processListCard === 'function') {
+                processListCard(card);
+            }
+        }
+        
+        index++;
+        // ❗ ГОЛОВНЕ: Робимо паузу 250мс між картками. 
+        // Це дозволить інтерфейсу реагувати на натискання пульта.
+        setTimeout(processNext, 250); 
+    }
+
+    processNext(); // Запуск ланцюжка
   }
 
   // ❗ Порожній шаблон як у LQE — щоб не дублювати контейнер налаштувань

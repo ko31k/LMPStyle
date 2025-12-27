@@ -418,15 +418,15 @@
 
     /* --- CSS Змінні (розміри іконок) --- */
     ":root{" +
-    "  --lmp-h-imdb:24px;" +
-    "  --lmp-h-mc:24px;" +
-    "  --lmp-h-rt:26px;" +
-    "  --lmp-h-popcorn:26px;" +
-    "  --lmp-h-tmdb:26px;" +
-    "  --lmp-h-awards:20px;" + // іконка 'Awards' у rate--awards
-    "  --lmp-h-avg:20px;" + // зірка 'TOTAL/AVG'
-    "  --lmp-h-oscar:22px;" + // статуетка Оскара
-    "  --lmp-h-emmy:24px;" + // статуетка Еммі
+    "  --lmp-h-imdb:22px;" +
+    "  --lmp-h-mc:22px;" +
+    "  --lmp-h-rt:24px;" +
+    "  --lmp-h-popcorn:24px;" +
+    "  --lmp-h-tmdb:24px;" +
+    "  --lmp-h-awards:18px;" + // іконка 'Awards' у rate--awards
+    "  --lmp-h-avg:18px;" + // зірка 'TOTAL/AVG'
+    "  --lmp-h-oscar:20px;" + // статуетка Оскара
+    "  --lmp-h-emmy:22px;" + // статуетка Еммі
     "}" +
 
     /* --- Кольоровий режим (за замовчуванням) --- */

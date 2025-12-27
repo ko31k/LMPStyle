@@ -966,8 +966,6 @@ function reprocessVisibleCardsChunked(){
     
 
 /* **=====** UA-Finder: Settings (Interface → "Мітки "UA" доріжок") **=====** */
-(function(){
-  'use strict';
 
   var SETTINGS_KEY = 'ltf_user_settings_v1';
   var st;
@@ -1100,7 +1098,7 @@ function clearTracks(){
   
   if (window.appready) start();
   else if (Lampa?.Listener) Lampa.Listener.follow('app', e=>{ if(e.type==='ready') start(); });
-})();
+
 
 
 

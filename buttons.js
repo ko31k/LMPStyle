@@ -57,9 +57,14 @@
             en: 'Reset to default'
         },
         custom_interface_plugin_button_editor: {
-            uk: 'Редактор кнопок',
-            ru: 'Редактор кнопок',
-            en: 'Buttons editor'
+            uk: 'Показати редактор кнопок',
+            ru: 'Показать редактор кнопок',
+            en: 'Show buttons editor'
+        },
+        custom_interface_plugin_button_editor_desc: {
+            uk: 'Змінює відображення кнопок і тексту',
+            ru: 'Изменяет отображение кнопок и текста',
+            en: 'Changes the display of buttons and text'
         },
         custom_interface_plugin_options: {
             uk: 'Опції',
@@ -67,9 +72,9 @@
             en: 'Options'
         },
         custom_interface_plugin_online: {
-            uk: 'Онлайн',
-            ru: 'Онлайн',
-            en: 'Online'
+            uk: 'Дивитись',
+            ru: 'Смотреть',
+            en: 'Look'
         },
         custom_interface_plugin_torrent: {
             uk: 'Торенти',
@@ -143,7 +148,6 @@
         if (classes.indexOf('showy') !== -1 || text.indexOf('Showy') !== -1) {
             return 'showy_online_button';
         }
-        // Спеціальна обробка для кнопки Options (три крапки)
         if (classes.indexOf('button--options') !== -1) {
             return 'button--options';
         }
@@ -191,13 +195,37 @@
             var $btn = $(this);
             if (isExcluded($btn)) return;
             var type = getButtonType($btn);
-            if (type === 'online' && $btn.hasClass('lampac--button') && !$btn.hasClass('modss--button') && !$btn.hasClass('showy--button')) {
-                var svgElement = $btn.find('svg').first();
-                if (svgElement.length && !svgElement.hasClass('modss-online-icon')) {
-                    svgElement.replaceWith(LAMPAC_ICON);
-                }
-            }
-            // Додаємо текст "Опції" до кнопки з трьома крапками
+            var ONLINE_SVG_VIEWBOX = '0 0 392.697 392.697';
+            if (
+    type === 'online' &&
+    $btn.hasClass('lampac--button') &&
+    !$btn.hasClass('modss--button') &&
+    !$btn.hasClass('showy--button')
+) {
+    var svgElement = $btn.find('svg').first();
+
+    if (
+        svgElement.length &&
+        svgElement.attr('viewBox') === ONLINE_SVG_VIEWBOX &&
+        !svgElement.data('lampacReplaced')
+    ) {
+        svgElement.replaceWith(
+            $(LAMPAC_ICON).attr('data-lampac-icon', 'online')
+        );
+    }
+}
+
+if (type === 'online') {
+    var span = $btn.find('span');
+
+    if (span.length) {
+        span.text(t('custom_interface_plugin_online'));
+    } else {
+        $btn.append('<span>' + t('custom_interface_plugin_online') + '</span>');
+    }
+}
+
+            
             if ($btn.hasClass('button--options') && $btn.find('span').length === 0) {
                 $btn.append('<span>' + t('custom_interface_plugin_options') + '</span>');
             }
@@ -290,9 +318,8 @@
         btn.on('hover:enter', function() {
             openEditDialog();
         });
-        if (Lampa.Storage.get('buttons_editor_enabled') === false) {
-            btn.hide();
-        }
+        var enabled = Lampa.Storage.get('buttons_editor_enabled', true);
+        btn.toggle(enabled);
         return btn;
     }
 
@@ -360,7 +387,6 @@
         var text = btn.find('span').text().trim();
         var classes = btn.attr('class') || '';
         var subtitle = btn.attr('data-subtitle') || '';
-        // Якщо це кнопка Options — повертаємо перекладений текст
         if (classes.indexOf('button--options') !== -1) {
             return t('custom_interface_plugin_options');
         }
@@ -673,7 +699,7 @@
         });
     }
 
-    if (Lampa.SettingsApi) {
+        if (Lampa.SettingsApi) {
         try {
             Lampa.SettingsApi.addParam({
                 component: 'interface',
@@ -700,13 +726,11 @@
             console.error('SettingsApi error:', e);
         }
     }
-
     try {
         init();
     } catch (e) {
         console.error('Plugin init error:', e);
     }
-
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {};
     }

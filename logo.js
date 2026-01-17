@@ -63,7 +63,7 @@
 				container.style.boxSizing = "";
 			}
 
-			img.style.marginTop = "1.5em";
+			img.style.marginTop = "0.2em";
 			img.style.marginLeft = "0";
 
 			img.style.paddingTop = PADDING_TOP_EM + "em";

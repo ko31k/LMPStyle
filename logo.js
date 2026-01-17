@@ -150,7 +150,7 @@
 					details_elem.append(new_item);
 				}
 
-				moveHeadToDetails();
+				//moveHeadToDetails();
 
 				function startLogoAnimation(img_url, save_to_cache) {
 					if (save_to_cache && !DISABLE_CACHE)

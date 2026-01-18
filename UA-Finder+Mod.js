@@ -44,7 +44,7 @@
         CACHE_VERSION: 4, // ❗ Змініть це число (напр. 5), якщо хочете примусово скинути весь кеш у користувачів.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години). Після цього він вважається недійсним.
-        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (22 годин).
+        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (12 годин).
 
         // --- Налаштування логування для налагодження ---
         LOGGING_GENERAL: false, // Загальні логи (старт плагіна, оновлення мережі).
@@ -58,8 +58,8 @@
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
-        PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
-        MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість одночасних запитів до API.
+        PROXY_TIMEOUT_MS: 4500, // Максимальний час очікування відповіді від одного проксі (4.5 секунди).
+        MAX_PARALLEL_REQUESTS: 8, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 
         // --- Налаштування функціоналу ---
@@ -738,7 +738,99 @@ function reprocessVisibleCardsChunked(){
      * 2. Кеш свіжий (0-6 годин)? -> Просто малюємо з кешу. (Це "автозцілення", якщо DOM оновився).
      * 3. Кеш застарілий (6-12 годин)? -> Малюємо з кешу + запускаємо фоновий пошук. (Це виправлення "примар").
      */
-    function processListCard(cardElement) {
+    
+  function processListCard(cardElement) {
+        // --- 1. Базові перевірки ---
+        if (!cardElement || !cardElement.isConnected || !document.body.contains(cardElement)) {
+            return;
+        }
+
+        // --- 2. Механізм очікування даних (Retry Logic) ---
+        // Lampa часто створює картку раніше, ніж записує в неї card_data.
+        // Ми будемо пробувати отримати ID до 20 разів (загалом 5 секунд).
+        var attempts = 0;
+        var maxAttempts = 20;
+
+        function tryProcess() {
+            var cardData = cardElement.card_data;
+            var cardView = cardElement.querySelector('.card__view');
+
+            // Якщо даних ще немає — чекаємо 250мс і пробуємо знову
+            if (!cardData || !cardData.id) {
+                if (attempts < maxAttempts) {
+                    attempts++;
+                    setTimeout(tryProcess, 250); 
+                    return;
+                }
+                return; // Так і не отримали ID, зупиняємось
+            }
+
+            // Перевірка налаштування: чи показувати для серіалів
+            var cardType = getCardType(cardData);
+            if (cardType === 'tv' && !LTF_CONFIG.SHOW_TRACKS_FOR_TV_SERIES) return;
+
+            // --- 3. Нормалізація та Кеш ---
+            var cardId = String(cardData.id);
+            var cacheKey = LTF_CONFIG.CACHE_VERSION + '_' + cardType + '_' + cardId;
+
+            // Важливо: перевіряємо, чи вже є мітка в DOM. 
+            // Якщо є і ID збігається — не робимо нічого (захист від мерехтіння).
+            var existingBadge = cardView.querySelector('.card__tracks');
+            if (existingBadge && existingBadge.getAttribute('data-ltf-id') === cardId) {
+                return;
+            }
+
+            // Перевірка ручних перевизначень
+            var manualOverrideData = LTF_CONFIG.MANUAL_OVERRIDES[cardId];
+            if (manualOverrideData) {
+                updateCardListTracksElement(cardView, manualOverrideData.track_count);
+                return;
+            }
+
+            var cachedData = getTracksCache(cacheKey);
+
+            // --- 4. Основна логіка відображення ---
+            if (cachedData) {
+                // Виводимо з кешу миттєво
+                updateCardListTracksElement(cardView, cachedData.track_count);
+
+                // Якщо кеш старий (понад 12 годин) — оновлюємо у фоні
+                if (Date.now() - cachedData.timestamp > LTF_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
+                    fetchAndSave(cardData, cardId, cardType, cacheKey, cardElement, cardView);
+                }
+            } else {
+                // Кешу немає — запускаємо пошук через чергу
+                fetchAndSave(cardData, cardId, cardType, cacheKey, cardElement, cardView);
+            }
+        }
+
+        // Допоміжна функція, щоб не дублювати код пошуку
+        function fetchAndSave(cardData, cardId, cardType, cacheKey, element, view) {
+            var normalized = {
+                id: cardId,
+                title: cardData.title || cardData.name || '',
+                original_title: cardData.original_title || cardData.original_name || '',
+                type: cardType,
+                release_date: cardData.release_date || cardData.first_air_date || ''
+            };
+
+            getBestReleaseWithUkr(normalized, cardId, function(res) {
+                var count = res ? res.track_count : 0;
+                saveTracksCache(cacheKey, { track_count: count });
+                
+                // Малюємо, тільки якщо користувач ще не пішов з цієї сторінки
+                if (document.body.contains(element)) {
+                    updateCardListTracksElement(view, count);
+                }
+            });
+        }
+
+        // Запуск першої спроби
+        tryProcess();
+    }  
+    
+    
+    /*function processListCard(cardElement) {
         // --- Базові перевірки ---
         // Картка ще існує в DOM?
         if (!cardElement || !cardElement.isConnected || !document.body.contains(cardElement)) {
@@ -818,7 +910,7 @@ function reprocessVisibleCardsChunked(){
                 }
             });
         }
-    }
+    }*/
     
     // ===================== ІНІЦІАЛІЗАЦІЯ ПЛАГІНА =====================
     

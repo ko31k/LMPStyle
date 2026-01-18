@@ -2521,9 +2521,9 @@ function ensureCss(){
         display: none !important;
       }
 
-      /* --- НОВИЙ БЛОК: Ефект тонкої рамки та м'якого світіння як на скриншоті --- */
+      /* --- БЛОК СТИЛІЗАЦІЇ ТОРРЕНТІВ: РАМКИ ТА СВІТІННЯ --- */
 
-      /* Базовий стиль для цифр (темний напівпрозорий фон) */
+      /* Загальний стиль для всіх елементів (спанів) */
       .torrent-item__bitrate span, .torrent-item__seeds span {
         border-radius: 4px !important;
         padding: 1px 6px !important;
@@ -2533,31 +2533,41 @@ function ensureCss(){
         text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
       }
 
-      /* ВИСОКИЙ бітрейт та насіння — ЧЕРВОНИЙ */
-      .torrent-item__bitrate span.high-bitrate, 
-      .torrent-item__seeds span.high-seeds {
-        background: rgba(80, 0, 0, 0.4) !important;
+      /* ЛОГІКА БІТРЕЙТУ (High=Червоний, Medium=Зелений, Low=Жовтий) */
+      .torrent-item__bitrate span.high-bitrate {
+        background: rgba(100, 0, 0, 0.45) !important;
         border: 1.5px solid #ff3333 !important;
         box-shadow: 0 0 8px rgba(255, 51, 51, 0.6) !important;
       }
-
-      /* СЕРЕДНІЙ бітрейт та насіння — ЗЕЛЕНИЙ */
-      .torrent-item__bitrate span.medium-bitrate,
-      .torrent-item__seeds span.medium-seeds {
-        background: rgba(0, 80, 0, 0.4) !important;
+      .torrent-item__bitrate span.medium-bitrate {
+        background: rgba(0, 90, 0, 0.45) !important;
         border: 1.5px solid #00ff00 !important;
         box-shadow: 0 0 8px rgba(0, 255, 0, 0.6) !important;
       }
-
-      /* НИЗЬКИЙ бітрейт та насіння — ЖОВТИЙ */
-      .torrent-item__bitrate span.low-bitrate,
-      .torrent-item__seeds span.low-seeds {
-        background: rgba(100, 70, 0, 0.4) !important;
+      .torrent-item__bitrate span.low-bitrate {
+        background: rgba(110, 80, 0, 0.45) !important;
         border: 1.5px solid #ffcc00 !important;
         box-shadow: 0 0 8px rgba(255, 204, 0, 0.6) !important;
       }
 
-      /* Активна біла рамка вибору (Фокус) */
+      /* ЛОГІКА СІДІВ (класична: багато=зелений, мало=червоний) */
+      .torrent-item__seeds span.high-seeds {
+        background: rgba(0, 90, 0, 0.45) !important;
+        border: 1.5px solid #00ff00 !important;
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.6) !important;
+      }
+      .torrent-item__seeds span.medium-seeds {
+        background: rgba(110, 80, 0, 0.45) !important;
+        border: 1.5px solid #ffcc00 !important;
+        box-shadow: 0 0 8px rgba(255, 204, 0, 0.6) !important;
+      }
+      .torrent-item__seeds span.low-seeds {
+        background: rgba(100, 0, 0, 0.45) !important;
+        border: 1.5px solid #ff3333 !important;
+        box-shadow: 0 0 8px rgba(255, 51, 51, 0.6) !important;
+      }
+
+      /* Активна біла рамка вибору (Фокус) — світіння */
       .torrent-item.focus {
         outline: none !important;
         border: 2px solid #ffffff !important;

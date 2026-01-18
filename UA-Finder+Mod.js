@@ -58,8 +58,8 @@
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
-        PROXY_TIMEOUT_MS: 4500, // Максимальний час очікування відповіді від одного проксі (4.5 секунди).
-        MAX_PARALLEL_REQUESTS: 8, // Максимальна кількість одночасних запитів до API.
+        PROXY_TIMEOUT_MS: 4000, // Максимальний час очікування відповіді від одного проксі (4 секунди).
+        MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 
         // --- Налаштування функціоналу ---
@@ -738,8 +738,7 @@ function reprocessVisibleCardsChunked(){
      * 2. Кеш свіжий (0-6 годин)? -> Просто малюємо з кешу. (Це "автозцілення", якщо DOM оновився).
      * 3. Кеш застарілий (6-12 годин)? -> Малюємо з кешу + запускаємо фоновий пошук. (Це виправлення "примар").
      */
-    
-  function processListCard(cardElement) {
+    function processListCard(cardElement) {
         // --- 1. Базові перевірки ---
         if (!cardElement || !cardElement.isConnected || !document.body.contains(cardElement)) {
             return;
@@ -827,8 +826,7 @@ function reprocessVisibleCardsChunked(){
 
         // Запуск першої спроби
         tryProcess();
-    }  
-    
+    }
     
     /*function processListCard(cardElement) {
         // --- Базові перевірки ---

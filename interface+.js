@@ -763,6 +763,21 @@
               settings.tor_seeds = getBool(key, true);
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
               break;
+              
+              /*case 'interface_mod_new_tor_frame':
+              settings.tor_frame = getBool(key, true);
+              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+              break;
+              
+            case 'interface_mod_new_tor_bitrate':
+              settings.tor_bitrate = getBool(key, true);
+              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+              break;
+              
+            case 'interface_mod_new_tor_seeds':
+              settings.tor_seeds = getBool(key, true);
+              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
+              break;*/
           }
         }
         return res;
@@ -2470,18 +2485,62 @@ function ensureCss(){
     var st = document.createElement('style');
     st.id = id;
     st.textContent = `
-      /* --- Базові стилі (Пігулки, Стек, ALT-режим) --- */
-      .ifx-pill{ background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700; padding:.2em .5em; border-radius:1em; line-height:1; white-space:nowrap; }
-      .ifx-corner-stack{ position:absolute; right:.3em; bottom:.3em; display:flex; flex-direction:column; align-items:flex-end; gap:2px; z-index:10; pointer-events:none; }
-      .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{ position:static !important; background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700; padding:.2em .5em; border-radius:1em; line-height:1; }
-      .card .card__view, .card-episode .full-episode{ position:relative; }
-      body.ifx-ep-alt .card-episode .full-episode .card__title{ position:absolute; left:.7em; top:.7em; right:.7em; margin:0; z-index:2; text-shadow:0 1px 2px rgba(0,0,0,0.35); }
-      body.ifx-ep-alt .card-episode .full-episode__num, body.ifx-num-only .card-episode .full-episode__num, .ifx-hide-age .card__age { display:none !important; }
-      body.ifx-no-rate .card__view > .card__vote, body.ifx-no-rate .card__view > .card_vote { display: none !important; }
+      /* Пігулка (як .card_vote) — наш власний бейдж року */
+      .ifx-pill{
+        background: rgba(0,0,0,.5);
+        color:#fff; font-size:1.3em; font-weight:700;
+        padding:.2em .5em; border-radius:1em; line-height:1;
+        white-space:nowrap;
+      }
+
+      /* Стек у правому нижньому, мінімальна щілина */
+      .ifx-corner-stack{
+        position:absolute; right:.3em; bottom:.3em;
+        display:flex; flex-direction:column; align-items:flex-end;
+        gap:2px; z-index:10; pointer-events:none;
+      }
+      .ifx-corner-stack > *{ pointer-events:auto; }
+
+      /* Коли переносимо рейтинґ у стек — робимо його пігулкою без absolute */
+      .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{
+        position:static !important; right:auto !important; bottom:auto !important; top:auto !important; left:auto !important;
+        background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700;
+        padding:.2em .5em; border-radius:1em; line-height:1;
+      }
+
+      /* Точки кріплення (для списків і епізодів) */
+      .card .card__view{ position:relative; }
+      .card-episode .full-episode{ position:relative; }
+
+      /* ALT mode: заголовок у ВЕРХНЬОМУ ЛІВОМУ куті */
+      body.ifx-ep-alt .card-episode .full-episode .card__title{
+        position:absolute; left:.7em; top:.7em; right:.7em; margin:0;
+        z-index:2; text-shadow:0 1px 2px rgba(0,0,0,.35);
+      }
+
+      /* ALT mode: ховаємо ВЕЛИКУ цифру та текстовий рік у тілі */
+      body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
+      body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
+
+      /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
+      body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
+
+      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток.
+         Додаємо клас .ifx-hide-age саме на картки списків та епізодів.
+         Повні картки НЕ мають цього класу — там нічого не ховаємо. */
+      .ifx-hide-age .card__age{ display:none !important; }
+
+      /* Ховаємо штатний рейтинг повністю, коли вимкнено */
+      body.ifx-no-rate .card__view > .card__vote,
+      body.ifx-no-rate .card__view > .card_vote,
+      body.ifx-no-rate .ifx-corner-stack > .card__vote,
+      body.ifx-no-rate .ifx-corner-stack > .card_vote {
+        display: none !important;
+      }
 
       /* --- ТОРРЕНТИ: М'ЯКІ КОЛЬОРИ ТА УНІФІКОВАНІ РОЗМІРИ --- */
 
-      /* Стиль цифр: розмір як у .torrent-item__size */
+      /* Стиль цифр як у .torrent-item__size */
       .torrent-item__bitrate span, .torrent-item__seeds span {
         border-radius: 0.3em !important;
         padding: 0.3em 0.5em !important;
@@ -2491,69 +2550,33 @@ function ensureCss(){
         transition: all 0.2s ease !important;
       }
 
-      /* 1. ВЕЛИКІ РАМКИ БЛОКІВ (.torrent-item) */
-      .torrent-item.high-seeds { border: 2px solid rgba(119, 205, 178, 0.5) !important; box-shadow: 0 0 10px rgba(119, 205, 178, 0.2) !important; }
-      .torrent-item.medium-seeds { border: 2px solid rgba(251, 203, 121, 0.5) !important; box-shadow: 0 0 10px rgba(251, 203, 121, 0.2) !important; }
-      .torrent-item.low-seeds { border: 2px solid rgba(255, 150, 150, 0.5) !important; box-shadow: 0 0 10px rgba(255, 150, 150, 0.2) !important; }
+      /* 1. РАМКИ БЛОКІВ (interface_mod_new_tor_frame) */
+      body.ifx-tor-frame .torrent-item.high-seeds { border: 2px solid rgba(119, 205, 178, 0.45) !important; box-shadow: 0 0 8px rgba(119, 205, 178, 0.15) !important; }
+      body.ifx-tor-frame .torrent-item.medium-seeds { border: 2px solid rgba(251, 203, 121, 0.45) !important; box-shadow: 0 0 8px rgba(251, 203, 121, 0.15) !important; }
+      body.ifx-tor-frame .torrent-item.low-seeds { border: 2px solid rgba(255, 150, 150, 0.45) !important; box-shadow: 0 0 8px rgba(255, 150, 150, 0.15) !important; }
 
-      /* 2. БІТРЕЙТ (Логіка: High=Червоний) */
-      /* High */
-      span.high-bitrate { 
-        color: #ff9696 !important; 
-        background: rgba(255, 150, 150, 0.2) !important; 
-        border: 1.5px solid rgba(255, 150, 150, 0.6) !important; 
-        box-shadow: 0 0 8px rgba(255, 150, 150, 0.3) !important; 
-      }
-      /* Medium */
-      span.medium-bitrate { 
-        color: #77cdb2 !important; 
-        background: rgba(119, 205, 178, 0.2) !important; 
-        border: 1.5px solid rgba(119, 205, 178, 0.6) !important; 
-        box-shadow: 0 0 8px rgba(119, 205, 178, 0.3) !important; 
-      }
-      /* Low */
-      span.low-bitrate { 
-        color: #fbcb79 !important; 
-        background: rgba(251, 203, 121, 0.2) !important; 
-        border: 1.5px solid rgba(251, 203, 121, 0.6) !important; 
-        box-shadow: 0 0 8px rgba(251, 203, 121, 0.3) !important; 
-      }
+      /* 2. БІТРЕЙТ (interface_mod_new_tor_bitrate) - Кольоровий текст */
+      body.ifx-tor-bitrate span.high-bitrate { color: #ff9696 !important; background: rgba(255, 150, 150, 0.15) !important; border: 1.2px solid rgba(255, 150, 150, 0.5) !important; }
+      body.ifx-tor-bitrate span.medium-bitrate { color: #77cdb2 !important; background: rgba(119, 205, 178, 0.15) !important; border: 1.2px solid rgba(119, 205, 178, 0.5) !important; }
+      body.ifx-tor-bitrate span.low-bitrate { color: #fbcb79 !important; background: rgba(251, 203, 121, 0.15) !important; border: 1.2px solid rgba(251, 203, 121, 0.5) !important; }
 
-      /* 3. СІДИ (Логіка: High=Зелений) */
-      /* High */
-      span.high-seeds { 
-        color: #77cdb2 !important; 
-        background: rgba(119, 205, 178, 0.2) !important; 
-        border: 1.5px solid rgba(119, 205, 178, 0.6) !important; 
-        box-shadow: 0 0 8px rgba(119, 205, 178, 0.3) !important; 
-      }
-      /* Medium */
-      span.medium-seeds { 
-        color: #fbcb79 !important; 
-        background: rgba(251, 203, 121, 0.2) !important; 
-        border: 1.5px solid rgba(251, 203, 121, 0.6) !important; 
-        box-shadow: 0 0 8px rgba(251, 203, 121, 0.3) !important; 
-      }
-      /* Low */
-      span.low-seeds { 
-        color: #ff9696 !important; 
-        background: rgba(255, 150, 150, 0.2) !important; 
-        border: 1.5px solid rgba(255, 150, 150, 0.6) !important; 
-        box-shadow: 0 0 8px rgba(255, 150, 150, 0.3) !important; 
-      }
+      /* 3. СІДИ (interface_mod_new_tor_seeds) - Кольоровий текст */
+      body.ifx-tor-seeds span.high-seeds { color: #77cdb2 !important; background: rgba(119, 205, 178, 0.15) !important; border: 1.2px solid rgba(119, 205, 178, 0.5) !important; }
+      body.ifx-tor-seeds span.medium-seeds { color: #fbcb79 !important; background: rgba(251, 203, 121, 0.15) !important; border: 1.2px solid rgba(251, 203, 121, 0.5) !important; }
+      body.ifx-tor-seeds span.low-seeds { color: #ff9696 !important; background: rgba(255, 150, 150, 0.15) !important; border: 1.2px solid rgba(255, 150, 150, 0.5) !important; }
 
-      /* Фокус (Біла рамка) */
+      /* Фокусна рамка торрента */
       .torrent-item.focus {
         outline: none !important;
         border: 2px solid #ffffff !important;
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
         transform: scale(1.01) !important;
         z-index: 10 !important;
         background: rgba(255, 255, 255, 0.1) !important;
       }
     `;
     document.head.appendChild(st);
-  }
+}
 
 
 // Синхронізуємо ТІЛЬКИ кольори з якості (фон/текст).

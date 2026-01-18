@@ -445,7 +445,7 @@ function applyFinalStyles(img, container, has_tagline, text_height) {
 		param: {
 			name: "logo_glav",
 			type: "select",
-			values: { 1: "Приховати", 0: "Відобразити" },
+			values: { 1: "'Приховати'", 0: "'Відобразити'" },
 			default: "0"
 		},
 		field: {
@@ -459,7 +459,7 @@ function applyFinalStyles(img, container, has_tagline, text_height) {
 			name: "logo_lang",
 			type: "select",
 			values: {
-				"": "Как в Lampa",
+				"": "Як в Lampa",
 				ru: "Русский",
 				en: "English",
 				uk: "Українська",

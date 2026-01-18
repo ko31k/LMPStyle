@@ -2521,46 +2521,58 @@ function ensureCss(){
         display: none !important;
       }
 
-      /* --- НОВІ СТИЛІ: Світіння бітрейту та активного фокусу --- */
+      /* --- НОВІ СТИЛІ: Неонове підсвічування бітрейту та сидів (за вашими класами) --- */
 
-      /* Загальна база для плашок бітрейту (напівпрозора біла рамка зовні) */
-      .ifx-bitrate-low, .ifx-bitrate-mid, .ifx-bitrate-high {
-        border-radius: 4px;
-        padding: 2px 6px;
-        font-weight: bold;
+      /* Загальна база для всіх кольорових позначок у списку торрентів */
+      .torrent-item__bitrate span, .torrent-item__seeds span {
+        border-radius: 4px !important;
+        padding: 1px 5px !important;
+        font-weight: bold !important;
         color: #fff !important;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-        border: 1px solid rgba(255,255,255,0.25) !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
+        border: 1px solid rgba(255,255,255,0.3) !important; /* Зовнішня тонка рамка */
+        display: inline-block !important;
       }
 
-      /* Низький бітрейт (Червоний) — м'який фон + червоний неоновий контур */
-      .ifx-bitrate-low {
-        background-color: #8b0000 !important;
-        box-shadow: inset 0 0 7px #ff3b3b, 0 0 10px rgba(255, 0, 0, 0.4) !important;
+      /* Високий бітрейт (Зелений) — смарагдовий неон */
+      .torrent-item__bitrate span.high-bitrate {
+        background-color: #006b00 !important;
+        box-shadow: inset 0 0 7px #39ff39, 0 0 10px rgba(0, 255, 0, 0.5) !important;
       }
 
-      /* Середній бітрейт (Помаранчевий/Жовтий) — золотистий фон + тепле світіння */
-      .ifx-bitrate-mid {
-        background-color: #9a7200 !important;
-        box-shadow: inset 0 0 7px #ffd43b, 0 0 10px rgba(255, 174, 0, 0.4) !important;
+      /* Середній бітрейт (Жовтий/Помаранчевий) — золотий неон */
+      .torrent-item__bitrate span.medium-bitrate {
+        background-color: #b38f00 !important;
+        box-shadow: inset 0 0 7px #ffdf5d, 0 0 10px rgba(255, 223, 0, 0.5) !important;
       }
 
-      /* Високий бітрейт (Зелений) — смарагдовий фон + салатова внутрішня рамка */
-      .ifx-bitrate-high {
-        background-color: #005a00 !important;
-        box-shadow: inset 0 0 7px #39ff39, 0 0 10px rgba(0, 255, 0, 0.4) !important;
+      /* Низький бітрейт (Червоний) — червоний неон */
+      .torrent-item__bitrate span.low-bitrate {
+        background-color: #a50000 !important;
+        box-shadow: inset 0 0 7px #ff4b4b, 0 0 10px rgba(255, 0, 0, 0.5) !important;
       }
 
-      /* Ефект світіння для активного елемента (біла рамка при переході пультом) */
+      /* Багато роздаючих (Зелений зазвичай) */
+      .torrent-item__seeds span.high-seeds {
+        background-color: #006b00 !important;
+        box-shadow: inset 0 0 7px #39ff39, 0 0 10px rgba(0, 255, 0, 0.5) !important;
+      }
+
+      /* Середньо роздаючих (Жовтий) */
+      .torrent-item__seeds span.medium-seeds {
+        background-color: #b38f00 !important;
+        box-shadow: inset 0 0 7px #ffdf5d, 0 0 10px rgba(255, 223, 0, 0.5) !important;
+      }
+
+      /* Світіння для активної білої рамки вибору (Фокус на всьому рядку) */
       .torrent-item.focus {
         outline: none !important;
         border: 2px solid #ffffff !important;
-        /* Зовнішнє світіння білим + внутрішній м'який відблиск для об'єму */
         box-shadow: 0 0 18px rgba(255, 255, 255, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.3) !important;
-        transition: all 0.2s ease-in-out;
-        transform: scale(1.015); /* Легке збільшення активної роздачі */
-        z-index: 10;
-        background: rgba(255,255,255, 0.05) !important;
+        transition: all 0.2s ease-in-out !important;
+        transform: scale(1.015) !important;
+        z-index: 10 !important;
+        background: rgba(255,255,255, 0.08) !important;
       }
     `;
     document.head.appendChild(st);

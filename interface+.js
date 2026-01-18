@@ -2521,50 +2521,43 @@ function ensureCss(){
         display: none !important;
       }
 
-      /* --- НОВІ СТИЛІ: Неонове підсвічування бітрейту та сидів (за вашими класами) --- */
+      /* --- НОВИЙ БЛОК: Ефект тонкої рамки та м'якого світіння як на скриншоті --- */
 
-      /* Загальна база для всіх кольорових позначок у списку торрентів */
+      /* Базовий стиль для цифр (темний напівпрозорий фон) */
       .torrent-item__bitrate span, .torrent-item__seeds span {
         border-radius: 4px !important;
-        padding: 1px 5px !important;
+        padding: 1px 6px !important;
         font-weight: bold !important;
         color: #fff !important;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
-        border: 1px solid rgba(255,255,255,0.3) !important; /* Зовнішня тонка рамка */
         display: inline-block !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
       }
 
-      /* Високий бітрейт (Зелений) — смарагдовий неон */
-      .torrent-item__bitrate span.high-bitrate {
-        background-color: #006b00 !important;
-        box-shadow: inset 0 0 7px #39ff39, 0 0 10px rgba(0, 255, 0, 0.5) !important;
-      }
-
-      /* Середній бітрейт (Жовтий/Помаранчевий) — золотий неон */
-      .torrent-item__bitrate span.medium-bitrate {
-        background-color: #b38f00 !important;
-        box-shadow: inset 0 0 7px #ffdf5d, 0 0 10px rgba(255, 223, 0, 0.5) !important;
-      }
-
-      /* Низький бітрейт (Червоний) — червоний неон */
-      .torrent-item__bitrate span.low-bitrate {
-        background-color: #a50000 !important;
-        box-shadow: inset 0 0 7px #ff4b4b, 0 0 10px rgba(255, 0, 0, 0.5) !important;
-      }
-
-      /* Багато роздаючих (Зелений зазвичай) */
+      /* ВИСОКИЙ бітрейт та насіння — ЧЕРВОНИЙ */
+      .torrent-item__bitrate span.high-bitrate, 
       .torrent-item__seeds span.high-seeds {
-        background-color: #006b00 !important;
-        box-shadow: inset 0 0 7px #39ff39, 0 0 10px rgba(0, 255, 0, 0.5) !important;
+        background: rgba(80, 0, 0, 0.4) !important;
+        border: 1.5px solid #ff3333 !important;
+        box-shadow: 0 0 8px rgba(255, 51, 51, 0.6) !important;
       }
 
-      /* Середньо роздаючих (Жовтий) */
+      /* СЕРЕДНІЙ бітрейт та насіння — ЗЕЛЕНИЙ */
+      .torrent-item__bitrate span.medium-bitrate,
       .torrent-item__seeds span.medium-seeds {
-        background-color: #b38f00 !important;
-        box-shadow: inset 0 0 7px #ffdf5d, 0 0 10px rgba(255, 223, 0, 0.5) !important;
+        background: rgba(0, 80, 0, 0.4) !important;
+        border: 1.5px solid #00ff00 !important;
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.6) !important;
       }
 
-      /* Світіння для активної білої рамки вибору (Фокус на всьому рядку) */
+      /* НИЗЬКИЙ бітрейт та насіння — ЖОВТИЙ */
+      .torrent-item__bitrate span.low-bitrate,
+      .torrent-item__seeds span.low-seeds {
+        background: rgba(100, 70, 0, 0.4) !important;
+        border: 1.5px solid #ffcc00 !important;
+        box-shadow: 0 0 8px rgba(255, 204, 0, 0.6) !important;
+      }
+
+      /* Активна біла рамка вибору (Фокус) */
       .torrent-item.focus {
         outline: none !important;
         border: 2px solid #ffffff !important;

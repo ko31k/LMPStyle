@@ -2521,9 +2521,10 @@ function ensureCss(){
         display: none !important;
       }
 
-      /* --- НОВІ СТИЛІ: Світіння бітрейту та роздач (seeders) --- */
-      
-      .ifx-bitrate-low, .ifx-bitrate-mid, .ifx-bitrate-high, .ifx-seeders {
+      /* --- НОВІ СТИЛІ: Світіння бітрейту та активного фокусу --- */
+
+      /* Загальна база для плашок бітрейту (напівпрозора біла рамка зовні) */
+      .ifx-bitrate-low, .ifx-bitrate-mid, .ifx-bitrate-high {
         border-radius: 4px;
         padding: 2px 6px;
         font-weight: bold;
@@ -2532,37 +2533,32 @@ function ensureCss(){
         border: 1px solid rgba(255,255,255,0.25) !important;
       }
 
-      /* Низький бітрейт - Червоний */
+      /* Низький бітрейт (Червоний) — м'який фон + червоний неоновий контур */
       .ifx-bitrate-low {
-        background-color: #a50000 !important;
-        box-shadow: inset 0 0 7px #ff3232, 0 0 10px rgba(255, 50, 50, 0.4) !important;
+        background-color: #8b0000 !important;
+        box-shadow: inset 0 0 7px #ff3b3b, 0 0 10px rgba(255, 0, 0, 0.4) !important;
       }
 
-      /* Середній бітрейт - Жовтий */
+      /* Середній бітрейт (Помаранчевий/Жовтий) — золотистий фон + тепле світіння */
       .ifx-bitrate-mid {
-        background-color: #8a6d00 !important;
-        box-shadow: inset 0 0 7px #ffcc00, 0 0 10px rgba(255, 204, 0, 0.4) !important;
+        background-color: #9a7200 !important;
+        box-shadow: inset 0 0 7px #ffd43b, 0 0 10px rgba(255, 174, 0, 0.4) !important;
       }
 
-      /* Високий бітрейт - Зелений */
+      /* Високий бітрейт (Зелений) — смарагдовий фон + салатова внутрішня рамка */
       .ifx-bitrate-high {
-        background-color: #006000 !important;
-        box-shadow: inset 0 0 7px #00ff00, 0 0 10px rgba(0, 255, 0, 0.4) !important;
+        background-color: #005a00 !important;
+        box-shadow: inset 0 0 7px #39ff39, 0 0 10px rgba(0, 255, 0, 0.4) !important;
       }
 
-      /* Роздаючі - Синій */
-      .ifx-seeders {
-        background-color: #0033a0 !important;
-        box-shadow: inset 0 0 7px #00a2ff, 0 0 10px rgba(0, 162, 255, 0.4) !important;
-      }
-
-      /* Ефект світіння для активного елемента (фокусу) */
+      /* Ефект світіння для активного елемента (біла рамка при переході пультом) */
       .torrent-item.focus {
         outline: none !important;
-        border: 2px solid #fff !important;
-        box-shadow: 0 0 18px rgba(255, 255, 255, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.4) !important;
+        border: 2px solid #ffffff !important;
+        /* Зовнішнє світіння білим + внутрішній м'який відблиск для об'єму */
+        box-shadow: 0 0 18px rgba(255, 255, 255, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.3) !important;
         transition: all 0.2s ease-in-out;
-        transform: scale(1.015);
+        transform: scale(1.015); /* Легке збільшення активної роздачі */
         z-index: 10;
         background: rgba(255,255,255, 0.05) !important;
       }

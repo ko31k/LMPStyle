@@ -52,7 +52,7 @@
         LOGGING_CARDLIST: false, // Логи обробки карток (скільки карток в пачці, тощо).
 
         // --- Налаштування API та мережі ---
-        JACRED_PROTOCOL: 'http://', // Протокол для API JacRed.
+        JACRED_PROTOCOL: 'https://', // Протокол для API JacRed.
         JACRED_URL: 'jacred.xyz', // Домен API JacRed.
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
             'http://api.allorigins.win/raw?url=',

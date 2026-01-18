@@ -2470,134 +2470,84 @@ function ensureCss(){
     var st = document.createElement('style');
     st.id = id;
     st.textContent = `
-      /* Пігулка (як .card_vote) — наш власний бейдж року */
-      .ifx-pill{
-        background: rgba(0,0,0,.5);
-        color:#fff; font-size:1.3em; font-weight:700;
-        padding:.2em .5em; border-radius:1em; line-height:1;
-        white-space:nowrap;
-      }
-
-      /* Стек у правому нижньому, мінімальна щілина */
-      .ifx-corner-stack{
-        position:absolute; right:.3em; bottom:.3em;
-        display:flex; flex-direction:column; align-items:flex-end;
-        gap:2px; z-index:10; pointer-events:none;
-      }
-      .ifx-corner-stack > *{ pointer-events:auto; }
-
-      /* Коли переносимо рейтинґ у стек — робимо його пігулкою без absolute */
-      .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{
-        position:static !important; right:auto !important; bottom:auto !important; top:auto !important; left:auto !important;
-        background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700;
-        padding:.2em .5em; border-radius:1em; line-height:1;
-      }
-
-      /* Точки кріплення (для списків і епізодів) */
-      .card .card__view{ position:relative; }
-      .card-episode .full-episode{ position:relative; }
-
-      /* ALT mode: заголовок у ВЕРХНЬОМУ ЛІВОМУ куті */
-      body.ifx-ep-alt .card-episode .full-episode .card__title{
-        position:absolute; left:.7em; top:.7em; right:.7em; margin:0;
-        z-index:2; text-shadow:0 1px 2px rgba(0,0,0,0.35);
-      }
-
-      /* ALT mode: ховаємо ВЕЛИКУ цифру та текстовий рік у тілі */
-      body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
-      body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
-
-      /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
-      body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
-
-      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток. */
-      .ifx-hide-age .card__age{ display:none !important; }
-
-      /* Ховаємо штатний рейтинг повністю, коли вимкнено */
-      body.ifx-no-rate .card__view > .card__vote,
-      body.ifx-no-rate .card__view > .card_vote,
-      body.ifx-no-rate .ifx-corner-stack > .card__vote,
-      body.ifx-no-rate .ifx-corner-stack > .card_vote {
-        display: none !important;
-      }
+      /* --- Базові стилі (Пігулки, Стек, ALT-режим) --- */
+      .ifx-pill{ background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700; padding:.2em .5em; border-radius:1em; line-height:1; white-space:nowrap; }
+      .ifx-corner-stack{ position:absolute; right:.3em; bottom:.3em; display:flex; flex-direction:column; align-items:flex-end; gap:2px; z-index:10; pointer-events:none; }
+      .ifx-corner-stack .card__vote, .ifx-corner-stack .card_vote{ position:static !important; background: rgba(0,0,0,.5); color:#fff; font-size:1.3em; font-weight:700; padding:.2em .5em; border-radius:1em; line-height:1; }
+      .card .card__view, .card-episode .full-episode{ position:relative; }
+      body.ifx-ep-alt .card-episode .full-episode .card__title{ position:absolute; left:.7em; top:.7em; right:.7em; margin:0; z-index:2; text-shadow:0 1px 2px rgba(0,0,0,0.35); }
+      body.ifx-ep-alt .card-episode .full-episode__num, body.ifx-num-only .card-episode .full-episode__num, .ifx-hide-age .card__age { display:none !important; }
+      body.ifx-no-rate .card__view > .card__vote, body.ifx-no-rate .card__view > .card_vote { display: none !important; }
 
       /* --- ТОРРЕНТИ: М'ЯКІ КОЛЬОРИ ТА УНІФІКОВАНІ РОЗМІРИ --- */
 
-      /* Загальний стиль для цифр (як .torrent-item__size) */
+      /* Стиль цифр: розмір як у .torrent-item__size */
       .torrent-item__bitrate span, .torrent-item__seeds span {
         border-radius: 0.3em !important;
         padding: 0.3em 0.5em !important;
-        font-weight: 600 !important;
+        font-weight: bold !important;
         display: inline-block !important;
-        line-height: 1 !important;
-        color: #fff !important;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+        line-height: 1.2 !important;
         transition: all 0.2s ease !important;
       }
 
       /* 1. ВЕЛИКІ РАМКИ БЛОКІВ (.torrent-item) */
-      .torrent-item.high-seeds, .torrent-item.medium-seeds, .torrent-item.low-seeds {
-        border-radius: 0.3em !important;
-        box-sizing: border-box !important;
-        margin-bottom: 6px !important;
-        transition: all 0.3s ease !important;
-      }
-      /* Зелена рамка (#77cdb2) */
-      .torrent-item.high-seeds { 
-        border: 2px solid rgba(119, 205, 178, 0.5) !important; 
-        box-shadow: 0 0 10px rgba(119, 205, 178, 0.2) !important; 
-      }
-      /* Жовта рамка (#fbcb79) */
-      .torrent-item.medium-seeds { 
-        border: 2px solid rgba(251, 203, 121, 0.5) !important; 
-        box-shadow: 0 0 10px rgba(251, 203, 121, 0.2) !important; 
-      }
-      /* Червона рамка (#ff9696) */
-      .torrent-item.low-seeds { 
-        border: 2px solid rgba(255, 150, 150, 0.5) !important; 
-        box-shadow: 0 0 10px rgba(255, 150, 150, 0.2) !important; 
-      }
+      .torrent-item.high-seeds { border: 2px solid rgba(119, 205, 178, 0.5) !important; box-shadow: 0 0 10px rgba(119, 205, 178, 0.2) !important; }
+      .torrent-item.medium-seeds { border: 2px solid rgba(251, 203, 121, 0.5) !important; box-shadow: 0 0 10px rgba(251, 203, 121, 0.2) !important; }
+      .torrent-item.low-seeds { border: 2px solid rgba(255, 150, 150, 0.5) !important; box-shadow: 0 0 10px rgba(255, 150, 150, 0.2) !important; }
 
-      /* 2. БІТРЕЙТ (High=Red) */
+      /* 2. БІТРЕЙТ (Логіка: High=Червоний) */
+      /* High */
       span.high-bitrate { 
-        background: rgba(255, 150, 150, 0.25) !important; 
-        border: 1.5px solid #ff9696 !important; 
+        color: #ff9696 !important; 
+        background: rgba(255, 150, 150, 0.2) !important; 
+        border: 1.5px solid rgba(255, 150, 150, 0.6) !important; 
         box-shadow: 0 0 8px rgba(255, 150, 150, 0.3) !important; 
       }
+      /* Medium */
       span.medium-bitrate { 
-        background: rgba(119, 205, 178, 0.25) !important; 
-        border: 1.5px solid #77cdb2 !important; 
+        color: #77cdb2 !important; 
+        background: rgba(119, 205, 178, 0.2) !important; 
+        border: 1.5px solid rgba(119, 205, 178, 0.6) !important; 
         box-shadow: 0 0 8px rgba(119, 205, 178, 0.3) !important; 
       }
+      /* Low */
       span.low-bitrate { 
-        background: rgba(251, 203, 121, 0.25) !important; 
-        border: 1.5px solid #fbcb79 !important; 
+        color: #fbcb79 !important; 
+        background: rgba(251, 203, 121, 0.2) !important; 
+        border: 1.5px solid rgba(251, 203, 121, 0.6) !important; 
         box-shadow: 0 0 8px rgba(251, 203, 121, 0.3) !important; 
       }
 
-      /* 3. СІДИ (High=Green) */
+      /* 3. СІДИ (Логіка: High=Зелений) */
+      /* High */
       span.high-seeds { 
-        background: rgba(119, 205, 178, 0.25) !important; 
-        border: 1.5px solid #77cdb2 !important; 
+        color: #77cdb2 !important; 
+        background: rgba(119, 205, 178, 0.2) !important; 
+        border: 1.5px solid rgba(119, 205, 178, 0.6) !important; 
         box-shadow: 0 0 8px rgba(119, 205, 178, 0.3) !important; 
       }
+      /* Medium */
       span.medium-seeds { 
-        background: rgba(251, 203, 121, 0.25) !important; 
-        border: 1.5px solid #fbcb79 !important; 
+        color: #fbcb79 !important; 
+        background: rgba(251, 203, 121, 0.2) !important; 
+        border: 1.5px solid rgba(251, 203, 121, 0.6) !important; 
         box-shadow: 0 0 8px rgba(251, 203, 121, 0.3) !important; 
       }
+      /* Low */
       span.low-seeds { 
-        background: rgba(255, 150, 150, 0.25) !important; 
-        border: 1.5px solid #ff9696 !important; 
+        color: #ff9696 !important; 
+        background: rgba(255, 150, 150, 0.2) !important; 
+        border: 1.5px solid rgba(255, 150, 150, 0.6) !important; 
         box-shadow: 0 0 8px rgba(255, 150, 150, 0.3) !important; 
       }
 
-      /* Активна біла рамка фокусу */
+      /* Фокус (Біла рамка) */
       .torrent-item.focus {
         outline: none !important;
         border: 2px solid #ffffff !important;
         box-shadow: 0 0 20px rgba(255, 255, 255, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.2) !important;
-        transform: scale(1.015) !important;
+        transform: scale(1.01) !important;
         z-index: 10 !important;
         background: rgba(255, 255, 255, 0.1) !important;
       }

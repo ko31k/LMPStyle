@@ -2500,11 +2500,10 @@ function ensureCss(){
       /* ALT mode: заголовок у ВЕРХНЬОМУ ЛІВОМУ куті */
       body.ifx-ep-alt .card-episode .full-episode .card__title{
         position:absolute; left:.7em; top:.7em; right:.7em; margin:0;
-        z-index:2; text-shadow:0 1px 2px rgba(0,0,0,.35);
+        z-index:2; text-shadow:0 1px 2px rgba(0,0,0,0.35);
       }
 
       /* ALT mode: ховаємо ВЕЛИКУ цифру та текстовий рік у тілі */
-      body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
       body.ifx-ep-alt .card-episode .full-episode__num{ display:none !important; }
       body.ifx-ep-alt .card-episode .full-episode__body > .card__age{ display:none !important; }
 
@@ -2522,52 +2521,78 @@ function ensureCss(){
         display: none !important;
       }
 
-      /* --- НОВИЙ БЛОК: М'ЯКЕ СВІТІННЯ ТА АДАПТИВНІ РОЗМІРИ --- */
+      /* --- ТОРРЕНТИ: М'ЯКІ КОЛЬОРИ ТА УНІФІКОВАНІ РОЗМІРИ --- */
 
-      /* Базовий стиль цифр: копіюємо розміри .torrent-item__size */
+      /* Загальний стиль для цифр (як .torrent-item__size) */
       .torrent-item__bitrate span, .torrent-item__seeds span {
         border-radius: 0.3em !important;
         padding: 0.3em 0.5em !important;
         font-weight: 600 !important;
         display: inline-block !important;
-        line-height: 1.2 !important;
+        line-height: 1 !important;
+        color: #fff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
         transition: all 0.2s ease !important;
       }
 
-      /* 1. КОЛЬОРОВІ РАМКИ БЛОКІВ (Вмикаються через .ifx-torrent-borders) */
-      body.ifx-torrent-borders .torrent-item.high-seeds, 
-      body.ifx-torrent-borders .torrent-item.medium-seeds, 
-      body.ifx-torrent-borders .torrent-item.low-seeds {
+      /* 1. ВЕЛИКІ РАМКИ БЛОКІВ (.torrent-item) */
+      .torrent-item.high-seeds, .torrent-item.medium-seeds, .torrent-item.low-seeds {
         border-radius: 0.3em !important;
         box-sizing: border-box !important;
         margin-bottom: 6px !important;
+        transition: all 0.3s ease !important;
       }
-      /* Зелений (#77cdb2) - багато сідів */
-      body.ifx-torrent-borders .torrent-item.high-seeds { border: 2px solid rgba(119, 205, 178, 0.5) !important; box-shadow: 0 0 10px rgba(119, 205, 178, 0.2) !important; }
-      /* Жовтий (#fbcb79) - середньо сідів */
-      body.ifx-torrent-borders .torrent-item.medium-seeds { border: 2px solid rgba(251, 203, 121, 0.5) !important; box-shadow: 0 0 10px rgba(251, 203, 121, 0.2) !important; }
-      /* Червоний (#ff9696) - мало сідів */
-      body.ifx-torrent-borders .torrent-item.low-seeds { border: 2px solid rgba(255, 150, 150, 0.5) !important; box-shadow: 0 0 10px rgba(255, 150, 150, 0.2) !important; }
+      /* Зелена рамка (#77cdb2) */
+      .torrent-item.high-seeds { 
+        border: 2px solid rgba(119, 205, 178, 0.5) !important; 
+        box-shadow: 0 0 10px rgba(119, 205, 178, 0.2) !important; 
+      }
+      /* Жовта рамка (#fbcb79) */
+      .torrent-item.medium-seeds { 
+        border: 2px solid rgba(251, 203, 121, 0.5) !important; 
+        box-shadow: 0 0 10px rgba(251, 203, 121, 0.2) !important; 
+      }
+      /* Червона рамка (#ff9696) */
+      .torrent-item.low-seeds { 
+        border: 2px solid rgba(255, 150, 150, 0.5) !important; 
+        box-shadow: 0 0 10px rgba(255, 150, 150, 0.2) !important; 
+      }
 
-      /* 2. КОЛЬОРОВИЙ БІТРЕЙТ (Вмикається через .ifx-bitrate-colored) */
-      body.ifx-bitrate-colored .torrent-item__bitrate span { color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important; }
-      /* Високий бітрейт - Червоний */
-      body.ifx-bitrate-colored span.high-bitrate { background: rgba(255, 150, 150, 0.25) !important; border: 1.5px solid #ff9696 !important; box-shadow: 0 0 8px rgba(255, 150, 150, 0.4) !important; }
-      /* Середній бітрейт - Зелений */
-      body.ifx-bitrate-colored span.medium-bitrate { background: rgba(119, 205, 178, 0.25) !important; border: 1.5px solid #77cdb2 !important; box-shadow: 0 0 8px rgba(119, 205, 178, 0.4) !important; }
-      /* Низький бітрейт - Жовтий */
-      body.ifx-bitrate-colored span.low-bitrate { background: rgba(251, 203, 121, 0.25) !important; border: 1.5px solid #fbcb79 !important; box-shadow: 0 0 8px rgba(251, 203, 121, 0.4) !important; }
+      /* 2. БІТРЕЙТ (High=Red) */
+      span.high-bitrate { 
+        background: rgba(255, 150, 150, 0.25) !important; 
+        border: 1.5px solid #ff9696 !important; 
+        box-shadow: 0 0 8px rgba(255, 150, 150, 0.3) !important; 
+      }
+      span.medium-bitrate { 
+        background: rgba(119, 205, 178, 0.25) !important; 
+        border: 1.5px solid #77cdb2 !important; 
+        box-shadow: 0 0 8px rgba(119, 205, 178, 0.3) !important; 
+      }
+      span.low-bitrate { 
+        background: rgba(251, 203, 121, 0.25) !important; 
+        border: 1.5px solid #fbcb79 !important; 
+        box-shadow: 0 0 8px rgba(251, 203, 121, 0.3) !important; 
+      }
 
-      /* 3. КОЛЬОРОВІ СІДИ (Вмикаються через .ifx-seeds-colored) */
-      body.ifx-seeds-colored .torrent-item__seeds span { color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important; }
-      /* Багато сідів - Зелений */
-      body.ifx-seeds-colored span.high-seeds { background: rgba(119, 205, 178, 0.25) !important; border: 1.5px solid #77cdb2 !important; box-shadow: 0 0 8px rgba(119, 205, 178, 0.4) !important; }
-      /* Середньо сідів - Жовтий */
-      body.ifx-seeds-colored span.medium-seeds { background: rgba(251, 203, 121, 0.25) !important; border: 1.5px solid #fbcb79 !important; box-shadow: 0 0 8px rgba(251, 203, 121, 0.4) !important; }
-      /* Мало сідів - Червоний */
-      body.ifx-seeds-colored span.low-seeds { background: rgba(255, 150, 150, 0.25) !important; border: 1.5px solid #ff9696 !important; box-shadow: 0 0 8px rgba(255, 150, 150, 0.4) !important; }
+      /* 3. СІДИ (High=Green) */
+      span.high-seeds { 
+        background: rgba(119, 205, 178, 0.25) !important; 
+        border: 1.5px solid #77cdb2 !important; 
+        box-shadow: 0 0 8px rgba(119, 205, 178, 0.3) !important; 
+      }
+      span.medium-seeds { 
+        background: rgba(251, 203, 121, 0.25) !important; 
+        border: 1.5px solid #fbcb79 !important; 
+        box-shadow: 0 0 8px rgba(251, 203, 121, 0.3) !important; 
+      }
+      span.low-seeds { 
+        background: rgba(255, 150, 150, 0.25) !important; 
+        border: 1.5px solid #ff9696 !important; 
+        box-shadow: 0 0 8px rgba(255, 150, 150, 0.3) !important; 
+      }
 
-      /* Активна біла рамка вибору (ФОКУС) */
+      /* Активна біла рамка фокусу */
       .torrent-item.focus {
         outline: none !important;
         border: 2px solid #ffffff !important;

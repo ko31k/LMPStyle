@@ -58,8 +58,8 @@
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
-        PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
-        MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість одночасних запитів до API.
+        PROXY_TIMEOUT_MS: 4500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
+        MAX_PARALLEL_REQUESTS: 6, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 
         // --- Налаштування функціоналу ---
@@ -781,10 +781,13 @@ function waitForCardData(cardElement){
      * 3. Кеш застарілий (6-12 годин)? -> Малюємо з кешу + запускаємо фоновий пошук. (Це виправлення "примар").
      */
     function processListCard(cardElement) {
-        // --- Базові перевірки ---
-        // Картка ще існує в DOM?
-        if (!cardElement || !cardElement.isConnected || !document.body.contains(cardElement)) {
-            return;
+        if (!cardElement || !cardElement.isConnected) return;
+
+        // Якщо даних ще немає, спробуємо ще раз через 100мс (одноразово)
+        if (!cardElement.card_data && !cardElement.__retried) {
+        cardElement.__retried = true;
+        setTimeout(() => processListCard(cardElement), 100);
+        return;
         }
         // У картки є необхідні дані?
         var cardData = cardElement.card_data;
@@ -1002,7 +1005,19 @@ function waitForCardData(cardElement){
 
         if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG: Плагін пошуку українських доріжок (v3.3) успішно ініціалізовано!");
     }
-
+    Lampa.Listener.follow('app', (e) => {
+    if (e.type === 'ready') {
+        setInterval(() => {
+            // Кожні 3 секунди перевіряємо, чи на видимих картках не зникли мітки
+            const visible = document.querySelectorAll('.card');
+            visible.forEach(card => {
+                if (card.isConnected && !card.querySelector('.card__tracks')) {
+                    processListCard(card);
+                }
+            });
+        }, 3000);
+    }
+    });
     // Запускаємо ініціалізацію, коли сторінка (DOM) буде готова.
     if (document.body) {
         initializeLampaTracksPlugin();
@@ -1055,45 +1070,32 @@ function waitForCardData(cardElement){
 
   function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); ltfToast('Збережено'); }
 
-function clearTracks(){
-    // 1. Очищуємо пам'ять
+function clearTracks() {
+    // 1. Повністю очищуємо сховище кешу
     try {
-        if(typeof clearTracksCache === 'function') {
-            clearTracksCache();
-        } else {
-            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); 
-        }
-    } catch(e) {}
+        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); 
+    } catch(e) {
+        console.error('UA-Finder: Помилка очищення Storage', e);
+    }
 
-    // 2. Миттєво візуально прибираємо старі мітки (через подію)
-    try{ document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); }catch(e){}
+    // 2. Миттєво видаляємо всі існуючі мітки з екрана, щоб користувач бачив результат
+    document.querySelectorAll('.card__tracks').forEach(function(el) {
+        el.remove();
+    });
     
     ltfToast('Кеш очищено. Оновлюю дані...');
 
-    // 3. БЕЗПЕЧНЕ ОНОВЛЕННЯ: Запускаємо пересканування по черзі, щоб не "повісити" інтерфейс
-    var cards = Array.from(document.querySelectorAll('.card')); // Беремо всі картки
-    var index = 0;
-
-    function processNext() {
-        if (index >= cards.length) return; // Кінець списку
-
-        var card = cards[index];
-        // Перевіряємо, чи картка видима, щоб не витрачати ресурси даремно
-        if (card.isConnected && card.getBoundingClientRect().top < window.innerHeight) {
-            // Викликаємо головну функцію. Оскільки кеш пустий, вона сама піде в мережу шукати дані
-            if(typeof processListCard === 'function') {
-                processListCard(card);
-            }
+    // 3. Замість важкого циклу, просто змушуємо плагін перевірити видимі картки.
+    // Оскільки кеш тепер порожній, processListCard сама запустить пошук для тих, що в полі зору.
+    var cards = document.querySelectorAll('.card');
+    cards.forEach(function(card) {
+        // Скидаємо прапорці очікування, якщо вони були прикріплені до картки
+        card.__ltfWait = false; 
+        if (typeof processListCard === 'function') {
+            processListCard(card);
         }
-        
-        index++;
-        // ❗ ГОЛОВНЕ: Робимо паузу 250мс між картками. 
-        // Це дозволить інтерфейсу реагувати на натискання пульта.
-        setTimeout(processNext, 250); 
-    }
-
-    processNext(); // Запуск ланцюжка
-  }
+    });
+}
 
   // ❗ Порожній шаблон як у LQE — щоб не дублювати контейнер налаштувань
   Lampa.Template.add('settings_ltf','<div></div>');

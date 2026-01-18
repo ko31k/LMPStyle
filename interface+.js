@@ -2054,35 +2054,47 @@ const STYLES = {
           /* СІДИ: Текст яскравий, фон ледь помітний (0.15) */
           '.torrent-item__seeds span.low-seeds': { 
             'color': '#ff9696', 
-            'background': 'rgba(255, 150, 150, 0.15)', 
-            'border': '1.2px solid rgba(255, 150, 150, 0.5)' 
+            'background': 'rgba(255, 150, 150, 0.10)', 
+            'border': '1.4px solid rgba(255, 150, 150, 0.5)',
+            'text-shadow': '0 0 5px rgba(255, 150, 150, 0.4)',
+            'box-shadow': '0 0 8px rgba(255, 150, 150, 0.2)'
           },
           '.torrent-item__seeds span.medium-seeds': { 
             'color': '#fbcb79', 
-            'background': 'rgba(251, 203, 121, 0.15)', 
-            'border': '1.2px solid rgba(251, 203, 121, 0.5)' 
+            'background': 'rgba(251, 203, 121, 0.10)', 
+            'border': '1.4px solid rgba(251, 203, 121, 0.5)',
+            'text-shadow': '0 0 5px rgba(251, 203, 121, 0.4)',
+            'box-shadow': '0 0 8px rgba(251, 203, 121, 0.2)'
           },
           '.torrent-item__seeds span.high-seeds': { 
             'color': '#77cdb2', 
-            'background': 'rgba(119, 205, 178, 0.15)', 
-            'border': '1.2px solid rgba(119, 205, 178, 0.5)' 
+            'background': 'rgba(119, 205, 178, 0.10)', 
+            'border': '1.4px solid rgba(119, 205, 178, 0.5)',
+            'text-shadow': '0 0 5px rgba(119, 205, 178, 0.4)',
+            'box-shadow': '0 0 8px rgba(119, 205, 178, 0.2)'
           },
 
           /* БІТРЕЙТ: Кольорова диференціація */
           '.torrent-item__bitrate span.low-bitrate': { 
             'color': '#fbcb79', 
-            'background': 'rgba(251, 203, 121, 0.15)', 
-            'border': '1.2px solid rgba(251, 203, 121, 0.5)' 
+            'background': 'rgba(251, 203, 121, 0.10)', 
+            'border': '1.4px solid rgba(251, 203, 121, 0.5)',
+            'text-shadow': '0 0 5px rgba(251, 203, 121, 0.4)',
+            'box-shadow': '0 0 8px rgba(251, 203, 121, 0.2)'
           },
           '.torrent-item__bitrate span.medium-bitrate': { 
             'color': '#77cdb2', 
-            'background': 'rgba(119, 205, 178, 0.15)', 
-            'border': '1.2px solid rgba(119, 205, 178, 0.5)' 
+            'background': 'rgba(119, 205, 178, 0.10)', 
+            'border': '1.4px solid rgba(119, 205, 178, 0.5)',
+            'text-shadow': '0 0 5px rgba(119, 205, 178, 0.4)',
+            'box-shadow': '0 0 8px rgba(119, 205, 178, 0.2)'
           },
           '.torrent-item__bitrate span.high-bitrate': { 
             'color': '#ff9696', 
-            'background': 'rgba(255, 150, 150, 0.15)', 
-            'border': '1.2px solid rgba(255, 150, 150, 0.5)' 
+            'background': 'rgba(255, 150, 150, 0.10)', 
+            'border': '1.4px solid rgba(255, 150, 150, 0.5)',
+            'text-shadow': '0 0 5px rgba(255, 150, 150, 0.4)',
+            'box-shadow': '0 0 8px rgba(255, 150, 150, 0.2)'
           },
 
           /* РАМКИ КАРТОК (interface_mod_new_tor_frame) */

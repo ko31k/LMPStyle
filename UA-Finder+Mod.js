@@ -661,9 +661,22 @@ document.addEventListener('ltf:settings-changed', function(){
  * @param {number} trackCount - Кількість доріжок (0, 1, 2...).
  */
 function updateCardListTracksElement(cardView, trackCount) {
+  const card = cardView.closest('.card');
+  const cardId = card && card.card_data ? String(card.card_data.id || '') : '';
+
   // 1) готуємо мітку
   const displayLabel = formatTrackLabel(trackCount);
-  const wrapper = cardView.querySelector('.card__tracks');
+  let wrapper = cardView.querySelector('.card__tracks');
+
+  // 🟢 FIX: DOM reuse protection — мітка від іншої картки
+  if (wrapper) {
+    const badgeId = wrapper.getAttribute('data-ltf-id');
+    if (badgeId && badgeId !== cardId) {
+      wrapper.remove();
+      wrapper = null;
+    }
+  }
+
 
   // допоміжна: правильно розмістити під рейтингом (RatingUp)
   function ensurePositionClass(el){
@@ -689,7 +702,10 @@ function updateCardListTracksElement(cardView, trackCount) {
       inner = document.createElement('div');
       wrapper.appendChild(inner);
     }
-
+    
+    // 🟢 FIX: оновлюємо ID при reuse
+    if (cardId) wrapper.setAttribute('data-ltf-id', cardId);
+      
     // нічого не робимо, якщо текст/HTML збіглися
     if (inner.innerHTML === displayLabel) {
       ensurePositionClass(wrapper);
@@ -705,6 +721,9 @@ function updateCardListTracksElement(cardView, trackCount) {
   const newWrapper = document.createElement('div');
   newWrapper.className = 'card__tracks';
 
+  // 🟢 FIX: прив’язка мітки до ID картки
+  if (cardId) newWrapper.setAttribute('data-ltf-id', cardId);
+    
   const inner = document.createElement('div');
   inner.innerHTML = displayLabel;
 
@@ -727,6 +746,29 @@ function reprocessVisibleCardsChunked(){
   })();
 }
    
+// 🟢 FIX: відкладена повторна обробка, якщо дані картки ще не готові
+function waitForCardData(cardElement){
+    if (cardElement.__ltfWait) return;
+    cardElement.__ltfWait = true;
+
+    const obs = new MutationObserver(() => {
+        const d = cardElement.card_data;
+        if (!d) return;
+        const date = d.release_date || d.first_air_date;
+        if (!date) return;
+
+        obs.disconnect();
+        cardElement.__ltfWait = false;
+        processListCard(cardElement);
+    });
+
+    obs.observe(cardElement, { childList:true, subtree:true, attributes:true });
+
+    setTimeout(() => {
+        try { obs.disconnect(); } catch(e){}
+        cardElement.__ltfWait = false;
+    }, 3000);
+}
    
     
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
@@ -761,7 +803,15 @@ function reprocessVisibleCardsChunked(){
             original_title: cardData.original_title || cardData.original_name || '',
             type: getCardType(cardData),
             release_date: cardData.release_date || cardData.first_air_date || ''
+
         };
+
+        // 🟢 FIX: якщо дата ще не готова — чекаємо її появи
+        if (!normalizedCard.release_date) {
+            waitForCardData(cardElement);
+            return;
+        }
+        
         var cardId = normalizedCard.id;
         var cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${normalizedCard.type}_${cardId}`;
 

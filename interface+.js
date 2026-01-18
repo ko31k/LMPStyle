@@ -2464,7 +2464,7 @@
   })();
 
   // ---------- CSS ----------
-  function ensureCss(){
+function ensureCss(){
     var id = 'ifx_css_stable_final_v2';
     if (document.getElementById(id)) return;
     var st = document.createElement('style');
@@ -2510,9 +2510,7 @@
       /* NUM-ONLY: ховаємо велику цифру завжди (і для ALT, і для стандарту) */
       body.ifx-num-only .card-episode .full-episode__num{ display:none !important; }
 
-      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток.
-         Додаємо клас .ifx-hide-age саме на картки списків та епізодів.
-         Повні картки НЕ мають цього класу — там нічого не ховаємо. */
+      /* ЛОКАЛЬНЕ ховання текстових років тільки для оброблених карток. */
       .ifx-hide-age .card__age{ display:none !important; }
 
       /* Ховаємо штатний рейтинг повністю, коли вимкнено */
@@ -2520,8 +2518,54 @@
       body.ifx-no-rate .card__view > .card_vote,
       body.ifx-no-rate .ifx-corner-stack > .card__vote,
       body.ifx-no-rate .ifx-corner-stack > .card_vote {
-      display: none !important;}
+        display: none !important;
+      }
 
+      /* --- НОВІ СТИЛІ: Світіння бітрейту та роздач (seeders) --- */
+      
+      .ifx-bitrate-low, .ifx-bitrate-mid, .ifx-bitrate-high, .ifx-seeders {
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-weight: bold;
+        color: #fff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        border: 1px solid rgba(255,255,255,0.25) !important;
+      }
+
+      /* Низький бітрейт - Червоний */
+      .ifx-bitrate-low {
+        background-color: #a50000 !important;
+        box-shadow: inset 0 0 7px #ff3232, 0 0 10px rgba(255, 50, 50, 0.4) !important;
+      }
+
+      /* Середній бітрейт - Жовтий */
+      .ifx-bitrate-mid {
+        background-color: #8a6d00 !important;
+        box-shadow: inset 0 0 7px #ffcc00, 0 0 10px rgba(255, 204, 0, 0.4) !important;
+      }
+
+      /* Високий бітрейт - Зелений */
+      .ifx-bitrate-high {
+        background-color: #006000 !important;
+        box-shadow: inset 0 0 7px #00ff00, 0 0 10px rgba(0, 255, 0, 0.4) !important;
+      }
+
+      /* Роздаючі - Синій */
+      .ifx-seeders {
+        background-color: #0033a0 !important;
+        box-shadow: inset 0 0 7px #00a2ff, 0 0 10px rgba(0, 162, 255, 0.4) !important;
+      }
+
+      /* Ефект світіння для активного елемента (фокусу) */
+      .torrent-item.focus {
+        outline: none !important;
+        border: 2px solid #fff !important;
+        box-shadow: 0 0 18px rgba(255, 255, 255, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.4) !important;
+        transition: all 0.2s ease-in-out;
+        transform: scale(1.015);
+        z-index: 10;
+        background: rgba(255,255,255, 0.05) !important;
+      }
     `;
     document.head.appendChild(st);
   }

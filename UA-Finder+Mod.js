@@ -41,10 +41,10 @@
         BADGE_STYLE: 'text',        // 'text' | 'flag_count' | 'flag_only'
         SHOW_FOR_TV: true,          // показувати на серіалах
         // --- Налаштування кешу ---
-        CACHE_VERSION: 5, // ❗ Змініть це число (напр. 6), якщо хочете примусово скинути весь кеш у користувачів.
+        CACHE_VERSION: 4, // ❗ Змініть це число (напр. 5), якщо хочете примусово скинути весь кеш у користувачів.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години). Після цього він вважається недійсним.
-        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (12 годин).
+        CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (22 годин).
 
         // --- Налаштування логування для налагодження ---
         LOGGING_GENERAL: false, // Загальні логи (старт плагіна, оновлення мережі).
@@ -58,8 +58,8 @@
             'http://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
         ],
-        PROXY_TIMEOUT_MS: 4500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
-        MAX_PARALLEL_REQUESTS: 6, // Максимальна кількість одночасних запитів до API.
+        PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
+        MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 
         // --- Налаштування функціоналу ---
@@ -661,22 +661,9 @@ document.addEventListener('ltf:settings-changed', function(){
  * @param {number} trackCount - Кількість доріжок (0, 1, 2...).
  */
 function updateCardListTracksElement(cardView, trackCount) {
-  const card = cardView.closest('.card');
-  const cardId = card && card.card_data ? String(card.card_data.id || '') : '';
-
   // 1) готуємо мітку
   const displayLabel = formatTrackLabel(trackCount);
-  let wrapper = cardView.querySelector('.card__tracks');
-
-  // 🟢 FIX: DOM reuse protection — мітка від іншої картки
-  if (wrapper) {
-    const badgeId = wrapper.getAttribute('data-ltf-id');
-    if (badgeId && badgeId !== cardId) {
-      wrapper.remove();
-      wrapper = null;
-    }
-  }
-
+  const wrapper = cardView.querySelector('.card__tracks');
 
   // допоміжна: правильно розмістити під рейтингом (RatingUp)
   function ensurePositionClass(el){
@@ -702,10 +689,7 @@ function updateCardListTracksElement(cardView, trackCount) {
       inner = document.createElement('div');
       wrapper.appendChild(inner);
     }
-    
-    // 🟢 FIX: оновлюємо ID при reuse
-    if (cardId) wrapper.setAttribute('data-ltf-id', cardId);
-      
+
     // нічого не робимо, якщо текст/HTML збіглися
     if (inner.innerHTML === displayLabel) {
       ensurePositionClass(wrapper);
@@ -721,9 +705,6 @@ function updateCardListTracksElement(cardView, trackCount) {
   const newWrapper = document.createElement('div');
   newWrapper.className = 'card__tracks';
 
-  // 🟢 FIX: прив’язка мітки до ID картки
-  if (cardId) newWrapper.setAttribute('data-ltf-id', cardId);
-    
   const inner = document.createElement('div');
   inner.innerHTML = displayLabel;
 
@@ -746,29 +727,6 @@ function reprocessVisibleCardsChunked(){
   })();
 }
    
-// 🟢 FIX: відкладена повторна обробка, якщо дані картки ще не готові
-function waitForCardData(cardElement){
-    if (cardElement.__ltfWait) return;
-    cardElement.__ltfWait = true;
-
-    const obs = new MutationObserver(() => {
-        const d = cardElement.card_data;
-        if (!d) return;
-        const date = d.release_date || d.first_air_date;
-        if (!date) return;
-
-        obs.disconnect();
-        cardElement.__ltfWait = false;
-        processListCard(cardElement);
-    });
-
-    obs.observe(cardElement, { childList:true, subtree:true, attributes:true });
-
-    setTimeout(() => {
-        try { obs.disconnect(); } catch(e){}
-        cardElement.__ltfWait = false;
-    }, 3000);
-}
    
     
     // ===================== ГОЛОВНИЙ ОБРОБНИК КАРТОК =====================
@@ -781,13 +739,10 @@ function waitForCardData(cardElement){
      * 3. Кеш застарілий (6-12 годин)? -> Малюємо з кешу + запускаємо фоновий пошук. (Це виправлення "примар").
      */
     function processListCard(cardElement) {
-        if (!cardElement || !cardElement.isConnected) return;
-
-        // Якщо даних ще немає, спробуємо ще раз через 100мс (одноразово)
-        if (!cardElement.card_data && !cardElement.__retried) {
-        cardElement.__retried = true;
-        setTimeout(() => processListCard(cardElement), 100);
-        return;
+        // --- Базові перевірки ---
+        // Картка ще існує в DOM?
+        if (!cardElement || !cardElement.isConnected || !document.body.contains(cardElement)) {
+            return;
         }
         // У картки є необхідні дані?
         var cardData = cardElement.card_data;
@@ -806,15 +761,7 @@ function waitForCardData(cardElement){
             original_title: cardData.original_title || cardData.original_name || '',
             type: getCardType(cardData),
             release_date: cardData.release_date || cardData.first_air_date || ''
-
         };
-
-        // 🟢 FIX: якщо дата ще не готова — чекаємо її появи
-        if (!normalizedCard.release_date) {
-            waitForCardData(cardElement);
-            return;
-        }
-        
         var cardId = normalizedCard.id;
         var cacheKey = `${LTF_CONFIG.CACHE_VERSION}_${normalizedCard.type}_${cardId}`;
 
@@ -1005,19 +952,7 @@ function waitForCardData(cardElement){
 
         if (LTF_CONFIG.LOGGING_GENERAL) console.log("LTF-LOG: Плагін пошуку українських доріжок (v3.3) успішно ініціалізовано!");
     }
-    Lampa.Listener.follow('app', (e) => {
-    if (e.type === 'ready') {
-        setInterval(() => {
-            // Кожні 3 секунди перевіряємо, чи на видимих картках не зникли мітки
-            const visible = document.querySelectorAll('.card');
-            visible.forEach(card => {
-                if (card.isConnected && !card.querySelector('.card__tracks')) {
-                    processListCard(card);
-                }
-            });
-        }, 3000);
-    }
-    });
+
     // Запускаємо ініціалізацію, коли сторінка (DOM) буде готова.
     if (document.body) {
         initializeLampaTracksPlugin();
@@ -1070,32 +1005,45 @@ function waitForCardData(cardElement){
 
   function save(){ Lampa.Storage.set(SETTINGS_KEY, st); apply(); ltfToast('Збережено'); }
 
-function clearTracks() {
-    // 1. Повністю очищуємо сховище кешу
+function clearTracks(){
+    // 1. Очищуємо пам'ять
     try {
-        Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); 
-    } catch(e) {
-        console.error('UA-Finder: Помилка очищення Storage', e);
-    }
+        if(typeof clearTracksCache === 'function') {
+            clearTracksCache();
+        } else {
+            Lampa.Storage.set(LTF_CONFIG.CACHE_KEY, {}); 
+        }
+    } catch(e) {}
 
-    // 2. Миттєво видаляємо всі існуючі мітки з екрана, щоб користувач бачив результат
-    document.querySelectorAll('.card__tracks').forEach(function(el) {
-        el.remove();
-    });
+    // 2. Миттєво візуально прибираємо старі мітки (через подію)
+    try{ document.dispatchEvent(new CustomEvent('ltf:settings-changed',{detail:{...st}})); }catch(e){}
     
     ltfToast('Кеш очищено. Оновлюю дані...');
 
-    // 3. Замість важкого циклу, просто змушуємо плагін перевірити видимі картки.
-    // Оскільки кеш тепер порожній, processListCard сама запустить пошук для тих, що в полі зору.
-    var cards = document.querySelectorAll('.card');
-    cards.forEach(function(card) {
-        // Скидаємо прапорці очікування, якщо вони були прикріплені до картки
-        card.__ltfWait = false; 
-        if (typeof processListCard === 'function') {
-            processListCard(card);
+    // 3. БЕЗПЕЧНЕ ОНОВЛЕННЯ: Запускаємо пересканування по черзі, щоб не "повісити" інтерфейс
+    var cards = Array.from(document.querySelectorAll('.card')); // Беремо всі картки
+    var index = 0;
+
+    function processNext() {
+        if (index >= cards.length) return; // Кінець списку
+
+        var card = cards[index];
+        // Перевіряємо, чи картка видима, щоб не витрачати ресурси даремно
+        if (card.isConnected && card.getBoundingClientRect().top < window.innerHeight) {
+            // Викликаємо головну функцію. Оскільки кеш пустий, вона сама піде в мережу шукати дані
+            if(typeof processListCard === 'function') {
+                processListCard(card);
+            }
         }
-    });
-}
+        
+        index++;
+        // ❗ ГОЛОВНЕ: Робимо паузу 250мс між картками. 
+        // Це дозволить інтерфейсу реагувати на натискання пульта.
+        setTimeout(processNext, 250); 
+    }
+
+    processNext(); // Запуск ланцюжка
+  }
 
   // ❗ Порожній шаблон як у LQE — щоб не дублювати контейнер налаштувань
   Lampa.Template.add('settings_ltf','<div></div>');

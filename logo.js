@@ -54,7 +54,53 @@
 			return "logo_cache_width_based_v1_" + type + "_" + id + "_" + lang;
 		}
 
-		function applyFinalStyles(img, container, has_tagline, text_height) {
+function applyFinalStyles(img, container, has_tagline, text_height) {
+    if (container) {
+        container.style.height = "";
+        container.style.overflow = "";
+        container.style.display = "";
+        container.style.transition = "none";
+        container.style.boxSizing = "";
+    }
+
+    img.style.marginTop = "0.2em";
+    img.style.marginLeft = "0";
+    img.style.paddingTop = PADDING_TOP_EM + "em";
+
+    var pb = PADDING_BOTTOM_EM;
+    if (window.innerWidth < 768 && has_tagline) pb = 0.5;
+    img.style.paddingBottom = pb + "em";
+
+    var use_text_height = Lampa.Storage.get("logo_use_text_height", false);
+
+    if (use_text_height && text_height) {
+        // Тут ми ставимо 1.0 за замовчуванням
+        var factor = parseFloat(Lampa.Storage.get("logo_height_factor", "1.0"));
+        img.style.height = (text_height * factor) + "px";
+        img.style.width = "auto";
+    } else {
+        // Тут беремо ширину з налаштувань
+        var custom_width = Lampa.Storage.get("logo_custom_width", "7"); 
+        if (window.innerWidth < 768) {
+            img.style.width = "100%";
+        } else {
+            img.style.width = custom_width + "em";
+        }
+        img.style.height = "auto";
+    }
+
+    img.style.maxWidth = "100%";
+    img.style.maxHeight = "none";
+    img.style.boxSizing = "border-box";
+    img.style.display = "block";
+    img.style.objectFit = "contain";
+    img.style.objectPosition = "left bottom";
+    img.style.opacity = "1";
+    img.style.transition = "none";
+}
+		
+		
+		/*function applyFinalStyles(img, container, has_tagline, text_height) {
 			if (container) {
 				container.style.height = "";
 				container.style.overflow = "";
@@ -101,7 +147,7 @@
 
 			img.style.opacity = "1";
 			img.style.transition = "none";
-		}
+		}*/
 
 		Lampa.Listener.follow("full", function (e) {
 			if (e.type == "complite" && Lampa.Storage.get("logo_glav") != "1") {
@@ -361,7 +407,7 @@
 			) {
 				Lampa.SettingsApi.addComponent({
 					component: LOGO_COMPONENT,
-					name: "Логотипы"
+					name: "Логотипи"
 				});
 			}
 			Lampa.Settings.main().update();
@@ -372,7 +418,7 @@
 	Lampa.SettingsApi.addParam({
 		component: "interface",
 		param: { name: "logo_settings_entry", type: "static" },
-		field: { name: "Логотипы", description: "Настройки отображения логотипов" },
+		field: { name: "Логотипи", description: "Налаштування відображення логотипів" },
 		onRender: function (item) {
 			item.on("hover:enter", function () {
 				Lampa.Settings.create(LOGO_COMPONENT);
@@ -386,7 +432,7 @@
 	Lampa.SettingsApi.addParam({
 		component: LOGO_COMPONENT,
 		param: { name: "logo_back_to_int", type: "static" },
-		field: { name: "Назад", description: "Вернуться в настройки интерфейса" },
+		field: { name: "Назад", description: "Повернутися в налаштування інтерфейсу" },
 		onRender: function (item) {
 			item.on("hover:enter", function () {
 				Lampa.Settings.create("interface");
@@ -399,12 +445,12 @@
 		param: {
 			name: "logo_glav",
 			type: "select",
-			values: { 1: "Скрыть", 0: "Отображать" },
+			values: { 1: "Приховати", 0: "Відобразити" },
 			default: "0"
 		},
 		field: {
-			name: "Логотипы вместо названий",
-			description: "Отображает логотипы фильмов вместо текста"
+			name: "Логотипи замість назв",
+			description: "Відображає логотипи фільмів замість тексту"
 		}
 	});
 	Lampa.SettingsApi.addParam({
@@ -428,8 +474,8 @@
 			default: ""
 		},
 		field: {
-			name: "Язык логотипа",
-			description: "Приоритетный язык для поиска логотипа"
+			name: "Мова логотипу",
+			description: "Пріоритетна мова для пошуку логотипу"
 		}
 	});
 	Lampa.SettingsApi.addParam({
@@ -441,13 +487,13 @@
 				w300: "w300",
 				w500: "w500",
 				w780: "w780",
-				original: "Оригинал"
+				original: "Оригінал"
 			},
 			default: "original"
 		},
 		field: {
-			name: "Размер логотипа",
-			description: "Разрешение загружаемого изображения"
+			name: "Размір логотипу",
+			description: "Разширення завантажуваного зображення"
 		}
 	});
 	Lampa.SettingsApi.addParam({
@@ -459,30 +505,76 @@
 			default: "css"
 		},
 		field: {
-			name: "Тип анимации логотипов",
-			description: "Способ анимации логотипов"
+			name: "Тип анімації логотипів",
+			description: "Спосіб анімації логотипів"
 		}
 	});
 	Lampa.SettingsApi.addParam({
 		component: LOGO_COMPONENT,
 		param: { name: "logo_use_text_height", type: "trigger", default: false },
 		field: {
-			name: "Логотип по высоте текста",
-			description: "Размер логотипа равен высоте текста"
+			name: "Логотип по висоті тексту",
+			description: "Розмір логотипи рівний висоті тексту"
 		}
 	});
 
+Lampa.SettingsApi.addParam({
+    component: LOGO_COMPONENT,
+    param: {
+        name: "logo_height_factor",
+        type: "select",
+        values: {
+            "1.0": "1.0",
+            "1.1": "1.1",
+            "1.2": "1.2",
+            "1.3": "1.3",
+            "1.4": "1.4",
+            "1.5": "1.5",
+            "1.6": "1.6"
+        },
+        default: "1.0"
+    },
+    field: {
+        name: "Коефіцієнт висоти",
+        description: "Працює, якщо увімкнено підлаштування під текст"
+    }
+});
+
+Lampa.SettingsApi.addParam({
+    component: LOGO_COMPONENT,
+    param: {
+        name: "logo_custom_width",
+        type: "select",
+        values: {
+            "3": "3em",
+            "4": "4em",
+            "5": "5em",
+            "6": "6em",
+            "7": "7em",
+            "8": "8em",
+            "9": "9em"
+        },
+        default: "7"
+    },
+    field: {
+        name: "Ширина логотипа",
+        description: "Працює, коли вимкнено підлаштування під текст"
+    }
+});
+
+
+	
 	Lampa.SettingsApi.addParam({
 		component: LOGO_COMPONENT,
 		param: { name: "logo_clear_cache", type: "button" },
 		field: {
-			name: "Сбросить кеш логотипов",
-			description: "Нажмите для очистки кеша изображений"
+			name: "Скинути кеш логотипів",
+			description: "Натисніть для очищення кешу зображень"
 		},
 		onChange: function () {
 			Lampa.Select.show({
-				title: "Сбросить кеш?",
-				items: [{ title: "Да", confirm: true }, { title: "Нет" }],
+				title: "Скинути кеш?",
+				items: [{ title: "Так", confirm: true }, { title: "Ні" }],
 				onSelect: function (a) {
 					if (a.confirm) {
 						var keys = [];

@@ -854,9 +854,17 @@ function reprocessVisibleCardsChunked(){
                 function(liveResult) {
                     let trackCount = liveResult ? liveResult.track_count : 0;
                     // Зберігаємо новий результат в кеш
-                    saveTracksCache(cacheKey, { track_count: trackCount }_
+                    saveTracksCache(cacheKey, { track_count: trackCount });
+                    
+                    if (document.body.contains(cardElement)) {
+                        updateCardListTracksElement(cardView, trackCount);
+                    }
+                },
+                priority
+            );
+        }
+    }
 
-    
     // ===================== ІНІЦІАЛІЗАЦІЯ ПЛАГІНА =====================
     
     // --- Логіка Дебаунсингу та Пакетної обробки ---

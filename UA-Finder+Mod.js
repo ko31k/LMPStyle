@@ -60,8 +60,8 @@
             'https://api.allorigins.win/raw?url='
             
         ],
-        PROXY_TIMEOUT_MS: 3000, // Максимальний час очікування відповіді від одного проксі (5.5 секунди).
-        MAX_PARALLEL_REQUESTS: 15, // Максимальна кількість одночасних запитів до API.
+        PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
+        MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 
         // --- Налаштування функціоналу ---
@@ -343,7 +343,10 @@ function enqueueTask(fn, priority) {
 function isCardVisible(card){
     if (!card || !card.getBoundingClientRect) return false;
     const r = card.getBoundingClientRect();
-    return r.bottom > 0 && r.top < window.innerHeight;
+    return r.bottom > 0 && 
+           r.top < window.innerHeight && 
+           r.right > 0 && 
+           r.left < window.innerWidth;
 }
 
     

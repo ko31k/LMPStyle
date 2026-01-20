@@ -201,11 +201,11 @@
     // ===================== КОНФІГУРАЦІЯ =====================
     var LQE_CONFIG = {
         CACHE_VERSION: 3, // Версія кешу для інвалідації старих даних
-        LOGGING_GENERAL: false, // Загальне логування для налагодження
+        LOGGING_GENERAL: true, // Загальне логування для налагодження
         LOGGING_QUALITY: false, // Логування процесу визначення якості
-        LOGGING_CARDLIST: false, // Логування для спискових карток
+        LOGGING_CARDLIST: true, // Логування для спискових карток
         CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000, // Час життя кешу (48 години)
-        CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
+        CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (24 години)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
         JACRED_PROTOCOL: 'https://', // Протокол для API JacRed
         JACRED_URL: 'redapi.cfhttp.top', // Домен API JacRed

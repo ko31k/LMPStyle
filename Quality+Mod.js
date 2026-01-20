@@ -207,12 +207,13 @@
         CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000, // Час життя кешу (48 години)
         CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
-        JACRED_PROTOCOL: 'http://', // Протокол для API JacRed
+        JACRED_PROTOCOL: 'https://', // Протокол для API JacRed
         JACRED_URL: 'jacred.xyz', // Домен API JacRed
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
-            'http://api.allorigins.win/raw?url=',
-            'http://cors.bwa.workers.dev/'
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest=',
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів

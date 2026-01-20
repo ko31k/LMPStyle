@@ -52,13 +52,14 @@
         LOGGING_CARDLIST: false, // Логи обробки карток (скільки карток в пачці, тощо).
 
         // --- Налаштування API та мережі ---
-        JACRED_PROTOCOL: 'http://', // Протокол для API JacRed.
+        JACRED_PROTOCOL: 'https://', // Протокол для API JacRed.
         JACRED_URL: 'jacred.xyz', // Домен API JacRed.
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
-            'http://api.allorigins.win/raw?url=',
-            'http://cors.bwa.workers.dev/'
+            'https://api.allorigins.win/raw?url=',
+            'https://cors.bwa.workers.dev/',
+            'https://api.codetabs.com/v1/proxy?quest='
         ],
-        PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
+        PROXY_TIMEOUT_MS: 4500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).
         MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 

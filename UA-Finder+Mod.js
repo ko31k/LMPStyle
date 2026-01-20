@@ -56,7 +56,7 @@
         JACRED_URL: 'jacred.xyz', // Домен API JacRed.
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
             'https://my-finder.kozak-bohdan.workers.dev/?url=',
-            'http://cors.bwa.workers.dev/',
+            'https://cors.bwa.workers.dev/',
             'https://api.allorigins.win/raw?url='
             
         ],

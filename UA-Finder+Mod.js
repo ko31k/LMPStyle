@@ -56,11 +56,12 @@
         JACRED_URL: 'jacred.xyz', // Домен API JacRed.
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
             'https://my-finder.kozak-bohdan.workers.dev/?url=',
-            'https://api.allorigins.win/raw?url=',
             'http://cors.bwa.workers.dev/'
+            'https://api.allorigins.win/raw?url=',
+            
         ],
-        PROXY_TIMEOUT_MS: 5500, // Максимальний час очікування відповіді від одного проксі (5.5 секунди).
-        MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість одночасних запитів до API.
+        PROXY_TIMEOUT_MS: 3000, // Максимальний час очікування відповіді від одного проксі (5.5 секунди).
+        MAX_PARALLEL_REQUESTS: 15, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 
         // --- Налаштування функціоналу ---
@@ -206,7 +207,10 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
     function processQueue() {
         // Адаптивний ліміт: базується на MAX_PARALLEL_REQUESTS, але зменшується,
         // якщо мережа "хворіє" (напр. проксі не відповідають).
-        var adaptiveLimit = Math.max(3, Math.min(LTF_CONFIG.MAX_PARALLEL_REQUESTS, Math.floor(LTF_CONFIG.MAX_PARALLEL_REQUESTS * networkHealth)));
+        //var adaptiveLimit = Math.max(3, Math.min(LTF_CONFIG.MAX_PARALLEL_REQUESTS, Math.floor(LTF_CONFIG.MAX_PARALLEL_REQUESTS * networkHealth)));
+        
+        // Ігноруємо здоров'я мережі, завжди максимум
+        var adaptiveLimit = LTF_CONFIG.MAX_PARALLEL_REQUESTS; 
         
         // Не перевищувати адаптивний ліміт.
         if (activeRequests >= adaptiveLimit) return; 

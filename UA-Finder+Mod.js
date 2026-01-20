@@ -41,7 +41,7 @@
         BADGE_STYLE: 'text',        // 'text' | 'flag_count' | 'flag_only'
         SHOW_FOR_TV: true,          // показувати на серіалах
         // --- Налаштування кешу ---
-        CACHE_VERSION: 6, // ❗ Змініть це число (напр. 7), якщо хочете примусово скинути весь кеш у користувачів.
+        CACHE_VERSION: 4, // ❗ Змініть це число (напр. 5), якщо хочете примусово скинути весь кеш у користувачів.
         CACHE_KEY: 'lampa_ukr_tracks_cache', // Унікальний ключ для зберігання кешу в LocalStorage.
         CACHE_VALID_TIME_MS: 24 * 60 * 60 * 1000, // Час життя кешу (24 години). Після цього він вважається недійсним.
         CACHE_REFRESH_THRESHOLD_MS: 12 * 60 * 60 * 1000, // Через скільки часу кеш потребує фонового оновлення (12 годин).
@@ -56,8 +56,7 @@
         JACRED_URL: 'jacred.xyz', // Домен API JacRed.
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
             'https://api.allorigins.win/raw?url=',
-            //'https://corsproxy.io/?',
-            //'https://api.codetabs.com/v1/proxy?quest=',
+            //'http://cors.bwa.workers.dev/'
             'https://my-finder.kozak-bohdan.workers.dev/?url='
         ],
         PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).

@@ -190,16 +190,23 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
 
     var requestQueue = []; // Масив, де зберігаються завдання на пошук.
     var activeRequests = 0; // Лічильник активних (тих, що виконуються зараз) запитів.
+    var priorityQueue = [];    // пріоритетна черга (видимі картки)
     var networkHealth = 1.0; // Показник "здоров'я" мережі (1.0 = добре, 0.3 = погано).
 
     /**
      * Додає завдання (функцію пошуку) до черги.
      * @param {function} fn - Функція, яку потрібно виконати.
      */
-    function enqueueTask(fn) {
-        requestQueue.push(fn); // Додати в кінець черги.
-        processQueue(); // Спробувати запустити обробку.
+
+function enqueueTask(fn, priority) {
+    if (priority) {
+        priorityQueue.push(fn);
+    } else {
+        requestQueue.push(fn);
     }
+    processQueue();
+}
+
 
     /**
      * Обробляє чергу, запускаючи завдання по одному, з урахуванням ліміту.
@@ -214,9 +221,16 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
         
         // Не перевищувати адаптивний ліміт.
         if (activeRequests >= adaptiveLimit) return; 
+
+
+    var task = priorityQueue.length
+    ? priorityQueue.shift()
+    : requestQueue.shift();
+
+    if (!task) return;
         
-        var task = requestQueue.shift(); // Взяти перше завдання з черги.
-        if (!task) return; // Якщо черга порожня, вийти.
+        //var task = requestQueue.shift(); // Взяти перше завдання з черги.
+        //if (!task) return; // Якщо черга порожня, вийти.
 
         activeRequests++; // Збільшити лічильник активних запитів.
         
@@ -322,7 +336,17 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
         // Додаткова евристика: якщо є 'name', це, ймовірно, серіал
         return cardData.name || cardData.original_name ? 'tv' : 'movie';
     }
+        
+/**
+ * Перевіряє, чи картка зараз видима на екрані
+*/
+function isCardVisible(card){
+    if (!card || !card.getBoundingClientRect) return false;
+    const r = card.getBoundingClientRect();
+    return r.bottom > 0 && r.top < window.innerHeight;
+}
 
+    
     // ===================== ОСНОВНА ЛОГІКА ПІДРАХУНКУ ДОРІЖОК =====================
     /**
      * Рахує кількість українських доріжок у назві, ігноруючи субтитри.
@@ -396,7 +420,7 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
      * @param {string} cardId - ID картки.
      * @param {function} callback - Функція, яка викликається з фінальним результатом.
      */
-    function getBestReleaseWithUkr(normalizedCard, cardId, callback) {
+    function getBestReleaseWithUkr(normalizedCard, cardId, callback, priority) {
         // 'done' - це функція onTaskDone з 'processQueue',
         // яку ми *мусимо* викликати в кінці, щоб черга продовжилася.
         enqueueTask(function(done) {
@@ -584,7 +608,7 @@ $('body').append(Lampa.Template.get('lampa_tracks_css', {}, true));
                 callback(bestOverallResult); // Повертаємо фінальний найкращий результат
                 done(); // ❗ Сигнал черзі, що завдання завершено.
             });
-        });
+        }, priority);
     }
 
     // ===================== РОБОТА З КЕШЕМ =====================
@@ -797,33 +821,41 @@ function reprocessVisibleCardsChunked(){
             if (Date.now() - cachedData.timestamp > LTF_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
                 if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Кеш застарілий, фонове оновлення...`);
                 
-                getBestReleaseWithUkr(normalizedCard, cardId, function(liveResult) {
-                    let trackCount = liveResult ? liveResult.track_count : 0;
-                    // Оновлюємо кеш новими даними
-                    saveTracksCache(cacheKey, { track_count: trackCount });
-                    
-                    // Оновлюємо UI, лише якщо картка ще існує на екрані
-                    if (document.body.contains(cardElement)) {
-                        updateCardListTracksElement(cardView, trackCount);
-                    }
-                });
+                // Визначаємо пріоритет за видимістю картки
+                const priority = isCardVisible(cardElement);
+
+                getBestReleaseWithUkr(
+                    normalizedCard,
+                    cardId,
+                    function(liveResult) {
+                        let trackCount = liveResult ? liveResult.track_count : 0;
+                        // Оновлюємо кеш новими даними
+                        saveTracksCache(cacheKey, { track_count: trackCount });
+                        
+                        // Оновлюємо UI, лише якщо картка ще існує на екрані
+                        if (document.body.contains(cardElement)) {
+                            updateCardListTracksElement(cardView, trackCount);
+                        }
+                    },
+                    priority
+                );
             }
         } else {
             // --- КЕШУ НЕМАЄ (або він прострочений > 12 годин) ---
             if (LTF_CONFIG.LOGGING_TRACKS) console.log(`LTF-LOG [${cardId}]: Кеш відсутній, новий пошук...`);
             
+            // Визначаємо пріоритет за видимістю картки
+            const priority = isCardVisible(cardElement);
+
             // Запускаємо повний пошук
-            getBestReleaseWithUkr(normalizedCard, cardId, function(liveResult) {
-                let trackCount = liveResult ? liveResult.track_count : 0;
-                // Зберігаємо новий результат в кеш
-                saveTracksCache(cacheKey, { track_count: trackCount });
-                
-                if (document.body.contains(cardElement)) {
-                    updateCardListTracksElement(cardView, trackCount);
-                }
-            });
-        }
-    }
+            getBestReleaseWithUkr(
+                normalizedCard,
+                cardId,
+                function(liveResult) {
+                    let trackCount = liveResult ? liveResult.track_count : 0;
+                    // Зберігаємо новий результат в кеш
+                    saveTracksCache(cacheKey, { track_count: trackCount }_
+
     
     // ===================== ІНІЦІАЛІЗАЦІЯ ПЛАГІНА =====================
     

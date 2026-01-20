@@ -212,8 +212,9 @@
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
             'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://api.codetabs.com/v1/proxy?quest=',
+            //'https://corsproxy.io/?',
+            //'https://api.codetabs.com/v1/proxy?quest=',
+			'https://my-finder.kozak-bohdan.workers.dev/?url='
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів

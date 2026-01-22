@@ -42,43 +42,62 @@
           key: '2', // Ключ API
           parser_torrent_type: 'jackett' // Тип парсера
       }
-  }, {
-      // Другий парсер: Spawn UA (V2).
-      base: 'spawnum_duckdns_org_49117', // Новий унікальний ідентифікатор
-      name: 'Spawn UA (V2)', // Нова назва
+    }, 
+    {
+      base: 'lampa_ua',
+      name: 'LampaUA',
       settings: {
-          url: 'spawnum.duckdns.org:49117', // Нова адреса
-          key: '2', // Новий ключ API
-          parser_torrent_type: 'jackett' // Тип парсера
+        url: 'jackettua.mooo.com',
+        key: 'ua',
+        parser_torrent_type: 'jackett'
       }
-  },{
-      // Третій парсер: RedApi. Залишено без змін.
+    },
+    {
+      base: 'jacred_pro',
+      name: 'Jacred.pro',
+      settings: {
+        url: 'jacred.pro',
+        key: '',
+        parser_torrent_type: 'jackett'
+      }
+    },
+    {
+      base: 'jacred_xyz',
+      name: 'Jacred.xyz',
+      settings: {
+        url: 'jacred.xyz',
+        key: '',
+        parser_torrent_type: 'jackett'
+      }
+    },
+    {
+      base: 'maxvol_pro',
+      name: 'Maxvol.Pro',
+      settings: {
+        url: 'jac.maxvol.pro',
+        key: '1',
+        parser_torrent_type: 'jackett'
+      }
+    },
+    {
       base: 'redapi_cfhttp_top',
       name: 'RedApi',
       settings: {
-          url: 'redapi.cfhttp.top',
-          key: '',
-          parser_torrent_type: 'jackett'
+        url: 'redapi.cfhttp.top',
+        key: '',
+        parser_torrent_type: 'jackett'
       }
-  }, {
-      // Четвертий парсер: Jacred viewbox. Залишено без змін.
-      base: 'jacred_viewbox_dev',
-      name: 'Jacred Viewbox',
+    },
+    {
+      base: 'spawnpp_ua',
+      name: 'SpawnPP-UA',
       settings: {
-          url: 'jacred.viewbox.dev',
-          key: 'viewbox',
-          parser_torrent_type: 'jackett'
+        url: 'spawn.pp.ua:59117',
+        key: '2',
+        parser_torrent_type: 'jackett'
       }
-  }, {
-      // П'ятий парсер: Jacred pro. Залишено без змін.
-      base: 'jacred_pro',
-      name: 'Jacred Pro',
-      settings: {
-          url: 'jacred.pro',
-          key: '',
-          parser_torrent_type: 'jackett'
-      }
-  }];
+    }
+  ];
 
   // Визначаємо протокол (http або https) залежно від поточного протоколу сторінки.
   var proto = location.protocol === "https:" ? 'https://' : 'http://';

@@ -2579,7 +2579,7 @@ function ensureCss(){
       /* Фокусна рамка торрента (біла) */
       .torrent-item.focus {
         outline: none !important;
-        border: 2px solid #ffffff !important;
+        border: 3px solid #ffffff !important;
         box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
         transform: scale(1.01) !important;
         z-index: 10 !important;

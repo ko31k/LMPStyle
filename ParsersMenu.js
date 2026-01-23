@@ -3,7 +3,7 @@
   'use strict';
 
   /* =========================
-   * 1) Локалізація (мінімальна)
+   * 1) Локалізація
    * ========================= */
   function translate() {
     Lampa.Lang.add({
@@ -14,12 +14,11 @@
         zh: '解析器目录'
       },
       bat_parser_description: {
-        ru: 'Нажмите для выбора парсера из ',
-        en: 'Click to select a parser from the ',
-        uk: 'Натисніть для вибору парсера з ',
-        zh: '点击从目录中选择解析器 '
+        ru: 'Нажмите для выбора парсера из',
+        en: 'Click to select a parser from',
+        uk: 'Натисніть для вибору парсера з',
+        zh: '点击从目录中选择解析器'
       },
-
       bat_parser_current: {
         ru: 'Текущий выбор:',
         en: 'Current selection:',
@@ -31,6 +30,12 @@
         en: 'Not selected',
         uk: 'Не вибрано',
         zh: '未选择'
+      },
+      bat_parser_selected_label: {
+        ru: 'Выбрано:',
+        en: 'Selected:',
+        uk: 'Обрано:',
+        zh: '已选择：'
       },
 
       bat_check_parsers: {
@@ -72,23 +77,24 @@
         zh: '检查完成（有错误）'
       },
 
-      bat_status_ok: {
-        ru: 'Доступен',
-        en: 'Available',
-        uk: 'Доступний',
-        zh: '可用'
+      // Статуси HEALTH (перевірка сервера)
+      bat_status_checking_server: {
+        ru: 'Проверка сервера…',
+        en: 'Checking server…',
+        uk: 'Перевірка сервера…',
+        zh: '检查服务器…'
       },
-      bat_status_bad: {
-        ru: 'Недоступен',
-        en: 'Unavailable',
-        uk: 'Недоступний',
-        zh: '不可用'
+      bat_status_server_ok: {
+        ru: 'Сервер доступен',
+        en: 'Server available',
+        uk: 'Сервер доступний',
+        zh: '服务器可用'
       },
-      bat_status_checking: {
-        ru: 'Проверка…',
-        en: 'Checking…',
-        uk: 'Перевірка…',
-        zh: '检查中…'
+      bat_status_server_bad: {
+        ru: 'Сервер недоступен',
+        en: 'Server unavailable',
+        uk: 'Сервер недоступний',
+        zh: '服务器不可用'
       },
       bat_status_unknown: {
         ru: 'Не проверен',
@@ -96,17 +102,25 @@
         uk: 'Не перевірено',
         zh: '未检查'
       },
+
+      // Статуси SEARCH (перевірка пошуку)
+      bat_status_checking_search: {
+        ru: 'Проверка поиска…',
+        en: 'Checking search…',
+        uk: 'Перевірка пошуку…',
+        zh: '检查搜索…'
+      },
       bat_status_search_ok: {
         ru: 'Поиск работает',
         en: 'Search works',
         uk: 'Пошук працює',
         zh: '搜索可用'
       },
-      bat_status_search_empty: {
-        ru: 'Поиск без результатов',
-        en: 'Search: no results',
-        uk: 'Пошук без результатів',
-        zh: '搜索无结果'
+      bat_status_search_bad: {
+        ru: 'Поиск не работает',
+        en: 'Search does not work',
+        uk: 'Пошук не працює',
+        zh: '搜索不可用'
       }
     });
   }
@@ -160,12 +174,13 @@
   var STORAGE_KEY = 'bat_url_two';
   var NO_PARSER = 'no_parser';
 
-  var COLOR_OK = '1aff00';
-  var COLOR_BAD = 'ff2e36';
-  var COLOR_WARN = 'f3d900';
-  var COLOR_UNKNOWN = '8c8c8c';
+  // Кольори (із #, щоб CSS/jQuery не “мовчали”)
+  var COLOR_OK = '#1aff00';
+  var COLOR_BAD = '#ff2e36';
+  var COLOR_WARN = '#f3d900';
+  var COLOR_UNKNOWN = '#8c8c8c';
 
-  // Кеш: health 30 сек, deep-search 15 хв
+  // Кеш: health 30 сек, search 15 хв
   var cache = {
     data: {},
     ttlHealth: 30 * 1000,
@@ -176,10 +191,7 @@
       return null;
     },
     set: function (key, value, ttl) {
-      this.data[key] = {
-        value: value,
-        expiresAt: Date.now() + ttl
-      };
+      this.data[key] = { value: value, expiresAt: Date.now() + ttl };
     }
   };
 
@@ -198,11 +210,14 @@
     alert(text);
   }
 
-  function getProtocolFor(url) {
-    // Підтримка url з протоколом або без нього
-    var hasProtocol = /^https?:\/\//i.test(url);
-    if (hasProtocol) return '';
+  function getProtocol() {
+    if (Lampa.Utils && typeof Lampa.Utils.protocol === 'function') return Lampa.Utils.protocol();
     return location.protocol === 'https:' ? 'https://' : 'http://';
+  }
+
+  function getProtocolFor(url) {
+    var hasProtocol = /^https?:\/\//i.test(url);
+    return hasProtocol ? '' : getProtocol();
   }
 
   function getSelectedBase() {
@@ -229,6 +244,14 @@
     return true;
   }
 
+  function updateSelectedLabelInSettings() {
+    var base = getSelectedBase();
+    var parser = getParserByBase(base);
+    var name = parser ? parser.name : Lampa.Lang.translate('bat_parser_none');
+    var text = Lampa.Lang.translate('bat_parser_selected_label') + " " + name;
+    $('.bat-parser-selected').text(text);
+  }
+
   /* =========================
    * 4) Перевірки
    * ========================= */
@@ -246,13 +269,14 @@
   }
 
   function runHealthChecks(parsers) {
-    var map = {}; // base -> {status,color,labelKey}
+    var map = {}; // base -> {color,labelKey}
 
     var requests = parsers.map(function (parser) {
       return new Promise(function (resolve) {
         var url = healthUrl(parser);
         var cacheKey = 'health::' + parser.base + '::' + url;
         var cached = cache.get(cacheKey);
+
         if (cached) {
           map[parser.base] = cached.value;
           resolve();
@@ -267,14 +291,14 @@
             var ok = xhr && xhr.status === 200;
             var val = {
               color: ok ? COLOR_OK : COLOR_BAD,
-              labelKey: ok ? 'bat_status_ok' : 'bat_status_bad'
+              labelKey: ok ? 'bat_status_server_ok' : 'bat_status_server_bad'
             };
             map[parser.base] = val;
             cache.set(cacheKey, val, cache.ttlHealth);
             resolve();
           },
           error: function () {
-            var val = { color: COLOR_BAD, labelKey: 'bat_status_bad' };
+            var val = { color: COLOR_BAD, labelKey: 'bat_status_server_bad' };
             map[parser.base] = val;
             cache.set(cacheKey, val, cache.ttlHealth);
             resolve();
@@ -286,14 +310,12 @@
     return Promise.all(requests).then(function () { return map; });
   }
 
-  // DEEP SEARCH: тільки для вибраного
+  // SEARCH: тільки для вибраного, 2 стани (працює / не працює)
   function deepSearchUrl(parser, query) {
     var protocol = getProtocolFor(parser.settings.url);
     var key = encodeURIComponent(parser.settings.key || '');
     var q = encodeURIComponent(query);
 
-    // NB: використовуємо /indexers/all/results — як у твоїй поточній логіці.
-    // Це “глибша” перевірка і запускається тільки по кнопці.
     return protocol + parser.settings.url
       + '/api/v2.0/indexers/all/results'
       + '?apikey=' + key
@@ -306,12 +328,14 @@
     var parser = getParserByBase(base);
     if (!parser) return Promise.resolve({ ok: false, error: true });
 
-    var deepKey = 'search::' + parser.base;
-    var cached = cache.get(deepKey);
+    var cacheKey = 'search::' + parser.base;
+    var cached = cache.get(cacheKey);
     if (cached) return Promise.resolve(cached.value);
 
+    // “безпечний” загальний запит, щоб не тригерити бан-патерни
     var SAFE_QUERIES = ['1080p', 'bluray', 'x264', '2022'];
     var query = SAFE_QUERIES[Math.floor(Math.random() * SAFE_QUERIES.length)];
+
     var url = deepSearchUrl(parser, query);
 
     return new Promise(function (resolve) {
@@ -319,15 +343,14 @@
         url: url,
         method: 'GET',
         timeout: 6000,
-        success: function (data) {
-          var has = !!(data && data.Results && data.Results.length);
-          var res = { ok: true, hasResults: has };
-          cache.set(deepKey, res, cache.ttlSearch);
+        success: function () {
+          var res = { ok: true };
+          cache.set(cacheKey, res, cache.ttlSearch);
           resolve(res);
         },
         error: function () {
           var res = { ok: false, error: true };
-          cache.set(deepKey, res, cache.ttlSearch);
+          cache.set(cacheKey, res, cache.ttlSearch);
           resolve(res);
         }
       });
@@ -335,7 +358,7 @@
   }
 
   /* =========================
-   * 5) Модалка (UI)
+   * 5) Модалка (UI) + “лампочка”
    * ========================= */
 
   function injectStyleOnce() {
@@ -347,20 +370,19 @@
       ".bat-parser-modal__head{display:flex;align-items:center;justify-content:space-between;gap:1em}" +
       ".bat-parser-modal__current-label{font-size:.9em;opacity:.7}" +
       ".bat-parser-modal__current-value{font-size:1.1em}" +
+
       ".bat-parser-modal__list{display:flex;flex-direction:column;gap:.6em}" +
-      ".bat-parser-modal__item{position:relative;display:flex;align-items:center;justify-content:space-between;gap:1em;padding:.8em 1em .8em 1.8em;border-radius:.7em;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}" +
-      ".bat-parser-modal__item::before{content:'';position:absolute;left:.8em;top:50%;width:.55em;height:.55em;border-radius:50%;background:var(--bat-status-color," + COLOR_UNKNOWN + ");transform:translateY(-50%);box-shadow:0 0 .6em rgba(0,0,0,.3)}" +
+      ".bat-parser-modal__item{display:flex;align-items:center;justify-content:space-between;gap:1em;padding:.8em 1em;border-radius:.7em;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}" +
       ".bat-parser-modal__item.is-selected,.bat-parser-modal__item.focus{border-color:#fff}" +
-      ".bat-parser-modal__name{font-size:1em}" +
-      ".bat-parser-modal__status{font-size:.85em;opacity:.75;text-align:right}" +
+
+      ".bat-parser-modal__left{display:flex;align-items:center;gap:.65em;min-width:0}" +
+      ".bat-parser-modal__dot{width:.55em;height:.55em;border-radius:50%;background:" + COLOR_UNKNOWN + ";box-shadow:0 0 .6em rgba(0,0,0,.35);flex:0 0 auto}" +
+      ".bat-parser-modal__name{font-size:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
+      ".bat-parser-modal__status{font-size:.85em;opacity:.75;text-align:right;flex:0 0 auto}" +
+
       ".bat-parser-modal__actions{display:flex;gap:.6em;flex-wrap:wrap}" +
       ".bat-parser-modal__action{padding:.55em .9em;border-radius:.6em;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)}" +
-      ".bat-parser-modal__action.focus{border-color:#fff}" +
-      ".bat-status-ok{--bat-status-color:" + COLOR_OK + "}" +
-      ".bat-status-bad{--bat-status-color:" + COLOR_BAD + "}" +
-      ".bat-status-warn{--bat-status-color:" + COLOR_WARN + "}" +
-      ".bat-status-unknown{--bat-status-color:" + COLOR_UNKNOWN + "}" +
-      ".bat-status-checking{--bat-status-color:" + COLOR_WARN + "}";
+      ".bat-parser-modal__action.focus{border-color:#fff}";
 
     var style = document.createElement('style');
     style.type = 'text/css';
@@ -368,22 +390,26 @@
     document.head.appendChild(style);
   }
 
-  function buildParserItem(parser) {
+  function buildParserItem(base, name) {
     var item = $(
-      "<div class='bat-parser-modal__item selector bat-status-unknown' data-base='" + parser.base + "'>" +
-        "<div class='bat-parser-modal__name'></div>" +
+      "<div class='bat-parser-modal__item selector' data-base='" + base + "'>" +
+        "<div class='bat-parser-modal__left'>" +
+          "<span class='bat-parser-modal__dot'></span>" +
+          "<div class='bat-parser-modal__name'></div>" +
+        "</div>" +
         "<div class='bat-parser-modal__status'></div>" +
       "</div>"
     );
-    item.find('.bat-parser-modal__name').text(parser.name);
+
+    item.find('.bat-parser-modal__name').text(name);
     item.find('.bat-parser-modal__status').text(Lampa.Lang.translate('bat_status_unknown'));
+    item.find('.bat-parser-modal__dot').css('background-color', COLOR_UNKNOWN);
+
     return item;
   }
 
-  function setItemStatus(item, kind, labelKey) {
-    item
-      .removeClass('bat-status-ok bat-status-bad bat-status-warn bat-status-unknown bat-status-checking')
-      .addClass(kind);
+  function setItemStatus(item, color, labelKey) {
+    item.find('.bat-parser-modal__dot').css('background-color', color);
     item.find('.bat-parser-modal__status').text(Lampa.Lang.translate(labelKey));
   }
 
@@ -401,8 +427,8 @@
   function openParserModal() {
     injectStyleOnce();
 
-    // Зібрати список
     var selected = getSelectedBase();
+
     var modal = $(
       "<div class='bat-parser-modal'>" +
         "<div class='bat-parser-modal__head'>" +
@@ -420,15 +446,27 @@
     updateCurrentLabel(modal, selected);
 
     var list = modal.find('.bat-parser-modal__list');
-    parsersInfo.forEach(function (p) {
-      var item = buildParserItem(p);
 
-      // Вибір парсера
+    // Пункт "Не вибрано"
+    var noneItem = buildParserItem(NO_PARSER, Lampa.Lang.translate('bat_parser_none'));
+    noneItem.on('hover:enter', function () {
+      Lampa.Storage.set(STORAGE_KEY, NO_PARSER);
+      applySelection(list, NO_PARSER);
+      updateCurrentLabel(modal, NO_PARSER);
+      updateSelectedLabelInSettings();
+    });
+    list.append(noneItem);
+
+    // Реальні парсери
+    parsersInfo.forEach(function (p) {
+      var item = buildParserItem(p.base, p.name);
+
       item.on('hover:enter', function () {
         Lampa.Storage.set(STORAGE_KEY, p.base);
         applySelectedParser(p.base);
         applySelection(list, p.base);
         updateCurrentLabel(modal, p.base);
+        updateSelectedLabelInSettings();
       });
 
       list.append(item);
@@ -436,7 +474,7 @@
 
     applySelection(list, selected);
 
-    // Кнопки внизу списку (як ти хотів)
+    // Кнопки внизу модалки
     var actions = modal.find('.bat-parser-modal__actions');
 
     var btnHealth = $("<div class='bat-parser-modal__action selector'></div>");
@@ -447,26 +485,37 @@
 
     actions.append(btnHealth).append(btnSearch);
 
-    // Функція: оновити статуси в UI за map
+    // HEALTH UI
     function applyHealthMap(statusMap) {
       list.find('.bat-parser-modal__item').each(function () {
         var it = $(this);
         var base = it.data('base');
-        var st = statusMap[base];
-        if (!st) {
-          setItemStatus(it, 'bat-status-unknown', 'bat_status_unknown');
+
+        if (base === NO_PARSER) {
+          setItemStatus(it, COLOR_UNKNOWN, 'bat_status_unknown');
           return;
         }
-        if (st.color === COLOR_OK) setItemStatus(it, 'bat-status-ok', st.labelKey);
-        else setItemStatus(it, 'bat-status-bad', st.labelKey);
+
+        var st = statusMap[base];
+        if (!st) {
+          setItemStatus(it, COLOR_UNKNOWN, 'bat_status_unknown');
+          return;
+        }
+
+        setItemStatus(it, st.color, st.labelKey);
       });
     }
 
-    // Перша перевірка при відкритті модалки: health-check (як ти хотів)
     function runHealthUI() {
-      // “checking…”
+      // “checking…” лише для health
       list.find('.bat-parser-modal__item').each(function () {
-        setItemStatus($(this), 'bat-status-checking', 'bat_status_checking');
+        var it = $(this);
+        var base = it.data('base');
+        if (base === NO_PARSER) {
+          setItemStatus(it, COLOR_UNKNOWN, 'bat_status_unknown');
+        } else {
+          setItemStatus(it, COLOR_WARN, 'bat_status_checking_server');
+        }
       });
 
       return runHealthChecks(parsersInfo)
@@ -479,12 +528,11 @@
         });
     }
 
-    // Кнопка #1: health-check
     btnHealth.on('hover:enter', function () {
       runHealthUI();
     });
 
-    // Кнопка #2: deep-search для вибраного
+    // SEARCH UI (2 states)
     btnSearch.on('hover:enter', function () {
       var base = getSelectedBase();
       if (!base || base === NO_PARSER) {
@@ -493,21 +541,20 @@
       }
 
       var selectedItem = list.find("[data-base='" + base + "']");
-      setItemStatus(selectedItem, 'bat-status-checking', 'bat_status_checking');
+      setItemStatus(selectedItem, COLOR_WARN, 'bat_status_checking_search');
 
       runDeepSearchCheckForSelected()
         .then(function (res) {
-          if (res.ok && res.hasResults) {
-            setItemStatus(selectedItem, 'bat-status-ok', 'bat_status_search_ok');
-          } else if (res.ok && !res.hasResults) {
-            setItemStatus(selectedItem, 'bat-status-warn', 'bat_status_search_empty');
+          if (res && res.ok) {
+            setItemStatus(selectedItem, COLOR_OK, 'bat_status_search_ok');
+            notifyDone('bat_check_done');
           } else {
-            setItemStatus(selectedItem, 'bat-status-bad', 'bat_status_bad');
+            setItemStatus(selectedItem, COLOR_BAD, 'bat_status_search_bad');
+            notifyDone('bat_check_done_error');
           }
-          notifyDone('bat_check_done');
         })
         .catch(function () {
-          setItemStatus(selectedItem, 'bat-status-bad', 'bat_status_bad');
+          setItemStatus(selectedItem, COLOR_BAD, 'bat_status_search_bad');
           notifyDone('bat_check_done_error');
         });
     });
@@ -527,15 +574,13 @@
       }
     });
 
-    // Автозапуск health-check на відкритті
+    // Автозапуск при відкритті: ТІЛЬКИ HEALTH
     runHealthUI();
   }
 
   /* =========================
    * 6) Інтеграція в Налаштування → Парсер
-   * =========================
-   * Замість select — кнопка, що відкриває модалку.
-   */
+   * ========================= */
   function parserSetting() {
     // застосувати вибраний парсер при старті
     applySelectedParser(getSelectedBase());
@@ -545,18 +590,25 @@
       param: { name: 'bat_parser_manage', type: 'button' },
       field: {
         name: Lampa.Lang.translate('bat_parser'),
-        description: Lampa.Lang.translate('bat_parser_description') + " " + parsersInfo.length
+        description:
+          Lampa.Lang.translate('bat_parser_description') + " " + parsersInfo.length +
+          "<div class='bat-parser-selected' style='margin-top:.35em;opacity:.85'></div>"
       },
       onChange: function () {
         openParserModal();
       },
       onRender: function (item) {
         setTimeout(function () {
-          // показуємо лише якщо parser_use увімкнений
           if (Lampa.Storage.field('parser_use')) item.show();
           else item.hide();
 
-          // розміщуємо біля секції parser
+          // Повертаємо жовтий колір пункту меню
+          $('.settings-param__name', item).css('color', COLOR_WARN);
+
+          // Показуємо “Обрано: …” під описом
+          updateSelectedLabelInSettings();
+
+          // Розміщуємо після parser_use (як у твоїй логіці раніше)
           var parserUse = $('div[data-name="parser_use"]').first();
           if (parserUse.length) item.insertAfter(parserUse);
         });

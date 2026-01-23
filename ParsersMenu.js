@@ -70,14 +70,8 @@
         uk: 'Перевірку завершено',
         zh: '检查完成'
       },
-      bat_check_done_error: {
-        ru: 'Проверку завершено (с ошибкой)',
-        en: 'Check completed (with error)',
-        uk: 'Перевірку завершено (з помилкою)',
-        zh: '检查完成（有错误）'
-      },
 
-      // Статуси HEALTH (перевірка сервера)
+      // HEALTH (сервер)
       bat_status_checking_server: {
         ru: 'Проверка сервера…',
         en: 'Checking server…',
@@ -90,12 +84,21 @@
         uk: 'Сервер доступний',
         zh: '服务器可用'
       },
+      bat_status_server_warn: {
+        ru: 'Сервер отвечает (ограничения)',
+        en: 'Server responds (restrictions)',
+        uk: 'Сервер відповідає (обмеження)',
+        zh: '服务器有响应（受限）'
+      },
+
+      },
       bat_status_server_bad: {
         ru: 'Сервер недоступен',
         en: 'Server unavailable',
         uk: 'Сервер недоступний',
         zh: '服务器不可用'
       },
+
       bat_status_unknown: {
         ru: 'Не проверен',
         en: 'Unchecked',
@@ -103,7 +106,7 @@
         zh: '未检查'
       },
 
-      // Статуси SEARCH (перевірка пошуку)
+      // SEARCH (2 стани)
       bat_status_checking_search: {
         ru: 'Проверка поиска…',
         en: 'Checking search…',
@@ -128,7 +131,7 @@
   var Lang = { translate: translate };
 
   /* =========================
-   * 2) Список парсерів (твій актуальний)
+   * 2) Список парсерів
    * ========================= */
   var parsersInfo = [
     {
@@ -174,7 +177,7 @@
   var STORAGE_KEY = 'bat_url_two';
   var NO_PARSER = 'no_parser';
 
-  // Кольори (із #, щоб CSS/jQuery не “мовчали”)
+  // Кольори
   var COLOR_OK = '#1aff00';
   var COLOR_BAD = '#ff2e36';
   var COLOR_WARN = '#f3d900';
@@ -195,8 +198,8 @@
     }
   };
 
-  function notifyDone(textKey) {
-    var text = Lampa.Lang.translate(textKey);
+  function notifyDone() {
+    var text = Lampa.Lang.translate('bat_check_done');
     try {
       if (Lampa.Noty && typeof Lampa.Noty.show === 'function') {
         Lampa.Noty.show(text);
@@ -208,16 +211,6 @@
       }
     } catch (e) {}
     alert(text);
-  }
-
-  function getProtocol() {
-    if (Lampa.Utils && typeof Lampa.Utils.protocol === 'function') return Lampa.Utils.protocol();
-    return location.protocol === 'https:' ? 'https://' : 'http://';
-  }
-
-  function getProtocolFor(url) {
-    var hasProtocol = /^https?:\/\//i.test(url);
-    return hasProtocol ? '' : getProtocol();
   }
 
   function getSelectedBase() {
@@ -252,29 +245,77 @@
     $('.bat-parser-selected').text(text);
   }
 
+  // Протоколи: якщо протокол вже заданий у url — лише ""
+  function protocolCandidatesFor(url) {
+    if (/^https?:\/\//i.test(url)) return [''];
+    return ['https://', 'http://']; // спочатку https
+  }
+
+  // Послідовно пробуємо URL і повертаємо перший результат:
+  // - ok=true для 2xx
+  // - ok=false, network=false якщо server відповів кодом (401/403/404/500…)
+  // - ok=false, network=true якщо status 0/timeout на всіх спробах
+  function ajaxTryUrls(urls, timeout) {
+    return new Promise(function (resolve) {
+      var idx = 0;
+
+      function attempt() {
+        if (idx >= urls.length) {
+          resolve({ ok: false, xhr: null, url: null, network: true });
+          return;
+        }
+
+        var url = urls[idx++];
+        $.ajax({
+          url: url,
+          method: 'GET',
+          timeout: timeout,
+          success: function (data, textStatus, xhr) {
+            resolve({ ok: true, xhr: xhr, url: url, data: data });
+          },
+          error: function (xhr) {
+            var status = xhr && typeof xhr.status === 'number' ? xhr.status : 0;
+            var isNetwork = (status === 0);
+            if (isNetwork) attempt();
+            else resolve({ ok: false, xhr: xhr, url: url, network: false });
+          }
+        });
+      }
+
+      attempt();
+    });
+  }
+
   /* =========================
    * 4) Перевірки
    * ========================= */
 
-  // HEALTH: для всіх парсерів
-  function healthUrl(parser) {
-    var protocol = getProtocolFor(parser.settings.url);
+  // HEALTH candidates
+  function healthUrlCandidates(parser) {
     var key = encodeURIComponent(parser.settings.key || '');
     var type = parser.settings.parser_torrent_type || 'jackett';
 
-    if (type === 'prowlarr') {
-      return protocol + parser.settings.url + '/api/v1/health?apikey=' + key;
-    }
-    return protocol + parser.settings.url + '/api/v2.0/indexers/status:healthy/results?apikey=' + key;
+    var path = (type === 'prowlarr')
+      ? '/api/v1/health?apikey=' + key
+      : '/api/v2.0/indexers/status:healthy/results?apikey=' + key;
+
+    var url = parser.settings.url;
+    var protos = protocolCandidatesFor(url);
+
+    return protos.map(function (p) { return p + url + path; });
   }
 
+  // HEALTH 3-статуси:
+  // - OK (зелений): 2xx (endpoint реально відпрацював)
+  // - WARN (жовтий): сервер відповів HTTP, але не 2xx (401/403/404/5xx) -> “сервер відповідає, але є проблема”
+  // - BAD (червоний): network/timeout (status 0) -> сервер недоступний
   function runHealthChecks(parsers) {
     var map = {}; // base -> {color,labelKey}
 
     var requests = parsers.map(function (parser) {
       return new Promise(function (resolve) {
-        var url = healthUrl(parser);
-        var cacheKey = 'health::' + parser.base + '::' + url;
+        var urls = healthUrlCandidates(parser);
+        var cacheKey = 'health::' + parser.base + '::' + urls.join('|');
         var cached = cache.get(cacheKey);
 
         if (cached) {
@@ -283,26 +324,20 @@
           return;
         }
 
-        $.ajax({
-          url: url,
-          method: 'GET',
-          timeout: 5000,
-          success: function (resp, txt, xhr) {
-            var ok = xhr && xhr.status === 200;
-            var val = {
-              color: ok ? COLOR_OK : COLOR_BAD,
-              labelKey: ok ? 'bat_status_server_ok' : 'bat_status_server_bad'
-            };
-            map[parser.base] = val;
-            cache.set(cacheKey, val, cache.ttlHealth);
-            resolve();
-          },
-          error: function () {
-            var val = { color: COLOR_BAD, labelKey: 'bat_status_server_bad' };
-            map[parser.base] = val;
-            cache.set(cacheKey, val, cache.ttlHealth);
-            resolve();
+        ajaxTryUrls(urls, 5000).then(function (res) {
+          var val;
+
+          if (res.ok) {
+            val = { color: COLOR_OK, labelKey: 'bat_status_server_ok' };
+          } else if (res.network === false) {
+            val = { color: COLOR_WARN, labelKey: 'bat_status_server_warn' };
+          } else {
+            val = { color: COLOR_BAD, labelKey: 'bat_status_server_bad' };
           }
+
+          map[parser.base] = val;
+          cache.set(cacheKey, val, cache.ttlHealth);
+          resolve();
         });
       });
     });
@@ -310,51 +345,54 @@
     return Promise.all(requests).then(function () { return map; });
   }
 
-  // SEARCH: тільки для вибраного, 2 стани (працює / не працює)
-  function deepSearchUrl(parser, query) {
-    var protocol = getProtocolFor(parser.settings.url);
+  // SEARCH candidates (2 стани)
+  function deepSearchUrlCandidates(parser, query) {
     var key = encodeURIComponent(parser.settings.key || '');
     var q = encodeURIComponent(query);
 
-    return protocol + parser.settings.url
-      + '/api/v2.0/indexers/all/results'
-      + '?apikey=' + key
-      + '&Query=' + q
-      + '&Category=2000';
+    var path =
+      '/api/v2.0/indexers/all/results' +
+      '?apikey=' + key +
+      '&Query=' + q +
+      '&Category=2000';
+
+    var url = parser.settings.url;
+    var protos = protocolCandidatesFor(url);
+
+    return protos.map(function (p) { return p + url + path; });
   }
 
-  function runDeepSearchCheckForSelected() {
-    var base = getSelectedBase();
-    var parser = getParserByBase(base);
-    if (!parser) return Promise.resolve({ ok: false, error: true });
+  function runDeepSearchChecks(parsers) {
+    var map = {}; // base -> {color,labelKey}
 
-    var cacheKey = 'search::' + parser.base;
-    var cached = cache.get(cacheKey);
-    if (cached) return Promise.resolve(cached.value);
-
-    // “безпечний” загальний запит, щоб не тригерити бан-патерни
     var SAFE_QUERIES = ['1080p', 'bluray', 'x264', '2022'];
     var query = SAFE_QUERIES[Math.floor(Math.random() * SAFE_QUERIES.length)];
 
-    var url = deepSearchUrl(parser, query);
+    var requests = parsers.map(function (parser) {
+      return new Promise(function (resolve) {
+        var urls = deepSearchUrlCandidates(parser, query);
+        var cacheKey = 'search::' + parser.base;
+        var cached = cache.get(cacheKey);
 
-    return new Promise(function (resolve) {
-      $.ajax({
-        url: url,
-        method: 'GET',
-        timeout: 6000,
-        success: function () {
-          var res = { ok: true };
-          cache.set(cacheKey, res, cache.ttlSearch);
-          resolve(res);
-        },
-        error: function () {
-          var res = { ok: false, error: true };
-          cache.set(cacheKey, res, cache.ttlSearch);
-          resolve(res);
+        if (cached) {
+          map[parser.base] = cached.value;
+          resolve();
+          return;
         }
+
+        ajaxTryUrls(urls, 6000).then(function (res) {
+          var val = res.ok
+            ? { color: COLOR_OK, labelKey: 'bat_status_search_ok' }
+            : { color: COLOR_BAD, labelKey: 'bat_status_search_bad' };
+
+          map[parser.base] = val;
+          cache.set(cacheKey, val, cache.ttlSearch);
+          resolve();
+        });
       });
     });
+
+    return Promise.all(requests).then(function () { return map; });
   }
 
   /* =========================
@@ -447,7 +485,7 @@
 
     var list = modal.find('.bat-parser-modal__list');
 
-    // Пункт "Не вибрано"
+    // "Не вибрано"
     var noneItem = buildParserItem(NO_PARSER, Lampa.Lang.translate('bat_parser_none'));
     noneItem.on('hover:enter', function () {
       Lampa.Storage.set(STORAGE_KEY, NO_PARSER);
@@ -457,7 +495,7 @@
     });
     list.append(noneItem);
 
-    // Реальні парсери
+    // Парсери
     parsersInfo.forEach(function (p) {
       var item = buildParserItem(p.base, p.name);
 
@@ -474,7 +512,7 @@
 
     applySelection(list, selected);
 
-    // Кнопки внизу модалки
+    // Кнопки
     var actions = modal.find('.bat-parser-modal__actions');
 
     var btnHealth = $("<div class='bat-parser-modal__action selector'></div>");
@@ -485,8 +523,7 @@
 
     actions.append(btnHealth).append(btnSearch);
 
-    // HEALTH UI
-    function applyHealthMap(statusMap) {
+    function applyMapToList(statusMap) {
       list.find('.bat-parser-modal__item').each(function () {
         var it = $(this);
         var base = it.data('base');
@@ -506,57 +543,42 @@
       });
     }
 
+    // HEALTH UI
     function runHealthUI() {
-      // “checking…” лише для health
       list.find('.bat-parser-modal__item').each(function () {
         var it = $(this);
         var base = it.data('base');
-        if (base === NO_PARSER) {
-          setItemStatus(it, COLOR_UNKNOWN, 'bat_status_unknown');
-        } else {
-          setItemStatus(it, COLOR_WARN, 'bat_status_checking_server');
-        }
+        if (base === NO_PARSER) setItemStatus(it, COLOR_UNKNOWN, 'bat_status_unknown');
+        else setItemStatus(it, COLOR_WARN, 'bat_status_checking_server');
       });
 
-      return runHealthChecks(parsersInfo)
-        .then(function (map) {
-          applyHealthMap(map);
-          notifyDone('bat_check_done');
-        })
-        .catch(function () {
-          notifyDone('bat_check_done_error');
-        });
+      return runHealthChecks(parsersInfo).then(function (map) {
+        applyMapToList(map);
+        notifyDone();
+      });
+    }
+
+    // SEARCH UI (для всіх)
+    function runSearchUI() {
+      list.find('.bat-parser-modal__item').each(function () {
+        var it = $(this);
+        var base = it.data('base');
+        if (base === NO_PARSER) return;
+        setItemStatus(it, COLOR_WARN, 'bat_status_checking_search');
+      });
+
+      return runDeepSearchChecks(parsersInfo).then(function (map) {
+        applyMapToList(map);
+        notifyDone();
+      });
     }
 
     btnHealth.on('hover:enter', function () {
       runHealthUI();
     });
 
-    // SEARCH UI (2 states)
     btnSearch.on('hover:enter', function () {
-      var base = getSelectedBase();
-      if (!base || base === NO_PARSER) {
-        notifyDone('bat_check_done_error');
-        return;
-      }
-
-      var selectedItem = list.find("[data-base='" + base + "']");
-      setItemStatus(selectedItem, COLOR_WARN, 'bat_status_checking_search');
-
-      runDeepSearchCheckForSelected()
-        .then(function (res) {
-          if (res && res.ok) {
-            setItemStatus(selectedItem, COLOR_OK, 'bat_status_search_ok');
-            notifyDone('bat_check_done');
-          } else {
-            setItemStatus(selectedItem, COLOR_BAD, 'bat_status_search_bad');
-            notifyDone('bat_check_done_error');
-          }
-        })
-        .catch(function () {
-          setItemStatus(selectedItem, COLOR_BAD, 'bat_status_search_bad');
-          notifyDone('bat_check_done_error');
-        });
+      runSearchUI();
     });
 
     // Відкрити модалку
@@ -574,7 +596,7 @@
       }
     });
 
-    // Автозапуск при відкритті: ТІЛЬКИ HEALTH
+    // Авто: тільки HEALTH при відкритті
     runHealthUI();
   }
 
@@ -582,7 +604,6 @@
    * 6) Інтеграція в Налаштування → Парсер
    * ========================= */
   function parserSetting() {
-    // застосувати вибраний парсер при старті
     applySelectedParser(getSelectedBase());
 
     Lampa.SettingsApi.addParam({
@@ -602,13 +623,11 @@
           if (Lampa.Storage.field('parser_use')) item.show();
           else item.hide();
 
-          // Повертаємо жовтий колір пункту меню
+          // жовтий колір
           $('.settings-param__name', item).css('color', COLOR_WARN);
 
-          // Показуємо “Обрано: …” під описом
           updateSelectedLabelInSettings();
 
-          // Розміщуємо після parser_use (як у твоїй логіці раніше)
           var parserUse = $('div[data-name="parser_use"]').first();
           if (parserUse.length) item.insertAfter(parserUse);
         });
@@ -640,5 +659,6 @@
   }
 
   if (!window.plugin_batpublictorr_ready) startPlugin();
+
 
 })();

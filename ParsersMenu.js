@@ -90,8 +90,7 @@
         uk: 'Сервер відповідає (обмеження)',
         zh: '服务器有响应（受限）'
       },
-
-      },
+      
       bat_status_server_bad: {
         ru: 'Сервер недоступен',
         en: 'Server unavailable',

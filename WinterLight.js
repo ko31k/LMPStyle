@@ -19,7 +19,7 @@
   var CANVAS_STYLE_ID = 'lampa-garland-canvas-style';
   var CANVAS_ID       = 'lampa-garland-canvas';
 
-  // ===== Icon (РєР°Рє Сѓ snow: С‡РµСЂРµР· РєР»Р°СЃСЃ + css Р±РµР»Р°СЏ/С†РІРµС‚РЅР°СЏ) =====
+  // ===== Icon (как у snow: через класс + css белая/цветная) =====
   var GARLAND_ICON =
     '<svg class="garlandfx-menu-icon" width="88" height="83" viewBox="0 0 88 83" xmlns="http://www.w3.org/2000/svg">' +
       '<g fill-rule="evenodd" clip-rule="evenodd">' +
@@ -67,7 +67,7 @@
     return isNaN(v) ? def : v;
   }
 
-  // ======= Icon CSS (РєР°Рє snow) =======
+  // ======= Icon CSS (как snow) =======
   function injectGarlandIconCSS() {
     try {
       if (document.getElementById('garlandfx_menu_icon_css')) return;
@@ -163,7 +163,7 @@
 
   function shouldHideNow() {
     var h = (location.hash || '').toLowerCase();
-    var byHashSettings = (h.indexOf('settings') !== -1 || h.indexOf('РЅР°СЃС‚СЂРѕР№Рє') !== -1 || h.indexOf('РЅР°Р»Р°С€С‚') !== -1);
+    var byHashSettings = (h.indexOf('settings') !== -1 || h.indexOf('настройк') !== -1 || h.indexOf('налашт') !== -1);
     return byHashSettings || detectOverlayOpen() || detectPlayerOpen();
   }
 
@@ -181,34 +181,34 @@
   // ======= Settings UI =======
   // i18n: ru/en/uk for Settings items
   var I18N = {
-    title: { ru: 'Р“РёСЂР»СЏРЅРґР°', en: 'Garland', uk: 'Р“С–СЂР»СЏРЅРґР°' },
+    title: { ru: 'Гирлянда', en: 'Garland', uk: 'Гірлянда' },
 
-    off: { ru: 'Р’С‹РєР»', en: 'Off', uk: 'Р’РёРјРє' },
-    on:  { ru: 'Р’РєР»',  en: 'On',  uk: 'РЈРІС–РјРє' },
+    off: { ru: 'Выкл', en: 'Off', uk: 'Вимк' },
+    on:  { ru: 'Вкл',  en: 'On',  uk: 'Увімк' },
 
-    enabled_name: { ru: 'Р“РёСЂР»СЏРЅРґР° РЅР° СЌРєСЂР°РЅР°С…', en: 'Garland on screens', uk: 'Р“С–СЂР»СЏРЅРґР° РЅР° РµРєСЂР°РЅР°С…' },
+    enabled_name: { ru: 'Гирлянда на экранах', en: 'Garland on screens', uk: 'Гірлянда на екранах' },
     enabled_desc: {
-      ru: 'Р“Р»Р°РІРЅР°СЏ / Р¤РёР»СЊРјС‹ / РЎРµСЂРёР°Р»С‹ / РљР°С‚РµРіРѕСЂРёРё (РІ РїР»РµРµСЂРµ Рё РѕРІРµСЂР»РµСЏС… СЃРєСЂС‹РІР°РµС‚СЃСЏ)',
+      ru: 'Главная / Фильмы / Сериалы / Категории (в плеере и оверлеях скрывается)',
       en: 'Home / Movies / TV Shows / Categories (hidden in player and overlays)',
-      uk: 'Р“РѕР»РѕРІРЅР° / Р¤С–Р»СЊРјРё / РЎРµСЂС–Р°Р»Рё / РљР°С‚РµРіРѕСЂС–С— (Сѓ РїР»РµС”СЂС– С‚Р° РѕРІРµСЂР»РµСЏС… РїСЂРёС…РѕРІСѓС”С‚СЊСЃСЏ)'
+      uk: 'Головна / Фільми / Серіали / Категорії (у плеєрі та оверлеях приховується)'
     },
 
-    mode_name: { ru: 'Р РµР¶РёРј РѕС‚СЂРёСЃРѕРІРєРё', en: 'Render mode', uk: 'Р РµР¶РёРј РїСЂРѕРјР°Р»СЊРѕРІСѓРІР°РЅРЅСЏ' },
-    mode_desc:  { ru: 'РђРІС‚Рѕ: РЅР° TV/Tizen/РјРѕР±РёР»Рµ РІС‹Р±РёСЂР°РµС‚ Canvas', en: 'Auto: on TV/Tizen/mobile uses Canvas', uk: 'РђРІС‚Рѕ: РЅР° TV/Tizen/РјРѕР±С–Р»СЊРЅРёС… РІРёР±РёСЂР°С” Canvas' },
-    mode_auto:  { ru: 'РђРІС‚Рѕ (СЂРµРєРѕРјРµРЅРґРѕРІР°РЅРѕ)', en: 'Auto (recommended)', uk: 'РђРІС‚Рѕ (СЂРµРєРѕРјРµРЅРґРѕРІР°РЅРѕ)' },
-    mode_canvas:{ ru: 'Canvas (Р±С‹СЃС‚СЂРѕ)', en: 'Canvas (fast)', uk: 'Canvas (С€РІРёРґРєРѕ)' },
-    mode_dom:   { ru: 'DOM (РєСЂР°СЃРёРІРѕ, С‚СЏР¶РµР»РµРµ)', en: 'DOM (pretty, heavier)', uk: 'DOM (РіР°СЂРЅРѕ, РІР°Р¶С‡Рµ)' },
+    mode_name: { ru: 'Режим отрисовки', en: 'Render mode', uk: 'Режим промальовування' },
+    mode_desc:  { ru: 'Авто: на TV/Tizen/мобиле выбирает Canvas', en: 'Auto: on TV/Tizen/mobile uses Canvas', uk: 'Авто: на TV/Tizen/мобільних вибирає Canvas' },
+    mode_auto:  { ru: 'Авто (рекомендовано)', en: 'Auto (recommended)', uk: 'Авто (рекомендовано)' },
+    mode_canvas:{ ru: 'Canvas (быстро)', en: 'Canvas (fast)', uk: 'Canvas (швидко)' },
+    mode_dom:   { ru: 'DOM (красиво, тяжелее)', en: 'DOM (pretty, heavier)', uk: 'DOM (гарно, важче)' },
 
-    quality_name: { ru: 'РљР°С‡РµСЃС‚РІРѕ СЌС„С„РµРєС‚Р°', en: 'Effect quality', uk: 'РЇРєС–СЃС‚СЊ РµС„РµРєС‚Сѓ' },
+    quality_name: { ru: 'Качество эффекта', en: 'Effect quality', uk: 'Якість ефекту' },
     quality_desc: {
-      ru: 'Р’Р»РёСЏРµС‚ РЅР° РЅР°РіСЂСѓР·РєСѓ Рё РєСЂР°СЃРѕС‚Сѓ. РќР° TV/Tizen Р»СѓС‡С€Рµ РђРІС‚Рѕ/РќРёР·РєРѕРµ',
+      ru: 'Влияет на нагрузку и красоту. На TV/Tizen лучше Авто/Низкое',
       en: 'Affects performance and visuals. On TV/Tizen, use Auto/Low',
-      uk: 'Р’РїР»РёРІР°С” РЅР° РЅР°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С‚Р° РІРёРіР»СЏРґ. РќР° TV/Tizen РєСЂР°С‰Рµ РђРІС‚Рѕ/РќРёР·СЊРєРµ'
+      uk: 'Впливає на навантаження та вигляд. На TV/Tizen краще Авто/Низьке'
     },
-    quality_auto:   { ru: 'РђРІС‚Рѕ', en: 'Auto', uk: 'РђРІС‚Рѕ' },
-    quality_low:    { ru: 'РќРёР·РєРѕРµ', en: 'Low', uk: 'РќРёР·СЊРєРµ' },
-    quality_medium: { ru: 'РЎСЂРµРґРЅРµРµ', en: 'Medium', uk: 'РЎРµСЂРµРґРЅС”' },
-    quality_high:   { ru: 'Р’С‹СЃРѕРєРѕРµ', en: 'High', uk: 'Р’РёСЃРѕРєРµ' }
+    quality_auto:   { ru: 'Авто', en: 'Auto', uk: 'Авто' },
+    quality_low:    { ru: 'Низкое', en: 'Low', uk: 'Низьке' },
+    quality_medium: { ru: 'Среднее', en: 'Medium', uk: 'Середнє' },
+    quality_high:   { ru: 'Высокое', en: 'High', uk: 'Високе' }
   };
 
   function getLangCode() {
@@ -308,14 +308,14 @@
     } catch (e) {}
   }
 
-  // ======= РџР•Р Р•РњР•Р©Р•РќРР• Р РЇР”РћРњ РЎРћ РЎРќР•Р“РћРњ =======
+  // ======= ПЕРЕМЕЩЕНИЕ РЯДОМ СО СНЕГОМ =======
   function closestMenuItem(node) {
     if (!node) return null;
     return node.closest('.menu__item') || node.closest('li') || node.closest('.menu-item') || null;
   }
 
   function reorderGarlandAfterSnow() {
-    // СЃРЅРµРі РёР· snow_no_stripes.js: .snowfx-menu-icon
+    // снег из snow_no_stripes.js: .snowfx-menu-icon
     var snowIcon = document.querySelector('.snowfx-menu-icon');
     var garIcon  = document.querySelector('.garlandfx-menu-icon');
     if (!snowIcon || !garIcon) return false;
@@ -327,7 +327,7 @@
     var parent = snowItem.parentNode;
     if (!parent || parent !== garItem.parentNode) return false;
 
-    // СѓР¶Рµ СЃС‚РѕРёС‚ СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ СЃРЅРµРіР°
+    // уже стоит сразу после снега
     if (snowItem.nextSibling === garItem) return true;
 
     parent.insertBefore(garItem, snowItem.nextSibling);
@@ -340,7 +340,7 @@
   function startSettingsReorderWatch() {
     if (settingsMO) return;
 
-    // РЅРµСЃРєРѕР»СЊРєРѕ РїРѕРїС‹С‚РѕРє (РјРµРЅСЋ РёРЅРѕРіРґР° СЃС‚СЂРѕРёС‚СЃСЏ СЃ Р·Р°РґРµСЂР¶РєРѕР№)
+    // несколько попыток (меню иногда строится с задержкой)
     clearTimeout(reorderTimer);
     reorderTimer = setTimeout(reorderGarlandAfterSnow, 50);
     setTimeout(reorderGarlandAfterSnow, 250);
@@ -363,7 +363,7 @@
 
   function onHashForReorder() {
     var h = (location.hash || '').toLowerCase();
-    var inSettings = (h.indexOf('settings') !== -1 || h.indexOf('РЅР°СЃС‚СЂРѕР№Рє') !== -1 || h.indexOf('РЅР°Р»Р°С€С‚') !== -1);
+    var inSettings = (h.indexOf('settings') !== -1 || h.indexOf('настройк') !== -1 || h.indexOf('налашт') !== -1);
 
     if (inSettings) startSettingsReorderWatch();
     else stopSettingsReorderWatch();
@@ -509,8 +509,8 @@
         b.style.left = x + 'px';
         b.style.top = y + 'px';
         b.style.setProperty('--c', COLORS[i % COLORS.length]);
-        b.style.setProperty('--t', (2600 + (i % 7) * 220) + 'ms'); // С‚РІРѕРё
-        b.style.setProperty('--d', ((i % 9) * 140) + 'ms');        // С‚РІРѕРё
+        b.style.setProperty('--t', (2600 + (i % 7) * 220) + 'ms'); // твои
+        b.style.setProperty('--d', ((i % 9) * 140) + 'ms');        // твои
 
         wrap.appendChild(b);
       }
@@ -931,9 +931,9 @@ function drawBulb(b, w, now) {
     addSettingsUI();
     bindLampaHooks();
 
-    // РІРєР»СЋС‡Р°РµРј вЂњРґРµСЂР¶Р°С‚СЊ СЂСЏРґРѕРј СЃРѕ СЃРЅРµРіРѕРјвЂќ
+    // включаем “держать рядом со снегом”
     window.addEventListener('hashchange', onHashForReorder);
-    onHashForReorder(); // РµСЃР»Рё РЅР°СЃС‚СЂРѕР№РєРё СѓР¶Рµ РѕС‚РєСЂС‹С‚С‹
+    onHashForReorder(); // если настройки уже открыты
 
     applyMode();
 
@@ -953,9 +953,9 @@ function drawBulb(b, w, now) {
         applyMode();
       }
 
-      // РµСЃР»Рё РІ РЅР°СЃС‚СЂРѕР№РєР°С… вЂ” РїРµСЂРёРѕРґРёС‡РµСЃРєРё РїСЂРѕР±СѓРµРј РµС‰С‘ СЂР°Р· (РЅР° СЃР»СѓС‡Р°Р№ Р»РµРЅРёРІРѕР№ РѕС‚СЂРёСЃРѕРІРєРё РјРµРЅСЋ)
+      // если в настройках — периодически пробуем ещё раз (на случай ленивой отрисовки меню)
       var h = (location.hash || '').toLowerCase();
-      if (h.indexOf('settings') !== -1 || h.indexOf('РЅР°СЃС‚СЂРѕР№Рє') !== -1) {
+      if (h.indexOf('settings') !== -1 || h.indexOf('настройк') !== -1) {
         reorderGarlandAfterSnow();
       }
     }, 700);

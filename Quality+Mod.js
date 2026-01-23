@@ -5,15 +5,14 @@
  *  - Мітки на повній і спискових картках
  *  - Спрощені (4K/FHD/HD/SD, TS/TC/CAM) або повні підписи — перемикається
  *  - Ручні оверрайди для окремих ID
- *  - Кеш 24h + тихе фонове оновлення
+ *  - Кеш 48h + тихе фонове оновлення
  *  - Черга запитів (до 12 парал.), проксі (HTTPS), поліфіли для старих WebView
  *
  * Налаштування: Інтерфейс → «Мітки якості»
  */
 
-
-// --- LQE TV-BOX COMPAT LAYER ---------------------------------
-// Цей блок робить плагін життєздатним у старих WebView без fetch/Promise/localStorage/CORS
+// LQE TV-BOX COMPAT LAYER 
+// Цей блок для старих WebView без fetch/Promise/localStorage/CORS
 (function () {
     // 1. Проміси (дуже простий поліфіл, достатньо для then/catch)
     if (typeof window.Promise !== 'function') {
@@ -93,14 +92,14 @@
         })();
     }
 
-    // 2. requestAnimationFrame поліфіл (деякі дуже древні WebView його не мають)
+    // 2. requestAnimationFrame поліфіл
     if (typeof window.requestAnimationFrame !== 'function') {
         window.requestAnimationFrame = function (cb) {
             return setTimeout(cb, 16); // ~60fps
         };
     }
 
-    // 3. Безпечне localStorage (деякі бокси кидають SecurityError або просто забороняють сховище)
+    // 3. Безпечне localStorage
     var safeLocalStorage = (function () {
         try {
             var testKey = '__lqe_test__';
@@ -109,7 +108,7 @@
             // якщо дійшли сюди — localStorage живий
             return window.localStorage;
         } catch (e) {
-            // fallback у RAM (не переживає перезапуск, але не падає)
+            // fallback у RAM
             var memoryStore = {};
             return {
                 getItem: function (k) { return memoryStore[k] || null; },
@@ -119,7 +118,7 @@
         }
     })();
 
-    // 4. Якщо чомусь немає Lampa.Storage (деякі форки Lampa TV кастрять API),
+    // 4. Якщо чомусь немає Lampa.Storage,
     // створимо просту сумісну версію поверх safeLocalStorage.
     if (!window.Lampa) window.Lampa = {};
     if (!Lampa.Storage) {
@@ -205,10 +204,10 @@
         LOGGING_QUALITY: false, // Логування процесу визначення якості
         LOGGING_CARDLIST: true, // Логування для спискових карток
         CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000, // Час життя кешу (48 години)
-        CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (12 годин)
+        CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (24 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
         JACRED_PROTOCOL: 'https://', // Протокол для API JacRed
-        JACRED_URL: 'redapi.cfhttp.top', // Домен API JacRed
+        JACRED_URL: 'redapi.cfhttp.top', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
             'https://my-finder.kozak-bohdan.workers.dev/?url=',
@@ -216,7 +215,7 @@
             'https://api.allorigins.win/raw?url='
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
-        SHOW_QUALITY_FOR_TV_SERIES: true, // ✅ Показувати якість для серіалів
+        SHOW_QUALITY_FOR_TV_SERIES: false, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
 
         MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
@@ -272,6 +271,11 @@
                 full_label: '1080p WEB-DLRip',  //✅ Повна мітка
                 simple_label: 'FHD'  		    //✅ Спрощена мітка
             },*/
+            /*'Тут ID фільму': { 
+                quality_code: 2160, 
+                full_label: '4K WEB-DL',     //✅ Повна мітка
+                simple_label: '4K'  		 //✅ Спрощена мітка
+            }*/
         }
     };
 
@@ -379,8 +383,8 @@
         "hdrip": "HDRip",
         "dvdrip": "DVDRip", "dvd": "DVD"
     };
+    
     // ===================== СТИЛІ CSS =====================
-
     // Основні стилі для відображення якості
     var styleLQE = "<style id=\"lampa_quality_styles\">" +
         ".full-start-new__rate-line {" + // Контейнер для лінії рейтингу повної картки
@@ -397,12 +401,12 @@
         "min-width: 2.8em;" + // Мінімальна ширина
         "text-align: center;" + // Вирівнювання тексту по центру
         "text-transform: none;" + // Без трансформації тексту
-        "border: 1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" + // Колір рамки з конфігурації
-        "color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту
-        "font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" + // Товщина шрифту
-        "font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" + // Розмір шрифту
-        "font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" + // Стиль шрифту
-        "border-radius: 0.2em;" + // Закруглення кутів
+        "border: 1px solid " + LQE_CONFIG.FULL_CARD_LABEL_BORDER_COLOR + " !important;" + // ✅ Колір рамки з конфігурації
+        "color: " + LQE_CONFIG.FULL_CARD_LABEL_TEXT_COLOR + " !important;" + // ✅ Колір тексту
+        "font-weight: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_WEIGHT + " !important;" + // ✅ Товщина шрифту
+        "font-size: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_SIZE + " !important;" + // ✅ Розмір шрифту
+        "font-style: " + LQE_CONFIG.FULL_CARD_LABEL_FONT_STYLE + " !important;" + // ✅ Стиль шрифту
+        "border-radius: 0.2em;" + // ✅ Закруглення кутів
         "padding: 0.3em;" + // Внутрішні відступи
         "height: 1.72em;" + // Фіксована висота
         "display: flex;" + // Flexbox для центрування
@@ -415,24 +419,24 @@
         "}" +
         ".card__quality {" + // Стилі для мітки якості на списковій картці
         " position: absolute; " + // Абсолютне позиціонування
-        " bottom: 0.50em; " + // Відступ від низу
-        " left: 0; " + // Вирівнювання по лівому краю
+        " bottom: 0.50em; " + // ✅ Відступ від низу
+        " left: 0; " + // ✅ Вирівнювання по лівому краю
         " margin-left: -0.78em; " + //ВІДСТУП за лівий край 
-        " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // Колір фону
+        " background-color: " + (LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_TRANSPARENT ? "transparent" : LQE_CONFIG.LIST_CARD_LABEL_BACKGROUND_COLOR) + " !important;" + // ✅ Колір фону
         " z-index: 10;" + // Z-index для поверх інших елементів
         " width: fit-content; " + // Ширина по вмісту
         " max-width: calc(100% - 1em); " + // Максимальна ширина
-        " border-radius: 0.3em 0.3em 0.3em 0.3em; " + // Закруглення кутів
+        " border-radius: 0.3em 0.3em 0.3em 0.3em; " + // ✅ Закруглення кутів
         " overflow: hidden;" + // Обрізання переповнення
         "}" +
         ".card__quality div {" + // Стилі для тексту всередині мітки якості
         " text-transform: uppercase; " + // Великі літери
         " font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif; " + // Шрифт
-        " font-weight: 700; " + // Жирний шрифт
+        " font-weight: 700; " + // ✅ Жирний шрифт
         " letter-spacing: 0.1px; " + // Відстань між літерами
-        " font-size: 1.10em; " + // Розмір шрифту
-        " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // Колір тексту
-        " padding: 0.1em 0.1em 0.08em 0.1em; " + // Внутрішні відступи
+        " font-size: 1.10em; " + // ✅ Розмір шрифту
+        " color: " + LQE_CONFIG.LIST_CARD_LABEL_TEXT_COLOR + " !important;" + // ✅ Колір тексту
+        " padding: 0.1em 0.1em 0.08em 0.1em; " + // ✅ Внутрішні відступи
         " white-space: nowrap;" + // Заборонити перенос тексту
         " text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); " + // Тінь тексту
         "}" +
@@ -455,7 +459,7 @@
         "}" +
         "</style>";
 
-    // === LQE: пошук якості всередині rate-line (оновлені стилі) ===
+    // LQE: пошук якості всередині rate-line
     var lqeLoaderCss = "<style id=\"lqe_search_loader_css\">" +
         "#lqe-search-loader.loading-dots-container{display:inline-flex;align-items:center;gap:.4em;color:#ccc;font-size:.85em;background:rgba(0,0,0,.3);padding:.6em 1em;border-radius:.5em;pointer-events:none;}" +
         "#lqe-search-loader .loading-dots__text{margin-right:.6em;}" +
@@ -473,11 +477,7 @@
     Lampa.Template.add('lampa_quality_fade', fadeStyles);
     $('body').append(Lampa.Template.get('lampa_quality_fade', {}, true));
 
-
-
-
     // ===================== МЕРЕЖЕВІ ФУНКЦІЇ =====================
-
     /**
      * Виконує запит через проксі з обробкою помилок + fallback для старих WebView
      * @param {string} url - оригінальний URL, який хочемо викликати
@@ -548,23 +548,20 @@
 
         tryNextProxy();
     }
-
-
     // ===================== АНІМАЦІЯ ЗАВАНТАЖЕННЯ =====================
-
     /**
      * Додає анімацію завантаження до картки
      * @param {string} cardId - ID картки
      * @param {Element} renderElement - DOM елемент
      */
     /**
-     * Додає анімацію завантаження всЕРЕДИНІ рядка рейтингів,
+     * Додає анімацію завантаження всередині рядка рейтингів,
      * не змінюючи видимість самого рядка.
      * - НІКОЛИ не ховає .full-start-new__rate-line
      * - Не додає дублікат, якщо анімація вже є
      * - Поважає налаштування: якщо мітку вимкнено — анімацію не показуємо
      */
-    // === LQE loader (порт із ratingsmod) ===
+    //LQE loader
     var __lqeRateLineObs = null;
 
     function addLoadingAnimation(cardId, renderElement) {
@@ -636,10 +633,7 @@
         try { if (__lqeRateLineObs) __lqeRateLineObs.disconnect(); } catch (_) { }
         __lqeRateLineObs = null;
     }
-
-
     // ===================== УТІЛІТИ =====================
-
     /**
      * Визначає тип контенту (фільм/серіал)
      * @param {object} cardData - Дані картки
@@ -650,7 +644,6 @@
         if (type === 'movie' || type === 'tv') return type; // Якщо тип визначено
         return cardData.name || cardData.original_name ? 'tv' : 'movie'; // Визначаємо по наявності назви
     }
-
     /**
      * Очищує та нормалізує назву для пошуку
      * @param {string} title - Оригінальна назва
@@ -664,7 +657,6 @@
             .replace(/\s+/g, ' ') // Видалення зайвих пробілів
             .trim(); // Обрізка пробілів по краях
     }
-
     /**
      * Генерує ключ для кешу
      * @param {number} version - Версія кешу
@@ -677,9 +669,8 @@
     }
 
     // ===================== ПАРСИНГ ЯКОСТІ =====================
-
     /**
-     * Спрощує повну назву якості до короткого формату (Фінальна версія)
+     * Спрощує повну назву якості до короткого формату 
      * @param {string} fullLabel - Повна назва якості (вибрана з найкращого релізу JacRed)
      * @param {string} originalTitle - Оригінальна назва торренту
      * @returns {string} - Спрощена назва для відображення на мітці
@@ -688,7 +679,7 @@
         if (!fullLabel) return ''; // Перевірка на пусту назву
 
         var lowerLabel = fullLabel.toLowerCase(); // Нижній регістр для порівняння
-        // var lowerTitle = (originalTitle || '').toLowerCase(); // ❌ БІЛЬШЕ НЕ ВИКОРИСТОВУЄМО (бо перебиває якісний реліз)
+        // var lowerTitle = (originalTitle || '').toLowerCase(); // ❌ БІЛЬШЕ НЕ ВИКОРИСТОВУЄМО (перебиває якісний реліз)
 
         // --- Крок 1: Погані якості (найвищий пріоритет) ---
         // Якщо JacRed вибрав реліз з поганою якістю - показуємо тип якості
@@ -771,7 +762,6 @@
         if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "No simplification rules matched, keeping original:", fullLabel);
         return fullLabel;
     }
-
 
     /**
      * Перетворює технічну назву якості на читабельну
@@ -914,7 +904,6 @@
     }
 
     // ===================== ПОШУК В JACRED =====================
-
     /**
      * Визначає якість з назви торренту
      * @param {string} title - Назва торренту
@@ -1067,8 +1056,6 @@
                                 }
                             }
 
-
-
                             // Визначаємо якість (спочатку з поля, потім з назви)
                             var currentNumericQuality = currentTorrent.quality;
                             if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
@@ -1091,7 +1078,7 @@
                                 parsedYear = extractYearFromTitle(currentTorrent.title);
                             }
 
-                            // Дозволяємо різницю в 1 рік (наприклад, реліз в грудні, а торрент з'явився в січні)
+                            // ✅✅✅ Дозволяємо різницю в 1 рік (наприклад, реліз в грудні, а торрент з'явився в січні)
                             var yearDifference = Math.abs(parsedYear - searchYearNum);
                             if (parsedYear > 1900 && yearDifference > 1) {
                                 if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Torrent year mismatch, skipping. Torrent: " + currentTorrent.title + ", Searched: " + searchYearNum + ", Found: " + parsedYear);
@@ -1285,7 +1272,6 @@
     // Очищаємо застарілий кеш при ініціалізації
     removeExpiredCacheEntries();
     // ===================== UI ДОПОМІЖНІ ФУНКЦІЇ =====================
-
     /**
      * Очищає елементи якості на повній картці
      * @param {string} cardId - ID картки
@@ -1300,7 +1286,6 @@
             }
         }
     }
-
 
     /**
      * Оновлює елемент якості на повній картці
@@ -1318,7 +1303,7 @@
 
         var displayQuality = bypassTranslation ? fullTorrentTitle : translateQualityLabel(qualityCode, fullTorrentTitle);
 
-        // ✅ Якщо це ручне перевизначення І увімкнено спрощення - беремо спрощену мітку
+        // ✅ Якщо це ручне перевизначення і увімкнено спрощення - беремо спрощену мітку
         if (bypassTranslation && LQE_CONFIG.USE_SIMPLE_QUALITY_LABELS) {
             var manualData = LQE_CONFIG.MANUAL_OVERRIDES[cardId];
             if (manualData && manualData.simple_label) {
@@ -1406,9 +1391,7 @@
         }
     }
 
-
     // ===================== ОБРОБКА ПОВНОЇ КАРТКИ =====================
-
     /**
      * Обробляє якість для повної картки
      * @param {object} cardData - Дані картки
@@ -1558,9 +1541,7 @@
         }
     }
 
-
     // ===================== ОБРОБКА СПИСКОВИХ КАРТОК =====================
-
     /**
      * Оновлює якість для спискової картки
      * @param {object|Element} cardInstance - інстанс картки Lampa або DOM елемент
@@ -1662,10 +1643,8 @@
         });
     }
 
-    // ===================== LIST CARD HOOK (onVisible) =====================
-
-    // ===================== ІНІЦІАЛІЗАЦІЯ ПЛАГІНА =====================
-
+    // ===================== LIST CARD HOOK (onVisible) ===================
+    // ======================= ІНІЦІАЛІЗАЦІЯ ПЛАГІНА ======================
     /**
      * Ініціалізує плагін якості
      */
@@ -1711,14 +1690,7 @@
         }
     }
 
-
-
-
-
-
-
-
-    /* ===== LQE: Settings (Interface -> "Мітки якості") ===== */
+    /* LQE: Settings (Interface -> "Мітки якості") */
     (function () {
         'use strict';
 
@@ -1742,9 +1714,6 @@
             el.style.opacity = '1';
             setTimeout(function () { el.style.opacity = '0'; }, 1300);
         }
-
-
-
 
         function load() {
             var s = (Lampa.Storage.get(SETTINGS_KEY) || {});
@@ -1805,8 +1774,6 @@
                 }
             });
 
-
-
             // 2) Перемикач (через select): мітки для серіалів
             Lampa.SettingsApi.addParam({
                 component: 'lqe',
@@ -1820,7 +1787,6 @@
                 onChange: function (v) { st.show_tv = (String(v) === 'true'); save(); }
             });
 
-
             // 3) Перемикач (через select): мітка у повній картці
             Lampa.SettingsApi.addParam({
                 component: 'lqe',
@@ -1833,7 +1799,6 @@
                 field: { name: 'Відображати мітку якості у повній картці' },
                 onChange: function (v) { st.show_full_card = (String(v) === 'true'); save(); }
             });
-
 
             // 4) Селектор стилю мітки
             Lampa.SettingsApi.addParam({
@@ -1870,7 +1835,7 @@
             }
         }
 
-        // Реєструємо після готовності застосунку (як у TMDB-Networks)
+        // Реєструємо після готовності застосунку
         if (window.appready) start();
         else if (Lampa && Lampa.Listener) Lampa.Listener.follow('app', function (e) { if (e.type === 'ready') start(); });
 
@@ -1878,6 +1843,5 @@
         //LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
 
     })();
-
 
 })();

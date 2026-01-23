@@ -1,48 +1,51 @@
 // IIFE (Immediately Invoked Function Expression) - самовикликаюча анонімна функція.
 // Створює приватний простір, щоб уникнути конфліктів з іншими скриптами.
 (function () {
-  // 'use strict'; - вмикає строгий режим JavaScript. Це допомагає уникнути поширених помилок.
   'use strict';
 
   /**
-   * Функція для додавання перекладів (локалізації) в Lampa.
-   * Додає текстові рядки для різних мов (ru, en, uk, zh).
+   * Локалізація (переклади)
    */
   function translate() {
-      Lampa.Lang.add({
-          bat_parser: {
-              ru: 'Каталог парсеров',
-              en: 'Parsers catalog',
-              uk: 'Каталог парсерів',
-              zh: '解析器目录'
-          },
-          bat_parser_description: {
-              ru: 'Нажмите для выбора парсера из ',
-              en: 'Click to select a parser from the ',
-              uk: 'Натисніть для вибору парсера з ',
-              zh: '点击从目录中选择解析器 '
-          },
-      });
+    Lampa.Lang.add({
+      bat_parser: {
+        ru: 'Каталог парсеров',
+        en: 'Parsers catalog',
+        uk: 'Каталог парсерів',
+        zh: '解析器目录'
+      },
+      bat_parser_description: {
+        ru: 'Нажмите для выбора парсера из ',
+        en: 'Click to select a parser from the ',
+        uk: 'Натисніть для вибору парсера з ',
+        zh: '点击从目录中选择解析器 '
+      }
+    });
   }
-  // Об'єкт-модуль для роботи з мовними функціями.
+
   var Lang = {
-      translate: translate
+    translate: translate
   };
 
   /**
-   * Основний масив, що містить інформацію про всі доступні парсери.
-   * Кожен об'єкт представляє один парсер з його унікальними налаштуваннями
+   * ============================
+   * СПИСОК ПАРСЕРІВ (твій)
+   * ============================
+   * ВАЖЛИВО:
+   * - url без http/https (можна додати, код підтримує і так, і так)
+   * - key як рядок
+   * - base унікальний
    */
-  var parsersInfo = [{
-      // Перший парсер: Spawn UA (V1).
-      base: 'spawnum_duckdns_org_59117', // Унікальний ідентифікатор
-      name: 'Spawn UA (V1)', // Назва, що відображається користувачу
+  var parsersInfo = [
+    {
+      base: 'spawnum_duckdns_org_59117',
+      name: 'SpawnUA',
       settings: {
-          url: 'spawnum.duckdns.org:59117', // Адреса сервера парсера
-          key: '2', // Ключ API
-          parser_torrent_type: 'jackett' // Тип парсера
+        url: 'spawnum.duckdns.org:59117',
+        key: '2',
+        parser_torrent_type: 'jackett'
       }
-    }, 
+    },
     {
       base: 'lampa_ua',
       name: 'LampaUA',
@@ -72,7 +75,7 @@
     },
     {
       base: 'maxvol_pro',
-      name: 'Maxvol.Pro',
+      name: 'Maxvol.pro',
       settings: {
         url: 'jac.maxvol.pro',
         key: '1',
@@ -90,7 +93,7 @@
     },
     {
       base: 'spawnpp_ua',
-      name: 'SpawnPP-UA',
+      name: 'Spawnpp-UA',
       settings: {
         url: 'spawn.pp.ua:59117',
         key: '2',
@@ -99,239 +102,339 @@
     }
   ];
 
-  // Визначаємо протокол (http або https) залежно від поточного протоколу сторінки.
+  /**
+   * Протокол для запитів (http або https) залежно від сторінки.
+   * ВАЖЛИВО: якщо Lampa відкрито по https, а парсер доступний лише по http,
+   * health-check може показувати "червоний".
+   */
   var proto = location.protocol === "https:" ? 'https://' : 'http://';
-  // Об'єкт для кешування результатів перевірки доступності парсерів.
-  var cache = {};
-  // Змінна для зберігання ідентифікатора інтервалу періодичної перевірки.
-  var checkInterval;
 
   /**
-   * Функція для перевірки статусу (доступності) парсерів.
-   * @param {string} type - Тип перевірки (в даному випадку завжди 'parser').
+   * Кеш для health-check (30 секунд) і для deep-search (15 хв).
+   * Структура:
+   * - cache[myLink] = { color, timestamp }
+   * - cache['search_' + base] = timestamp
+   */
+  var cache = {};
+
+  /**
+   * ===================================================
+   * HEALTH-CHECK: перевірка доступності парсерів (Jackett/Prowlarr)
+   * ===================================================
+   * Логіка:
+   * - Для кожного парсера робимо GET на health endpoint
+   * - Якщо HTTP 200 => зелений
+   * - Якщо інше / помилка => червоний
+   * - Результат фарбує елементи в списку вибору (коли список відкритий)
+   * - Кеш 30 секунд
    */
   function checkAlive(type) {
-    if (type === 'parser') {
-      // Створюємо масив запитів до кожного парсера за допомогою .map()
-      var requests = parsersInfo.map(function (parser) {
-        var protocol = parser.base === "bat_jackett" || parser.base === "bat_prowlarr" ? "" : proto;
-        // Формуємо кінцеву точку (endpoint) для API запиту залежно від типу парсера.
-        // Цей блок логіки взято з вашого оригінального файлу.
-        var endPoint = parser.settings.parser_torrent_type === 'prowlarr' ?
-            '/api/v1/health?apikey=' + parser.settings.key :
-            "/api/v2.0/indexers/status:healthy/results?apikey=".concat(
-                parser.settings.url === 'batmen.my.to:9199'
-                    ? '9'
-                    : parser.settings.url === '12.307407.xyz'
-                        ? '12307407'
-                        : parser.settings.url === 'spawnum.duckdns.org:59117'
-                            ? '2'
-                            : parser.base === 'bat_jackett'
-                                ? parser.settings.key
-                                : ''
-            );
-        // Повне посилання для AJAX-запиту.
-        var myLink = protocol + parser.settings.url + endPoint;
+    if (type !== 'parser') return;
 
-        // Знаходимо елемент в інтерфейсі Lampa, що відповідає парсеру, за його назвою.
-        var mySelector = $('div.selectbox-item__title').filter(function () {
-            return $(this).text().trim() === parser.name;
+    var requests = parsersInfo.map(function (parser) {
+      // Підтримка url як з протоколом (http/https), так і без нього
+      var hasProtocol = /^https?:\/\//i.test(parser.settings.url);
+      var protocol = hasProtocol ? '' : proto;
+
+      // Універсально: ключ береться з settings.key (твій актуальний список)
+      var apiKey = (parser.settings.key || '');
+
+      // Health endpoint
+      var endPoint = (parser.settings.parser_torrent_type === 'prowlarr')
+        ? '/api/v1/health?apikey=' + encodeURIComponent(apiKey)
+        : '/api/v2.0/indexers/status:healthy/results?apikey=' + encodeURIComponent(apiKey);
+
+      var myLink = protocol + parser.settings.url + endPoint;
+
+      // Знаходимо пункт у випадаючому списку за назвою (важливо, щоб name збігався з UI)
+      var mySelector = $('div.selectbox-item__title').filter(function () {
+        return $(this).text().trim() === parser.name;
+      });
+
+      // Кеш 30 секунд
+      if (cache[myLink] && cache[myLink].timestamp > Date.now() - 30000) {
+        $(mySelector).css('color', cache[myLink].color);
+        return Promise.resolve();
+      }
+
+      return new Promise(function (resolve) {
+        $.ajax({
+          url: myLink,
+          method: 'GET',
+          timeout: 5000,
+          success: function (response, textStatus, xhr) {
+            var color = (xhr && xhr.status === 200) ? '1aff00' : 'ff2e36';
+            $(mySelector).css('color', color);
+
+            cache[myLink] = {
+              color: color,
+              timestamp: Date.now()
+            };
+
+            resolve();
+          },
+          error: function () {
+            $(mySelector).css('color', 'ff2e36');
+
+            cache[myLink] = {
+              color: 'ff2e36',
+              timestamp: Date.now()
+            };
+
+            resolve();
+          }
+        });
+      });
+    });
+
+    return Promise.all(requests).then(function () {
+      console.log('All health-check requests completed');
+    });
+  }
+
+  /**
+   * ===================================================
+   * DEEP SEARCH CHECK: перевірка "чи доступний пошук торентів"
+   * ===================================================
+   * Логіка:
+   * - Перевіряємо ТІЛЬКИ обраний зараз парсер
+   * - Робимо один запит до /api/v2.0/indexers/all/results
+   * - Якщо Results.length > 0 => зелений
+   * - Якщо Results порожній => жовтий (API живий, але конкретно тут може не знайти)
+   * - Кеш 15 хв (щоб не було банів)
+   *
+   * УВАГА: ця перевірка може створювати навантаження на індексери/трекери,
+   * тому вона запускається ТІЛЬКИ по кнопці.
+   */
+  function deepSearchCheck() {
+    var selectedId = Lampa.Storage.get("bat_url_two");
+    var parser = parsersInfo.find(function (p) {
+      return p.base === selectedId;
+    });
+
+    if (!parser) return;
+
+    // кеш 15 хв
+    var deepKey = 'search_' + parser.base;
+    if (cache[deepKey] && Date.now() - cache[deepKey] < 900000) {
+      console.log('Deep search check from cache');
+      return;
+    }
+
+    // підтримка url з протоколом або без
+    var hasProtocol = /^https?:\/\//i.test(parser.settings.url);
+    var protocol = hasProtocol ? '' : proto;
+
+    // "безпечні" запити (не “test/asdf”)
+    var SAFE_QUERIES = ['1080p', 'bluray', 'x264', '2022'];
+    var query = SAFE_QUERIES[Math.floor(Math.random() * SAFE_QUERIES.length)];
+
+    var url =
+      protocol + parser.settings.url +
+      '/api/v2.0/indexers/all/results' +
+      '?apikey=' + encodeURIComponent(parser.settings.key || '') +
+      '&Query=' + encodeURIComponent(query) +
+      '&Category=2000';
+
+    console.log('Deep search check:', url);
+
+    $.ajax({
+      url: url,
+      method: 'GET',
+      timeout: 6000,
+      success: function (data) {
+        // Фарбуємо саме вибраний пункт у списку (коли список відкритий)
+        var selector = $('div.selectbox-item__title').filter(function () {
+          return $(this).text().trim() === parser.name;
         });
 
-        // Перевіряємо, чи є в кеші свіжий результат (не старіший за 30 секунд).
-        if (cache[myLink] && cache[myLink].timestamp > Date.now() - 30000) {
-            console.log('Using cached response for', myLink, cache[myLink]);
-            var color = cache[myLink].color;
-            // Встановлюємо колір тексту залежно від кешованого результату.
-            $(mySelector).css('color', color);
-            return Promise.resolve(); // Повертаємо вирішений проміс, щоб не робити новий запит.
+        if (data && data.Results && data.Results.length) {
+          $(selector).css('color', '1aff00'); // зелений
+        } else {
+          $(selector).css('color', 'f3d900'); // жовтий
         }
 
-        // Повертаємо новий Promise, який виконає AJAX-запит.
-        return new Promise(function (resolve) {
-            $.ajax({
-                url: myLink,
-                method: 'GET',
-                timeout: 5000, // Таймаут запиту - 5 секунд.
-                // Функція, що виконується при успішному запиті.
-                success: function success(response, textStatus, xhr) {
-                    var color;
-                    if (xhr.status === 200) {
-                        color = '1aff00'; // Зелений колір
-                    } else if (xhr.status === 401) {
-                        color = 'ff2e36'; // Червоний колір
-                    } else {
-                        color = 'ff2e36'; // Червоний колір
-                    }
-                    $(mySelector).css('color', color);
+        cache[deepKey] = Date.now();
+      },
+      error: function () {
+        alert('Помилка перевірки пошуку');
+      }
+    });
+  }
 
-                    // Якщо колір було визначено, кешуємо результат.
-                    if (color) {
-                        cache[myLink] = {
-                            color: color,
-                            timestamp: Date.now()
-                        };
-                    }
-                },
-                // Функція, що виконується при помилці запиту.
-                error: function error() {
-                    $(mySelector).css('color', 'ff2e36'); // Червоний колір
-                },
-                // Функція, що виконується завжди після success або error.
-                complete: function complete() {
-                    return resolve(); // Вирішуємо проміс, сигналізуючи про завершення запиту.
-                }
-            });
-        });
-      });
-      // Promise.all чекає, поки всі запити в масиві `requests` завершаться.
-      return Promise.all(requests).then(function () {
-          console.log('All requests completed');
-      });
+  /**
+   * Подія Lampa: коли відкривається випадаючий список select,
+   * робимо "першу" перевірку (як ти хотів).
+   */
+  Lampa.Controller.listener.follow('toggle', function (e) {
+    if (e.name === 'select') {
+      checkAlive("parser");
+    }
+  });
+
+  /**
+   * Застосувати вибраний парсер у глобальні налаштування Lampa
+   */
+  function changeParser() {
+    var selectedBase = Lampa.Storage.get("bat_url_two");
+    var selectedParser = parsersInfo.find(function (parser) {
+      return parser.base === selectedBase;
+    });
+
+    if (selectedParser) {
+      var settings = selectedParser.settings;
+      Lampa.Storage.set(
+        settings.parser_torrent_type === 'prowlarr' ? "prowlarr_url" : "jackett_url",
+        settings.url
+      );
+      Lampa.Storage.set(
+        settings.parser_torrent_type === 'prowlarr' ? "prowlarr_key" : "jackett_key",
+        settings.key
+      );
+      Lampa.Storage.set("parser_torrent_type", settings.parser_torrent_type);
+    } else {
+      console.warn("Selected parser not found in parsersInfo");
     }
   }
 
   /**
-   * Запускає періодичну перевірку доступності парсерів кожні 30 секунд.
+   * Значення для select: { base: name }
    */
-  function startPeriodicCheck() {
-      checkAlive("parser"); // Перший запуск одразу.
-      checkInterval = setInterval(function() {
-          checkAlive("parser");
-      }, 30000); // Повторювати кожні 30000 мс.
-  }
-
-  /**
-   * Зупиняє періодичну перевірку.
-   */
-  function stopPeriodicCheck() {
-      if (checkInterval) {
-          clearInterval(checkInterval);
-      }
-  }
-
-  // Слухач подій Lampa. Спрацьовує, коли відкривається випадаючий список.
-  Lampa.Controller.listener.follow('toggle', function (e) {
-      if (e.name === 'select') {
-          // Запускаємо перевірку парсерів, коли користувач відкриває список вибору.
-          checkAlive("parser");
-      }
-  });
-
-  /**
-   * Змінює налаштування парсера в сховищі Lampa на основі вибору користувача.
-   */
-  function changeParser() {
-      // Отримуємо ідентифікатор вибраного парсера зі сховища.
-      var jackettUrlTwo = Lampa.Storage.get("bat_url_two");
-      // Знаходимо об'єкт парсера в масиві `parsersInfo` за його ідентифікатором.
-      var selectedParser = parsersInfo.find(function (parser) {
-          return parser.base === jackettUrlTwo;
-      });
-      // Якщо парсер знайдено, оновлюємо глобальні налаштування Lampa.
-      if (selectedParser) {
-          var settings = selectedParser.settings;
-          Lampa.Storage.set(settings.parser_torrent_type === 'prowlarr' ? "prowlarr_url" : "jackett_url", settings.url);
-          Lampa.Storage.set(settings.parser_torrent_type === 'prowlarr' ? "prowlarr_key" : "jackett_key", settings.key);
-          Lampa.Storage.set("parser_torrent_type", settings.parser_torrent_type);
-      } else {
-          console.warn("Jackett URL not found in parsersInfo");
-      }
-  }
-
-  // Готуємо об'єкт `s_values` для випадаючого списку в налаштуваннях.
-  // Використовуємо .reduce() для перетворення масиву `parsersInfo` в об'єкт формату {id: name}.
-  var s_values = parsersInfo.reduce(function (prev, _ref) {
-      var base = _ref.base,
-          name = _ref.name;
-      prev[base] = name;
-      return prev;
+  var s_values = parsersInfo.reduce(function (prev, parser) {
+    prev[parser.base] = parser.name;
+    return prev;
   }, {
-      no_parser: 'Обрати парсер' // Додаємо опцію за замовчуванням.
+    no_parser: 'Обрати парсер'
   });
 
   /**
-   * Створює та додає елемент налаштувань для вибору парсера в інтерфейс Lampa.
+   * ===================================================
+   * UI: Налаштування → Парсер
+   * - Select "Каталог парсерів"
+   * - Кнопка #1 "Перевірити доступність парсерів"
+   * - Кнопка #2 "Перевірити доступність пошуку"
+   * ===================================================
+   *
+   * Кнопки розміщуються ПІСЛЯ select на сторінці налаштувань.
    */
   function parserSetting() {
-      Lampa.SettingsApi.addParam({
-          component: 'parser', // Компонент, до якого належить налаштування.
-          param: {
-              name: 'bat_url_two', // Назва параметра в сховищі.
-              type: 'select', // Тип елемента - випадаючий список.
-              values: s_values, // Значення для списку.
-              "default": 'no_parser' // Значення за замовчуванням.
-          },
-          // Оригінальний блок field з HTML-розміткою. ЗАЛИШЕНО БЕЗ ЗМІН.
-          field: {
-              name: "<div class=\"settings-folder\" style=\"padding:0!important\"><div style=\"font-size:1.0em\">".concat(Lampa.Lang.translate('bat_parser'), "</div></div>"),
-              description: "".concat(Lampa.Lang.translate('bat_parser_description'), " ").concat(parsersInfo.length)
-          },
-          // Функція, що викликається при зміні значення.
-          onChange: function onChange(value) {
-              changeParser(); // Оновлюємо налаштування.
-              Lampa.Settings.update(); // Оновлюємо інтерфейс налаштувань.
-          },
-          // Оригінальна функція onRender.
-          // Саме вона відповідає за зміну кольору та позиції.
-          onRender: function onRender(item) {
-              $('.settings-param__value p.parserName').remove();
-              changeParser();
-              setTimeout(function () {
-                  $('div[data-children="parser"]').on('hover:enter', function () {
-                      Lampa.Settings.update();
-                  });
-                  if (Lampa.Storage.field('parser_use')) {
-                      item.show();
-                      $('.settings-param__name', item).css('color', 'f3d900');
-                      $('div[data-name="bat_url_two"]').insertAfter('div[data-children="parser"]');
-                  } else {
-                      item.hide();
-                  }
-              });
+    // 1) Select (каталог парсерів)
+    Lampa.SettingsApi.addParam({
+      component: 'parser',
+      param: {
+        name: 'bat_url_two',
+        type: 'select',
+        values: s_values,
+        "default": 'no_parser'
+      },
+      field: {
+        name:
+          "<div class=\"settings-folder\" style=\"padding:0!important\">" +
+            "<div style=\"font-size:1.0em\">" + Lampa.Lang.translate('bat_parser') + "</div>" +
+          "</div>",
+        description: Lampa.Lang.translate('bat_parser_description') + " " + parsersInfo.length
+      },
+      onChange: function () {
+        changeParser();
+        Lampa.Settings.update();
+      },
+      onRender: function (item) {
+        $('.settings-param__value p.parserName').remove();
+        changeParser();
+
+        setTimeout(function () {
+          if (Lampa.Storage.field('parser_use')) {
+            item.show();
+            $('.settings-param__name', item).css('color', 'f3d900');
+            $('div[data-name="bat_url_two"]').insertAfter('div[data-children="parser"]');
+          } else {
+            item.hide();
           }
-      });
+        });
+      }
+    });
+
+    // 2) Кнопка №1 – health-check всіх парсерів
+    Lampa.SettingsApi.addParam({
+      component: 'parser',
+      param: {
+        name: 'bat_check_parsers',
+        type: 'button'
+      },
+      field: {
+        name: 'Перевірити доступність парсерів',
+        description: 'Виконує перевірку доступності парсерів'
+      },
+      onChange: function () {
+        checkAlive("parser");
+      },
+      onRender: function (item) {
+        setTimeout(function () {
+          // вставляємо кнопку одразу після select
+          var select = $('div[data-name="bat_url_two"]').first();
+          if (select.length) item.insertAfter(select);
+
+          if (Lampa.Storage.field('parser_use')) item.show();
+          else item.hide();
+        });
+      }
+    });
+
+    // 3) Кнопка №2 – deep-search для обраного парсера
+    Lampa.SettingsApi.addParam({
+      component: 'parser',
+      param: {
+        name: 'bat_check_search',
+        type: 'button'
+      },
+      field: {
+        name: 'Перевірити доступність пошуку',
+        description: 'Виконує перевірку доступності пошуку торентів'
+      },
+      onChange: function () {
+        deepSearchCheck();
+      },
+      onRender: function (item) {
+        setTimeout(function () {
+          // вставляємо кнопку після першої кнопки
+          var btn1 = $('div[data-name="bat_check_parsers"]').first();
+          if (btn1.length) item.insertAfter(btn1);
+
+          if (Lampa.Storage.field('parser_use')) item.show();
+          else item.hide();
+        });
+      }
+    });
   }
 
-  // Об'єкт-модуль для функцій, пов'язаних з парсером.
   var Parser = {
-      parserSetting: parserSetting
+    parserSetting: parserSetting
   };
 
   Lampa.Platform.tv();
 
   /**
-   * Головна функція для ініціалізації плагіна.
+   * Ініціалізація плагіна
+   * ВАЖЛИВО: ми НЕ запускаємо setInterval — лише:
+   * - автоматична перевірка при відкритті select
+   * - ручні перевірки по кнопках
    */
   function add() {
-      Lang.translate(); // Додаємо переклади.
-      Parser.parserSetting(); // Додаємо налаштування в інтерфейс.
-      startPeriodicCheck(); // Запускаємо періодичну перевірку.
+    Lang.translate();
+    Parser.parserSetting();
   }
 
-  /**
-   * Функція-завантажувач. Перевіряє, чи готова програма Lampa, і запускає плагін.
-   */
   function startPlugin() {
-      // Встановлюємо прапорець, що плагін завантажено, щоб уникнути повторного запуску.
-      window.plugin_batpublictorr_ready = true;
-      // Якщо Lampa вже готова, запускаємо `add()`.
-      if (window.appready) add();
-      // Інакше, чекаємо на подію 'ready' від Lampa.
-      else {
-          Lampa.Listener.follow('app', function (e) {
-              if (e.type === 'ready') add();
-          });
-      }
+    window.plugin_batpublictorr_ready = true;
+
+    if (window.appready) add();
+    else {
+      Lampa.Listener.follow('app', function (e) {
+        if (e.type === 'ready') add();
+      });
+    }
   }
 
-  // Запускаємо плагін, якщо він ще не був запущений.
   if (!window.plugin_batpublictorr_ready) startPlugin();
-
-  // Додаємо слухача події 'unload' (коли користувач закриває сторінку).
-  // Це потрібно для очищення ресурсів, зокрема, для зупинки інтервалу.
-  window.addEventListener('unload', function() {
-      stopPeriodicCheck();
-  });
 
 })();

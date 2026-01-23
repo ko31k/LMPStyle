@@ -46,6 +46,20 @@
     return small && mobileUA && !isTvDevice();
   }
 
+
+// ======= Layout tweak =======
+// На некоторых ТВ (overscan/масштабирование) гирлянда визуально "проседает" ниже.
+// Сдвиг применяется ТОЛЬКО на TV-устройствах (не на мобильных/ПК).
+// Подберите значение под свой ТВ: -8 ... -28 обычно достаточно.
+var TV_SHIFT_PX = -16;
+
+function tvShiftPx() {
+  // важно: не применять на телефоне/планшете, даже если UA содержит "TV"
+  try { if (isTvDevice() && !isMobileDevice()) return TV_SHIFT_PX; } catch (e) {}
+  return 0;
+}
+
+
   function prefersReduceMotion() {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (e) { return false; }
@@ -418,6 +432,7 @@
     root.id = DOM_ROOT_ID;
     root.className = (TIZEN ? 'is-tizen ' : '') + (MOBILE ? 'is-mobile ' : '') + ('q-' + Q);
     document.body.appendChild(root);
+    root.style.setProperty('--garland-shift', tvShiftPx() + 'px');
 
     var st = document.createElement('style');
     st.id = DOM_STYLE_ID;
@@ -532,7 +547,9 @@
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
         MOBILE = isMobileDevice();
-        root.classList.toggle('is-mobile', MOBILE);
+        root.style.setProperty('--garland-shift', tvShiftPx() + 'px');
+        root.style.setProperty('--garland-shift', tvShiftPx() + 'px');
+      root.classList.toggle('is-mobile', MOBILE);
         render();
         sync();
       }, 120);
@@ -571,6 +588,7 @@
     root.id = CANVAS_ROOT_ID;
     if (MOBILE) root.classList.add('is-mobile');
     document.body.appendChild(root);
+    root.style.setProperty('--garland-shift', tvShiftPx() + 'px');
 
     var st = document.createElement('style');
     st.id = CANVAS_STYLE_ID;
@@ -720,6 +738,7 @@
 
     function setupCanvasSize() {
       MOBILE = isMobileDevice();
+      root.style.setProperty('--garland-shift', tvShiftPx() + 'px');
       root.classList.toggle('is-mobile', MOBILE);
 
       var cap = dprCap();

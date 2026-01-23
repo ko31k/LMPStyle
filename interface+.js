@@ -178,7 +178,7 @@
       uk: 'Оригінальна назва'
     },
     interface_mod_new_en_data_desc: {
-      en: 'Show original (EN) title under the card header',
+      en: 'Show original title under the card header',
       uk: 'Показувати оригінальну назву в заголовку картки'
     },
 
@@ -188,7 +188,7 @@
       uk: 'Всі кнопки в картці'
     },
     interface_mod_new_all_buttons_desc: {
-      en: 'Show all buttons in the card. Order: Online → Torrents → Trailers',
+      en: 'Show all buttons in the card.',
       uk: 'Показує всі кнопки у картці (Потрібне перезавантаження)'
     },
 
@@ -213,7 +213,7 @@
     // ТОРЕНТИ (з torrents+mod)
     torr_mod_frame: {
       uk: 'Кольорова рамка блоку торентів',
-      en: 'Torrent frame by seeders'
+      en: 'Colored torrent frame by seeders'
     },
     torr_mod_frame_desc: {
       uk: 'Підсвічувати блоки торентів кольоровою рамкою залежно від кількості сідерів',
@@ -240,7 +240,6 @@
   /* ============================================================
    * НАЛАШТУВАННЯ
    * ============================================================ */
-
   /**
    * Отримує налаштування оригінальної назви (зі зворотною сумісністю)
    */
@@ -290,7 +289,6 @@
   /* ============================================================
    * ФОЛБЕК-CSS + ПРІОРИТЕТ СТИЛІВ
    * ============================================================ */
-
   /**
    * Додає CSS для "відкату" стилів (якщо кольорові статуси/рейтинги вимкнені)
    */
@@ -449,7 +447,6 @@
   /* ============================================================
    * НАЛАШТУВАННЯ UI
    * ============================================================ */
-
   /**
    * Ініціалізує компонент налаштувань "Інтерфейс +"
    */
@@ -671,7 +668,7 @@
 
     /**
      * Закриває випадаючі списки і оновлює налаштування
-     * ВИКЛИКАЄ Lampa.Settings.update() - ПРИЧИНА "СТРИБКІВ"
+     * ВИКЛИКАЄ Lampa.Settings.update()
      */
     function closeOpenSelects() {
       setTimeout(function () {
@@ -692,7 +689,7 @@
         // Реагуємо тільки на зміни *наших* налаштувань
         if (typeof key === 'string' && key.indexOf('interface_mod_new_') === 0) {
           
-          // [!!!] OPTIMIZATION: Update only the changed setting in the local 'settings' object
+          // [!!!] Update only the changed setting in the local 'settings' object
           // and call the specific function for that setting.
           // This avoids re-reading all 13 settings from storage on every change.
 
@@ -763,21 +760,6 @@
               settings.tor_seeds = getBool(key, true);
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
               break;
-              
-              /*case 'interface_mod_new_tor_frame':
-              settings.tor_frame = getBool(key, true);
-              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
-              break;
-              
-            case 'interface_mod_new_tor_bitrate':
-              settings.tor_bitrate = getBool(key, true);
-              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
-              break;
-              
-            case 'interface_mod_new_tor_seeds':
-              settings.tor_seeds = getBool(key, true);
-              if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
-              break;*/
           }
         }
         return res;
@@ -788,7 +770,6 @@
   /* ============================================================
    * ІНФО-ПАНЕЛЬ (4 ряди + кольорові жанри)
    * ============================================================ */
-
   /**
    * Створює і наповнює нову інфо-панель
    */
@@ -797,7 +778,7 @@
       display: 'flex',
       'flex-direction': 'column',
       width: '100%',
-      gap: '0em', // '0em'.replace('ем','em') - дивний хак, замінив на '0em'
+      gap: '0em', // '0em'.replace('ем','em') - замінив на '0em'
       margin: '-1.0em 0 0.2em 0.45em'
     });
 
@@ -1025,7 +1006,6 @@
   /* ============================================================
    * КОЛЬОРОВІ РЕЙТИНГИ
    * ============================================================ */
-
   /**
    * Застосовує кольори до всіх видимих рейтингів
    */
@@ -1097,7 +1077,6 @@
   /* ============================================================
    * БАЗА СТИЛІВ ДЛЯ СТАТУСІВ/PG
    * ============================================================ */
-
   /**
    * Вмикає/вимикає базові стилі для плашок СТАТУСУ
    */
@@ -1383,24 +1362,6 @@
     return '';
    }
   
-  /*function ageCategoryFor(text) {
-    for (var k in __ageGroups) {
-      if (__ageGroups[k].some(function (mark) {
-          return text.indexOf(mark) !== -1;
-        })) return k;
-    }
-    var m = text.match(/(^|\D)(\d{1,2})\s*\+(?=\D|$)/);
-    if (m) {
-      var n = parseInt(m[2], 10);
-      if (n <= 3) return 'kids';
-      if (n <= 7) return 'children';
-      if (n <= 14) return 'teens';
-      if (n <= 17) return 'almostAdult';
-      return 'adult';
-    }
-    return '';
-  }*/
-
   /**
    * Застосовує кольори до вікових рейтингів (PG)
    */
@@ -1539,7 +1500,6 @@
   /* ============================================================
    * ОРИГІНАЛЬНА НАЗВА (EN)
    * ============================================================ */
-
   /**
    * Додає оригінальну назву в заголовок картки
    */
@@ -1571,7 +1531,6 @@
   /* ============================================================
    * КНОПКИ (Всі / Іконки без тексту)
    * ============================================================ */
-
   /**
    * Перевіряє, чи є кнопка кнопкою "Play" (щоб уникнути дублювання)
    */
@@ -1950,7 +1909,7 @@
     });
   }
 
-  /* BEGIN torrents+mod (Verbatim) */
+  /* BEGIN my torrents mod (Verbatim) */
   (function () {
     try {
       (function () {
@@ -2073,7 +2032,6 @@ const STYLES = {
             'text-shadow': '0 0 5px rgba(119, 205, 178, 0.4)',
             'box-shadow': '0 0 8px rgba(119, 205, 178, 0.2)'
           },
-
           /* БІТРЕЙТ: Кольорова диференціація */
           '.torrent-item__bitrate span.low-bitrate': { 
             'color': '#fbcb79', 
@@ -2096,7 +2054,6 @@ const STYLES = {
             'text-shadow': '0 0 5px rgba(255, 150, 150, 0.4)',
             'box-shadow': '0 0 8px rgba(255, 150, 150, 0.2)'
           },
-
           /* РАМКИ КАРТОК (interface_mod_new_tor_frame) */
           '.torrent-item.low-seeds': { 
             'border': '2px solid rgba(255, 150, 150, 0.45)', 
@@ -2113,21 +2070,20 @@ const STYLES = {
             'border-radius': '6px',
             'box-sizing': 'border-box'
           },
-
           /* ТРЕКЕРИ */
           '.torrent-item__tracker.utopia': { 'color': '#9b59b6', 'font-weight': 'bold' },
           '.torrent-item__tracker.toloka': { 'color': '#3498db', 'font-weight': 'bold' },
           '.torrent-item__tracker.mazepa': { 'color': '#C9A0DC', 'font-weight': 'bold' }
         };
 
-        // ===================== ІНІЦІАЛІЗАЦІЯ СТИЛІВ =====================
+        // ===================== ІНІЦІАЛІЗАЦІЯ СТИЛІВ ====================
         let style = document.createElement('style');
         style.innerHTML = FLAG_STYLES + '\n' + Object.entries(STYLES).map(([selector, props]) => {
           return `${selector} { ${Object.entries(props).map(([prop, val]) => `${prop}: ${val} !important`).join('; ')} }`;
         }).join('\n');
         document.head.appendChild(style);
 
-        // ===================== СИСТЕМА ЗАМІНИ ТЕКСТУ ДЛЯ ФІЛЬТРІВ =====================
+        // ============= СИСТЕМА ЗАМІНИ ТЕКСТУ ДЛЯ ФІЛЬТРІВ =============
         const UKRAINIAN_STUDIOS = [
           'DniproFilm', 'Дніпрофільм', 'Цікава Ідея', 'Колодій Трейлерів',
           'UaFlix', 'BaibaKo', 'В одне рило', 'Так Треба Продакшн',
@@ -2193,7 +2149,7 @@ const STYLES = {
           });
         }
 
-        // ===================== ОПТИМІЗОВАНА СИСТЕМА ЗАМІНИ ТЕКСТУ =====================
+        // =============== ОПТИМІЗОВАНА СИСТЕМА ЗАМІНИ ТЕКСТУ ===============
         function replaceTexts() {
           const safeContainers = [
             '.online-prestige-watched__body',
@@ -2267,7 +2223,7 @@ const STYLES = {
           }
         }
 
-        // ===================== СИСТЕМА ОНОВЛЕННЯ СТИЛІВ ТОРЕНТІВ =====================
+        // ================= СИСТЕМА ОНОВЛЕННЯ СТИЛІВ ТОРЕНТІВ =================
         function updateTorrentStyles() {
           const visibleElements = {
             seeds: document.querySelectorAll('.torrent-item__seeds span:not([style*="display: none"])'),
@@ -2335,7 +2291,7 @@ const STYLES = {
           }
         }
 
-        // ===================== ОПТИМІЗОВАНА СИСТЕМА СПОСТЕРЕЖЕННЯ =====================
+        // ================= ОПТИМІЗОВАНА СИСТЕМА СПОСТЕРЕЖЕННЯ =================
         let updateTimeout = null;
         const observer = new MutationObserver(mutations => {
           const hasImportantChanges = mutations.some(mutation => {
@@ -2366,10 +2322,10 @@ const STYLES = {
       } catch (_e) {}
     }
   })();
-  /* END torrents+mod ==== */
+  /* END my torrents mod */
 
-  /* Torrent toggles overrides */
-  // Цей блок динамічно вмикає/вимикає стилі з torrents+mod
+  /* torrent toggles overrides */
+  // Цей блок динамічно вмикає/вимикає стилі з torrents mod
   // на основі налаштувань з "Інтерфейс +"
   (function () {
     // Власна реалізація getBool, щоб бути незалежним
@@ -2407,7 +2363,7 @@ function apply() {
         css += '.torrent-item__seeds span.low-seeds, .torrent-item__seeds span.medium-seeds, .torrent-item__seeds span.high-seeds { color: inherit !important; background: none !important; border: none !important; font-weight: inherit !important; }\n';
       }
       
-      // Якщо вимкнено ЗАГАЛЬНІ РАМКИ: прибираємо бордер з усього рядка торрента
+      // Якщо вимкнено ЗАГАЛЬНІ РАМКИ: прибираємо бордер з усього рядка торента
       if (!ef) {
         css += '.torrent-item.low-seeds, .torrent-item.medium-seeds, .torrent-item.high-seeds { border: none !important; box-shadow: none !important; }\n';
       }
@@ -2420,9 +2376,8 @@ function apply() {
     setTimeout(apply, 0); // Перший запуск
   })();
 
-
 /* ============================================================
- * YEAR PILL + ALT EPISODE CARDS — STABLE FINAL v2 (NO MENU REORDER)
+ * YEAR PILL + ALT EPISODE CARDS (NO MENU REORDER)
  * - year pill styles intact
  * - hide year ONLY on processed list/episode cards (not in full view)
  * - strip year from titles only on processed cards
@@ -2431,7 +2386,7 @@ function apply() {
   // ---------- i18n ----------
   Lampa.Lang.add({
     ifx_year_on_cards:         { uk:'Показувати рік на картці', en:'Show year on card' },
-    ifx_year_on_cards_desc:    { uk:'Увімкнути/Вimкнути відображення року на постері', en:'Year displayed on the poster only' },
+    ifx_year_on_cards_desc:    { uk:'Увімкнути/Вимкнути відображення року на постері', en:'Year displayed on the poster only' },
 
     ifx_show_rating_on_cards:      { uk:'Показувати рейтинг на картці', en:'Show rating on card' },
     ifx_show_rating_on_cards_desc: { uk:'Увімкнути/Вимкнути стандартний рейтинг на постері',
@@ -2439,8 +2394,6 @@ function apply() {
       
     ifx_alt_badges:      { uk:'Альтернативні мітки', en:'Alternative badges' },
     ifx_alt_badges_desc: { uk:'Мітки "рік" і "рейтинг" у іншому стилі', en:'Year & Rating  alternative style' },
-      
-
     
     ifx_episode_alt_cards:     { uk:'Альтернативні "Найближчі епізоди"', en:'Alternative "Upcoming Episodes"' },
     ifx_episode_alt_cards_desc:{ uk:'Компактний вигляд блоку "Найближчі епізоди"', en:'Compact view for the "Upcoming Episodes" block' },
@@ -2451,16 +2404,11 @@ function apply() {
   
   });
 
-
-
-  
-
-  // ---------- keys (усі дефолт: false) ----------
+  // keys (усі дефолт: false) 
   var KEY_YEAR = 'interface_mod_new_year_on_cards';
   var KEY_ALT  = 'interface_mod_new_episode_alt_cards';
   var KEY_NUM  = 'interface_mod_new_episode_numbers_only';
   var KEY_RATING = 'interface_mod_new_rating_on_cards';
-
   
   var S = {
     year_on:  (Lampa.Storage.get(KEY_YEAR, false)===true || Lampa.Storage.get(KEY_YEAR,'false')==='true'),
@@ -2470,7 +2418,7 @@ function apply() {
   
   };
 
-  // ---------- settings UI (без перестановок) ----------
+  // settings UI (без перестановок)
   (function addSettings(){
     var add = Lampa.SettingsApi.addParam;
     add({ component:'interface_mod_new',
@@ -2489,7 +2437,6 @@ function apply() {
                description: Lampa.Lang.translate('ifx_alt_badges_desc') }
     });
     
-    
     add({ component:'interface_mod_new',
       param:{ name: KEY_ALT, type:'trigger', values:true, default:false },
       field:{ name:Lampa.Lang.translate('ifx_episode_alt_cards'),
@@ -2500,11 +2447,10 @@ function apply() {
       field:{ name:Lampa.Lang.translate('ifx_episode_num_only'),
               description:Lampa.Lang.translate('ifx_episode_num_only_desc') }
     });
-
     
   })();
 
-  // ---------- CSS ----------
+  //  CSS 
 function ensureCss(){
     var id = 'ifx_css_stable_final_v2';
     if (document.getElementById(id)) return;
@@ -2589,7 +2535,6 @@ function ensureCss(){
     document.head.appendChild(st);
 }
 
-
 // Синхронізуємо ТІЛЬКИ кольори з якості (фон/текст).
 // Якщо нічого не знайдено — дефолт як у твоєму прикладі.
 function ifxSyncAltBadgeThemeFromQuality(){
@@ -2625,13 +2570,13 @@ function ensureAltBadgesCss(){
 
   /* ====== КОНСТАНТИ ДЛЯ ШВИДКОГО ТЮНІНГУ ====== */
   var RIGHT_OFFSET  = '.3em';   // правий відступ (як у стандартного рейтингу/року)
-  var BOTTOM_OFFSET = '.50em';  // нижній відступ (залишаємо як у твоєму прикладі)
-  var RADIUS        = '0.3em';  // радіус заокруглення як у Quality+
+  var BOTTOM_OFFSET = '.50em';  // нижній відступ
+  var RADIUS        = '0.3em';  // радіус заокруглення
   var FONT_FAMILY   = "'Roboto Condensed','Arial Narrow',Arial,sans-serif";
   var FONT_WEIGHT   = '700';
-  var FONT_SIZE     = '1.0em';  // РОЗМІР ШРИФТУ (твій приклад)
-  var PAD_Y         = '.19em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
-  var PAD_X         = '.39em';  // ВНУТРІШНІ ВІДСТУПИ (твій приклад)
+  var FONT_SIZE     = '1.0em';  // РОЗМІР ШРИФТУ
+  var PAD_Y         = '.19em';  // ВНУТРІШНІ ВІДСТУПИ
+  var PAD_X         = '.39em';  // ВНУТРІШНІ ВІДСТУПИ
   var UPPERCASE     = true;     // true => uppercase, false => як є
   /* ============================================ */
 
@@ -2694,7 +2639,7 @@ function ensureAltBadgesCss(){
   if (st){ st.textContent = css; }
   else { st = document.createElement('style'); st.id = 'ifx_alt_badges_css'; st.textContent = css; document.head.appendChild(st); }
 }
-  // ---------- ALT episode template ----------
+  // ALT episode template
   var tplEpisodeOriginal = null;
   var tplEpisodeAlt =
     '<div class="card-episode selector layer--visible layer--render">\
@@ -2728,7 +2673,7 @@ function ensureAltBadgesCss(){
     Lampa.Template.add('card_episode', on ? tplEpisodeAlt : (tplEpisodeOriginal || tplEpisodeAlt));
     document.body.classList.toggle('ifx-ep-alt', !!on);
     
-    // [!!!] ВИПРАВЛЕНО (з минулого разу):
+    // [!!!] ВИПРАВЛЕНО:
     // 'ifx-num-only' керується незалежно, базуючись лише на S.num_only
     document.body.classList.toggle('ifx-num-only', S.num_only);
     
@@ -2742,7 +2687,7 @@ function ensureAltBadgesCss(){
   }
 
   // ВАЖЛИВО: спершу з даних, потім — з DOM (щоб не залежати від прихованих .card__age)
-  /* --- ОПТИМІЗАЦІЯ: Кешування року (WeakMap) + ПРАВИЛЬНИЙ рік серіалу --- */
+  /* ОПТИМІЗАЦІЯ: Кешування року (WeakMap) + ПРАВИЛЬНИЙ рік серіалу */
   var __ifx_yearCache = window.__ifx_yearCache || new WeakMap();
   window.__ifx_yearCache = __ifx_yearCache;
 
@@ -2762,7 +2707,7 @@ function ensureAltBadgesCss(){
     if (/^(19|20)\d{2}$/.test(String(y))) return String(y);
 
     // 2) Текстовий рік з .card__age
-    //    (Lampa зазвичай ставить сюди рік СЕРІАЛУ, навіть на картках епізодів)
+    //    (зазвичай ставиться сюди рік СЕРІАЛУ, навіть на картках епізодів)
     var ageTxt = ($root.find('.card__age').first().text() || '').trim();
     var mAge = ageTxt.match(/(19|20)\d{2}/);
     if (mAge) return mAge[0];
@@ -2775,7 +2720,7 @@ function ensureAltBadgesCss(){
       title.match(/(?:[–—·\/-]\s*)((?:19|20)\d{2})\s*$/);
     if (mTitle) return mTitle[1];
     
-    // МИ ПРИБРАЛИ ПОШУК .full-episode__date, оскільки він дає рік ЕПІЗОДУ.
+    // ПРИБРАЛИ ПОШУК .full-episode__date, оскільки він дає рік ЕПІЗОДУ.
 
     return '';
   }
@@ -2799,7 +2744,6 @@ function ensureAltBadgesCss(){
     }
   }
   /* --- Кінець блоку getYear --- */
-
 
   function ensureStack($anchor){
     var $stack = $anchor.children('.ifx-corner-stack');
@@ -2885,17 +2829,15 @@ if ($vote.length){
   }
 }
 
-  
+    function applyEpisodeCard($ep){
+      var $full = $ep.find('.full-episode').first();
+        if (!$full.length) return;
 
-  function applyEpisodeCard($ep){
-    var $full = $ep.find('.full-episode').first();
-    if (!$full.length) return;
+      var $stack = ensureStack($full);
 
-    var $stack = ensureStack($full);
-
-    if (!$stack.children('.ifx-year-pill').length){
-      var y = getYear($ep);
-      if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
+      if (!$stack.children('.ifx-year-pill').length){
+        var y = getYear($ep);
+          if (y) $('<div class="ifx-pill ifx-year-pill"></div>').text(y).appendTo($stack);
     }
 
     // ЛОКАЛЬНО ховаємо текстові роки й підчищаємо назву лише для цієї картки епізоду
@@ -2930,33 +2872,11 @@ function injectAll($scope){
   applyTitleYearHide($scope);
 }   
   
-  /*function injectAll($scope){
-    $scope = $scope || $(document.body);
-
-    if (S.year_on){
-      // Списки тайтлів (не повні картки)
-      $scope.find('.card').each(function(){
-        var $c = $(this);
-        if ($c.closest('.full-start, .full-start-new, .full, .details').length) return;
-        applyListCard($c);
-      });
-      // Епізоди (alt і стандарт)
-      $scope.find('.card-episode').each(function(){ applyEpisodeCard($(this)); });
-    } else {
-      // якщо вимкнено — прибираємо локальні класи
-      $scope.find('.card.ifx-hide-age').removeClass('ifx-hide-age');
-      $scope.find('.card-episode .full-episode.ifx-hide-age').removeClass('ifx-hide-age');
-    }
-
-    applyNumberOnly($scope);
-    applyTitleYearHide($scope);
-  }*/
-
   // ---------- «лише номер серії» (та ALT) ----------
   function applyNumberOnly($scope){
     $scope = $scope || $(document.body);
     
-    // [!!!] ВИПРАВЛЕНО (з минулого разу):
+    // [!!!] ВИПРАВЛЕНО:
     // Тепер 'force' залежить ТІЛЬКИ від S.num_only
     var force = S.num_only;
 
@@ -3023,7 +2943,7 @@ function injectAll($scope){
           S.alt_ep = (v===true || v==='true' || Lampa.Storage.get(KEY_ALT,'false')==='true');
           setEpisodeAlt(S.alt_ep);
           
-          // [!!!] ВИПРАВЛЕНО (з минулого разу):
+          // [!!!] ВИПРАВЛЕНО:
           // Рядок document.body.classList.toggle('ifx-num-only', S.alt_ep || S.num_only);
           // ВИДАЛЕНО, оскільки setEpisodeAlt() тепер робить це коректно.
           
@@ -3032,7 +2952,7 @@ function injectAll($scope){
         if (k===KEY_NUM){
           S.num_only = (v===true || v==='true' || Lampa.Storage.get(KEY_NUM,'false')==='true');
 
-          // [!!!] ВИПРАВЛЕНО (з минулого разу):
+          // [!!!] ВИПРАВЛЕНО:
           // Тепер логіка незалежна:
           document.body.classList.toggle('ifx-num-only', S.num_only);
           
@@ -3087,9 +3007,6 @@ function injectAll($scope){
   }
   if (window.appready) boot();
   else Lampa.Listener.follow('app', function(e){ if (e.type==='ready') boot(); });
-})(); 
+})();
   
-
-  
-
 })();

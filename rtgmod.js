@@ -542,7 +542,6 @@
     /* щоб рамка не “липла” до контенту і не ламала верстку */
     "body.lmp-enh--rate-border .full-start-new__rate-line, " +
     "body.lmp-enh--rate-border .full-start__rate-line{" +
-    "  gap: 0.35em;" +
     "}"
     "</style>";
 

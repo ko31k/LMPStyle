@@ -537,7 +537,6 @@
     "body.lmp-enh--rate-border .full-start__rate{" +
     "  border: 1px solid rgba(255, 255, 255, 0.45);" +
     "  border-radius: 0.3em;" +
-    "  padding: 0.18em 0.45em;" +
     "  box-sizing: border-box;" +
     "}" +
     /* щоб рамка не “липла” до контенту і не ламала верстку */

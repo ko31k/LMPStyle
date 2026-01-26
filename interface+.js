@@ -44,6 +44,53 @@
     return v === true || v === 'true' || v === 1 || v === '1';
   }
 
+
+  /**
+   * Чи увімкнений монохромний режим (наш тумблер або клас від іншого плагіна)
+   */
+  function isMonoEnabled() {
+    try {
+      // 1) Наш тумблер
+      if (getBool('interface_mod_new_mono_mode', false)) return true;
+
+      // 2) Якщо інший плагін ставить глобальний клас моно — теж підтримуємо
+      return !!(document.body && document.body.classList.contains('lmp-enh--mono'));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Монохром застосовується ТІЛЬКИ якщо:
+   * - моно увімкнено
+   * - і конкретна опція теж увімкнена (кольорові статуси / PG / інфо-панель)
+   */
+  function isMonoFor(settingKey) {
+    return isMonoEnabled() && getBool(settingKey, false);
+  }
+
+  /**
+   * Єдиний монохромний стиль для бейджів/плашок
+   */
+  function applyMonoBadgeStyle(el) {
+    if (!el || !el.style) return;
+
+    // прибираємо попередні інлайн-кольори/ефекти
+    [
+      'background-color','color','border','border-color','border-width','border-style',
+      'box-shadow','text-shadow'
+    ].forEach(function (p) {
+      try { el.style.removeProperty(p); } catch (e) {}
+    });
+
+    el.style.setProperty('border-width', '1px', 'important');
+    el.style.setProperty('border-style', 'solid', 'important');
+    el.style.setProperty('border-color', 'rgba(255,255,255,.45)', 'important');
+    el.style.setProperty('background-color', 'rgba(255,255,255,.08)', 'important');
+    el.style.setProperty('color', '#fff', 'important');
+  }
+
+  
   /**
    * Розраховує середню тривалість епізоду (в хвилинах)
    * @param {object} movie - Об'єкт movie з Lampa
@@ -150,7 +197,15 @@
       en: 'Colorize age rating',
       uk: 'Підсвічувати віковий рейтинг в повній картці'
     },
-
+    interface_mod_new_mono_mode: {
+      en: 'Monochrome override',
+      uk: 'Монохромний режим'
+    },
+    interface_mod_new_mono_mode_desc: {
+      en: 'Overrides colors for statuses, age rating and the new info panel (only when those options are enabled)',
+      uk: 'Перекриває кольори для статусів, PG та нової інфо-панелі (якщо відповідні опції увімкнені)'
+    },
+   
     interface_mod_new_theme_select_title: {
       en: 'Interface theme',
       uk: 'Тема інтерфейсу'
@@ -258,6 +313,7 @@
     colored_ratings: getBool('interface_mod_new_colored_ratings', false),
     colored_status: getBool('interface_mod_new_colored_status', false),
     colored_age: getBool('interface_mod_new_colored_age', false),
+    mono_mode: getBool('interface_mod_new_mono_mode', false),
     theme: (Lampa.Storage.get('interface_mod_new_theme_select', 'default') || 'default'),
 
     en_data: getOriginalTitleEnabled(),
@@ -521,6 +577,22 @@
     add({
       component: 'interface_mod_new',
       param: {
+        name: 'interface_mod_new_mono_mode',
+        type: 'trigger',
+        values: true,
+        default: false
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_mono_mode'),
+        description: Lampa.Lang.translate('interface_mod_new_mono_mode_desc')
+      }
+    });
+
+
+    
+    add({
+      component: 'interface_mod_new',
+      param: {
         name: 'interface_mod_new_theme_select',
         type: 'select',
         values: {
@@ -718,6 +790,15 @@
               if (settings.colored_age) enableAgeColoring();
               else disableAgeColoring(true);
               break;
+
+            case 'interface_mod_new_mono_mode':
+              settings.mono_mode = getBool(key, false);
+              // Перебудувати інфо-панель (бо кольори там інлайном)
+              rebuildInfoPanelActive();
+              // Перемалювати статуси/PG на відкритій картці, якщо вони увімкнені
+              if (settings.colored_status) applyStatusOnceIn(document);
+              if (settings.colored_age) applyAgeOnceIn(document);
+              break;
               
             case 'interface_mod_new_theme_select':
               settings.theme = (val || 'default'); // Use 'val' directly from arguments
@@ -773,184 +854,213 @@
   /**
    * Створює і наповнює нову інфо-панель
    */
-  function buildInfoPanel(details, movie, isTvShow, originalDetails) {
-    var container = $('<div>').css({
-      display: 'flex',
-      'flex-direction': 'column',
-      width: '100%',
-      gap: '0em', // '0em'.replace('ем','em') - замінив на '0em'
-      margin: '-1.0em 0 0.2em 0.45em'
-    });
+/**
+ * Створює і наповнює нову інфо-панель
+ * + Монохромний оверрайд (перекриває всі кольори бейджів і жанрів),
+ *   але тільки коли:
+ *   - увімкнено "Монохромний режим"
+ *   - і увімкнено "Нова інфо-панель"
+ */
+function buildInfoPanel(details, movie, isTvShow, originalDetails) {
+  var mono = isMonoFor('interface_mod_new_info_panel');
 
-    var row1 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'center', margin: '0 0 0.2em 0' });
-    var row2 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'center', margin: '0 0 0.2em 0' });
-    var row3 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'center', margin: '0 0 0.2em 0' });
-    var row4 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'flex-start', margin: '0 0 0.2em 0' });
+  var container = $('<div>').css({
+    display: 'flex',
+    'flex-direction': 'column',
+    width: '100%',
+    gap: '0em',
+    margin: '-1.0em 0 0.2em 0.45em'
+  });
 
-    var colors = {
-      seasons: { bg: 'rgba(52,152,219,0.8)', text: 'white' },
-      episodes: { bg: 'rgba(46,204,113,0.8)', text: 'white' },
-      duration: { bg: 'rgba(52,152,219,0.8)', text: 'white' },
-      next: { bg: 'rgba(230,126,34,0.9)', text: 'white' },
-      genres: {
-        'Бойовик': { bg: 'rgba(231,76,60,.85)', text: 'white' }, 'Пригоди': { bg: 'rgba(39,174,96,.85)', text: 'white' },
-        'Мультфільм': { bg: 'rgba(155,89,182,.85)', text: 'white' }, 'Комедія': { bg: 'rgba(241,196,15,.9)', text: 'black' },
-        'Кримінал': { bg: 'rgba(88,24,69,.85)', text: 'white' }, 'Документальний': { bg: 'rgba(22,160,133,.85)', text: 'white' },
-        'Драма': { bg: 'rgba(102,51,153,.85)', text: 'white' }, 'Сімейний': { bg: 'rgba(139,195,74,.90)', text: 'white' },
-        'Фентезі': { bg: 'rgba(22,110,116,.85)', text: 'white' }, 'Історія': { bg: 'rgba(121,85,72,.85)', text: 'white' },
-        'Жахи': { bg: 'rgba(155,27,48,.85)', text: 'white' }, 'Музика': { bg: 'rgba(63,81,181,.85)', text: 'white' },
-        'Детектив': { bg: 'rgba(52,73,94,.85)', text: 'white' }, 'Мелодрама': { bg: 'rgba(233,30,99,.85)', text: 'white' },
-        'Фантастика': { bg: 'rgba(41,128,185,.85)', text: 'white' }, 'Трилер': { bg: 'rgba(165,27,11,.90)', text: 'white' },
-        'Військовий': { bg: 'rgba(85,107,47,.85)', text: 'white' }, 'Вестерн': { bg: 'rgba(211,84,0,.85)', text: 'white' },
-        'Бойовик і Пригоди': { bg: 'rgba(231,76,60,.85)', text: 'white' }, 'Дитячий': { bg: 'rgba(0,188,212,.85)', text: 'white' },
-        'Новини': { bg: 'rgba(70,130,180,.85)', text: 'white' }, 'Реаліті-шоу': { bg: 'rgba(230,126,34,.9)', text: 'white' },
-        'НФ і Фентезі': { bg: 'rgba(41,128,185,.85)', text: 'white' }, 'Мильна опера': { bg: 'rgba(233,30,99,.85)', text: 'white' },
-        'Ток-шоу': { bg: 'rgba(241,196,15,.9)', text: 'black' }, 'Війна і Політика': { bg: 'rgba(96,125,139,.85)', text: 'white' },
-        'Екшн і Пригоди': { bg: 'rgba(231,76,60,.85)', text: 'white' },
-        'Екшн': { bg: 'rgba(231,76,60,.85)', text: 'white' },
-        'Науково фантастичний': { bg: 'rgba(40,53,147,.90)', text: 'white' },
-        'Науково-фантастичний': { bg: 'rgba(40,53,147,.90)', text: 'white' },
-        'Наукова фантастика': { bg: 'rgba(40,53,147,.90)', text: 'white' },
-        'Наукова-фантастика': { bg: 'rgba(40,53,147,.90)', text: 'white' },
-        'Науково-фантастика': { bg: 'rgba(40,53,147,.90)', text: 'white' }
-      }
-    };
+  var row1 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'center', margin: '0 0 0.2em 0' });
+  var row2 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'center', margin: '0 0 0.2em 0' });
+  var row3 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'center', margin: '0 0 0.2em 0' });
+  var row4 = $('<div>').css({ display: 'flex', 'flex-wrap': 'wrap', gap: '0.2em', 'align-items': 'flex-start', margin: '0 0 0.2em 0' });
 
-    var baseBadge = {
-      'border-radius': '0.3em',
-      border: '0',
-      'font-size': '1.0em',
-      padding: '0.2em 0.6em',
-      display: 'inline-block',
-      'white-space': 'nowrap',
-      'line-height': '1.2em',
-      'margin-right': '0.4em',
-      'margin-bottom': '0.2em'
-    };
-
-    // 1 — Серії (для серіалів)
-    if (isTvShow && Array.isArray(movie.seasons)) {
-      var totalEps = 0,
-        airedEps = 0,
-        now = new Date(),
-        hasEpisodes = false;
-      movie.seasons.forEach(function (s) {
-        if (s.season_number === 0) return;
-        if (s.episode_count) totalEps += s.episode_count;
-        if (Array.isArray(s.episodes) && s.episodes.length) {
-          hasEpisodes = true;
-          s.episodes.forEach(function (e) {
-            if (e.air_date && new Date(e.air_date) <= now) airedEps++;
-          });
-        } else if (s.air_date && new Date(s.air_date) <= now && s.episode_count) {
-          airedEps += s.episode_count;
-        }
-      });
-
-      if (!hasEpisodes && movie.next_episode_to_air && movie.next_episode_to_air.season_number && movie.next_episode_to_air.episode_number) {
-        var nextS = movie.next_episode_to_air.season_number,
-          nextE = movie.next_episode_to_air.episode_number,
-          rem = 0;
-        movie.seasons.forEach(function (s) {
-          if (s.season_number === nextS) rem += (s.episode_count || 0) - nextE + 1;
-          else if (s.season_number > nextS) rem += s.episode_count || 0;
-        });
-        if (rem > 0 && totalEps > 0) airedEps = Math.max(0, totalEps - rem);
-      }
-
-      var epsText = '';
-      if (totalEps > 0 && airedEps > 0 && airedEps < totalEps) epsText = airedEps + ' ' + plural(airedEps, 'Серія', 'Серії', 'Серій') + ' з ' + totalEps;
-      else if (totalEps > 0) epsText = totalEps + ' ' + plural(totalEps, 'Серія', 'Серії', 'Серій');
-
-      if (epsText) row1.append($('<span>').text(epsText).css($.extend({}, baseBadge, {
-        'background-color': colors.episodes.bg,
-        color: colors.episodes.text
-      })));
+  var colors = {
+    seasons: { bg: 'rgba(52,152,219,0.8)', text: 'white' },
+    episodes:{ bg: 'rgba(46,204,113,0.8)', text: 'white' },
+    duration:{ bg: 'rgba(52,152,219,0.8)', text: 'white' },
+    next:    { bg: 'rgba(230,126,34,0.9)', text: 'white' },
+    genres: {
+      'Бойовик': { bg: 'rgba(231,76,60,.85)', text: 'white' }, 'Пригоди': { bg: 'rgba(39,174,96,.85)', text: 'white' },
+      'Мультфільм': { bg: 'rgba(155,89,182,.85)', text: 'white' }, 'Комедія': { bg: 'rgba(241,196,15,.9)', text: 'black' },
+      'Кримінал': { bg: 'rgba(88,24,69,.85)', text: 'white' }, 'Документальний': { bg: 'rgba(22,160,133,.85)', text: 'white' },
+      'Драма': { bg: 'rgba(102,51,153,.85)', text: 'white' }, 'Сімейний': { bg: 'rgba(139,195,74,.90)', text: 'white' },
+      'Фентезі': { bg: 'rgba(22,110,116,.85)', text: 'white' }, 'Історія': { bg: 'rgba(121,85,72,.85)', text: 'white' },
+      'Жахи': { bg: 'rgba(155,27,48,.85)', text: 'white' }, 'Музика': { bg: 'rgba(63,81,181,.85)', text: 'white' },
+      'Детектив': { bg: 'rgba(52,73,94,.85)', text: 'white' }, 'Мелодрама': { bg: 'rgba(233,30,99,.85)', text: 'white' },
+      'Фантастика': { bg: 'rgba(41,128,185,.85)', text: 'white' }, 'Трилер': { bg: 'rgba(165,27,11,.90)', text: 'white' },
+      'Військовий': { bg: 'rgba(85,107,47,.85)', text: 'white' }, 'Вестерн': { bg: 'rgba(211,84,0,.85)', text: 'white' },
+      'Бойовик і Пригоди': { bg: 'rgba(231,76,60,.85)', text: 'white' }, 'Дитячий': { bg: 'rgba(0,188,212,.85)', text: 'white' },
+      'Новини': { bg: 'rgba(70,130,180,.85)', text: 'white' }, 'Реаліті-шоу': { bg: 'rgba(230,126,34,.9)', text: 'white' },
+      'НФ і Фентезі': { bg: 'rgba(41,128,185,.85)', text: 'white' }, 'Мильна опера': { bg: 'rgba(233,30,99,.85)', text: 'white' },
+      'Ток-шоу': { bg: 'rgba(241,196,15,.9)', text: 'black' }, 'Війна і Політика': { bg: 'rgba(96,125,139,.85)', text: 'white' },
+      'Екшн і Пригоди': { bg: 'rgba(231,76,60,.85)', text: 'white' },
+      'Екшн': { bg: 'rgba(231,76,60,.85)', text: 'white' },
+      'Науково фантастичний': { bg: 'rgba(40,53,147,.90)', text: 'white' },
+      'Науково-фантастичний': { bg: 'rgba(40,53,147,.90)', text: 'white' },
+      'Наукова фантастика': { bg: 'rgba(40,53,147,.90)', text: 'white' },
+      'Наукова-фантастика': { bg: 'rgba(40,53,147,.90)', text: 'white' },
+      'Науково-фантастика': { bg: 'rgba(40,53,147,.90)', text: 'white' }
     }
+  };
 
-    // 2 — Наступна серія
-    if (isTvShow && movie.next_episode_to_air && movie.next_episode_to_air.air_date) {
-      var nextDate = new Date(movie.next_episode_to_air.air_date),
-        today = new Date();
-      nextDate.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-      var diff = Math.floor((nextDate - today) / (1000 * 60 * 60 * 24));
-      var txt = diff === 0 ? 'Наступна серія вже сьогодні' : diff === 1 ? 'Наступна серія вже завтра' : diff > 1 ? ('Наступна серія через ' + diff + ' ' + plural(diff, 'день', 'дні', 'днів')) : '';
-      if (txt) row2.append($('<span>').text(txt).css($.extend({}, baseBadge, {
-        'background-color': colors.next.bg,
-        color: colors.next.text
-      })));
-    }
+  var baseBadge = {
+    'border-radius': '0.3em',
+    border: '0',
+    'font-size': '1.0em',
+    padding: '0.2em 0.6em',
+    display: 'inline-block',
+    'white-space': 'nowrap',
+    'line-height': '1.2em',
+    'margin-right': '0.4em',
+    'margin-bottom': '0.2em'
+  };
 
-    // 3 — Тривалість
-    if (!isTvShow && movie.runtime > 0) {
-      var mins = movie.runtime,
-        h = Math.floor(mins / 60),
-        m = mins % 60;
-      var t = 'Тривалість фільму: ';
-      if (h > 0) t += h + ' ' + plural(h, 'година', 'години', 'годин');
-      if (m > 0) t += (h > 0 ? ' ' : '') + m + ' хв.';
-      row3.append($('<span>').text(t).css($.extend({}, baseBadge, {
-        'background-color': colors.duration.bg,
-        color: colors.duration.text
-      })));
-    } else if (isTvShow) {
-      var avg = calculateAverageEpisodeDuration(movie);
-      if (avg > 0) row3.append($('<span>').text('Тривалість серії ≈ ' + formatDurationMinutes(avg)).css($.extend({}, baseBadge, {
-        'background-color': colors.duration.bg,
-        color: colors.duration.text
-      })));
-    }
-
-    // 4 — Сезони + Жанри
-    var seasonsCount = (movie.season_count || movie.number_of_seasons || (movie.seasons ? movie.seasons.filter(function (s) {
-      return s.season_number !== 0;
-    }).length : 0)) || 0;
-    if (isTvShow && seasonsCount > 0) {
-      row4.append($('<span>').text('Сезони: ' + seasonsCount).css($.extend({}, baseBadge, {
-        'background-color': colors.seasons.bg,
-        color: colors.seasons.text
-      })));
-    }
-
-    var genreList = [];
-    if (Array.isArray(movie.genres) && movie.genres.length) {
-      genreList = movie.genres.map(function (g) {
-        return g.name;
+  // Хелпери стилів: або кольорово, або моно
+  function badgeCss(bg, text) {
+    if (mono) {
+      return $.extend({}, baseBadge, {
+        'background-color': 'rgba(255,255,255,.08)',
+        color: '#fff',
+        border: '1px solid rgba(255,255,255,.45)'
       });
     }
-    genreList = genreList.filter(Boolean).filter(function (v, i, a) {
-      return a.indexOf(v) === i;
+    return $.extend({}, baseBadge, {
+      'background-color': bg,
+      color: text
     });
-
-    var baseGenre = {
-      'border-radius': '0.3em',
-      border: '0',
-      'font-size': '1.0em',
-      padding: '0.2em 0.6em',
-      display: 'inline-block',
-      'white-space': 'nowrap',
-      'line-height': '1.2em',
-      'margin-right': '0.4em',
-      'margin-bottom': '0.2em'
-    };
-    genreList.forEach(function (gn) {
-      var c = colors.genres[gn] || {
-        bg: 'rgba(255,255,255,.12)',
-        text: 'white'
-      };
-      row4.append($('<span>').text(gn).css($.extend({}, baseGenre, {
-        'background-color': c.bg,
-        color: c.text
-      })));
-    });
-
-    container.append(row1);
-    if (row2.children().length) container.append(row2);
-    if (row3.children().length) container.append(row3);
-    if (row4.children().length) container.append(row4);
-    details.append(container);
   }
+
+  var baseGenre = {
+    'border-radius': '0.3em',
+    border: '0',
+    'font-size': '1.0em',
+    padding: '0.2em 0.6em',
+    display: 'inline-block',
+    'white-space': 'nowrap',
+    'line-height': '1.2em',
+    'margin-right': '0.4em',
+    'margin-bottom': '0.2em'
+  };
+
+  function genreCss(bg, text) {
+    if (mono) {
+      return $.extend({}, baseGenre, {
+        'background-color': 'rgba(255,255,255,.08)',
+        color: '#fff',
+        border: '1px solid rgba(255,255,255,.45)'
+      });
+    }
+    return $.extend({}, baseGenre, {
+      'background-color': bg,
+      color: text
+    });
+  }
+
+  // 1 — Серії (для серіалів)
+  if (isTvShow && Array.isArray(movie.seasons)) {
+    var totalEps = 0, airedEps = 0, now = new Date(), hasEpisodes = false;
+
+    movie.seasons.forEach(function (s) {
+      if (s.season_number === 0) return;
+      if (s.episode_count) totalEps += s.episode_count;
+
+      if (Array.isArray(s.episodes) && s.episodes.length) {
+        hasEpisodes = true;
+        s.episodes.forEach(function (e) {
+          if (e.air_date && new Date(e.air_date) <= now) airedEps++;
+        });
+      } else if (s.air_date && new Date(s.air_date) <= now && s.episode_count) {
+        airedEps += s.episode_count;
+      }
+    });
+
+    if (!hasEpisodes && movie.next_episode_to_air && movie.next_episode_to_air.season_number && movie.next_episode_to_air.episode_number) {
+      var nextS = movie.next_episode_to_air.season_number, nextE = movie.next_episode_to_air.episode_number, rem = 0;
+      movie.seasons.forEach(function (s) {
+        if (s.season_number === nextS) rem += (s.episode_count || 0) - nextE + 1;
+        else if (s.season_number > nextS) rem += s.episode_count || 0;
+      });
+      if (rem > 0 && totalEps > 0) airedEps = Math.max(0, totalEps - rem);
+    }
+
+    var epsText = '';
+    if (totalEps > 0 && airedEps > 0 && airedEps < totalEps) epsText = airedEps + ' ' + plural(airedEps, 'Серія', 'Серії', 'Серій') + ' з ' + totalEps;
+    else if (totalEps > 0) epsText = totalEps + ' ' + plural(totalEps, 'Серія', 'Серії', 'Серій');
+
+    if (epsText) row1.append(
+      $('<span>').text(epsText).css(badgeCss(colors.episodes.bg, colors.episodes.text))
+    );
+  }
+
+  // 2 — Наступна серія
+  if (isTvShow && movie.next_episode_to_air && movie.next_episode_to_air.air_date) {
+    var nextDate = new Date(movie.next_episode_to_air.air_date), today = new Date();
+    nextDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    var diff = Math.floor((nextDate - today) / (1000 * 60 * 60 * 24));
+    var txt = diff === 0 ? 'Наступна серія вже сьогодні'
+      : diff === 1 ? 'Наступна серія вже завтра'
+      : diff > 1 ? ('Наступна серія через ' + diff + ' ' + plural(diff, 'день', 'дні', 'днів'))
+      : '';
+
+    if (txt) row2.append(
+      $('<span>').text(txt).css(badgeCss(colors.next.bg, colors.next.text))
+    );
+  }
+
+  // 3 — Тривалість
+  if (!isTvShow && movie.runtime > 0) {
+    var mins = movie.runtime, h = Math.floor(mins / 60), m = mins % 60;
+    var tt = 'Тривалість фільму: ';
+    if (h > 0) tt += h + ' ' + plural(h, 'година', 'години', 'годин');
+    if (m > 0) tt += (h > 0 ? ' ' : '') + m + ' хв.';
+
+    row3.append(
+      $('<span>').text(tt).css(badgeCss(colors.duration.bg, colors.duration.text))
+    );
+  } else if (isTvShow) {
+    var avg = calculateAverageEpisodeDuration(movie);
+    if (avg > 0) row3.append(
+      $('<span>').text('Тривалість серії ≈ ' + formatDurationMinutes(avg))
+        .css(badgeCss(colors.duration.bg, colors.duration.text))
+    );
+  }
+
+  // 4 — Сезони + Жанри
+  var seasonsCount = (movie.season_count || movie.number_of_seasons || (movie.seasons ? movie.seasons.filter(function (s) {
+    return s.season_number !== 0;
+  }).length : 0)) || 0;
+
+  if (isTvShow && seasonsCount > 0) {
+    row4.append(
+      $('<span>').text('Сезони: ' + seasonsCount).css(badgeCss(colors.seasons.bg, colors.seasons.text))
+    );
+  }
+
+  var genreList = [];
+  if (Array.isArray(movie.genres) && movie.genres.length) {
+    genreList = movie.genres.map(function (g) { return g.name; });
+  }
+  genreList = genreList.filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  genreList.forEach(function (gn) {
+    var c = colors.genres[gn] || { bg: 'rgba(255,255,255,.12)', text: 'white' };
+    row4.append(
+      $('<span>').text(gn).css(genreCss(c.bg, c.text))
+    );
+  });
+
+  container.append(row1);
+  if (row2.children().length) container.append(row2);
+  if (row3.children().length) container.append(row3);
+  if (row4.children().length) container.append(row4);
+
+  details.append(container);
+}
 
   /**
    * Перебудовує інфо-панель на відкритій картці (або повертає оригінальну)
@@ -1159,92 +1269,79 @@
   var __statusObserver = null;
   var __statusFollowReady = false;
 
-  /**
-   * Застосовує кольори до плашок статусів
-   */
-  function applyStatusOnceIn(elRoot) {
-    if (!getBool('interface_mod_new_colored_status', false)) return;
+/**
+ * Застосовує кольори до плашок статусів
+ * + Монохромний оверрайд (перекриває палітру, але тільки коли:
+ *   - увімкнено "Монохромний режим"
+ *   - і увімкнено "Кольорові статуси"
+ */
+function applyStatusOnceIn(elRoot) {
+  if (!getBool('interface_mod_new_colored_status', false)) return;
 
-    var palette = {
-      completed: {
-        bg: 'rgba(46,204,113,.85)',
-        text: 'white'
-      },
-      canceled: {
-        bg: 'rgba(231,76,60,.9)',
-        text: 'white'
-      },
-      ongoing: {
-        bg: 'rgba(243,156,18,.95)',
-        text: 'black'
-      },
-      production: {
-        bg: 'rgba(52,152,219,.9)',
-        text: 'white'
-      },
-      planned: {
-        bg: 'rgba(155,89,182,.9)',
-        text: 'white'
-      },
-      pilot: {
-        bg: 'rgba(230,126,34,.95)',
-        text: 'white'
-      },
-      released: {
-        bg: 'rgba(26,188,156,.9)',
-        text: 'white'
-      },
-      rumored: {
-        bg: 'rgba(149,165,166,.9)',
-        text: 'white'
-      },
-      post: {
-        bg: 'rgba(0,188,212,.9)',
-        text: 'white'
-      },
-      soon: {
-        bg: 'rgba(142,68,173,.95)',
-        text: 'white'
-      }
-    };
+  var mono = isMonoFor('interface_mod_new_colored_status');
 
-    var $root = $(elRoot || document);
-    $root.find(STATUS_BASE_SEL).each(function () {
-      var el = this;
-      var t = ($(el).text() || '').trim();
-      var key = '';
-      if (/заверш/i.test(t) || /ended/i.test(t)) key = 'completed';
-      else if (/скасов/i.test(t) || /cancel(l)?ed/i.test(t)) key = 'canceled';
-      else if (/онгоїн|виходить|триває/i.test(t) || /returning/i.test(t)) key = 'ongoing';
-      else if (/виробництв/i.test(t) || /in\s*production/i.test(t)) key = 'production';
-      else if (/заплан/i.test(t) || /planned/i.test(t)) key = 'planned';
-      else if (/пілот/i.test(t) || /pilot/i.test(t)) key = 'pilot';
-      else if (/випущ/i.test(t) || /released/i.test(t)) key = 'released';
-      else if (/чутк/i.test(t) || /rumored/i.test(t)) key = 'rumored';
-      else if (/пост/i.test(t) || /post/i.test(t)) key = 'post';
-      else if (/незабаром|скоро|soon/i.test(t)) key = 'soon';
+  var palette = {
+    completed: { bg: 'rgba(46,204,113,.85)', text: 'white' },
+    canceled:  { bg: 'rgba(231,76,60,.9)',  text: 'white' },
+    ongoing:   { bg: 'rgba(243,156,18,.95)', text: 'black' },
+    production:{ bg: 'rgba(52,152,219,.9)',  text: 'white' },
+    planned:   { bg: 'rgba(155,89,182,.9)',  text: 'white' },
+    pilot:     { bg: 'rgba(230,126,34,.95)', text: 'white' },
+    released:  { bg: 'rgba(26,188,156,.9)',  text: 'white' },
+    rumored:   { bg: 'rgba(149,165,166,.9)', text: 'white' },
+    post:      { bg: 'rgba(0,188,212,.9)',    text: 'white' },
+    soon:      { bg: 'rgba(142,68,173,.95)',  text: 'white' }
+  };
 
-      el.classList.remove('ifx-status-fallback');
+  var $root = $(elRoot || document);
 
-      if (!key) {
-        // Якщо статус не розпізнано, повертаємо білу рамку
-        el.classList.add('ifx-status-fallback');
-        el.style.setProperty('border-width', '1px', 'important');
-        el.style.setProperty('border-style', 'solid', 'important');
-        el.style.setProperty('border-color', '#fff', 'important');
-        el.style.setProperty('background-color', 'transparent', 'important');
-        el.style.setProperty('color', 'inherit', 'important');
-        return;
-      }
-      var c = palette[key];
-      $(el).css({
-        'background-color': c.bg,
-        color: c.text,
-        'border-color': 'transparent',
-        'display': 'inline-block'
-      });
+  $root.find(STATUS_BASE_SEL).each(function () {
+    var el = this;
+    var t = ($(el).text() || '').trim();
+    var key = '';
+
+    if (/заверш/i.test(t) || /ended/i.test(t)) key = 'completed';
+    else if (/скасов/i.test(t) || /cancel(l)?ed/i.test(t)) key = 'canceled';
+    else if (/онгоїн|виходить|триває/i.test(t) || /returning/i.test(t)) key = 'ongoing';
+    else if (/виробництв/i.test(t) || /in\s*production/i.test(t)) key = 'production';
+    else if (/заплан/i.test(t) || /planned/i.test(t)) key = 'planned';
+    else if (/пілот/i.test(t) || /pilot/i.test(t)) key = 'pilot';
+    else if (/випущ/i.test(t) || /released/i.test(t)) key = 'released';
+    else if (/чутк/i.test(t) || /rumored/i.test(t)) key = 'rumored';
+    else if (/пост/i.test(t) || /post/i.test(t)) key = 'post';
+    else if (/незабаром|скоро|soon/i.test(t)) key = 'soon';
+
+    el.classList.remove('ifx-status-fallback');
+
+    if (!key) {
+      // Якщо статус не розпізнано, повертаємо білу рамку
+      el.classList.add('ifx-status-fallback');
+      el.style.setProperty('border-width', '1px', 'important');
+      el.style.setProperty('border-style', 'solid', 'important');
+      el.style.setProperty('border-color', '#fff', 'important');
+      el.style.setProperty('background-color', 'transparent', 'important');
+      el.style.setProperty('color', 'inherit', 'important');
+      return;
+    }
+
+    // === МОНОХРОМНИЙ ОВЕРРАЙД ===
+    if (mono) {
+      // ВАЖЛИВО: перекриваємо value-based кольори
+      applyMonoBadgeStyle(el);
+      el.style.setProperty('display', 'inline-block', 'important');
+      return;
+    }
+
+    // === КОЛЬОРОВИЙ РЕЖИМ (як було) ===
+    var c = palette[key];
+    $(el).css({
+      'background-color': c.bg,
+      color: c.text,
+      'border-color': 'transparent',
+      'display': 'inline-block'
     });
-  }
+  });
+}
 
   function enableStatusColoring() {
     applyStatusOnceIn(document);
@@ -1362,61 +1459,75 @@
     return '';
    }
   
-  /**
-   * Застосовує кольори до вікових рейтингів (PG)
-   */
-  function applyAgeOnceIn(elRoot) {
-    if (!getBool('interface_mod_new_colored_age', false)) return;
+/**
+ * Застосовує кольори до вікових рейтингів (PG)
+ * + Монохромний оверрайд (перекриває __ageColors, але тільки коли:
+ *   - увімкнено "Монохромний режим"
+ *   - і увімкнено "Кольоровий віковий рейтинг"
+ */
+function applyAgeOnceIn(elRoot) {
+  if (!getBool('interface_mod_new_colored_age', false)) return;
 
-    var $root = $(elRoot || document);
-    $root.find(AGE_BASE_SEL).each(function () {
-      var el = this;
+  var mono = isMonoFor('interface_mod_new_colored_age');
 
-      // беремо текст або значення з атрибутів
-      var t = (el.textContent || '').trim();
-      if (!t) {
-        var attr = ((el.getAttribute('data-age') || el.getAttribute('data-pg') || '') + '').trim();
-        if (attr) t = attr;
-      }
+  var $root = $(elRoot || document);
+  $root.find(AGE_BASE_SEL).each(function () {
+    var el = this;
 
-      // якщо ПУСТО — ховаємо елемент і зчищаємо все
-      if (!t) {
-        el.classList.add('hide');
-        el.classList.remove('ifx-age-fallback');
-        ['border-width', 'border-style', 'border-color', 'background-color', 'color', 'display'].forEach(function (p) {
-          el.style.removeProperty(p);
-        });
+    // беремо текст або значення з атрибутів
+    var t = (el.textContent || '').trim();
+    if (!t) {
+      var attr = ((el.getAttribute('data-age') || el.getAttribute('data-pg') || '') + '').trim();
+      if (attr) t = attr;
+    }
+
+    // якщо ПУСТО — ховаємо елемент і зчищаємо все
+    if (!t) {
+      el.classList.add('hide');
+      el.classList.remove('ifx-age-fallback');
+      ['border-width', 'border-style', 'border-color', 'background-color', 'color', 'display'].forEach(function (p) {
+        el.style.removeProperty(p);
+      });
+      return;
+    }
+
+    // є значення — показуємо
+    el.classList.remove('hide');
+    el.classList.remove('ifx-age-fallback');
+    ['border-width', 'border-style', 'border-color', 'background-color', 'color'].forEach(function (p) {
+      el.style.removeProperty(p);
+    });
+
+    var g = ageCategoryFor(t);
+
+    if (g) {
+      // === МОНОХРОМНИЙ ОВЕРРАЙD ===
+      if (mono) {
+        applyMonoBadgeStyle(el);
+        el.style.display = 'inline-block'; // без !important — .hide завжди переможе
         return;
       }
 
-      // є значення — показуємо та фарбуємо
-      el.classList.remove('hide');
-      el.classList.remove('ifx-age-fallback');
-      ['border-width', 'border-style', 'border-color', 'background-color', 'color'].forEach(function (p) {
-        el.style.removeProperty(p);
+      // === КОЛЬОРОВИЙ РЕЖИМ (як було) ===
+      var c = __ageColors[g];
+      $(el).css({
+        'background-color': c.bg,
+        color: c.text,
+        'border-color': 'transparent'
       });
-
-      var g = ageCategoryFor(t);
-      if (g) {
-        var c = __ageColors[g];
-        $(el).css({
-          'background-color': c.bg,
-          color: c.text,
-          'border-color': 'transparent'
-        });
-        el.style.display = 'inline-block'; // без !important — .hide завжди переможе
-      } else {
-        // невідома категорія — «fallback», але тільки коли є текст
-        el.classList.add('ifx-age-fallback');
-        el.style.setProperty('border-width', '1px', 'important');
-        el.style.setProperty('border-style', 'solid', 'important');
-        el.style.setProperty('border-color', '#fff', 'important');
-        el.style.setProperty('background-color', 'transparent', 'important');
-        el.style.setProperty('color', 'inherit', 'important');
-        el.style.display = 'inline-block';
-      }
-    });
-  }
+      el.style.display = 'inline-block';
+    } else {
+      // невідома категорія — «fallback», але тільки коли є текст
+      el.classList.add('ifx-age-fallback');
+      el.style.setProperty('border-width', '1px', 'important');
+      el.style.setProperty('border-style', 'solid', 'important');
+      el.style.setProperty('border-color', '#fff', 'important');
+      el.style.setProperty('background-color', 'transparent', 'important');
+      el.style.setProperty('color', 'inherit', 'important');
+      el.style.display = 'inline-block';
+    }
+  });
+}
 
   function enableAgeColoring() {
     applyAgeOnceIn(document);
@@ -2337,6 +2448,9 @@ const STYLES = {
       if (v == null) return def;
       return !!v;
     }
+
+
+    
 
 function apply() {
       var s = document.getElementById('torr_mod_overrides');

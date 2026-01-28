@@ -211,8 +211,8 @@
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
             //'https://my-finder.kozak-bohdan.workers.dev/?url=',
-            'https://cors.bwa.workers.dev/',
-            'https://api.allorigins.win/raw?url='
+            'https://api.allorigins.win/raw?url=',
+            'https://cors.bwa.workers.dev/'
         ],
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: false, // ✅ Показувати якість для серіалів

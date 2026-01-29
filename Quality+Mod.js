@@ -206,10 +206,11 @@
         JACRED_URL: 'redapi.cfhttp.top', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
-            'https://my-finder.kozak-bohdan.workers.dev/?url=',
+            'https://my-finder.kozak-bohdan.workers.dev/?key={KEY}&url=',
             'https://api.allorigins.win/raw?url=',
             'https://cors.bwa.workers.dev/'
         ],
+        WORKER_KEY: 'lqe_2026_x9A3fQ7P2KJmLwD8N4s0Z', // ключ
         PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: false, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
@@ -495,7 +496,15 @@
             }
 
             // формуємо фінальний URL через поточний проксі
-            var proxyUrl = LQE_CONFIG.PROXY_LIST[currentProxyIndex] + encodeURIComponent(url);
+            var proxyTpl = LQE_CONFIG.PROXY_LIST[currentProxyIndex];
+
+            // підставляємо
+            if (proxyTpl.indexOf('{KEY}') !== -1) {
+            var k = (LQE_CONFIG.WORKER_KEY || '');
+            proxyTpl = proxyTpl.replace('{KEY}', encodeURIComponent(k));
+            }
+
+            var proxyUrl = proxyTpl + encodeURIComponent(url);
 
             if (LQE_CONFIG.LOGGING_GENERAL) {
                 console.log("LQE-LOG", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);

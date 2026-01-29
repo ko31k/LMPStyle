@@ -6,7 +6,7 @@
  *  - Спрощені (4K/FHD/HD/SD, TS/TC/CAM) або повні підписи — перемикається
  *  - Ручні оверрайди для окремих ID
  *  - Кеш 48h + тихе фонове оновлення
- *  - Черга запитів (до 12 парал.), проксі (HTTPS), поліфіли для старих WebView
+ *  - Черга запитів (до 10 парал.), проксі (HTTPS), поліфіли для старих WebView
  *
  * Налаштування: Інтерфейс → «Мітки якості»
  */
@@ -190,10 +190,6 @@
     window.LQE_safeFetchText = safeFetchText;
 })();
 
-
-
-
-
 (function () {
     'use strict'; // Використання суворого режиму для запобігання помилок
 
@@ -204,13 +200,13 @@
         LOGGING_QUALITY: false, // Логування процесу визначення якості
         LOGGING_CARDLIST: true, // Логування для спискових карток
         CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000, // Час життя кешу (48 години)
-        CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (24 годин)
+        CACHE_REFRESH_THRESHOLD_MS: 36 * 60 * 60 * 1000, // Час для фонового оновлення кешу (36 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
         JACRED_PROTOCOL: 'https://', // Протокол для API JacRed
         JACRED_URL: 'redapi.cfhttp.top', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
-            //'https://my-finder.kozak-bohdan.workers.dev/?url=',
+            'https://my-finder.kozak-bohdan.workers.dev/?url=',
             'https://api.allorigins.win/raw?url=',
             'https://cors.bwa.workers.dev/'
         ],
@@ -218,7 +214,7 @@
         SHOW_QUALITY_FOR_TV_SERIES: false, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
 
-        MAX_PARALLEL_REQUESTS: 12, // Максимальна кількість паралельних запитів
+        MAX_PARALLEL_REQUESTS: 10, // Максимальна кількість паралельних запитів
 
         USE_SIMPLE_QUALITY_LABELS: true, // ✅ Використовувати спрощені мітки якості (4K, FHD, TS, TC тощо) "true" - так /  "false" - ні
 
@@ -1843,5 +1839,6 @@
         //LQE_CONFIG.SHOW_FULL_CARD_LABEL = !!st.show_full_card;
 
     })();
+
 
 })();

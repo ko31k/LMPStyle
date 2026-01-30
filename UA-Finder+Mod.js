@@ -49,8 +49,8 @@
         JACRED_URL: 'redapi.cfhttp.top', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
             'https://my-finder.kozak-bohdan.workers.dev/?key=lqe_2026_x9A3fQ7P2KJmLwD8N4s0Z&url=',
-            'https://api.allorigins.win/raw?url=',
-            'https://cors.bwa.workers.dev/'
+            //'https://api.allorigins.win/raw?url=',
+            //'https://cors.bwa.workers.dev/'
             
         ],
         PROXY_TIMEOUT_MS: 5000, // Максимальний час очікування відповіді від одного проксі (3.5 секунди).

@@ -330,28 +330,29 @@ function tvShiftPx() {
     return node.closest('.menu__item') || node.closest('li') || node.closest('.menu-item') || null;
   }
 
-  function reorderGarlandAfterSnow() {
-    var garIcon  = document.querySelector('.garlandfx-menu-icon');
-    if (!garIcon) return false;
+function reorderGarlandAfterSnow() {
+  var garIcon = document.querySelector('.garlandfx-menu-icon');
+  if (!garIcon) return false;
 
-    var garItem  = closestMenuItem(garIcon);
-    if (!garItem || !garItem.parentNode) return false;
+  var garItem = closestMenuItem(garIcon);
+  if (!garItem || !garItem.parentNode) return false;
 
-    var parent = garItem.parentNode;
+  var parent = garItem.parentNode;
 
-    // 1) Garland ALWAYS last
-    if (parent.lastChild !== garItem) parent.appendChild(garItem);
+  // 1) Гірлянда завжди ОСТАННЯ
+  if (parent.lastChild !== garItem) parent.appendChild(garItem);
 
-    // 2) If snow exists in same menu list -> it must be right ABOVE garland
-    var snowIcon = document.querySelector('.snowfx-menu-icon');
-    var snowItem = snowIcon ? closestMenuItem(snowIcon) : null;
+  // 2) Якщо є "Сніг" у цьому ж списку — ставимо його ПРЯМО НАД гірляндою
+  var snowIcon = document.querySelector('.snowfx-menu-icon');
+  var snowItem = snowIcon ? closestMenuItem(snowIcon) : null;
 
-    if (snowItem && snowItem.parentNode === parent) {
-      if (snowItem.nextSibling !== garItem) parent.insertBefore(snowItem, garItem);
-    }
-
-    return true;
+  if (snowItem && snowItem.parentNode === parent) {
+    if (snowItem.nextSibling !== garItem) parent.insertBefore(snowItem, garItem);
   }
+
+  return true;
+}
+
 
 
   var settingsMO = null;
@@ -365,6 +366,8 @@ function tvShiftPx() {
     reorderTimer = setTimeout(reorderGarlandAfterSnow, 50);
     setTimeout(reorderGarlandAfterSnow, 250);
     setTimeout(reorderGarlandAfterSnow, 700);
+	setTimeout(reorderGarlandAfterSnow, 1500);
+	setTimeout(reorderGarlandAfterSnow, 2500);
 
     settingsMO = new MutationObserver(function () {
       // throttle

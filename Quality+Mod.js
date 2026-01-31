@@ -202,16 +202,16 @@
         CACHE_VALID_TIME_MS: 48 * 60 * 60 * 1000, // Час життя кешу (48 години)
         CACHE_REFRESH_THRESHOLD_MS: 36 * 60 * 60 * 1000, // Час для фонового оновлення кешу (36 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
-        JACRED_PROTOCOL: 'http://', // Протокол для API JacRed
-        JACRED_URL: 'redapi.cfhttp.top', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
+        JACRED_PROTOCOL: 'https://', // Протокол для API JacRed
+        JACRED_URL: 'jacred.xyz', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
-            'https://myfinder.kozak-bohdan.workers.dev/?key={KEY}&url=',
+            //'https://myfinder.kozak-bohdan.workers.dev/?key={KEY}&url=',
             //'https://api.allorigins.win/raw?url=',
             //'https://cors.bwa.workers.dev/'
         ],
         WORKER_KEY: 'lqe_2026_x9A3fQ7P2KJmLwD8N4s0Z', // ключ
-        PROXY_TIMEOUT_MS: 3500, // Таймаут для проксі запитів (4 секунди)
+        PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: false, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
 
@@ -481,7 +481,53 @@
      * @param {string} cardId - ID картки (тільки для логів)
      * @param {function} callback - callback(err, data)
      */
-    function fetchWithProxy(url, cardId, callback) {
+    function fetchSmart(url, cardId, callback) {
+    var called = false;
+
+    function done(err, data) {
+        if (called) return;
+        called = true;
+        if (typeof updateNetworkHealth === 'function') {
+            updateNetworkHealth(!err);
+        }
+        callback(err, data);
+    }
+
+    // 1️⃣ СПОЧАТКУ — прямий запит (Jacred працює напряму!)
+    LTF_safeFetchText(url, 5000)
+        .then(function (text) {
+            done(null, text);
+        })
+        .catch(function () {
+
+            // 2️⃣ ПРОКСІ — ТІЛЬКИ ЯК FALLBACK
+            if (!LTF_CONFIG.PROXY_LIST || !LTF_CONFIG.PROXY_LIST.length) {
+                done(new Error('Direct fetch failed'));
+                return;
+            }
+
+            var index = 0;
+
+            function tryProxy() {
+                if (index >= LTF_CONFIG.PROXY_LIST.length) {
+                    done(new Error('All proxies failed'));
+                    return;
+                }
+
+                var proxyUrl = LTF_CONFIG.PROXY_LIST[index] + encodeURIComponent(url);
+                index++;
+
+                LTF_safeFetchText(proxyUrl, LTF_CONFIG.PROXY_TIMEOUT_MS)
+                    .then(function (text) {
+                        done(null, text);
+                    })
+                    .catch(tryProxy);
+            }
+
+            tryProxy();
+        });
+}
+    /*function fetchWithProxy(url, cardId, callback) {
         var currentProxyIndex = 0;       // який проксі зараз пробуємо
         var callbackCalled = false;      // щоб не викликати callback двічі
 
@@ -552,7 +598,7 @@
         }
 
         tryNextProxy();
-    }
+    }*/
     // ===================== АНІМАЦІЯ ЗАВАНТАЖЕННЯ =====================
     /**
      * Додає анімацію завантаження до картки
@@ -1005,7 +1051,8 @@
                 }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);
 
                 // Виконуємо запит через проксі
-                fetchWithProxy(apiUrl, cardId, function (error, responseText) {
+                fetchSmart(apiUrl, cardId, function (error, responseText) {
+                //fetchWithProxy(apiUrl, cardId, function (error, responseText) {
                     clearTimeout(timeoutId);
 
                     if (error || !responseText) {

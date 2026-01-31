@@ -1729,8 +1729,8 @@ function resetAccumulationSoft(reason) {
       });
     } catch (e) {}
   }
-  // ======= MENU ORDER: snow at bottom (or right above garland) =======
-  function closestMenuItem(node) {
+  // ======= MENU ORDER: keep Snow at bottom (or right above Garland) =======
+  function snowClosestMenuItem(node) {
     if (!node) return null;
     return node.closest('.menu__item') || node.closest('li') || node.closest('.menu-item') || null;
   }
@@ -1739,27 +1739,62 @@ function resetAccumulationSoft(reason) {
     var snowIcon = document.querySelector('.snowfx-menu-icon');
     if (!snowIcon) return false;
 
-    var snowItem = closestMenuItem(snowIcon);
+    var snowItem = snowClosestMenuItem(snowIcon);
     if (!snowItem || !snowItem.parentNode) return false;
 
     var parent = snowItem.parentNode;
 
-    // If garland exists in same menu list -> snow must be right ABOVE it
+    // якщо є гірлянда в цьому ж списку — сніг має бути прямо над нею
     var garIcon = document.querySelector('.garlandfx-menu-icon');
-    var garItem = garIcon ? closestMenuItem(garIcon) : null;
+    var garItem = garIcon ? snowClosestMenuItem(garIcon) : null;
 
     if (garItem && garItem.parentNode === parent) {
-      // put snow directly before garland
       if (snowItem.nextSibling === garItem) return true;
       parent.insertBefore(snowItem, garItem);
       return true;
     }
 
-    // No garland -> snow must be the LAST item
+    // якщо гірлянди нема — сніг останній
     if (parent.lastChild === snowItem) return true;
     parent.appendChild(snowItem);
     return true;
   }
+
+  var snowSettingsMO = null;
+  var snowReorderTimer = 0;
+
+  function startSnowSettingsWatch() {
+    if (snowSettingsMO) return;
+
+    clearTimeout(snowReorderTimer);
+    snowReorderTimer = setTimeout(reorderSnowInSettingsMenu, 50);
+    setTimeout(reorderSnowInSettingsMenu, 250);
+    setTimeout(reorderSnowInSettingsMenu, 700);
+    setTimeout(reorderSnowInSettingsMenu, 1500);
+    setTimeout(reorderSnowInSettingsMenu, 2500);
+
+    snowSettingsMO = new MutationObserver(function () {
+      clearTimeout(snowReorderTimer);
+      snowReorderTimer = setTimeout(reorderSnowInSettingsMenu, 60);
+    });
+
+    snowSettingsMO.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function stopSnowSettingsWatch() {
+    if (!snowSettingsMO) return;
+    try { snowSettingsMO.disconnect(); } catch (e) {}
+    snowSettingsMO = null;
+  }
+
+  function onHashForSnowReorder() {
+    var h = (location.hash || '').toLowerCase();
+    var inSettings = (h.indexOf('settings') !== -1 || h.indexOf('настройк') !== -1 || h.indexOf('налашт') !== -1);
+
+    if (inSettings) startSnowSettingsWatch();
+    else stopSnowSettingsWatch();
+  }
+
 
   var snowMenuMO = null;
   var snowReorderTimer = 0;
@@ -2044,10 +2079,11 @@ function resetAccumulationSoft(reason) {
     tries++;
 
     addSettingsUI();
-        try {
+    try {
       window.addEventListener('hashchange', onHashForSnowReorder);
       onHashForSnowReorder(); // якщо налаштування вже відкриті
     } catch (e) {}
+
 
     bindLampaHooks();
     bindVisibility();

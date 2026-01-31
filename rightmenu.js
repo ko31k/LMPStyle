@@ -4,15 +4,16 @@
   if (window.__right_menu_editor_loaded__) return;
   window.__right_menu_editor_loaded__ = true;
 
-  var KEY_ORDER  = 'right_menu_editor__order_v1';
-  var KEY_HIDDEN = 'right_menu_editor__hidden_v1';
+  var KEY_ORDER  = 'right_menu_editor__order_v2';
+  var KEY_HIDDEN = 'right_menu_editor__hidden_v2';
 
   var EDIT_COMPONENT = 'right_menu_editor__edit';
   var EDIT_ID = 'right_menu_editor__edit_item';
 
-  var pollTimer = 0;
   var applyTimer = 0;
+  var pollTimer = 0;
   var mo = null;
+  var lastRoot = null;
 
   // ---------------- Storage ----------------
   function sGet(key, def) {
@@ -45,19 +46,40 @@
   function q(sel, root) { try { return (root || document).querySelector(sel); } catch (e) { return null; } }
   function qa(sel, root) { try { return (root || document).querySelectorAll(sel); } catch (e) { return []; } }
 
+  function inSettingsNow() {
+    var h = String(location.hash || '').toLowerCase();
+    // на різних локалях/збірках може бути по-різному
+    return (h.indexOf('settings') !== -1 || h.indexOf('настройк') !== -1 || h.indexOf('налашт') !== -1);
+  }
+
   function getSettingsRoot() {
-    // Твій реальний root зі скріна:
-    var root = q('.settings .settings__body .scroll__content .scroll__body');
-    if (root && root.querySelector('[data-component]')) return root;
+    // шукаємо контейнер зі списком пунктів (той, де лежать settings-folder як direct children)
+    var candidates = qa('.settings .scroll__body');
+    if (!candidates || !candidates.length) return null;
 
-    // запасні варіанти під інші збірки
-    root = q('.settings .scroll__content .scroll__body');
-    if (root && root.querySelector('[data-component]')) return root;
+    var best = null;
+    var bestCount = 0;
 
-    root = q('.settings .scroll__body');
-    if (root && root.querySelector('[data-component]')) return root;
+    for (var i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      if (!el || el.nodeType !== 1) continue;
 
-    return null;
+      // рахуємо прямі діти з data-component
+      var kids = el.children || [];
+      var cnt = 0;
+      for (var k = 0; k < kids.length; k++) {
+        var c = kids[k] && kids[k].getAttribute ? kids[k].getAttribute('data-component') : '';
+        if (c) cnt++;
+      }
+
+      if (cnt > bestCount) {
+        bestCount = cnt;
+        best = el;
+      }
+    }
+
+    // якщо знайшли список з хоч якимось контентом — це наш root
+    return bestCount ? best : null;
   }
 
   function compOf(el) {
@@ -75,32 +97,36 @@
     return (el.textContent || '').trim().split('\n')[0].trim();
   }
 
-  function scanItems(root) {
+  // беремо ТІЛЬКИ прямі елементи меню (без глибокого querySelectorAll)
+  function scanDirectItems(root) {
     var out = [];
     if (!root) return out;
 
-    var nodes = qa('.settings-folder.selector[data-component], .settings-folder[data-component], [data-component]', root);
-    for (var i = 0; i < nodes.length; i++) {
-      var el = nodes[i];
+    var kids = root.children || [];
+    var seen = {};
+
+    for (var i = 0; i < kids.length; i++) {
+      var el = kids[i];
       if (!el || el.nodeType !== 1) continue;
 
       var c = compOf(el);
       if (!c) continue;
       if (c === EDIT_COMPONENT) continue;
 
-      // дедуп
-      var exists = false;
-      for (var j = 0; j < out.length; j++) {
-        if (out[j].component === c) { exists = true; break; }
+      // не дублюємо в out, але дублікати видалимо окремо
+      if (!seen[c]) {
+        seen[c] = { component: c, el: el, name: nameOf(el), dups: [] };
+        out.push(seen[c]);
+      } else {
+        // дублікати того ж пункту
+        seen[c].dups.push(el);
       }
-      if (exists) continue;
-
-      out.push({ component: c, el: el, name: nameOf(el) });
     }
+
     return out;
   }
 
-  // ---------------- UI (CSS + Icons) ----------------
+  // ---------------- UI (icons + css) ----------------
   function pencilSvg() {
     return '' +
       '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
@@ -150,30 +176,22 @@
   function ensureEditItem(root) {
     if (!root) return false;
 
-    // already exists?
     var ex = q('#' + EDIT_ID, root);
     if (ex) {
-      // always keep at end
       try { root.appendChild(ex); } catch (e0) {}
       return true;
     }
 
-    // clone a real item to keep native look
-    var sample =
-      q('.settings-folder.selector[data-component]', root) ||
-      q('.settings-folder[data-component]', root) ||
-      q('[data-component]', root);
-
+    // робимо елемент "як у меню": клонуємо перший реальний пункт, але уважно
+    var sample = root.children && root.children.length ? root.children[0] : null;
     if (!sample) return false;
 
     var node = sample.cloneNode(true);
     node.id = EDIT_ID;
     node.setAttribute('data-component', EDIT_COMPONENT);
-    node.setAttribute('data-static', 'true'); // важливо для деяких збірок
-    try { node.classList.add('selector'); } catch (e1) {}
-    try { node.style.display = ''; } catch (e2) {}
+    node.setAttribute('data-static', 'true');
 
-    // set label
+    // назва
     var nameEl =
       node.querySelector('.settings-folder__name') ||
       node.querySelector('.settings-folder__title') ||
@@ -181,13 +199,16 @@
       node.querySelector('.name');
     if (nameEl) nameEl.textContent = 'Редагувати';
 
-    // set pencil icon if icon container exists
+    // іконка
     var iconWrap = node.querySelector('.settings-folder__icon') || node.querySelector('.icon');
     if (iconWrap) iconWrap.innerHTML = pencilSvg();
 
-    // clear any value/right side
+    // прибрати можливі “значення” справа
     var right = node.querySelector('.settings-folder__value') || node.querySelector('.settings-folder__right') || node.querySelector('.value') || node.querySelector('.right');
     if (right) { try { right.textContent = ''; } catch (e3) {} }
+
+    // відчепити можливі старі обробники через clone? вони не копіюються, але на всяк:
+    node.onclick = null;
 
     node.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
@@ -205,20 +226,36 @@
 
   // ---------------- Apply order/hidden to menu ----------------
   function applyState() {
+    if (!inSettingsNow()) return;
+
     var root = getSettingsRoot();
     if (!root) return;
 
-    var items = scanItems(root);
+    // 1) збираємо прямі пункти + їх дублікати
+    var items = scanDirectItems(root);
     if (!items.length) { ensureEditItem(root); return; }
 
+    // 2) видаляємо дублікати (критично для мобіли)
+    for (var d = 0; d < items.length; d++) {
+      var di = items[d];
+      if (di.dups && di.dups.length) {
+        for (var x = 0; x < di.dups.length; x++) {
+          try { di.dups[x].parentNode && di.dups[x].parentNode.removeChild(di.dups[x]); } catch (e0) {}
+        }
+        di.dups = [];
+      }
+    }
+
+    // 3) state
     var st = loadState();
     var order = st.order || [];
     var hidden = st.hidden || {};
 
+    // 4) map component -> el
     var map = {};
     for (var i = 0; i < items.length; i++) map[items[i].component] = items[i];
 
-    // build final sequence: saved order first, then new items
+    // 5) нормалізований список: saved order + нові
     var seq = [];
     var used = {};
     for (var j = 0; j < order.length; j++) {
@@ -230,7 +267,9 @@
       if (!used[c2]) { seq.push(c2); used[c2] = 1; }
     }
 
-    // reorder + hide
+    // 6) застосовуємо через fragment
+    var frag = document.createDocumentFragment();
+
     for (var s = 0; s < seq.length; s++) {
       var comp = seq[s];
       var it = map[comp];
@@ -238,19 +277,27 @@
 
       var isHidden = !!hidden[comp];
       try { it.el.style.display = isHidden ? 'none' : ''; } catch (e1) {}
-      try { root.appendChild(it.el); } catch (e2) {}
+
+      frag.appendChild(it.el);
     }
 
-    // pinned edit at end
+    // pinned edit (завжди видимий і останній)
+    // спочатку приберемо старий edit, якщо він не в root
+    var edit = q('#' + EDIT_ID);
+    if (edit && edit.parentNode && edit.parentNode !== root) {
+      try { edit.parentNode.removeChild(edit); } catch (e2) {}
+    }
+
+    root.appendChild(frag);
     ensureEditItem(root);
 
-    // save normalized state
+    // 7) зберігаємо нормалізований стан
     saveState(seq, hidden);
   }
 
   function debounceApply(ms) {
     clearTimeout(applyTimer);
-    applyTimer = setTimeout(applyState, ms || 80);
+    applyTimer = setTimeout(applyState, ms || 120);
   }
 
   // ---------------- Editor overlay ----------------
@@ -266,7 +313,10 @@
     var root = getSettingsRoot();
     if (!root) return;
 
-    var items = scanItems(root);
+    // перед відкриттям — прибираємо дублікати/нормалізуємо
+    applyState();
+
+    var items = scanDirectItems(root);
     if (!items.length) return;
 
     var st = loadState();
@@ -311,20 +361,19 @@
       fixDisabled(listEl);
     }
 
-    function idxOf(comp) {
-      for (var i = 0; i < seq.length; i++) if (seq[i] === comp) return i;
-      return -1;
-    }
-
     function fixDisabled(listEl) {
-      var rows = qa('.rme-row', listEl);
+      var rows = listEl.querySelectorAll('.rme-row');
       for (var i = 0; i < rows.length; i++) {
-        var comp = rows[i].getAttribute('data-comp');
         var up = rows[i].querySelector('[data-act="up"]');
         var dn = rows[i].querySelector('[data-act="down"]');
         if (up) up.disabled = (i === 0);
         if (dn) dn.disabled = (i === rows.length - 1);
       }
+    }
+
+    function idxOf(comp) {
+      for (var i = 0; i < seq.length; i++) if (seq[i] === comp) return i;
+      return -1;
     }
 
     function move(comp, dir) {
@@ -337,11 +386,8 @@
       seq[ni] = tmp;
     }
 
-    function toggle(comp) {
-      hidden[comp] = !hidden[comp];
-    }
+    function toggle(comp) { hidden[comp] = !hidden[comp]; }
 
-    // build overlay
     var overlay = document.createElement('div');
     overlay.className = 'rme-overlay';
     overlay.tabIndex = -1;
@@ -352,7 +398,7 @@
     var head = document.createElement('div');
     head.className = 'rme-head';
     head.innerHTML =
-      '<div class="rme-badge" style="color:#fff;">' + pencilSvg() + '</div>' +
+      '<div class="rme-badge">' + pencilSvg() + '</div>' +
       '<div>' +
         '<div class="rme-title">Редагувати</div>' +
         '<div class="rme-sub">↑/↓ — порядок • Enter/OK — показ/приховати</div>' +
@@ -384,7 +430,7 @@
 
     function commit() {
       saveState(seq, hidden);
-      debounceApply(10);
+      debounceApply(50);
     }
 
     overlay.addEventListener('click', function (e) {
@@ -396,7 +442,6 @@
 
       var act = t && t.getAttribute ? t.getAttribute('data-act') : null;
       if (!act && t && t.parentElement) act = t.parentElement.getAttribute && t.parentElement.getAttribute('data-act');
-
       if (!act) return;
 
       if (act === 'close' || act === 'cancel') { closeOverlay(); return; }
@@ -409,9 +454,9 @@
         return;
       }
 
-      // find row
       var row = t.closest ? t.closest('.rme-row') : null;
       if (!row) return;
+
       var comp = row.getAttribute('data-comp');
       if (!comp) return;
 
@@ -422,7 +467,6 @@
       renderRows(list);
     });
 
-    // keyboard: Enter toggles, arrows move
     panel.addEventListener('keydown', function (e) {
       var row = e.target && e.target.closest ? e.target.closest('.rme-row') : null;
       if (!row) return;
@@ -431,62 +475,72 @@
       if (!comp) return;
 
       var k = e.keyCode || e.which;
-      if (k === 13) { // Enter
-        e.preventDefault();
-        toggle(comp);
-        renderRows(list);
-        // restore focus to same row if possible
-        var r2 = list.querySelector('.rme-row[data-comp="' + comp.replace(/"/g, '\\"') + '"]');
-        if (r2) r2.focus();
-      } else if (k === 38) { // Up
-        e.preventDefault();
-        move(comp, -1);
-        renderRows(list);
-      } else if (k === 40) { // Down
-        e.preventDefault();
-        move(comp, +1);
-        renderRows(list);
-      } else if (k === 27) { // Esc
-        e.preventDefault();
-        closeOverlay();
-      }
+      if (k === 13) { e.preventDefault(); toggle(comp); renderRows(list); }
+      else if (k === 38) { e.preventDefault(); move(comp, -1); renderRows(list); }
+      else if (k === 40) { e.preventDefault(); move(comp, +1); renderRows(list); }
+      else if (k === 27) { e.preventDefault(); closeOverlay(); }
     });
 
-    // autofocus first row
     setTimeout(function () {
       var first = list.querySelector('.rme-row');
       if (first) first.focus();
     }, 50);
   }
 
-  // ---------------- Watch settings menu ----------------
+  // ---------------- Observer & polling (only in settings) ----------------
   function attachObserver(root) {
-    if (mo) return;
+    if (!root) return;
+
+    if (mo && lastRoot === root) return;
+
+    // якщо root змінився — перевішуємо observer
+    if (mo) {
+      try { mo.disconnect(); } catch (e) {}
+      mo = null;
+    }
+    lastRoot = root;
 
     mo = new MutationObserver(function () {
-      debounceApply(80);
+      // на мобілі під час анімацій DOM сильно смикається — ставимо дебаунс
+      debounceApply(200);
     });
 
-    try { mo.observe(root, { childList: true, subtree: true }); } catch (e) { mo = null; }
+    try { mo.observe(root, { childList: true, subtree: false }); } catch (e2) { mo = null; }
   }
 
-  function tickFindSettings() {
+  function tick() {
+    if (!inSettingsNow()) return;
+
     var root = getSettingsRoot();
     if (!root) return;
 
     attachObserver(root);
-    applyState();
+    debounceApply(120);
   }
 
-  // ---------------- Boot ----------------
   function start() {
-    // легкий polling, бо settings DOM з’являється/перемальовується динамічно
-    clearInterval(pollTimer);
-    pollTimer = setInterval(tickFindSettings, 600);
+    // реагуємо на відкриття/закриття settings
+    window.addEventListener('hashchange', function () {
+      if (inSettingsNow()) {
+        // кілька спроб, бо меню рендериться не миттєво
+        setTimeout(tick, 80);
+        setTimeout(tick, 250);
+        setTimeout(tick, 800);
+      }
+    });
 
-    // перша спроба одразу
-    setTimeout(tickFindSettings, 200);
-    setTimeout(tickFindSettings, 1200);
+    clearInterval(pollTimer);
+    pollTimer = setInterval(function () {
+      // polling тільки коли в settings
+      if (inSettingsNow()) tick();
+    }, 700);
+
+    // перший старт
+    setTimeout(function () { if (inSettingsNow()) tick(); }, 250);
+    setTimeout(function () { if (inSettingsNow()) tick(); }, 1200);
+
+    // відкриття редактора через пункт
+    // (ensureEditItem викликається з applyState)
   }
 
   function startWhenReady() {
@@ -502,4 +556,8 @@
   } else {
     startWhenReady();
   }
+
+  // експорт для дебагу (можеш викликати з консолі на телефоні/ПК)
+  window.__right_menu_editor_apply__ = function () { applyState(); };
+  window.__right_menu_editor_open__  = function () { openEditor(); };
 })();

@@ -211,7 +211,7 @@
             'https://cors.bwa.workers.dev/'
         ],
         WORKER_KEY: 'lqe_2026_x9A3fQ7P2KJmLwD8N4s0Z', // ключ
-        PROXY_TIMEOUT_MS: 4000, // Таймаут для проксі запитів (4 секунди)
+        PROXY_TIMEOUT_MS: 3000, // Таймаут для проксі запитів (3 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: false, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці
 
@@ -481,22 +481,75 @@
      * @param {string} cardId - ID картки (тільки для логів)
      * @param {function} callback - callback(err, data)
      */
+/**
+ * Виконує запит: спочатку напряму, потім через проксі по черзі
+ * Працює і на старих WebView через LQE_safeFetchText (fetch/XHR).
+ *
+ * @param {string} url - оригінальний URL
+ * @param {string} cardId - ID картки (для логів)
+ * @param {function} callback - callback(err, dataText)
+ */
 function fetchSmart(url, cardId, callback) {
     var called = false;
 
     function done(err, data) {
         if (called) return;
         called = true;
+        if (typeof updateNetworkHealth === 'function') {
+            updateNetworkHealth(!err);
+        }
         callback(err, data);
     }
 
-    // 1) Direct
-    window.LQE_safeFetchText(url)
+    // якщо сумісний fetch/XHR-обгортки немає — одразу фейл (щоб не падати)
+    var fetchText = window.LQE_safeFetchText;
+    if (typeof fetchText !== 'function') {
+        done(new Error('LQE_safeFetchText is not available'));
+        return;
+    }
+
+    function withTimeout(promise, ms) {
+        return new Promise(function (resolve, reject) {
+            var t = setTimeout(function () {
+                reject(new Error('Timeout ' + ms + 'ms'));
+            }, ms);
+
+            promise.then(function (v) {
+                clearTimeout(t);
+                resolve(v);
+            }).catch(function (e) {
+                clearTimeout(t);
+                reject(e);
+            });
+        });
+    }
+
+    function buildProxyUrl(tpl, rawUrl) {
+        // підстановка ключа для воркера
+        if (tpl.indexOf('{KEY}') !== -1) {
+            var k = (LQE_CONFIG.WORKER_KEY || '');
+            tpl = tpl.replace('{KEY}', encodeURIComponent(k));
+        }
+
+        // cors.bwa.workers.dev очікує формат Host/{URL} (краще без encodeURIComponent)
+        // приклад: https://cors.bwa.workers.dev/http://example.com
+        if (tpl.indexOf('cors.bwa.workers.dev') !== -1) {
+            // гарантуємо, що між хостом і URL є "/"
+            if (tpl.charAt(tpl.length - 1) !== '/') tpl += '/';
+            return tpl + rawUrl;
+        }
+
+        // allorigins/raw?url= та твій воркер url= — тут URL треба кодувати
+        return tpl + encodeURIComponent(rawUrl);
+    }
+
+    // 1) СПОЧАТКУ прямий запит
+    withTimeout(fetchText(url), 5000)
         .then(function (text) {
             done(null, text);
         })
         .catch(function () {
-            // 2) Proxy fallback
+            // 2) Якщо напряму не вийшло — пробуємо проксі по черзі
             if (!LQE_CONFIG.PROXY_LIST || !LQE_CONFIG.PROXY_LIST.length) {
                 done(new Error('Direct fetch failed'));
                 return;
@@ -504,60 +557,31 @@ function fetchSmart(url, cardId, callback) {
 
             var index = 0;
 
-            function tryProxy() {
+            function tryNextProxy() {
                 if (index >= LQE_CONFIG.PROXY_LIST.length) {
                     done(new Error('All proxies failed'));
                     return;
                 }
 
-                var proxyTpl = LQE_CONFIG.PROXY_LIST[index];
-                index++;
+                var tpl = LQE_CONFIG.PROXY_LIST[index++];
+                var proxyUrl = buildProxyUrl(tpl, url);
 
-                // підстановка {KEY} (якщо є)
-                if (proxyTpl.indexOf('{KEY}') !== -1) {
-                    var k = (LQE_CONFIG.WORKER_KEY || '');
-                    proxyTpl = proxyTpl.replace('{KEY}', encodeURIComponent(k));
+                if (LQE_CONFIG.LOGGING_GENERAL) {
+                    console.log('LQE-LOG', 'card: ' + cardId + ', Proxy fetch:', proxyUrl);
                 }
 
-                // нормалізуємо слеш для Host/{URL}
-                var endsWithSlash = proxyTpl.charAt(proxyTpl.length - 1) === '/';
-
-                var proxyUrl;
-                if (proxyTpl.indexOf('url=') !== -1) {
-                    // формат ...?url=
-                    proxyUrl = proxyTpl + encodeURIComponent(url);
-                } else {
-                    // формат Host/{URL} -> ТРЕБА КОДУВАТИ, інакше ? & зламають URL
-                    proxyUrl = proxyTpl + (endsWithSlash ? '' : '/') + encodeURIComponent(url);
-                }
-
-                // локальний таймаут на конкретний проксі (щоб не висіло “вічно”)
-                var finished = false;
-                var t = setTimeout(function () {
-                    if (finished) return;
-                    finished = true;
-                    tryProxy();
-                }, (LQE_CONFIG.PROXY_TIMEOUT_MS || 4000));
-
-                window.LQE_safeFetchText(proxyUrl)
+                withTimeout(fetchText(proxyUrl), LQE_CONFIG.PROXY_TIMEOUT_MS || 3000)
                     .then(function (text) {
-                        if (finished) return;
-                        finished = true;
-                        clearTimeout(t);
                         done(null, text);
                     })
                     .catch(function () {
-                        if (finished) return;
-                        finished = true;
-                        clearTimeout(t);
-                        tryProxy();
+                        tryNextProxy();
                     });
             }
 
-            tryProxy();
+            tryNextProxy();
         });
 }
-
 
     /*function fetchWithProxy(url, cardId, callback) {
         var currentProxyIndex = 0;       // який проксі зараз пробуємо
@@ -1068,180 +1092,150 @@ function fetchSmart(url, cardId, callback) {
             }
 
             // Функція пошуку в JacRed API
-function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
-    var userId = Lampa.Storage.get('lampac_unic_id', '');
-    var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
-        encodeURIComponent(searchTitle) +
-        '&year=' + searchYear +
-        (exactMatch ? '&exact=true' : '') +
-        '&uid=' + userId;
+            function searchJacredApi(searchTitle, searchYear, exactMatch, strategyName, apiCallback) {
+                var userId = Lampa.Storage.get('lampac_unic_id', '');
+                var apiUrl = LQE_CONFIG.JACRED_PROTOCOL + LQE_CONFIG.JACRED_URL + '/api/v1.0/torrents?search=' +
+                    encodeURIComponent(searchTitle) +
+                    '&year=' + searchYear +
+                    (exactMatch ? '&exact=true' : '') +
+                    '&uid=' + userId;
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " URL: " + apiUrl);
+                // Таймаут для запиту
+                var timeoutId = setTimeout(function () {
+                    if (LQE_CONFIG.LOGGING_GENERAL) console.log("LQE-LOG", "card: " + cardId + ", JacRed: " + strategyName + " request timed out.");
+                    apiCallback(null);
+                }, LQE_CONFIG.PROXY_TIMEOUT_MS * LQE_CONFIG.PROXY_LIST.length + 1000);
 
-    if (LQE_CONFIG.LOGGING_QUALITY) {
-        console.log("LQE-QUALITY", "card: " + cardId + ", JacRed: " + strategyName + " URL: " + apiUrl);
-    }
+                // Виконуємо запит через проксі
+                fetchSmart(apiUrl, cardId, function (error, responseText) {
+                //fetchWithProxy(apiUrl, cardId, function (error, responseText) {
+                    clearTimeout(timeoutId);
 
-    // =================== SAFE CALLBACK ===================
-    var finished = false;
-    function safeApiCallback(res) {
-        if (finished) return;
-        finished = true;
-        apiCallback(res);
-    }
+                    if (error || !responseText) {
+                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed fetch error:", error);
+                        apiCallback(null);
+                        return;
+                    }
 
-    // =================== TIMEOUT ===================
-    var proxiesCount = (LQE_CONFIG.PROXY_LIST && LQE_CONFIG.PROXY_LIST.length)
-        ? LQE_CONFIG.PROXY_LIST.length
-        : 1;
-
-    var timeoutMs = (LQE_CONFIG.PROXY_TIMEOUT_MS || 4000) * proxiesCount + 1000;
-
-    var timeoutId = setTimeout(function () {
-        if (LQE_CONFIG.LOGGING_GENERAL) {
-            console.log("LQE-LOG", "card: " + cardId + ", JacRed: " + strategyName + " request timed out.");
-        }
-        safeApiCallback(null);
-    }, timeoutMs);
-
-    // =================== FETCH ===================
-    fetchSmart(apiUrl, cardId, function (error, responseText) {
-        clearTimeout(timeoutId);
-        if (finished) return;
-
-        if (error || !responseText) {
-            if (LQE_CONFIG.LOGGING_QUALITY) {
-                console.log("LQE-QUALITY", "card: " + cardId + ", JacRed fetch error:", error);
-            }
-            safeApiCallback(null);
-            return;
-        }
-
-        try {
-            var parsed = JSON.parse(responseText);
-
-            // ✅ JacRed v1 (Array) / v2 ({Results:[...]}) support
-            var torrents = Array.isArray(parsed)
-                ? parsed
-                : (parsed && Array.isArray(parsed.Results) ? parsed.Results : null);
-
-            if (!torrents || torrents.length === 0) {
-                if (LQE_CONFIG.LOGGING_QUALITY) {
-                    console.log("LQE-QUALITY", "card: " + cardId + ", No torrents found / invalid format");
-                }
-                safeApiCallback(null);
-                return;
-            }
-
-            var bestNumericQuality = -1;
-            var bestFoundTorrent = null;
-
-            for (var i = 0; i < torrents.length; i++) {
-                var currentTorrent = torrents[i];
-                if (!currentTorrent) continue;
-
-                // =================== TITLE (v1/v2) ===================
-                var rawTitle = (currentTorrent.title != null ? currentTorrent.title : currentTorrent.Title);
-                var title = rawTitle ? String(rawTitle) : '';
-                if (!title) continue;
-                var titleLower = title.toLowerCase();
-
-                // =================== TV / MOVIE FILTER ===================
-                if (normalizedCard.type === 'tv') {
-                    if (!/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(titleLower)) {
-                        if (LQE_CONFIG.LOGGING_QUALITY) {
-                            console.log("LQE-QUALITY", "card: " + cardId + ", Skip (no season mark):", title);
+                    try {
+                        var torrents = JSON.parse(responseText);
+                        if (!Array.isArray(torrents) || torrents.length === 0) {
+                            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", No torrents found");
+                            apiCallback(null);
+                            return;
                         }
-                        continue;
-                    }
-                }
 
-                if (normalizedCard.type === 'movie') {
-                    if (/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(titleLower)) {
-                        if (LQE_CONFIG.LOGGING_QUALITY) {
-                            console.log("LQE-QUALITY", "card: " + cardId + ", Skip (series mark in movie):", title);
+                        var bestNumericQuality = -1; // Найкраща знайдена якість
+                        var bestFoundTorrent = null; // Найкращий знайдений торрент
+
+                        // Аналізуємо кожен торрент
+                        for (var i = 0; i < torrents.length; i++) {
+                            var currentTorrent = torrents[i];
+
+
+                            // Якщо картка - це серіал (tv)
+                            if (normalizedCard.type === 'tv') {
+                                var tTitle = currentTorrent.title.toLowerCase(); // назву приводимо до нижнього регістру
+                                // Перевірка: у назві має бути "сезон", "season", "s01", "s1", "серии" тощо
+                                if (!/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(tTitle)) {
+                                    if (LQE_CONFIG.LOGGING_QUALITY) {
+                                        console.log(
+                                            "LQE-QUALITY",
+                                            "card: " + cardId + ", Пропускаємо торрент без ознаки сезону:", currentTorrent.title
+                                        );
+                                    }
+                                    continue; // пропускаємо реліз, якщо це серіал, але немає сезону в назві
+                                }
+                            }
+
+                            // Якщо картка - це фільм (movie)
+                            if (normalizedCard.type === 'movie') {
+                                var tTitleMovie = currentTorrent.title.toLowerCase();
+                                // Якщо в назві є ознаки серіалу – пропускаємо (щоб не брати якість від серіалів)
+                                if (/(сезон|season|s\d{1,2}|\d{1,2}\s*из\s*\d{1,2}|серии)/.test(tTitleMovie)) {
+                                    if (LQE_CONFIG.LOGGING_QUALITY) {
+                                        console.log(
+                                            "LQE-QUALITY",
+                                            "card: " + cardId + ", Пропускаємо реліз із ознаками серіалу для фільму:",
+                                            currentTorrent.title
+                                        );
+                                    }
+                                    continue; // пропускаємо цей торрент
+                                }
+                            }
+
+                            // Визначаємо якість (спочатку з поля, потім з назви)
+                            var currentNumericQuality = currentTorrent.quality;
+                            if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
+                                var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
+                                if (extractedQuality > 0) {
+                                    currentNumericQuality = extractedQuality;
+                                } else {
+                                    continue; // Пропускаємо якщо якість не визначена
+                                }
+                            }
+
+                            // === ЗМІНА 2: Покращена валідація року ===
+                            var torrentYearRaw = currentTorrent.relased;
+                            var parsedYear = 0;
+                            if (torrentYearRaw && !isNaN(torrentYearRaw)) {
+                                parsedYear = parseInt(torrentYearRaw, 10);
+                            }
+                            // Якщо рік не знайдено в полі 'relased', спробуємо витягнути з назви
+                            if (parsedYear < 1900) {
+                                parsedYear = extractYearFromTitle(currentTorrent.title);
+                            }
+
+                            // ✅✅✅ Дозволяємо різницю в 1 рік (наприклад, реліз в грудні, а торрент з'явився в січні)
+                            var yearDifference = Math.abs(parsedYear - searchYearNum);
+                            if (parsedYear > 1900 && yearDifference > 1) {
+                                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Torrent year mismatch, skipping. Torrent: " + currentTorrent.title + ", Searched: " + searchYearNum + ", Found: " + parsedYear);
+                                continue;
+                            }
+                            // === КІНЕЦЬ ЗМІНИ 2 ===
+
+                            if (LQE_CONFIG.LOGGING_QUALITY) {
+                                console.log(
+                                    "LQE-QUALITY",
+                                    "card: " + cardId +
+                                    ", Torrent: " + currentTorrent.title +
+                                    " | Quality: " + currentNumericQuality + "p" +
+                                    " | Year: " + (parsedYear || "unknown") +
+                                    " | Strategy: " + strategyName
+                                );
+                            }
+
+                            // ✅ ЛОГІКА ВИБОРУ ТОРРЕНТУ
+                            if (currentNumericQuality > bestNumericQuality) {
+                                // Знайшли торрент з кращою якістю
+                                bestNumericQuality = currentNumericQuality;
+                                bestFoundTorrent = currentTorrent;
+                            }
+                            else if (currentNumericQuality === bestNumericQuality && bestFoundTorrent &&
+                                currentTorrent.title.length > bestFoundTorrent.title.length) {
+                                // Якість рівна - беремо торрент з довшою назвою (більше деталей)
+                                bestFoundTorrent = currentTorrent;
+                            }
                         }
-                        continue;
+
+                        if (bestFoundTorrent) {
+                            var result = {
+                                quality: bestFoundTorrent.quality || bestNumericQuality,
+                                full_label: bestFoundTorrent.title
+                            };
+                            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", Best torrent found:", result, "Quality:", bestNumericQuality);
+                            apiCallback(result);
+                        } else {
+                            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", No suitable torrent found");
+                            apiCallback(null);
+                        }
+
+                    } catch (e) {
+                        console.error("LQE-LOG", "card: " + cardId + ", JacRed API parse error:", e);
+                        apiCallback(null);
                     }
-                }
-
-                // =================== QUALITY (v1/v2) ===================
-                var qRaw = (currentTorrent.quality != null ? currentTorrent.quality : currentTorrent.Quality);
-                var currentNumericQuality =
-                    (typeof qRaw === 'number') ? qRaw :
-                    (qRaw && !isNaN(qRaw) ? parseInt(qRaw, 10) : 0);
-
-                if (!currentNumericQuality) {
-                    var extracted = extractNumericQualityFromTitle(title);
-                    if (extracted > 0) currentNumericQuality = extracted;
-                    else continue;
-                }
-
-                // =================== YEAR (v1/v2, tolerant) ===================
-                var yRaw =
-                    (currentTorrent.relased != null ? currentTorrent.relased :
-                    (currentTorrent.Relased != null ? currentTorrent.Relased :
-                    (currentTorrent.released != null ? currentTorrent.released :
-                    (currentTorrent.Released != null ? currentTorrent.Released :
-                    (currentTorrent.year != null ? currentTorrent.year :
-                    (currentTorrent.Year != null ? currentTorrent.Year : null))))));
-
-                var parsedYear = 0;
-                if (yRaw && !isNaN(yRaw)) parsedYear = parseInt(yRaw, 10);
-                if (parsedYear < 1900) parsedYear = extractYearFromTitle(title);
-
-                if (parsedYear > 1900 && Math.abs(parsedYear - searchYearNum) > 1) {
-                    if (LQE_CONFIG.LOGGING_QUALITY) {
-                        console.log("LQE-QUALITY", "card: " + cardId + ", Year mismatch, skip:", title, "found:", parsedYear, "need:", searchYearNum);
-                    }
-                    continue;
-                }
-
-                if (LQE_CONFIG.LOGGING_QUALITY) {
-                    console.log(
-                        "LQE-QUALITY",
-                        "card: " + cardId +
-                        ", Torrent: " + title +
-                        " | Quality: " + currentNumericQuality + "p" +
-                        " | Year: " + (parsedYear || "unknown") +
-                        " | Strategy: " + strategyName
-                    );
-                }
-
-                // =================== BEST PICK ===================
-                if (
-                    currentNumericQuality > bestNumericQuality ||
-                    (
-                        currentNumericQuality === bestNumericQuality &&
-                        bestFoundTorrent &&
-                        title.length > String((bestFoundTorrent.title != null ? bestFoundTorrent.title : bestFoundTorrent.Title) || '').length
-                    )
-                ) {
-                    bestNumericQuality = currentNumericQuality;
-                    bestFoundTorrent = currentTorrent;
-                }
-            }
-
-            if (bestFoundTorrent) {
-                var bestTitle = (bestFoundTorrent.title != null ? bestFoundTorrent.title : bestFoundTorrent.Title);
-                safeApiCallback({
-                    quality: (bestFoundTorrent.quality != null ? bestFoundTorrent.quality : (bestFoundTorrent.Quality != null ? bestFoundTorrent.Quality : bestNumericQuality)) || bestNumericQuality,
-                    full_label: bestTitle
                 });
-            } else {
-                if (LQE_CONFIG.LOGGING_QUALITY) {
-                    console.log("LQE-QUALITY", "card: " + cardId + ", No suitable torrent found");
-                }
-                safeApiCallback(null);
             }
-
-        } catch (e) {
-            console.error("LQE-LOG", "card: " + cardId + ", JacRed parse error:", e);
-            safeApiCallback(null);
-        }
-    });
-}
-
-
-
 
             // ✅ СТРАТЕГІЇ ПОШУКУ
             var searchStrategies = [];

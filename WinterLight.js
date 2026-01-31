@@ -325,66 +325,78 @@ function tvShiftPx() {
 
 
   // ======= ПЕРЕМЕЩЕНИЕ РЯДОМ СО СНЕГОМ =======
-  function closestMenuItem(node) {
-    if (!node) return null;
-    return node.closest('.menu__item') || node.closest('li') || node.closest('.menu-item') || null;
-  }
-function getSettingsScrollBody() {
-  // Найнадійніше: саме контейнер зі списком settings-folder
-  return document.querySelector('.scroll__content .scroll__body') || null;
-}
+  // ======= SETTINGS ORDER: after "Інше" (data-component="more") =======
 
-function getSettingsItemByComponent(component) {
-  var root = getSettingsScrollBody();
-  if (!root) return null;
-  return root.querySelector('.settings-folder.selector[data-component="' + component + '"]');
-}
-
-function reorderGarlandAfterSnow() {
-  var root = getSettingsScrollBody();
-  if (!root) return false;
-
-  var garItem = getSettingsItemByComponent('garlandfx');
-  if (!garItem) return false;
-
-  var snowItem = getSettingsItemByComponent('snowfx');
-
-  // Гірлянда завжди остання
-  if (root.lastElementChild !== garItem) root.appendChild(garItem);
-
-  // Сніг, якщо є, прямо над гірляндою
-  if (snowItem) {
-    if (snowItem.nextElementSibling !== garItem) root.insertBefore(snowItem, garItem);
+  function getSettingsRoot() {
+    // root саме для Settings-екрана
+    var settings = document.querySelector('.settings');
+    if (!settings) return null;
+    return settings.querySelector('.scroll__content .scroll__body') || null;
   }
 
-  return true;
-}
+  function getSettingsItem(component) {
+    var root = getSettingsRoot();
+    if (!root) return null;
+    return root.querySelector('.settings-folder.selector[data-component="' + component + '"]') || null;
+  }
 
+  function insertAfterEl(parent, node, ref) {
+    if (!parent || !node || !ref) return false;
 
+    // важливо: тільки element-sibling, без text nodes
+    var next = ref.nextElementSibling;
+    if (next) parent.insertBefore(node, next);
+    else parent.appendChild(node);
 
+    return true;
+  }
+
+  function reorderSnowGarlandAfterMore() {
+    var root = getSettingsRoot();
+    if (!root) return false;
+
+    var more = getSettingsItem('more');       // "Інше"
+    if (!more) return false;
+
+    var snow = getSettingsItem('snowfx');     // "Сніг" (може бути)
+    var gar  = getSettingsItem('garlandfx');  // "Гірлянда" (має бути тут)
+    if (!gar) return false;
+
+    // 1) Сніг одразу після "Інше" (якщо є)
+    if (snow) insertAfterEl(root, snow, more);
+
+    // 2) Гірлянда одразу після Снігу, а якщо снігу нема — одразу після "Інше"
+    insertAfterEl(root, gar, snow || more);
+
+    return true;
+  }
 
   var settingsMO = null;
   var reorderTimer = 0;
 
-  function startSettingsReorderWatch() {
-    if (settingsMO) return;
+function startSettingsReorderWatch() {
+  if (settingsMO) return;
 
-    // несколько попыток (меню иногда строится с задержкой)
+  clearTimeout(reorderTimer);
+
+  // кілька спроб
+  setTimeout(reorderSnowGarlandAfterMore, 60);
+  setTimeout(reorderSnowGarlandAfterMore, 250);
+  setTimeout(reorderSnowGarlandAfterMore, 800);
+  setTimeout(reorderSnowGarlandAfterMore, 1500);
+  setTimeout(reorderSnowGarlandAfterMore, 2500);
+
+  var root = getSettingsRoot();
+  if (!root) return; // нема куди підписуватись
+
+  settingsMO = new MutationObserver(function () {
     clearTimeout(reorderTimer);
-    reorderTimer = setTimeout(reorderGarlandAfterSnow, 50);
-    setTimeout(reorderGarlandAfterSnow, 250);
-    setTimeout(reorderGarlandAfterSnow, 700);
-	setTimeout(reorderGarlandAfterSnow, 1500);
-	setTimeout(reorderGarlandAfterSnow, 2500);
+    reorderTimer = setTimeout(reorderSnowGarlandAfterMore, 80);
+  });
 
-    settingsMO = new MutationObserver(function () {
-      // throttle
-      clearTimeout(reorderTimer);
-      reorderTimer = setTimeout(reorderGarlandAfterSnow, 40);
-    });
+  settingsMO.observe(root, { childList: true, subtree: true });
+}
 
-    settingsMO.observe(document.body, { childList: true, subtree: true });
-  }
 
   function stopSettingsReorderWatch() {
     if (!settingsMO) return;
@@ -399,6 +411,7 @@ function reorderGarlandAfterSnow() {
     if (inSettings) startSettingsReorderWatch();
     else stopSettingsReorderWatch();
   }
+
 
   // ======= Renderer manager =======
   var current_renderer = null;
@@ -454,8 +467,8 @@ function reorderGarlandAfterSnow() {
     var st = document.createElement('style');
     st.id = DOM_STYLE_ID;
 
-    st.textContent =
-      '#' + DOM_ROOT_ID + '{position:fixed;left:0;top:0;width:100%;height:130px;pointer-events:none;z-index:99999;opacity:1;transition:opacity .18s ease;transform:translateZ(0);contain:layout paint;}' +
+  st.textContent =
+ 	  '#' + DOM_ROOT_ID + '{position:fixed;left:0;top:0;width:100%;height:130px;pointer-events:none;z-index:99999;opacity:1;transition:opacity .18s ease;transform:translateY(var(--garland-shift,0px)) translateZ(0);contain:layout paint;}' +
       '#' + DOM_ROOT_ID + '.hidden{opacity:0;}' +
       '#' + DOM_ROOT_ID + '.paused .bulb{animation-play-state:paused !important;box-shadow:none !important;}' +
       '#' + DOM_ROOT_ID + '.is-mobile{height:76px;overflow:hidden;padding-top:env(safe-area-inset-top);}' +
@@ -565,7 +578,6 @@ function reorderGarlandAfterSnow() {
       resizeTimer = setTimeout(function () {
         MOBILE = isMobileDevice();
         root.style.setProperty('--garland-shift', tvShiftPx() + 'px');
-        root.style.setProperty('--garland-shift', tvShiftPx() + 'px');
       root.classList.toggle('is-mobile', MOBILE);
         render();
         sync();
@@ -609,8 +621,8 @@ function reorderGarlandAfterSnow() {
 
     var st = document.createElement('style');
     st.id = CANVAS_STYLE_ID;
-    st.textContent =
-      '#' + CANVAS_ROOT_ID + '{position:fixed;left:0;top:0;width:100%;height:130px;pointer-events:none;z-index:99999;opacity:1;transition:opacity .18s ease;contain:layout paint;}' +
+	st.textContent =
+  	  '#' + CANVAS_ROOT_ID + '{position:fixed;left:0;top:0;width:100%;height:130px;pointer-events:none;z-index:99999;opacity:1;transition:opacity .18s ease;transform:translateY(var(--garland-shift,0px));contain:layout paint;}' +
       '#' + CANVAS_ROOT_ID + '.hidden{opacity:0;}' +
       '#' + CANVAS_ROOT_ID + '.is-mobile{height:76px;overflow:hidden;padding-top:env(safe-area-inset-top);}' +
       '#' + CANVAS_ROOT_ID + ' canvas{display:block;width:100%;height:100%;}';
@@ -884,7 +896,8 @@ function drawBulb(b, w, now) {
 
     function tick() {
       var w = Math.max(320, window.innerWidth || 1920);
-      var h = MOBILE ? 76 : 130;
+      var h = MOBILE ? 76 : ((TIZEN || TV) ? 96 : 130);
+
 
       var hidden = shouldHideNow();
       root.classList.toggle('hidden', hidden);
@@ -992,7 +1005,7 @@ function drawBulb(b, w, now) {
       // если в настройках — периодически пробуем ещё раз (на случай ленивой отрисовки меню)
       var h = (location.hash || '').toLowerCase();
       if (h.indexOf('settings') !== -1 || h.indexOf('настройк') !== -1) {
-        reorderGarlandAfterSnow();
+        reorderSnowGarlandAfterMore();
       }
     }, 700);
   }

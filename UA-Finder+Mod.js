@@ -292,26 +292,39 @@
      * @param {string} cardId - ID картки для логування.
      * @param {function} callback - Функція, яка викликається з результатом `(error, data)`.
      */
-    function fetchSmart(url, cardId, callback) {
+function fetchSmart(url, cardId, callback) {
     var called = false;
+
+    // ✅ HARD TIMEOUT (рубильник на весь ланцюг)
+    var proxyCount = (LTF_CONFIG.PROXY_LIST && LTF_CONFIG.PROXY_LIST.length) ? LTF_CONFIG.PROXY_LIST.length : 0;
+    var totalMs = (Math.max(1500, LTF_CONFIG.PROXY_TIMEOUT_MS || 3000)   // direct
+                  + (LTF_CONFIG.PROXY_TIMEOUT_MS || 3000) * proxyCount   // all proxies
+                  + 800);                                                // запас
+    var hardTimer = setTimeout(function () {
+        done(new Error('fetchSmart hard timeout'));
+    }, totalMs);
 
     function done(err, data) {
         if (called) return;
         called = true;
+
+        // ✅ важливо: знімаємо hard-timeout
+        clearTimeout(hardTimer);
+
         if (typeof updateNetworkHealth === 'function') {
             updateNetworkHealth(!err);
         }
         callback(err, data);
     }
 
-    // 1️⃣ СПОЧАТКУ — прямий запит (Jacred працює напряму!)
+    // 1️⃣ direct
     LTF_safeFetchText(url, Math.max(1500, LTF_CONFIG.PROXY_TIMEOUT_MS || 3000))
         .then(function (text) {
             done(null, text);
         })
         .catch(function () {
 
-            // 2️⃣ ПРОКСІ — ТІЛЬКИ ЯК FALLBACK
+            // 2️⃣ proxies fallback
             if (!LTF_CONFIG.PROXY_LIST || !LTF_CONFIG.PROXY_LIST.length) {
                 done(new Error('Direct fetch failed'));
                 return;
@@ -319,32 +332,37 @@
 
             var index = 0;
 
-function tryProxy() {
-    if (index >= LTF_CONFIG.PROXY_LIST.length) {
-        done(new Error('All proxies failed'));
-        return;
-    }
+            function tryProxy() {
+                if (index >= LTF_CONFIG.PROXY_LIST.length) {
+                    done(new Error('All proxies failed'));
+                    return;
+                }
 
-    var proxy = LTF_CONFIG.PROXY_LIST[index];
-    index++;
+                var proxy = LTF_CONFIG.PROXY_LIST[index++];
+                var proxyUrl;
 
-    var proxyUrl;
-    if (proxy.indexOf('url=') !== -1) {
-        proxyUrl = proxy + encodeURIComponent(url);
-    } else {
-        // для проксі типу Host/{URL}
-        proxyUrl = proxy + url;
-    }
+                // allorigins / worker (?url=) -> encode
+                if (proxy.indexOf('url=') !== -1) {
+                    proxyUrl = proxy + encodeURIComponent(url);
+                } else {
+                    // cors.bwa.workers.dev/Host/{URL} -> без encode
+                    proxyUrl = (proxy.charAt(proxy.length - 1) === '/' ? proxy : (proxy + '/')) + url;
+                }
 
-    LTF_safeFetchText(proxyUrl, LTF_CONFIG.PROXY_TIMEOUT_MS)
-        .then(function (text) {
-            done(null, text);
-        })
-        .catch(tryProxy);
-}
+                LTF_safeFetchText(proxyUrl, LTF_CONFIG.PROXY_TIMEOUT_MS || 3000)
+                    .then(function (text) {
+                        done(null, text);
+                    })
+                    .catch(function () {
+                        tryProxy();
+                    });
+            }
+
             tryProxy();
         });
 }
+
+
    
     /*function fetchWithProxy(url, cardId, callback) {
         var currentProxyIndex = 0; // Починаємо з першого проксі.

@@ -322,6 +322,8 @@ function tvShiftPx() {
     } catch (e) {}
   }
 
+
+
   // ======= ПЕРЕМЕЩЕНИЕ РЯДОМ СО СНЕГОМ =======
   function closestMenuItem(node) {
     if (!node) return null;
@@ -329,24 +331,28 @@ function tvShiftPx() {
   }
 
   function reorderGarlandAfterSnow() {
-    // снег из snow_no_stripes.js: .snowfx-menu-icon
-    var snowIcon = document.querySelector('.snowfx-menu-icon');
     var garIcon  = document.querySelector('.garlandfx-menu-icon');
-    if (!snowIcon || !garIcon) return false;
+    if (!garIcon) return false;
 
-    var snowItem = closestMenuItem(snowIcon);
     var garItem  = closestMenuItem(garIcon);
-    if (!snowItem || !garItem) return false;
+    if (!garItem || !garItem.parentNode) return false;
 
-    var parent = snowItem.parentNode;
-    if (!parent || parent !== garItem.parentNode) return false;
+    var parent = garItem.parentNode;
 
-    // уже стоит сразу после снега
-    if (snowItem.nextSibling === garItem) return true;
+    // 1) Garland ALWAYS last
+    if (parent.lastChild !== garItem) parent.appendChild(garItem);
 
-    parent.insertBefore(garItem, snowItem.nextSibling);
+    // 2) If snow exists in same menu list -> it must be right ABOVE garland
+    var snowIcon = document.querySelector('.snowfx-menu-icon');
+    var snowItem = snowIcon ? closestMenuItem(snowIcon) : null;
+
+    if (snowItem && snowItem.parentNode === parent) {
+      if (snowItem.nextSibling !== garItem) parent.insertBefore(snowItem, garItem);
+    }
+
     return true;
   }
+
 
   var settingsMO = null;
   var reorderTimer = 0;

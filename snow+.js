@@ -1735,30 +1735,29 @@ function resetAccumulationSoft(reason) {
     return node.closest('.menu__item') || node.closest('li') || node.closest('.menu-item') || null;
   }
 
-  function reorderSnowInSettingsMenu() {
-    var snowIcon = document.querySelector('.snowfx-menu-icon');
-    if (!snowIcon) return false;
+function reorderSnowInSettingsMenu() {
+  var root = getSettingsScrollBody();
+  if (!root) return false;
 
-    var snowItem = snowClosestMenuItem(snowIcon);
-    if (!snowItem || !snowItem.parentNode) return false;
+  var snowItem = getSettingsItemByComponent('snowfx');
+  if (!snowItem) return false;
 
-    var parent = snowItem.parentNode;
+  var garItem = getSettingsItemByComponent('garlandfx');
 
-    // якщо є гірлянда в цьому ж списку — сніг має бути прямо над нею
-    var garIcon = document.querySelector('.garlandfx-menu-icon');
-    var garItem = garIcon ? snowClosestMenuItem(garIcon) : null;
+  if (garItem) {
+    // Спочатку робимо гірлянду останньою
+    if (root.lastElementChild !== garItem) root.appendChild(garItem);
 
-    if (garItem && garItem.parentNode === parent) {
-      if (snowItem.nextSibling === garItem) return true;
-      parent.insertBefore(snowItem, garItem);
-      return true;
-    }
-
-    // якщо гірлянди нема — сніг останній
-    if (parent.lastChild === snowItem) return true;
-    parent.appendChild(snowItem);
-    return true;
+    // Потім вставляємо сніг прямо перед гірляндою
+    if (snowItem.nextElementSibling !== garItem) root.insertBefore(snowItem, garItem);
+  } else {
+    // Якщо гірлянди нема — сніг останній
+    if (root.lastElementChild !== snowItem) root.appendChild(snowItem);
   }
+
+  return true;
+}
+
 
   var snowSettingsMO = null;
   var snowReorderTimer = 0;

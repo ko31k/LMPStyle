@@ -210,7 +210,7 @@
             'https://api.allorigins.win/raw?url=',
             'https://cors.bwa.workers.dev/'
         ],
-        WORKER_KEY: 'lqe_2026_x9A3fQ7P2KJmLwD8N4s0Z', // ключ
+        WORKER_KEY: 'lmp_2026_JacRed_K9xP7aQ4mV2E', // ключ
         PROXY_TIMEOUT_MS: 3000, // Таймаут для проксі запитів (3 секунди)
         SHOW_QUALITY_FOR_TV_SERIES: false, // ✅ Показувати якість для серіалів
         SHOW_FULL_CARD_LABEL: true,       // ✅ Показувати мітку якості у повній картці

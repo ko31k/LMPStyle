@@ -32,6 +32,8 @@
     var ukraineFlagSVG = '<i class="flag-css"></i>';
     // Головний об'єкт конфігурації
     var LTF_CONFIG = window.LTF_CONFIG || {
+        WRK_B: 'https://myfinder.kozak-bohdan.workers.dev/',
+        WRK_K: 'lmp_2026_JacRed_K9xP7aQ4mV2E',
         BADGE_STYLE: 'flag_count',        // 'text' | 'flag_count' | 'flag_only'
         SHOW_FOR_TV: true,          // показувати на серіалах
         // Налаштування кешу
@@ -45,10 +47,10 @@
         LOGGING_CARDLIST: true, // Логи обробки карток (скільки карток в пачці, тощо).
 
         // Налаштування API та мережі
-        JACRED_PROTOCOL: 'http://', // Протокол для API JacRed.
-        JACRED_URL: 'jr.maxvol.pro', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
+        JACRED_PROTOCOL: 'http://', 
+        JACRED_URL: 'jr.maxvol.pro',  //(redapi.cfhttp.top або jacred.xyz)
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
-            'https://myfinder.kozak-bohdan.workers.dev/?key=lqe_2026_x9A3fQ7P2KJmLwD8N4s0Z&url=',
+            'WRK',
             'https://api.allorigins.win/raw?url=',
             'https://cors.bwa.workers.dev/'
             
@@ -61,7 +63,7 @@
         // Налаштування функціоналу
         SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів (true або false).
 
-        // ✅ ОНОВЛЕНО: Налаштування відображення
+        //Налаштування відображення
         DISPLAY_MODE: 'flag_count', // Режим відображення мітки. Варіанти:
         // 'text': "Ukr" або "2xUkr"
         // 'flag_count': [SVG] або "2x[SVG]"
@@ -359,16 +361,24 @@ function fetchSmart(url, cardId, callback) {
                     return;
                 }
 
-                var proxy = LTF_CONFIG.PROXY_LIST[index++];
-                var proxyUrl;
+var proxy = LTF_CONFIG.PROXY_LIST[index++];
+var proxyUrl;
 
-                // allorigins / worker (?url=) -> encode
-                if (proxy.indexOf('url=') !== -1) {
-                    proxyUrl = proxy + encodeURIComponent(url);
-                } else {
-                    // cors.bwa.workers.dev/Host/{URL} -> без encode
-                    proxyUrl = (proxy.charAt(proxy.length - 1) === '/' ? proxy : (proxy + '/')) + url;
-                }
+if (proxy === 'WRK') {
+    proxyUrl =
+        LTF_CONFIG.WRK_B +
+        '?key=' + encodeURIComponent(LTF_CONFIG.WRK_K) +
+        '&url=' + encodeURIComponent(url);
+
+} else if (proxy.indexOf('url=') !== -1) {
+    // allorigins style (?url=)
+    proxyUrl = proxy + encodeURIComponent(url);
+
+} else {
+    // cors.bwa.workers.dev/Host/{URL} -> без encode
+    proxyUrl = (proxy.charAt(proxy.length - 1) === '/' ? proxy : (proxy + '/')) + url;
+}
+
 
                 LTF_safeFetchText(proxyUrl, LTF_CONFIG.PROXY_TIMEOUT_MS || 3000)
                     .then(function (text) {

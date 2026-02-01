@@ -45,16 +45,16 @@
         LOGGING_CARDLIST: true, // Логи обробки карток (скільки карток в пачці, тощо).
 
         // Налаштування API та мережі
-        JACRED_PROTOCOL: 'https://', // Протокол для API JacRed.
-        JACRED_URL: 'jacred.xyz', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
+        JACRED_PROTOCOL: 'http://', // Протокол для API JacRed.
+        JACRED_URL: 'jr.maxvol.pro', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
         PROXY_LIST: [ // Список проксі-серверів для обходу CORS-обмежень.
             'https://myfinder.kozak-bohdan.workers.dev/?key=lqe_2026_x9A3fQ7P2KJmLwD8N4s0Z&url=',
             'https://api.allorigins.win/raw?url=',
             'https://cors.bwa.workers.dev/'
             
         ],
-        PROXY_TIMEOUT_MS: 2500, // Максимальний час очікування відповіді від одного проксі (4 секунди).
-        MAX_PARALLEL_REQUESTS: 8, // Максимальна кількість одночасних запитів до API.
+        PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (4 секунди).
+        MAX_PARALLEL_REQUESTS: 4, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
 
         // Налаштування функціоналу

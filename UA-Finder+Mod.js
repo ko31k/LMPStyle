@@ -56,6 +56,7 @@
         PROXY_TIMEOUT_MS: 3500, // Максимальний час очікування відповіді від одного проксі (4 секунди).
         MAX_PARALLEL_REQUESTS: 2, // Максимальна кількість одночасних запитів до API.
         MAX_RETRY_ATTEMPTS: 2, // (Зараз не використовується, але зарезервовано).
+        MIN_GAP_MS: 800, // Мінімальна пауза між стартами мережевих задач у черзі (анти-бан / анти-DDoS)
 
         // Налаштування функціоналу
         SHOW_TRACKS_FOR_TV_SERIES: true, // Чи показувати мітки для серіалів (true або false).
@@ -184,6 +185,25 @@
     var activeRequests = 0; // Лічильник активних (тих, що виконуються зараз) запитів.
     var networkHealth = 1.0; // Показник "здоров'я" мережі (1.0 = добре, 0.3 = погано).
 
+    var NEXT_REQUEST_TS = 0;
+
+    /**
+     * Гарантує мінімальну паузу між стартами task'ів.
+     * Паралельність контролюється activeRequests, а це — QPS.
+     */
+function scheduleStart(startFn) {
+    var now = Date.now();
+
+    // можна робити адаптивно, але ти просив просто MIN_GAP_MS
+    var gap = (LTF_CONFIG.MIN_GAP_MS || 700);
+
+    var wait = Math.max(0, NEXT_REQUEST_TS - now);
+    NEXT_REQUEST_TS = Math.max(NEXT_REQUEST_TS, now) + gap;
+
+    setTimeout(startFn, wait);
+}
+
+    
     /**
      * Додає завдання (функцію пошуку) до черги.
      * @param {function} fn - Функція, яку потрібно виконати.
@@ -199,7 +219,9 @@
     function processQueue() {
         // Адаптивний ліміт: базується на MAX_PARALLEL_REQUESTS, але зменшується,
         // якщо мережа "хворіє" (напр. проксі не відповідають).
-        var adaptiveLimit = Math.max(3, Math.min(LTF_CONFIG.MAX_PARALLEL_REQUESTS, Math.floor(LTF_CONFIG.MAX_PARALLEL_REQUESTS * networkHealth)));
+        var base = Math.max(1, (LTF_CONFIG.MAX_PARALLEL_REQUESTS || 1));
+        var adaptiveLimit = Math.max(1, Math.floor(base * networkHealth));
+
 
         // Не перевищувати адаптивний ліміт.
         if (activeRequests >= adaptiveLimit) return;
@@ -207,22 +229,21 @@
         var task = requestQueue.shift(); // Взяти перше завдання з черги.
         if (!task) return; // Якщо черга порожня, вийти.
 
-        activeRequests++; // Збільшити лічильник активних запитів.
+activeRequests++;
 
-        try {
-            // Виконати завдання.
-            // Важливо: ми передаємо в завдання функцію `onTaskDone`,
-            // яку це завдання *зобов'язане* викликати, коли завершиться.
-            task(function onTaskDone() {
-                activeRequests--; // Зменшити лічильник.
-                // Запустити обробку наступного завдання асинхронно (через 0ms).
-                setTimeout(processQueue, 0);
-            });
-        } catch (e) {
-            console.error("LTF-LOG", "Помилка виконання завдання з черги:", e);
-            activeRequests--; // Все одно зменшити лічильник при помилці.
+scheduleStart(function () {
+    try {
+        task(function onTaskDone() {
+            activeRequests--;
             setTimeout(processQueue, 0);
-        }
+        });
+    } catch (e) {
+        console.error("LTF-LOG", "Помилка виконання завдання з черги:", e);
+        activeRequests--;
+        setTimeout(processQueue, 0);
+    }
+});
+
     }
 
     /**
@@ -1033,30 +1054,41 @@ function fetchSmart(url, cardId, callback) {
 
             ltfToast('Кеш очищено. Оновлюю дані...');
 
-            // 3. БЕЗПЕЧНЕ ОНОВЛЕННЯ: Запускаємо пересканування по черзі, щоб не "повісити" інтерфейс
-            var cards = Array.from(document.querySelectorAll('.card')); // Беремо всі картки
-            var index = 0;
+// 3. Обмежений перескан: тільки видимі 5–10 карток.
+// Нові мітки для інших підтягнуться самі через Card.onVisible під час гортання.
+var MAX_RESCAN = 8; // або 5, якщо хочеш ще обережніше
+var RESCAN_GAP = 250; // пауза між картками (UI-friendly)
 
-            function processNext() {
-                if (index >= cards.length) return; // Кінець списку
+function isCardVisible(cardEl) {
+    if (!cardEl || !cardEl.isConnected) return false;
+    var r = cardEl.getBoundingClientRect();
+    // видима хоча б частково + в межах viewport
+    return (r.bottom > 0 && r.top < window.innerHeight);
+}
 
-                var card = cards[index];
-                // Перевіряємо, чи картка видима, щоб не витрачати ресурси даремно
-                if (card.isConnected && card.getBoundingClientRect().top < window.innerHeight) {
-                    // Викликаємо головну функцію. Оскільки кеш пустий, вона сама піде в мережу шукати дані
-                    if (typeof processListCard === 'function') {
-                        processListCard(card);
-                    }
-                }
+// беремо тільки видимі
+var visibleCards = Array.from(document.querySelectorAll('.card')).filter(isCardVisible);
 
-                index++;
-                // ❗ ГОЛОВНЕ: Робимо паузу 250мс між картками. 
-                // Це дозволить інтерфейсу реагувати на натискання пульта.
-                setTimeout(processNext, 250);
-            }
+// обмежуємо кількість
+visibleCards = visibleCards.slice(0, MAX_RESCAN);
 
-            processNext(); // Запуск ланцюжка
-        }
+var idx = 0;
+
+function rescanNext() {
+    if (idx >= visibleCards.length) return;
+
+    var el = visibleCards[idx++];
+    // Тут передаємо DOM — твій processListCard це витримає (він дістає card_data з cardRoot)
+    try {
+        if (typeof processListCard === 'function') processListCard(el);
+    } catch (e) { }
+
+    setTimeout(rescanNext, RESCAN_GAP);
+}
+
+rescanNext();
+
+}
 
         // ❗ Порожній шаблон — щоб не дублювати контейнер налаштувань
         Lampa.Template.add('settings_ltf', '<div></div>');

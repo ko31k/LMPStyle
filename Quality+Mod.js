@@ -308,6 +308,7 @@
         "Blu-Ray Remux 2160p | 4K | HDR | Dolby Vision P7": "4K BDRemux",
         "4K, HEVC, HDR / WEB-DLRip (2160p)": "4K WEB-DLRip",
         "Blu-ray disc (custom) 1080P] [StudioCanal]": "1080P BDRip",
+        "HD-DVD Remux": "HDRemux", "HDDVDRemux": "HDRemux",
         "HDTVRip [H.264/720p]": "720p HDTVRip",
         "HDTVRip 720p": "720p HDTVRip",
         "2025 / ЛМ / TC": "TC", // Telecine
@@ -342,7 +343,8 @@
     // Мапа для визначення джерела відео
     var SOURCE_MAP = {
         "blu-ray remux": "BDRemux", "uhd bdremux": "4K BDRemux", "bdremux": "BDRemux",
-        "remux": "BDRemux", "blu-ray disc": "Blu-ray", "bluray": "Blu-ray",
+        "remux": "BDRemux", "blu-ray disc": "Blu-ray", "bluray": "Blu-ray", "HD-DVD Remux": "HDRemux",
+        "HDDVDRemux": "HDRemux",
         "blu-ray": "Blu-ray", "bdrip": "BDRip", "brrip": "BDRip",
         "uhd blu-ray": "4K Blu-ray", "4k blu-ray": "4K Blu-ray",
         "web-dl": "WEB-DL", "webdl": "WEB-DL", "web dl": "WEB-DL",

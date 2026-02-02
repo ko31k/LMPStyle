@@ -207,7 +207,7 @@
         CACHE_REFRESH_THRESHOLD_MS: 24 * 60 * 60 * 1000, // Час для фонового оновлення кешу (24 годин)
         CACHE_KEY: 'lampa_quality_cache', // Ключ для зберігання кешу в LocalStorage
         JACRED_PROTOCOL: 'https://', // Протокол для API JacRed
-        JACRED_URL: 'jacred.xyz', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
+        JACRED_URL: 'jr.maxvol.pro', // Домен API JacRed (redapi.cfhttp.top або jacred.xyz)
         JACRED_API_KEY: '', // Ключ API (не використовується в даній версії)
         PROXY_LIST: [ // Список проксі серверів для обходу CORS обмежень
             'https://myfinder.kozak-bohdan.workers.dev/?key={KEY}&url=',

@@ -490,6 +490,7 @@
 function fetchWithProxy(url, cardId, callback) {
     var currentProxyIndex = 0;
     var callbackCalled = false;
+    var saw429 = false;
 
     function buildProxyUrl(proxy, targetUrl) {
         // підстановка ключа у воркер-проксі
@@ -508,16 +509,35 @@ function fetchWithProxy(url, cardId, callback) {
     }
 
     function tryNextProxy() {
-        if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {
-            if (!callbackCalled) {
-                callbackCalled = true;
-                callback(new Error('All proxies failed for ' + url));
-            }
-            return;
-        }
+if (currentProxyIndex >= LQE_CONFIG.PROXY_LIST.length) {
+    if (!callbackCalled) {
+        callbackCalled = true;
 
-        var proxy = LQE_CONFIG.PROXY_LIST[currentProxyIndex];
-        var proxyUrl = buildProxyUrl(proxy, url);
+        // якщо причина — 429/cooldown, повертаємо спец-помилку
+        if (saw429) {
+            callback(new Error('LQE_COOLDOWN'));
+        } else {
+            callback(new Error('All proxies failed for ' + url));
+        }
+    }
+    return;
+}
+
+
+var proxy = LQE_CONFIG.PROXY_LIST[currentProxyIndex];
+var proxyUrl = buildProxyUrl(proxy, url);
+
+// якщо цей proxy-host у cooldown — пропускаємо його
+var phost = lqeGetHost(proxyUrl);
+if (phost && lqeHostInCooldown(phost)) {
+    if (LQE_CONFIG.LOGGING_GENERAL) {
+        console.log("LQE-LOG", "card: " + cardId + ", Proxy in cooldown, skip:", phost);
+    }
+    currentProxyIndex++;
+    tryNextProxy();
+    return;
+}
+
 
         if (LQE_CONFIG.LOGGING_GENERAL) {
             console.log("LQE-LOG", "card: " + cardId + ", Fetch with proxy: " + proxyUrl);
@@ -531,31 +551,58 @@ function fetchWithProxy(url, cardId, callback) {
             tryNextProxy();
         }, LQE_CONFIG.PROXY_TIMEOUT_MS);
 
-        LQE_safeFetchText(proxyUrl)
-            .then(function (data) {
-                if (finished) return;
-                finished = true;
-                clearTimeout(timeoutId);
+LQE_safeFetchText(proxyUrl)
+    .then(function (data) {
+        if (finished) return;
 
-                if (!callbackCalled) {
-                    callbackCalled = true;
-                    callback(null, data);
-                }
-            })
-            .catch(function (error) {
-                if (finished) return;
-                finished = true;
-                clearTimeout(timeoutId);
+        // ⛔️ 429 як текстове тіло (від воркера або upstream)
+        if (typeof data === 'string' && data.indexOf('Too Many Requests') !== -1) {
+            finished = true;
+            clearTimeout(timeoutId);
 
-                console.error(
-                    "LQE-LOG",
-                    "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":",
-                    error
-                );
+            saw429 = true;
+            lqeSetHostCooldown(phost);
 
-                currentProxyIndex++;
-                tryNextProxy();
-            });
+            currentProxyIndex++;
+            tryNextProxy();
+            return;
+        }
+
+        // ✅ нормальна відповідь
+        finished = true;
+        clearTimeout(timeoutId);
+
+        if (!callbackCalled) {
+            callbackCalled = true;
+            callback(null, data);
+        }
+    })
+
+.catch(function (error) {
+    if (finished) return;
+    finished = true;
+    clearTimeout(timeoutId);
+
+    var emsg = (error && error.message) ? String(error.message) : '';
+
+    // ⛔️ 429 через fetch / XHR
+    if (emsg.indexOf('429') !== -1) {
+        saw429 = true;
+        lqeSetHostCooldown(phost);
+    }
+
+    if (LQE_CONFIG.LOGGING_GENERAL) {
+        console.error(
+            "LQE-LOG",
+            "card: " + cardId + ", Proxy fetch error for " + proxyUrl + ":",
+            error
+        );
+    }
+
+    currentProxyIndex++;
+    tryNextProxy();
+});
+
     }
 
     tryNextProxy();
@@ -915,6 +962,98 @@ function fetchWithProxy(url, cardId, callback) {
             setTimeout(processQueue, 0); // Продовжуємо обробку
         }
     }
+// ===================== 429 COOLDOWN + RETRY (A+B) =====================
+
+// cooldown по проксі-хосту: { "myfinder.kozak-bohdan.workers.dev": timestamp_ms }
+var LQE_HOST_COOLDOWN = {};
+
+// pending повтори по cardId: { "123": { nextAt, tries } }
+var LQE_PENDING = {};
+var LQE_PENDING_TIMER = null;
+
+function lqeNow() { return Date.now(); }
+
+function lqeRand(min, max) {
+    return Math.floor(min + Math.random() * (max - min + 1));
+}
+
+function lqeGetHost(u) {
+    try { return (new URL(u)).hostname; } catch (e) { return ''; }
+}
+
+function lqeHostInCooldown(host) {
+    var t = LQE_HOST_COOLDOWN[host] || 0;
+    return t > lqeNow();
+}
+
+function lqeSetHostCooldown(host, ms) {
+    if (!host) return;
+    var dur = ms || lqeRand(30000, 120000); // 30–120s
+    var until = lqeNow() + dur;
+
+    // не зменшуємо існуючий cooldown, тільки продовжуємо
+    if ((LQE_HOST_COOLDOWN[host] || 0) < until) LQE_HOST_COOLDOWN[host] = until;
+
+    if (LQE_CONFIG.LOGGING_GENERAL) {
+        console.log("LQE-LOG", "Cooldown set for host:", host, "ms:", dur);
+    }
+}
+
+function lqeFindCardRootById(cardId) {
+    // шукаємо DOM-картку, яка має card_data.id
+    var cards = document.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) {
+        var cd = cards[i].card_data;
+        if (cd && String(cd.id) === String(cardId)) return cards[i];
+    }
+    return null;
+}
+
+function lqeSchedulePendingRetry(cardId) {
+    if (!cardId) return;
+
+    var p = LQE_PENDING[cardId] || { tries: 0, nextAt: 0 };
+    if (p.tries >= 2) return; // щоб не крутити безкінечно (можеш підняти до 3)
+
+    p.tries++;
+    p.nextAt = lqeNow() + lqeRand(30000, 120000);
+    LQE_PENDING[cardId] = p;
+
+    if (LQE_CONFIG.LOGGING_GENERAL) {
+        console.log("LQE-LOG", "Pending retry scheduled for card:", cardId, "tries:", p.tries, "in(ms):", (p.nextAt - lqeNow()));
+    }
+
+    if (!LQE_PENDING_TIMER) {
+        LQE_PENDING_TIMER = setInterval(function () {
+            var now = lqeNow();
+            var any = false;
+
+            for (var id in LQE_PENDING) {
+                if (!LQE_PENDING.hasOwnProperty(id)) continue;
+                any = true;
+
+                var st = LQE_PENDING[id];
+                if (!st || now < st.nextAt) continue;
+
+                // якщо картка є в DOM — пробуємо оновити (B)
+                var root = lqeFindCardRootById(id);
+                if (root) {
+                    // updateCardListQuality вже вміє приймати DOM element
+                    updateCardListQuality(root);
+                }
+
+                // прибираємо pending незалежно від того, вдалось чи ні:
+                // якщо не вдалось або картки нема — доб’є onVisible (A)
+                delete LQE_PENDING[id];
+            }
+
+            if (!any) {
+                clearInterval(LQE_PENDING_TIMER);
+                LQE_PENDING_TIMER = null;
+            }
+        }, 1500);
+    }
+}
 
     // ===================== ПОШУК В JACRED =====================
     /**
@@ -1018,11 +1157,21 @@ function fetchWithProxy(url, cardId, callback) {
                 fetchWithProxy(apiUrl, cardId, function (error, responseText) {
                     clearTimeout(timeoutId);
 
-                    if (error || !responseText) {
-                        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed fetch error:", error);
-                        apiCallback(null);
-                        return;
-                    }
+    // якщо всі проксі дали 429/cooldown — плануємо повтор (A+B)
+    if (error && error.message === 'LQE_COOLDOWN') {
+        if (LQE_CONFIG.LOGGING_GENERAL) {
+            console.log("LQE-LOG", "card: " + cardId + ", 429 cooldown. Schedule retry.");
+        }
+        lqeSchedulePendingRetry(cardId);
+        apiCallback(null);
+        return;
+    }
+
+    if (error || !responseText) {
+        if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "card: " + cardId + ", JacRed fetch error:", error);
+        apiCallback(null);
+        return;
+    }
 
                     try {
                         var parsed = JSON.parse(responseText);

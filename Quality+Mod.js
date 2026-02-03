@@ -354,8 +354,8 @@
         "dvd": "DVD", "dvdscr": "DVDSCR", "scr": "SCR", "bdscr": "BDSCR", "r5": "R5",
         "hdrip": "HDRip",
         "screener": "SCR",
-        "telecine": "TC", "tc": "TC", "hdtc": "TC", "telesync": "TS", "ts": "TS",
-        "hdts": "TS", "camrip": "CAMRip", "cam": "CAMRip", "hdcam": "CAMRip",
+        "telecine": "TC", "hdtc": "TC", "telesync": "TS", /*"ts": "TS", "tc": "TC",*/
+        "hdts": "TS", "camrip": "CAMRip", "hdcam": "CAMRip", /*"cam": "CAMRip",*/
         "vhsrip": "VHSRip", "vcdrip": "VCDRip", "dcp": "DCP", "workprint": "Workprint",
         "preair": "Preair", "tv": "TVRip", "line": "Line Audio", "hybrid": "Hybrid",
         "uhd hybrid": "4K Hybrid", "upscale": "Upscale", "ai upscale": "AI Upscale",

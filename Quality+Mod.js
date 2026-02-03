@@ -717,6 +717,29 @@ LQE_safeFetchText(proxyUrl)
             .replace(/\s+/g, ' ') // Видалення зайвих пробілів
             .trim(); // Обрізка пробілів по краях
     }
+
+    // ===================== TS/TC CONTEXT HELPERS =====================
+// Ідея: TS/TC беремо як "погану якість" лише коли це ВІДЕО-контекст,
+// а не "звук с TS" (аудіо) або шматки слів/імен.
+
+// "звук с TS", "звук из TS", "audio from TS", "sound from TS"
+function lqeHasAudioTSContext(s) {
+    if (!s) return false;
+    return /(?:звук\s*(?:с|из|із)\s*ts\b|audio\s*(?:from|of)\s*ts\b|sound\s*(?:from|of)\s*ts\b)/i.test(s);
+}
+
+// TS як відео-джерело: "(2025) TS", "/ 2025 / TS", "TS [H.264/1080p]" і т.п.
+function lqeHasVideoTSContext(s) {
+    if (!s) return false;
+    return /(?:\(\s*\d{4}\s*\)\s*ts\b|\b\d{4}\s*\/\s*ts\b|\bts\b\s*\[(?:h\.?264|h\.?265|hevc|avc|x264|x265|1080p|720p))/i.test(s);
+}
+
+// TC як відео-джерело: "(2025) TC", "/ 2025 / TC", "TC [H.264/1080p]" і т.п.
+function lqeHasVideoTCContext(s) {
+    if (!s) return false;
+    return /(?:\(\s*\d{4}\s*\)\s*tc\b|\b\d{4}\s*\/\s*tc\b|\btc\b\s*\[(?:h\.?264|h\.?265|hevc|avc|x264|x265|1080p|720p))/i.test(s);
+}
+
     /**
      * Генерує ключ для кешу
      * @param {number} version - Версія кешу
@@ -752,16 +775,42 @@ LQE_safeFetchText(proxyUrl)
         }
 
         // TS (Telesync) - погана якість (запис з проектора)
-        if (/(telesync|телесинк|\bts\b|hdts)/.test(lowerLabel)) {
+        /*if (/(telesync|телесинк|\bts\b|hdts)/.test(lowerLabel)) {
             if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS");
+            return "TS";
+        }*/
+        
+
+        // TC (Telecine) - погана якість (запис з кіноплівки)
+        /*if (/(telecine|телесин|\btc\b|hdtc)/.test(lowerLabel)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
+            return "TC";
+        }*/
+
+        // TS (Telesync) - погана якість (відео-джерело)
+        if (/(telesync|телесинк|hdts)/.test(lowerLabel)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS (telesync/hdts)");
             return "TS";
         }
 
-        // TC (Telecine) - погана якість (запис з кіноплівки)
-        if (/(telecine|телесин|\btc\b|hdtc)/.test(lowerLabel)) {
-            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC");
+        // "голий" TS як токен — тільки якщо є відео-контекст
+        if (/\bts\b/.test(lowerLabel) && lqeHasVideoTSContext(lowerLabel)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS (token, video-context)");
+            return "TS";
+        }
+
+        // TC (Telecine) - погана якість (відео-джерело)
+        if (/(telecine|телесин|hdtc)/.test(lowerLabel)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC (telecine/hdtc)");
             return "TC";
         }
+
+        // "голий" TC як токен — тільки якщо є відео-контекст
+        if (/\btc\b/.test(lowerLabel) && lqeHasVideoTCContext(lowerLabel)) {
+            if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC (token, video-context)");
+            return "TC";
+        }
+
 
         // SCR (DVD Screener) - погана якість (промо-копія)
         if (/(dvdscr|scr\b)/.test(lowerLabel)) {
@@ -1071,11 +1120,22 @@ function lqeSchedulePendingRetry(cardId) {
         if (/1080p/.test(lower)) return 1080; // Full HD
         if (/720p/.test(lower)) return 720; // HD
         if (/480p/.test(lower)) return 480; // SD
+        
         // Погані якості - правильний порядок (TC > TS > CamRip):
+        /*
         if (/(?:\btelecine\b|\btc\b)/.test(lower)) return 3;
         //if (/tc|telecine/.test(lower)) return 3; // TC краще за TS
         if (/(?:\btelesync\b|\bts\b)/.test(lower)) return 2;
         //if (/ts|telesync/.test(lower)) return 2; // TS краще за CamRip
+        */
+        // Погані якості - правильний порядок (TC > TS > CamRip):
+        // Явні маркери - без контексту
+        if (/(?:\btelecine\b|hdtc)/.test(lower)) return 3;
+        if (/(?:\btelesync\b|hdts)/.test(lower)) return 2;
+        // "голий" TC/TS — тільки у відео-контексті
+        if (/\btc\b/.test(lower) && lqeHasVideoTCContext(lower)) return 3;
+        if (/\bts\b/.test(lower) && lqeHasVideoTSContext(lower)) return 2;
+
         if (/camrip|камрип/.test(lower)) return 1; // CamRip - найгірше
 
         return 0; // Якість не визначена

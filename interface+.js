@@ -386,12 +386,14 @@ var css = `
     min-height:1.9em !important;
     font-size:1.1em !important;
   }
+
   *:not(input){
     -webkit-user-select:none !important;
     -moz-user-select:none !important;
     -ms-user-select:none !important;
     user-select:none !important;
   }
+
   *{
     -webkit-tap-highlight-color:transparent;
     -webkit-touch-callout:none;
@@ -431,39 +433,39 @@ var css = `
   }
 
   /* ============================================================
-   * ONLINE BUTTON COLORS (ICON ONLY)
+   * ONLINE BUTTON ICON COLORS
    * ============================================================ */
 
-  /* BanderaOnline — НЕ ПЕРЕФАРБОВУЄМО (залишається синьо-жовтий прапор) */
+  /* BanderaOnline */
   .full-start__button.ifx-bandera-online svg path,
   .full-start__button.ifx-bandera-online svg rect{
     fill: unset !important;
   }
 
-  /* ============================================================
-   * BazarNetUA — той самий стиль, що синя кнопка,
-   *              АЛЕ ІНШИЙ КОЛІР ІКОНКИ
-   *
-   * 👉 ТУТ МОЖНА ЗМІНИТИ ФІОЛЕТОВИЙ НА БУДЬ-ЯКИЙ ІНШИЙ КОЛІР
-   * ============================================================ */
+  /* ------------------------------------------------------------
+   * BazarNetUA — МІНЯЄМО ТІЛЬКИ КОЛІР ІКОНКИ
+   * 👉 МОЖНА ЗМІНИТИ ФІОЛЕТОВИЙ НА БУДЬ-ЯКИЙ ІНШИЙ КОЛІР
+   * ------------------------------------------------------------ */
   :root{
-    --ifx-bazarnet-play-color: #8b5cf6; /* ← ЗМІНИ ЦЕ ЗНАЧЕННЯ */
+    --ifx-bazarnet-play-color: #8b5cf6;
   }
 
   .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"] svg path{
     fill: var(--ifx-bazarnet-play-color) !important;
   }
 
-  /* ============================================================
+  /* ------------------------------------------------------------
    * Всі інші ONLINE — стандартний синій play
-   * ============================================================ */
+   * ------------------------------------------------------------ */
   .full-start__button.view--online:not(.ifx-bandera-online):not(.lampac--button) svg path{
     fill:#2196f3 !important;
   }
+
   .full-start__button.view--online.lampac--button:not([data-subtitle*="BazarNetUA"]) svg path{
     fill:#2196f3 !important;
   }
 `;
+
 
     var st = document.createElement('style');
     st.id = 'interface_mod_base';

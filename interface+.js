@@ -1823,7 +1823,14 @@ function applyAgeOnceIn(elRoot) {
       .full-start__button { transition: transform 0.2s ease !important; position: relative; }
       .full-start__button:active { transform: scale(0.98) !important; }
 
-      .full-start__button.view--online  svg path { fill: #2196f3 !important; }
+      /*.full-start__button.view--online  svg path { fill: #2196f3 !important; }*/
+      .full-start__button.view--online:not(.ifx-bandera-online) svg path { fill: #2196f3 !important; }
+      /* BanderaOnline: не перефарбовувати SVG (дати працювати fill атрибутам/інлайнам) */
+      .full-start__button.ifx-bandera-online svg path,
+      .full-start__button.ifx-bandera-online svg rect {
+      fill: unset !important;
+      }
+
       .full-start__button.view--torrent svg path { fill: lime !important; }
       .full-start__button.view--trailer svg path { fill: #f44336 !important; }
 
@@ -1907,10 +1914,16 @@ function applyAgeOnceIn(elRoot) {
 
         // ✅ SPECIAL: тільки BanderaOnline -> UA play
         if (kind === 'online' && isBanderaOnlineBtn($btn)) {
-          $svg.replaceWith(makeOnlineUaSvg());
-        } else {
-          $svg.replaceWith(SVG_MAP[kind]);
-        }
+        // позначаємо кнопку, щоб CSS НЕ перефарбовував її SVG
+        $btn.addClass('ifx-bandera-online');
+        // якщо хочеш лишити ОРИГІНАЛЬНУ bandera-іконку — нічого не міняй:
+        // return;
+        // якщо хочеш саме "play" синьо-жовтий (твій SVG) — тоді міняй:
+        $svg.replaceWith(makeOnlineUaSvg());
+          } else {
+            $svg.replaceWith(SVG_MAP[kind]);
+          }
+
       });
     });
   }

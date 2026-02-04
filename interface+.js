@@ -431,17 +431,6 @@ var css = `
     flex-wrap:wrap !important;
     gap:10px !important;
   }
-
-  /* ------------------------------------------------------------
-   * Всі інші ONLINE — стандартний синій play
-   * ------------------------------------------------------------ */
-  .full-start__button.view--online:not(.ifx-bandera-online):not(.lampac--button) svg path{
-    fill:#2196f3 !important;
-  }
-
-  .full-start__button.view--online.lampac--button:not([data-subtitle*="BazarNetUA"]) svg path{
-    fill:#2196f3 !important;
-  }
 `;
 
 

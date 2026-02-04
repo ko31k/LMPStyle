@@ -1649,6 +1649,11 @@ function lqeSchedulePendingRetry(cardId) {
         }
     }
 
+    function lqeIsDomNode(n) {
+        return !!(n && typeof n === 'object' && n.nodeType === 1);
+    }
+
+    
     /**
      * Оновлює елемент якості на списковій картці
      * @param {Element} cardView - DOM елемент картки
@@ -1909,20 +1914,24 @@ getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
      * Оновлює якість для спискової картки
      * @param {object|Element} cardInstance - інстанс картки Lampa або DOM елемент
      */
-    function updateCardListQuality(cardInstance) {
-        if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Processing list card");
-        var cardRoot = cardInstance && cardInstance.html ? (cardInstance.html[0] || cardInstance.html) : cardInstance;
-        if (!cardRoot) return;
-        if (document.body && !document.body.contains(cardRoot)) return;
+function updateCardListQuality(cardInstance) {
+    if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Processing list card");
 
+    var cardRoot = cardInstance && cardInstance.html
+        ? (cardInstance.html[0] || cardInstance.html)
+        : cardInstance;
 
-        var cardView = cardRoot.querySelector ? cardRoot.querySelector('.card__view') : null;
-        var cardData = cardInstance && cardInstance.data ? cardInstance.data : cardRoot.card_data;
+    // ✅ головний захист
+    if (!lqeIsDomNode(cardRoot)) return;
+    if (document.body && !document.body.contains(cardRoot)) return;
 
-        if (!cardData || !cardView) {
-            if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Invalid card data or view");
-            return;
-        }
+    var cardView = cardRoot.querySelector('.card__view');
+    var cardData = cardInstance && cardInstance.data ? cardInstance.data : cardRoot.card_data;
+
+    if (!cardData || !cardView) {
+        if (LQE_CONFIG.LOGGING_CARDLIST) console.log("LQE-CARDLIST", "Invalid card data or view");
+        return;
+    }
 
         var isTvSeries = (getCardType(cardData) === 'tv');
         if (isTvSeries && LQE_CONFIG.SHOW_QUALITY_FOR_TV_SERIES === false) {
@@ -1973,7 +1982,8 @@ getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
                             quality_code: jrResult.quality,
                             full_label: jrResult.full_label
                         }, cardId);
-                        if (document.body.contains(cardRoot)) {
+                        if (lqeIsDomNode(cardRoot) && document.body.contains(cardRoot)) {
+                        //if (document.body.contains(cardRoot)) {
                             updateCardListQualityElement(cardView, jrResult.quality, jrResult.full_label);
                         }
                     }
@@ -1995,7 +2005,8 @@ getBestReleaseFromJacred(normalizedCard, cardId, function (jrResult) {
 
             if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'card: ' + cardId + ', JacRed result for list');
 
-            if (!document.body.contains(cardRoot)) {
+            if (!lqeIsDomNode(cardRoot) || !document.body.contains(cardRoot)) {
+            //if (!document.body.contains(cardRoot)) {
                 if (LQE_CONFIG.LOGGING_CARDLIST) console.log('LQE-CARDLIST', 'Card removed from DOM');
                 delete inflightRequests[cacheKey];
                 return;

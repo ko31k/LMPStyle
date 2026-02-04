@@ -1881,16 +1881,23 @@ var css = `
     fill: unset !important;
   }
 
-  /* 2) BazarNetUA */
+  /* 2) BazarNetUA — ТІЛЬКИ КОЛІР ІКОНКИ (без фону/рамки)
+   * ЗМІНА КОЛЬОРУ: поміняй значення нижче (будь-який HEX)
+   */
   :root{
-    --ifx-bazarnet-accent: 139, 92, 246;
+    --ifx-bazarnet-play-color: #8b5cf6; /* <-- ЗМІНИ ТУТ, якщо треба інший фіолетовий */
   }
 
-  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"]{
-    background: rgba(var(--ifx-bazarnet-accent), .18) !important;
-    border: 1px solid rgba(var(--ifx-bazarnet-accent), .55) !important;
-    color: #ddd6fe !important;
+  /* Важливо: фарбуємо саме PATH, бо в більшості іконок play це path */
+  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"] svg path{
+    fill: var(--ifx-bazarnet-play-color) !important;
   }
+
+  /* На всякий випадок, якщо іконка через currentColor */
+  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"] svg{
+    color: var(--ifx-bazarnet-play-color) !important;
+  }
+
 
   .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"].focus,
   .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"]:hover{

@@ -1851,6 +1851,43 @@ function applyAgeOnceIn(elRoot) {
     if (el) el.remove();
   }
 
+    function makeOnlineUaSvg() {
+    var gid = 'ifx_ua_grad_' + Math.random().toString(16).slice(2);
+
+    return (
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
+        '<defs>' +
+          '<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%" stop-color="#156DD1"/>' +
+            '<stop offset="50%" stop-color="#156DD1"/>' +
+            '<stop offset="50%" stop-color="#FFD948"/>' +
+            '<stop offset="100%" stop-color="#FFD948"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        '<path style="fill:url(#' + gid + ') !important" d="M20.331 14.644l-13.794-13.831 17.55 10.075zM2.938 0c-0.813 0.425-1.356 1.2-1.356 2.206v27.581c0 1.006 0.544 1.781 1.356 2.206l16.038-16zM29.512 14.1l-3.681-2.131-4.106 4.031 4.106 4.031 3.756-2.131c1.125-0.893 1.125-2.906-0.075-3.8zM6.538 31.188l17.55-10.075-3.756-3.756z"/>' +
+      '</svg>'
+    );
+  }
+
+  function isBanderaOnlineBtn($btn) {
+    if (!$btn || !$btn.length) return false;
+
+    var sub = String($btn.attr('data-subtitle') || '').toLowerCase();
+    var txt = String($btn.text() || '').toLowerCase();
+
+    // точні маркери з твого коду BanderaOnline:
+    // data-subtitle: "[Free] Bandera Online vX"
+    // текст: "Спільнота t.me/mmssixxx"
+    if (sub.indexOf('bandera online') !== -1) return true;
+    if (txt.indexOf('mmssixxx') !== -1) return true;
+
+    // запасний варіант (на майбутні правки автора)
+    if (txt.indexOf('bandera') !== -1) return true;
+
+    return false;
+  }
+
+  
   // SVG іконки
   var SVG_MAP = {
     torrent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="50px" height="50px"><path d="M25,2C12.317,2,2,12.317,2,25s10.317,23,23,23s23-10.317,23-23S37.683,2,25,2zM40.5,30.963c-3.1,0-4.9-2.4-4.9-2.4S34.1,35,27,35c-1.4,0-3.6-0.837-3.6-0.837l4.17,9.643C26.727,43.92,25.874,44,25,44c-2.157,0-4.222-0.377-6.155-1.039L9.237,16.851c0,0-0.7-1.2,0.4-1.5c1.1-0.3,5.4-1.2,5.4-1.2s1.475-0.494,1.8,0.5c0.5,1.3,4.063,11.112,4.063,11.112S22.6,29,27.4,29c4.7,0,5.9-3.437,5.7-3.937c-1.2-3-4.993-11.862-4.993-11.862s-0.6-1.1,0.8-1.4c1.4-0.3,3.8-0.7,3.8-0.7s1.105-0.163,1.6,0.8c0.738,1.437,5.193,11.262,5.193,11.262s1.1,2.9,3.3,2.9c0.464,0,0.834-0.046,1.152-0.104c-0.082,1.635-0.348,3.221-0.817,4.722C42.541,30.867,41.756,30.963,40.5,30.963z"/></svg>',
@@ -1868,7 +1905,11 @@ function applyAgeOnceIn(elRoot) {
         var $svg = $(this);
         var $btn = $svg.closest('.full-start__button');
         if (!$btn.data('ifxOrigSvg')) $btn.data('ifxOrigSvg', $svg.prop('outerHTML'));
-        $svg.replaceWith(SVG_MAP[kind]);
+        if (kind === 'online' && isBanderaOnlineBtn($btn)) {
+          $svg.replaceWith(makeOnlineUaSvg());
+        } else {
+          $svg.replaceWith(SVG_MAP[kind]);
+        }
       });
     });
   }

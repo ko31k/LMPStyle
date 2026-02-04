@@ -915,6 +915,7 @@ function lqeHasVideoTCContext(s) {
         }
         if (bestResKey) resolution = RESOLUTION_MAP[bestResKey]; // Отримуємо роздільність
 
+
         // Пошук джерела в назві
         var source = '';
         var bestSrcKey = '';
@@ -930,6 +931,24 @@ function lqeHasVideoTCContext(s) {
             }
         }
         if (bestSrcKey) source = SOURCE_MAP[bestSrcKey]; // Отримуємо джерело
+
+        // --- TS/TC як відео-джерело (коли це просто токен) ---
+        // Не тримаємо "ts"/"tc" у SOURCE_MAP, щоб не ловити "звук с TS".
+        // Тому: якщо source не визначився або визначився як "TV"/інше,
+        // пробуємо витягнути TS/TC через контекст.
+
+        var t = title; // title вже sanitizeTitle(...)
+        if (!source) {
+            // відсікаємо "звук с TS", "audio from TS" тощо
+            if (!lqeHasAudioTSContext(t)) {
+                if (/\btc\b/.test(t) && lqeHasVideoTCContext(t)) {
+                    source = "TC";
+                } else if (/\bts\b/.test(t) && lqeHasVideoTSContext(t)) {
+                    source = "TS";
+                }
+            }
+        }
+
 
         // --- ДОДАТКОВО: TS/TC як відео-джерело (коли це просто токен) ---
         // Ми НЕ тримаємо "ts"/"tc" у SOURCE_MAP, щоб не ловити "звук с TS".

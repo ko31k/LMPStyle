@@ -764,6 +764,20 @@ function lqeHasVideoTCContext(s) {
         var lowerLabel = fullLabel.toLowerCase(); // Нижній регістр для порівняння
         // var lowerTitle = (originalTitle || '').toLowerCase(); // ❌ БІЛЬШЕ НЕ ВИКОРИСТОВУЄМО (перебиває якісний реліз)
 
+        // Якщо в уже сформованій мітці є TS/TC — це ТОЧНО відео-тип релізу
+        // (бо translateQualityLabel формує "1080p TS", а не "звук с TS").
+        // Але на всякий випадок відсікаємо аудіо-контекст.
+        if (!lqeHasAudioTSContext(lowerLabel)) {
+            if (/\bts\b/.test(lowerLabel)) {
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TS (label contains TS)");
+                return "TS";
+            }
+            if (/\btc\b/.test(lowerLabel)) {
+                if (LQE_CONFIG.LOGGING_QUALITY) console.log("LQE-QUALITY", "Simplified to TC (label contains TC)");
+                return "TC";
+            }
+        }
+        
         // --- Крок 1: Погані якості (найвищий пріоритет) ---
         // Якщо JacRed вибрав реліз з поганою якістю - показуємо тип якості
         // Це означає що кращих варіантів немає
@@ -917,6 +931,21 @@ function lqeHasVideoTCContext(s) {
         }
         if (bestSrcKey) source = SOURCE_MAP[bestSrcKey]; // Отримуємо джерело
 
+        // --- ДОДАТКОВО: TS/TC як відео-джерело (коли це просто токен) ---
+        // Ми НЕ тримаємо "ts"/"tc" у SOURCE_MAP, щоб не ловити "звук с TS".
+        // Тому визначаємо TS/TC через контекст-хелпери.
+        if (!source) {
+            // спершу відсікаємо "звук с TS", "audio from TS" і т.п.
+            if (!lqeHasAudioTSContext(title)) {
+                if (lqeHasVideoTCContext(title)) {
+                    source = "TC";
+                } else if (lqeHasVideoTSContext(title)) {
+                    source = "TS";
+                }
+            }
+        }
+
+        
         // Комбінуємо роздільність та джерело
         var finalLabel = '';
         if (resolution && source) {

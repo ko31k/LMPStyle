@@ -375,50 +375,96 @@ function isMonoEnabled() {
   (function injectBaseCss() {
     if (document.getElementById('interface_mod_base')) return;
 
-    var css = `
-      .full-start-new__details{
-        color:#fff !important;
-        margin:-0.45em !important;
-        margin-bottom:1em !important;
-        display:flex !important;
-        align-items:center !important;
-        flex-wrap:wrap !important;
-        min-height:1.9em !important;
-        font-size:1.1em !important;
-      }
-      *:not(input){ -webkit-user-select:none !important; -moz-user-select:none !important; -ms-user-select:none !important; user-select:none !important; }
-      *{ -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; box-sizing:border-box; outline:none; -webkit-user-drag:none; }
+var css = `
+  .full-start-new__details{
+    color:#fff !important;
+    margin:-0.45em !important;
+    margin-bottom:1em !important;
+    display:flex !important;
+    align-items:center !important;
+    flex-wrap:wrap !important;
+    min-height:1.9em !important;
+    font-size:1.1em !important;
+  }
+  *:not(input){
+    -webkit-user-select:none !important;
+    -moz-user-select:none !important;
+    -ms-user-select:none !important;
+    user-select:none !important;
+  }
+  *{
+    -webkit-tap-highlight-color:transparent;
+    -webkit-touch-callout:none;
+    box-sizing:border-box;
+    outline:none;
+    -webkit-user-drag:none;
+  }
 
-      .full-start-new__rate-line > * {
-        margin-left: 0 !important;
-        margin-right: 1em !important;
-        flex-shrink: 0;
-        flex-grow: 0;
-      }
+  .full-start-new__rate-line > * {
+    margin-left: 0 !important;
+    margin-right: 1em !important;
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
 
-      /* ОРИГІНАЛЬНА НАЗВА — сірий, −25%, з лівою лінією */
-      .ifx-original-title{
-        color:#aaa;
-        font-size: 0.75em;
-        font-weight: 600;
-        margin-top: 4px;
-        border-left: 2px solid #777;
-        padding-left: 8px;
-      }
+  /* ОРИГІНАЛЬНА НАЗВА — сірий, −25%, з лівою лінією */
+  .ifx-original-title{
+    color:#aaa;
+    font-size: 0.75em;
+    font-weight: 600;
+    margin-top: 4px;
+    border-left: 2px solid #777;
+    padding-left: 8px;
+  }
 
-      /* Іконки без тексту */
-      .ifx-btn-icon-only .full-start__button span,
-      .ifx-btn-icon-only .full-start__button .full-start__text{
-        display:none !important;
-      }
+  /* Іконки без тексту */
+  .ifx-btn-icon-only .full-start__button span,
+  .ifx-btn-icon-only .full-start__button .full-start__text{
+    display:none !important;
+  }
 
-      .full-start__buttons.ifx-flex,
-      .full-start-new__buttons.ifx-flex{
-        display:flex !important;
-        flex-wrap:wrap !important;
-        gap:10px !important;
-      }
-    `;
+  .full-start__buttons.ifx-flex,
+  .full-start-new__buttons.ifx-flex{
+    display:flex !important;
+    flex-wrap:wrap !important;
+    gap:10px !important;
+  }
+
+  /* ============================================================
+   * ONLINE BUTTON COLORS (ICON ONLY)
+   * ============================================================ */
+
+  /* BanderaOnline — НЕ ПЕРЕФАРБОВУЄМО (залишається синьо-жовтий прапор) */
+  .full-start__button.ifx-bandera-online svg path,
+  .full-start__button.ifx-bandera-online svg rect{
+    fill: unset !important;
+  }
+
+  /* ============================================================
+   * BazarNetUA — той самий стиль, що синя кнопка,
+   *              АЛЕ ІНШИЙ КОЛІР ІКОНКИ
+   *
+   * 👉 ТУТ МОЖНА ЗМІНИТИ ФІОЛЕТОВИЙ НА БУДЬ-ЯКИЙ ІНШИЙ КОЛІР
+   * ============================================================ */
+  :root{
+    --ifx-bazarnet-play-color: #8b5cf6; /* ← ЗМІНИ ЦЕ ЗНАЧЕННЯ */
+  }
+
+  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"] svg path{
+    fill: var(--ifx-bazarnet-play-color) !important;
+  }
+
+  /* ============================================================
+   * Всі інші ONLINE — стандартний синій play
+   * ============================================================ */
+  .full-start__button.view--online:not(.ifx-bandera-online):not(.lampac--button) svg path{
+    fill:#2196f3 !important;
+  }
+  .full-start__button.view--online.lampac--button:not([data-subtitle*="BazarNetUA"]) svg path{
+    fill:#2196f3 !important;
+  }
+`;
+
     var st = document.createElement('style');
     st.id = 'interface_mod_base';
     st.textContent = css;

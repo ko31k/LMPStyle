@@ -1851,7 +1851,7 @@ function applyAgeOnceIn(elRoot) {
     if (el) el.remove();
   }
 
-    function makeOnlineUaSvg() {
+  function makeOnlineUaSvg() {
     var gid = 'ifx_ua_grad_' + Math.random().toString(16).slice(2);
 
     return (
@@ -1875,17 +1875,14 @@ function applyAgeOnceIn(elRoot) {
     var sub = String($btn.attr('data-subtitle') || '').toLowerCase();
     var txt = String($btn.text() || '').toLowerCase();
 
-    // точні маркери з твого коду BanderaOnline:
-    // data-subtitle: "[Free] Bandera Online vX"
-    // текст: "Спільнота t.me/mmssixxx"
+    // BanderaOnline так ідентифікується у твоєму коді:
+    // data-subtitle="[Free] Bandera Online vX" і текст "t.me/mmssixxx"
     if (sub.indexOf('bandera online') !== -1) return true;
     if (txt.indexOf('mmssixxx') !== -1) return true;
 
-    // запасний варіант (на майбутні правки автора)
-    if (txt.indexOf('bandera') !== -1) return true;
-
     return false;
   }
+
 
   
   // SVG іконки
@@ -1900,11 +1897,15 @@ function applyAgeOnceIn(elRoot) {
    */
   function replaceIconsIn($root) {
     $root = $root && $root.length ? $root : $(document);
+
     ['torrent', 'online', 'trailer'].forEach(function (kind) {
       $root.find('.full-start__button.view--' + kind + ' svg').each(function () {
         var $svg = $(this);
         var $btn = $svg.closest('.full-start__button');
+
         if (!$btn.data('ifxOrigSvg')) $btn.data('ifxOrigSvg', $svg.prop('outerHTML'));
+
+        // ✅ SPECIAL: тільки BanderaOnline -> UA play
         if (kind === 'online' && isBanderaOnlineBtn($btn)) {
           $svg.replaceWith(makeOnlineUaSvg());
         } else {
@@ -1913,6 +1914,7 @@ function applyAgeOnceIn(elRoot) {
       });
     });
   }
+
 
   /**
    * Відновлює оригінальні іконки
@@ -1979,7 +1981,15 @@ function applyAgeOnceIn(elRoot) {
         applyIconOnlyClass(root);
 
         // 4. Кольорові кнопки
-        if (settings.colored_buttons) applyColoredButtonsIn(root);
+        //if (settings.colored_buttons) applyColoredButtonsIn(root);
+        if (settings.colored_buttons) {
+        applyColoredButtonsIn(root);
+
+        // BanderaOnline може вставити кнопку трохи пізніше — доганяємо
+        setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 300);
+        setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 900);
+        }
+
       }, 120);
     });
   }

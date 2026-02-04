@@ -1140,6 +1140,29 @@ function lqeSchedulePendingRetry(cardId) {
      * @returns {number} - Числовий код якості (2160, 1440, 1080, 720, 480, 3, 2, 1)
      */
     function extractNumericQualityFromTitle(title) {
+        if (!title) return 0;
+        var lower = title.toLowerCase();
+
+        // 1) Погані якості — ПЕРШІ (але тільки у відео-контексті)
+        if (/(?:\btelecine\b|hdtc)/.test(lower)) return 3;
+        if (/(?:\btelesync\b|hdts)/.test(lower)) return 2;
+
+        if (/\btc\b/.test(lower) && lqeHasVideoTCContext(lower)) return 3;
+        if (/\bts\b/.test(lower) && lqeHasVideoTSContext(lower)) return 2;
+
+        if (/camrip|камрип/.test(lower)) return 1;
+
+        // 2) Далі — роздільність (для нормальних релізів)
+        if (/2160p|4k/.test(lower)) return 2160;
+        if (/1440p|qhd|2k/.test(lower)) return 1440;
+        if (/1080p/.test(lower)) return 1080;
+        if (/720p/.test(lower)) return 720;
+        if (/480p/.test(lower)) return 480;
+
+        return 0;
+    }
+
+    /*function extractNumericQualityFromTitle(title) {
         if (!title) return 0; // Перевірка на пусту назву
         var lower = title.toLowerCase(); // Нижній регістр для порівняння
 
@@ -1151,12 +1174,12 @@ function lqeSchedulePendingRetry(cardId) {
         if (/480p/.test(lower)) return 480; // SD
         
         // Погані якості - правильний порядок (TC > TS > CamRip):
-        /*
-        if (/(?:\btelecine\b|\btc\b)/.test(lower)) return 3;
-        //if (/tc|telecine/.test(lower)) return 3; // TC краще за TS
-        if (/(?:\btelesync\b|\bts\b)/.test(lower)) return 2;
-        //if (/ts|telesync/.test(lower)) return 2; // TS краще за CamRip
-        */
+        
+        //if (/(?:\btelecine\b|\btc\b)/.test(lower)) return 3;
+                //if (/tc|telecine/.test(lower)) return 3; // TC краще за TS (Old)
+        //if (/(?:\btelesync\b|\bts\b)/.test(lower)) return 2;
+                //if (/ts|telesync/.test(lower)) return 2; // TS краще за CamRip (Old)
+        
         // Погані якості - правильний порядок (TC > TS > CamRip):
         // Явні маркери - без контексту
         if (/(?:\btelecine\b|hdtc)/.test(lower)) return 3;
@@ -1168,7 +1191,7 @@ function lqeSchedulePendingRetry(cardId) {
         if (/camrip|камрип/.test(lower)) return 1; // CamRip - найгірше
 
         return 0; // Якість не визначена
-    }
+    }*/
 
     /**
      * Знаходить найкращий реліз в JacRed API
@@ -1317,6 +1340,23 @@ function lqeSchedulePendingRetry(cardId) {
 
                             // Визначаємо якість (спочатку з поля, потім з назви)
                             var currentNumericQuality = currentTorrent.quality;
+
+                            // завжди пробуємо витягнути з назви
+                            var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
+
+                            // якщо з назви витягнули TS/TC/CAM — воно має пріоритет навіть над API quality
+                            if (extractedQuality > 0 && extractedQuality <= 3) {
+                                currentNumericQuality = extractedQuality;
+                            } else {
+                                // інакше — якщо API quality нема/0, тоді беремо з назви
+                                if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
+                                    if (extractedQuality > 0) currentNumericQuality = extractedQuality;
+                                    else continue; // якщо нічого не визначили — пропускаємо
+                                }
+                            }
+
+                            
+                            /*var currentNumericQuality = currentTorrent.quality;
                             if (typeof currentNumericQuality !== 'number' || currentNumericQuality === 0) {
                                 var extractedQuality = extractNumericQualityFromTitle(currentTorrent.title);
                                 if (extractedQuality > 0) {
@@ -1324,7 +1364,7 @@ function lqeSchedulePendingRetry(cardId) {
                                 } else {
                                     continue; // Пропускаємо якщо якість не визначена
                                 }
-                            }
+                            }*/
 
                             // === ЗМІНА 2: Покращена валідація року ===
                             var torrentYearRaw = currentTorrent.relased || currentTorrent.released;

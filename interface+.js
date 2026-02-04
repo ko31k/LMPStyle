@@ -1817,36 +1817,70 @@ function applyAgeOnceIn(elRoot) {
    */
   function injectColoredButtonsCss() {
     if (document.getElementById(__ifx_colbtn.styleId)) return;
-    var css = `
-      .head__action.selector.open--feed svg path { fill: #2196F3 !important; }
+var css = `
+  .head__action.selector.open--feed svg path { fill: #2196F3 !important; }
 
-      .full-start__button { transition: transform 0.2s ease !important; position: relative; }
-      .full-start__button:active { transform: scale(0.98) !important; }
+  .full-start__button { transition: transform 0.2s ease !important; position: relative; }
+  .full-start__button:active { transform: scale(0.98) !important; }
 
-      /*.full-start__button.view--online  svg path { fill: #2196f3 !important; }*/
-      .full-start__button.view--online:not(.ifx-bandera-online) svg path { fill: #2196f3 !important; }
-      /* BanderaOnline: не перефарбовувати SVG (дати працювати fill атрибутам/інлайнам) */
-      .full-start__button.ifx-bandera-online svg path,
-      .full-start__button.ifx-bandera-online svg rect {
-      fill: unset !important;
-      }
+  /* ============================================================
+   * ONLINE buttons colors
+   * ============================================================ */
 
-      .full-start__button.view--torrent svg path { fill: lime !important; }
-      .full-start__button.view--trailer svg path { fill: #f44336 !important; }
+  /* 1) BanderaOnline: не чіпаємо (як і було) */
+  .full-start__button.ifx-bandera-online svg path,
+  .full-start__button.ifx-bandera-online svg rect {
+    fill: unset !important;
+  }
 
-      .full-start__button.loading::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 2px;
-        background: rgba(255,255,255,0.5);
-        animation: ifx_loading 1s linear infinite;
-      }
-      @keyframes ifx_loading {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-      }
-    `;
+  /* 2) BazarNetUA */
+  :root{
+    --ifx-bazarnet-accent: 139, 92, 246;
+  }
+
+  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"]{
+    background: rgba(var(--ifx-bazarnet-accent), .18) !important;
+    border: 1px solid rgba(var(--ifx-bazarnet-accent), .55) !important;
+    color: #ddd6fe !important;
+  }
+
+  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"].focus,
+  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"]:hover{
+    background: rgba(var(--ifx-bazarnet-accent), .33) !important;
+  }
+
+  .full-start__button.view--online.lampac--button[data-subtitle*="BazarNetUA"] svg{
+    color: #ddd6fe !important;
+  }
+
+  /* 3) Всі інші online — стандартний синій */
+  .full-start__button.view--online:not(.ifx-bandera-online):not(.lampac--button) svg path {
+    fill: #2196f3 !important;
+  }
+
+  .full-start__button.view--online:not(.ifx-bandera-online).lampac--button:not([data-subtitle*="BazarNetUA"]) svg path {
+    fill: #2196f3 !important;
+  }
+
+  /* TORRENT / TRAILER */
+  .full-start__button.view--torrent svg path { fill: lime !important; }
+  .full-start__button.view--trailer svg path { fill: #f44336 !important; }
+
+  .full-start__button.loading::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(255,255,255,0.5);
+    animation: ifx_loading 1s linear infinite;
+  }
+
+  @keyframes ifx_loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+`;
+
     var st = document.createElement('style');
     st.id = __ifx_colbtn.styleId;
     st.textContent = css;

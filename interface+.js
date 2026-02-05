@@ -1875,10 +1875,15 @@ var css = `
     fill: #2196f3 !important;
   }
 
-  .full-start__button.view--online:not(.ifx-bandera-online)
-  .lampac--button:not([data-subtitle*="BazarNetUA"]) svg path {
-    fill: #2196f3 !important;
+  /*.full-start__button.view--online:not(.ifx-bandera-online)*/
+  /*.lampac--button:not([data-subtitle*="BazarNetUA"]) svg path {*/
+  /*  fill: #2196f3 !important;*/
+  /*}*/
+
+  .full-start__button.view--online.lampac--button:not(.ifx-bandera-online):not([data-subtitle*="BazarNetUA"]) svg path{
+  fill:#2196f3 !important;
   }
+
 
   /* TORRENT / TRAILER */
   .full-start__button.view--torrent svg path { fill: lime !important; }
@@ -1976,28 +1981,35 @@ function replaceIconsIn($root) {
     });
   });
 
-  // online: ТІЛЬКИ BanderaOnline і BazarNetUA
+  // online: БАЗОВО — синій play ДЛЯ ВСІХ, але:
+  // - BanderaOnline -> UA play (прапор)
+  // - BazarNetUA    -> play (колір дає CSS змінна)
   $root.find('.full-start__button.view--online svg').each(function () {
     var $svg = $(this);
     var $btn = $svg.closest('.full-start__button');
 
-    var isBandera = isBanderaOnlineBtn($btn);
-    var isBazar   = isBazarNetBtn($btn);
-
-    if (!isBandera && !isBazar) return; // <-- ключова різниця
-
     if (!$btn.data('ifxOrigSvg')) $btn.data('ifxOrigSvg', $svg.prop('outerHTML'));
 
-    if (isBandera) {
+    // 1) BanderaOnline -> UA play
+    if (isBanderaOnlineBtn($btn)) {
       $btn.addClass('ifx-bandera-online');
-      $svg.replaceWith(makeOnlineUaSvg());      // прапор (UA play)
-    } else {
-      // BazarNetUA: міняємо іконку на "play" (а колір дасть CSS)
+      $svg.replaceWith(makeOnlineUaSvg());
+      return;
+    }
+
+    // 2) BazarNetUA -> звичайний play (колір у CSS)
+    if (isBazarNetBtn($btn)) {
       $btn.removeClass('ifx-bandera-online');
       $svg.replaceWith(SVG_MAP.online);
+      return;
     }
+
+    // 3) Всі інші online -> стандартний play (синій через CSS)
+    $btn.removeClass('ifx-bandera-online');
+    $svg.replaceWith(SVG_MAP.online);
   });
 }
+
 
   
   /*function replaceIconsIn($root) {

@@ -431,6 +431,11 @@ var css = `
     flex-wrap:wrap !important;
     gap:10px !important;
   }
+
+  .ifx-btn-icon-only .full-start__button .ifx-btn-label{
+  display:none !important;
+  }
+
 `;
 
 
@@ -1730,6 +1735,13 @@ function applyAgeOnceIn(elRoot) {
       } catch (e) {}
     }
 
+    // --- PRESERVE other online buttons ---
+    var $preserve = $container.find('.full-start__button').filter(function(){
+      return isWpchLikeOnlineBtn($(this));
+    }).detach();
+
+    
+    
     // Вставляємо кнопки у правильному порядку
     $container.empty();
     ['online', 'torrent', 'trailer', 'other'].forEach(function (cat) {
@@ -1738,6 +1750,8 @@ function applyAgeOnceIn(elRoot) {
       });
     });
 
+    if ($preserve && $preserve.length) $container.append($preserve);
+    
     // Видаляємо "пусті" кнопки (без тексту та іконок)
     $container.find('.full-start__button').filter(function () {
       return $(this).text().trim() === '' && $(this).find('svg').length === 0;
@@ -1810,6 +1824,10 @@ function applyAgeOnceIn(elRoot) {
   function applyIconOnlyClass(fullRoot) {
     var $c = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
     if (!$c.length) return;
+
+    $c.find('.full-start__button').each(function(){
+    wrapButtonTextNodes($(this));
+    }); 
 
     if (settings.icon_only) {
       $c.addClass('ifx-btn-icon-only')
@@ -1904,6 +1922,11 @@ var css = `
     0%   { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
   }
+
+  .full-start__button.view--online:not(.ifx-bandera-online):not(.lampac--button) svg{
+  color: #2196f3 !important;
+  }
+
 `;
 
 
@@ -1935,6 +1958,51 @@ var css = `
       '</svg>'
     );
   }
+  
+  function isMovableBtn($b){
+  if (!$b || !$b.length) return false;
+
+  var hasHref   = !!$b.attr('href');
+  var hasAction = !!$b.attr('data-action') || !!$b.data('action');
+
+  var cls = ($b.attr('class') || '');
+  var isLampac = /(^|\s)lampac--button(\s|$)/i.test(cls);
+  var isStd    = /(^|\s)button--/i.test(cls) || /(^|\s)view--/i.test(cls);
+
+  // movable => можна переносити/клонувати
+  return hasHref || hasAction || isLampac || isStd;
+}
+
+function isWpchLikeOnlineBtn($b){
+  if (!$b || !$b.length) return false;
+
+  var cls = ($b.attr('class') || '').toLowerCase();
+  if (cls.indexOf('view--online') === -1) return false;
+
+  // “wtch-тип” = online кнопка без href/data-action і без lampac => майже точно JS-лістенери
+  var hasHref   = !!$b.attr('href');
+  var hasAction = !!$b.attr('data-action') || !!$b.data('action');
+  var isLampac  = cls.indexOf('lampac--button') !== -1;
+
+  return !hasHref && !hasAction && !isLampac;
+}
+
+function wrapButtonTextNodes($btn){
+  if (!$btn || !$btn.length) return;
+  if ($btn.data('ifxTextWrapped')) return;
+
+  $btn.contents().filter(function(){
+    return this.nodeType === 3 && (this.nodeValue || '').trim().length;
+  }).each(function(){
+    var span = document.createElement('span');
+    span.className = 'ifx-btn-label';
+    span.textContent = this.nodeValue;
+    this.parentNode.replaceChild(span, this);
+  });
+
+  $btn.data('ifxTextWrapped', true);
+}
+
 
   function isBanderaOnlineBtn($btn) {
     if (!$btn || !$btn.length) return false;

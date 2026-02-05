@@ -1675,97 +1675,105 @@ function applyAgeOnceIn(elRoot) {
   /**
    * Перезбирає кнопки в порядку Онлайн -> Торенти -> Трейлери
    */
-  function reorderAndShowButtons(fullRoot) {
-    if (!fullRoot) return;
+function reorderAndShowButtons(fullRoot) {
+  if (!fullRoot) return;
 
-    var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
-    if (!$container.length) return;
+  var $container = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
+  if (!$container.length) return;
 
-    // Прибрати можливі дублі "play"
-    fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
+  // Прибрати можливі дублі "play"
+  fullRoot.find('.button--play, .button--player, .view--play, .view--player').remove();
 
-    // Зібрати всі кнопки
-    var $source = fullRoot.find(
-      '.buttons--container .full-start__button, ' +
-      '.full-start__buttons .full-start__button, ' +
-      '.full-start-new__buttons .full-start__button'
-    );
+  // Зібрати всі кнопки
+  var $source = fullRoot.find(
+    '.buttons--container .full-start__button, ' +
+    '.full-start__buttons .full-start__button, ' +
+    '.full-start-new__buttons .full-start__button'
+  );
 
-    var seen = new Set();
-    function sig($b) {
-      return ($b.attr('data-action') || '') + '|' + ($b.attr('href') || '') + '|' + ($b.attr('class') || '');
-    }
+  // === [1] WTCH preserve: знімаємо WTCH з DOM ДО будь-яких empty/rebuild ===
+  // Важливо: detach() збереже listeners
+  var $wtch = $source.filter(function () {
+    return isWpchLikeOnlineBtn($(this));
+  }).detach();
 
-    var groups = {
-      online: [],
-      torrent: [],
-      trailer: [],
-      other: []
-    };
-
-    $source.each(function () {
-      var $b = $(this);
-      if (isPlayBtn($b)) return; // Ігноруємо кнопки "Play"
-
-      var s = sig($b);
-      if (seen.has(s)) return; // Уникаємо дублікатів
-      seen.add(s);
-
-      var cls = ($b.attr('class') || '').toLowerCase();
-
-      if (cls.includes('online')) {
-        groups.online.push($b);
-      } else if (cls.includes('torrent')) {
-        groups.torrent.push($b);
-      } else if (cls.includes('trailer')) {
-        groups.trailer.push($b);
-      /*} else {
-        groups.other.push($b.clone(true));
-      }*/
-      } else {
-      groups.other.push($b); // ВАЖЛИВО: без clone, щоб не втратити listeners
-      }
-    });
-
-    // Хак для перефокусування Lampa
-    var needToggle = false;
-    try {
-      needToggle = (Lampa.Controller.enabled().name === 'full_start');
-    } catch (e) {}
-    if (needToggle) {
-      try {
-        Lampa.Controller.toggle('settings_component');
-      } catch (e) {}
-    }
-
-    // Вставляємо кнопки у правильному порядку
-    $container.empty();
-    ['online', 'torrent', 'trailer', 'other'].forEach(function (cat) {
-      groups[cat].forEach(function ($b) {
-        $container.append($b);
-      });
-    });
-
-    
-    
-    // Видаляємо "пусті" кнопки (без тексту та іконок)
-    $container.find('.full-start__button').filter(function () {
-      return $(this).text().trim() === '' && $(this).find('svg').length === 0;
-    }).remove();
-
-    $container.addClass('controller');
-
-    applyIconOnlyClass(fullRoot);
-
-    // Повертаємо фокус
-    if (needToggle) {
-      setTimeout(function () {
-        try {
-          Lampa.Controller.toggle('full_start');
-        } catch (e) {}
-      }, 80);
-    }
+  var seen = new Set();
+  function sig($b) {
+    return ($b.attr('data-action') || '') + '|' + ($b.attr('href') || '') + '|' + ($b.attr('class') || '');
   }
+
+  var groups = {
+    online: [],
+    torrent: [],
+    trailer: [],
+    other: []
+  };
+
+  $source.each(function () {
+    var $b = $(this);
+
+    // Ігноруємо кнопки "Play"
+    if (isPlayBtn($b)) return;
+
+    // === [2] WTCH: пропускаємо, бо ми вже її зберегли ===
+    if (isWpchLikeOnlineBtn($b)) return;
+
+    var s = sig($b);
+    if (seen.has(s)) return;
+    seen.add(s);
+
+    var cls = ($b.attr('class') || '').toLowerCase();
+
+    if (cls.includes('online')) {
+      groups.online.push($b);
+    } else if (cls.includes('torrent')) {
+      groups.torrent.push($b);
+    } else if (cls.includes('trailer')) {
+      groups.trailer.push($b);
+    } else {
+      groups.other.push($b); // без clone — listeners збережуться
+    }
+  });
+
+  // Хак для перефокусування Lampa
+  var needToggle = false;
+  try {
+    needToggle = (Lampa.Controller.enabled().name === 'full_start');
+  } catch (e) {}
+  if (needToggle) {
+    try { Lampa.Controller.toggle('settings_component'); } catch (e) {}
+  }
+
+  // === [3] rebuild контейнера ===
+  $container.empty();
+  ['online', 'torrent', 'trailer', 'other'].forEach(function (cat) {
+    groups[cat].forEach(function ($b) {
+      $container.append($b);
+    });
+  });
+
+  // === [4] повертаємо WTCH ПІСЛЯ rebuild ===
+  if ($wtch && $wtch.length) {
+    $container.append($wtch);
+  }
+
+  // Видаляємо "пусті" кнопки (без тексту та іконок)
+  $container.find('.full-start__button').filter(function () {
+    return $(this).text().trim() === '' && $(this).find('svg').length === 0;
+  }).remove();
+
+  $container.addClass('controller');
+
+  applyIconOnlyClass(fullRoot);
+
+  // Повертаємо фокус
+  if (needToggle) {
+    setTimeout(function () {
+      try { Lampa.Controller.toggle('full_start'); } catch (e) {}
+    }, 80);
+  }
+}
+
 
   /**
    * Відновлює оригінальний порядок кнопок (з кешу)
@@ -2302,6 +2310,40 @@ function replaceIconsIn($root) {
     } catch (e) {}
   })();
 
+function observeFullButtonsForIconOnly() {
+  if (window.__ifx_btn_observer) return;
+  window.__ifx_btn_observer = true;
+
+  var t = null;
+  var mo = new MutationObserver(function () {
+    if (!settings.icon_only) return;
+
+    clearTimeout(t);
+    t = setTimeout(function () {
+      try {
+        // беремо актуальний контейнер кнопок у full-картці
+        var $root = __ifx_last.fullRoot || $(document);
+        var $c = $root.find('.full-start-new__buttons, .full-start__buttons').first();
+        if (!$c.length) return;
+
+        // повторно застосовуємо режим іконок
+        $c.addClass('ifx-btn-icon-only')
+          .find('.full-start__button').css('min-width', 'auto');
+
+        markWtchButtons($c);
+
+        // догорнути текст (з force)
+        $c.find('.full-start__button').each(function () {
+          wrapButtonTextNodes($(this), true);
+        });
+      } catch (e) {}
+    }, 120);
+  });
+
+  try {
+    mo.observe(document.body, { childList: true, subtree: true });
+  } catch (e) {}
+}
 
   /* ============================================================
    * ЗАПУСК
@@ -2311,7 +2353,7 @@ function replaceIconsIn($root) {
     initInterfaceModSettingsUI();
     newInfoPanel();
     setupVoteColorsObserver();
-
+    observeFullButtonsForIconOnly();
     if (settings.colored_ratings) updateVoteColors();
 
     setStatusBaseCssEnabled(settings.colored_status);

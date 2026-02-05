@@ -436,6 +436,14 @@ var css = `
   display:none !important;
   }
 
+  .full-start__button.ifx-wtch-like svg path { 
+  fill:#2196f3 !important; 
+  }
+  .full-start__button.ifx-wtch-like svg { 
+  color:#2196f3 !important; 
+  }
+
+
 `;
 
 
@@ -1735,6 +1743,12 @@ function applyAgeOnceIn(elRoot) {
       } catch (e) {}
     }
 
+    $source.each(function () {
+    var $b = $(this);
+    if (isWpchLikeOnlineBtn($b)) $b.addClass('ifx-wtch-like');
+    });
+
+    
     // --- PRESERVE other online buttons ---
     var $preserve = $container.find('.full-start__button').filter(function(){
       return isWpchLikeOnlineBtn($(this));
@@ -2210,6 +2224,10 @@ function replaceIconsIn($root) {
         // BanderaOnline може вставити кнопку трохи пізніше — доганяємо
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 300);
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 900);
+        
+          setTimeout(function(){ try { applyIconOnlyClass(root); } catch(e){} }, 300);
+        setTimeout(function(){ try { applyIconOnlyClass(root); } catch(e){} }, 900);
+
         }
 
       }, 120);

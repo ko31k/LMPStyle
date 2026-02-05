@@ -1719,8 +1719,11 @@ function applyAgeOnceIn(elRoot) {
         groups.torrent.push($b);
       } else if (cls.includes('trailer')) {
         groups.trailer.push($b);
-      } else {
+      /*} else {
         groups.other.push($b.clone(true));
+      }*/
+      } else {
+      groups.other.push($b); // ВАЖЛИВО: без clone, щоб не втратити listeners
       }
     });
 
@@ -1735,13 +1738,6 @@ function applyAgeOnceIn(elRoot) {
       } catch (e) {}
     }
 
-    // --- PRESERVE other online buttons ---
-    var $preserve = $container.find('.full-start__button').filter(function(){
-      return isWpchLikeOnlineBtn($(this));
-    }).detach();
-
-    
-    
     // Вставляємо кнопки у правильному порядку
     $container.empty();
     ['online', 'torrent', 'trailer', 'other'].forEach(function (cat) {
@@ -1750,7 +1746,7 @@ function applyAgeOnceIn(elRoot) {
       });
     });
 
-    if ($preserve && $preserve.length) $container.append($preserve);
+    
     
     // Видаляємо "пусті" кнопки (без тексту та іконок)
     $container.find('.full-start__button').filter(function () {
@@ -1825,10 +1821,14 @@ function applyAgeOnceIn(elRoot) {
     var $c = fullRoot.find('.full-start-new__buttons, .full-start__buttons').first();
     if (!$c.length) return;
 
+    markWtchButtons($c);
+    
     $c.find('.full-start__button').each(function(){
     wrapButtonTextNodes($(this));
     }); 
+    
 
+    
     if (settings.icon_only) {
       $c.addClass('ifx-btn-icon-only')
         .find('.full-start__button').css('min-width', 'auto');
@@ -1836,6 +1836,15 @@ function applyAgeOnceIn(elRoot) {
       $c.removeClass('ifx-btn-icon-only')
         .find('.full-start__button').css('min-width', '');
     }
+      // 3) Доганяємо пізні текст-ноди
+      setTimeout(function () {
+        try {
+          markWtchButtons($c);
+          $c.find('.full-start__button').each(function () {
+            wrapButtonTextNodes($(this), true); // <-- важливо, див. нижче
+          });
+        } catch (e) {}
+      }, 300);
   }
 
   /* ============================================================
@@ -1901,6 +1910,14 @@ var css = `
   .full-start__button.view--online.lampac--button:not(.ifx-bandera-online):not([data-subtitle*="BazarNetUA"]) svg path{
   fill:#2196f3 !important;
   }
+
+  
+  
+  /* wtch-like кнопки: синій play (тільки коли увімкнено "Кольорові кнопки", бо це CSS з injectColoredButtonsCss) */
+  .full-start__button.ifx-wtch-like svg path { fill:#2196f3 !important; }
+  .full-start__button.ifx-wtch-like svg { color:#2196f3 !important; }
+
+
 
 
   /* TORRENT / TRAILER */
@@ -1973,6 +1990,32 @@ var css = `
   return hasHref || hasAction || isLampac || isStd;
 }
 
+function isWtchBtn($b){
+  if (!$b || !$b.length) return false;
+
+  // 1) якщо вже помічена — одразу true
+  if ($b.hasClass('ifx-wtch-like')) return true;
+
+  // 2) пробуємо по тексту/сабтайтлу
+  var txt = String($b.text() || '').toLowerCase();
+  var sub = String($b.attr('data-subtitle') || '').toLowerCase();
+
+  if (txt.indexOf('wtch') !== -1 || txt.indexOf('wtch.ch') !== -1) return true;
+  if (sub.indexOf('wtch') !== -1 || sub.indexOf('wtch.ch') !== -1) return true;
+
+  // 3) fallback: "wtch-тип" online кнопки без href/data-action і без lampac (твоя логіка)
+  return isWpchLikeOnlineBtn($b);
+}
+
+function markWtchButtons($root){
+  $root = $root && $root.length ? $root : $(document);
+  $root.find('.full-start__button').each(function(){
+    var $b = $(this);
+    if (isWtchBtn($b)) $b.addClass('ifx-wtch-like');
+  });
+}
+
+  
 function isWpchLikeOnlineBtn($b){
   if (!$b || !$b.length) return false;
 
@@ -1987,9 +2030,13 @@ function isWpchLikeOnlineBtn($b){
   return !hasHref && !hasAction && !isLampac;
 }
 
-function wrapButtonTextNodes($btn){
+function wrapButtonTextNodes($btn, force){
   if (!$btn || !$btn.length) return;
-  if ($btn.data('ifxTextWrapped')) return;
+
+  // якщо не force — як було
+  if (!force && $btn.data('ifxTextWrapped')) return;
+
+  var did = false;
 
   $btn.contents().filter(function(){
     return this.nodeType === 3 && (this.nodeValue || '').trim().length;
@@ -1998,10 +2045,13 @@ function wrapButtonTextNodes($btn){
     span.className = 'ifx-btn-label';
     span.textContent = this.nodeValue;
     this.parentNode.replaceChild(span, this);
+    did = true;
   });
 
-  $btn.data('ifxTextWrapped', true);
+  // якщо щось реально обгорнули — ставимо флаг
+  if (did) $btn.data('ifxTextWrapped', true);
 }
+
 
 
   function isBanderaOnlineBtn($btn) {
@@ -2202,6 +2252,10 @@ function replaceIconsIn($root) {
         // 3. Режим «іконки без тексту»
         applyIconOnlyClass(root);
 
+        markWtchButtons(root);
+        if (settings.icon_only) applyIconOnlyClass(root); // ще раз, щоб гарантовано сховати пізній текст
+
+        
         // 4. Кольорові кнопки
         //if (settings.colored_buttons) applyColoredButtonsIn(root);
         if (settings.colored_buttons) {
@@ -2210,8 +2264,6 @@ function replaceIconsIn($root) {
         // BanderaOnline може вставити кнопку трохи пізніше — доганяємо
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 300);
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 900);
-        setTimeout(function(){ try { applyIconOnlyClass(root); } catch(e){} }, 300);
-        setTimeout(function(){ try { applyIconOnlyClass(root); } catch(e){} }, 900);
         }
 
       }, 120);

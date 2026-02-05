@@ -1927,9 +1927,9 @@ var css = `
   color: #2196f3 !important;
   }
   
-  /* wtch-like кнопки: синій play (тільки коли увімкнено "Кольорові кнопки", бо це CSS з injectColoredButtonsCss) */
-  .full-start__button.ifx-wtch-like svg path { fill:#2196f3 !important; }
-  .full-start__button.ifx-wtch-like svg { color:#2196f3 !important; }
+  body.ifx-colored-buttons .full-start__button.ifx-wtch-like svg path { fill:#2196f3 !important; }
+  body.ifx-colored-buttons .full-start__button.ifx-wtch-like svg { color:#2196f3 !important; }
+
 
 `;
 
@@ -2153,6 +2153,7 @@ function replaceIconsIn($root) {
 
   
   function setColoredButtonsEnabled(enabled) {
+  document.body.classList.toggle('ifx-colored-buttons', !!enabled);
   if (enabled) {
     injectColoredButtonsCss();
     if (__ifx_last.fullRoot) replaceIconsIn(__ifx_last.fullRoot);
@@ -2160,6 +2161,7 @@ function replaceIconsIn($root) {
   } else {
     removeColoredButtonsCss();
     restoreIconsIn($(document));
+
   }
 }
 

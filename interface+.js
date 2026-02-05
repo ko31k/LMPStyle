@@ -2210,6 +2210,8 @@ function replaceIconsIn($root) {
         // BanderaOnline може вставити кнопку трохи пізніше — доганяємо
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 300);
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 900);
+        setTimeout(function(){ try { applyIconOnlyClass(root); } catch(e){} }, 300);
+        setTimeout(function(){ try { applyIconOnlyClass(root); } catch(e){} }, 900);
         }
 
       }, 120);

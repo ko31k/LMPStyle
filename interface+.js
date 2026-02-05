@@ -1926,10 +1926,6 @@ var css = `
   .full-start__button.view--online:not(.ifx-bandera-online):not(.lampac--button) svg{
   color: #2196f3 !important;
   }
-  
-  body.ifx-colored-buttons .full-start__button.ifx-wtch-like svg path { fill:#2196f3 !important; }
-  body.ifx-colored-buttons .full-start__button.ifx-wtch-like svg { color:#2196f3 !important; }
-
 
 `;
 
@@ -2153,7 +2149,6 @@ function replaceIconsIn($root) {
 
   
   function setColoredButtonsEnabled(enabled) {
-  document.body.classList.toggle('ifx-colored-buttons', !!enabled);
   if (enabled) {
     injectColoredButtonsCss();
     if (__ifx_last.fullRoot) replaceIconsIn(__ifx_last.fullRoot);
@@ -2161,7 +2156,6 @@ function replaceIconsIn($root) {
   } else {
     removeColoredButtonsCss();
     restoreIconsIn($(document));
-
   }
 }
 

@@ -234,26 +234,41 @@ function isMonoEnabled() {
     },
 
     //Update
-    interface_mod_new_title_mode: {
-    en: 'Titles under header',
-    uk: 'Назви під заголовком'
-    },
-    interface_mod_new_title_mode_desc: {
-    en: 'Show original title, original/UA, or hide',
-    uk: 'Показувати оригінальну, оригінальну/укр або вимкнути'
-    },
-    interface_mod_new_title_mode_off: {
-    en: 'No',
-    uk: 'Ні'
-    },
-    interface_mod_new_title_mode_orig: {
-    en: 'Original title',
-    uk: 'Оригінальна назва'
-    },
-    interface_mod_new_title_mode_orig_ua: {
-    en: 'Original / Ukrainian',
-    uk: 'Оригінальна / українська назва'
-    },
+interface_mod_new_title_mode: {
+  en: 'Titles under header',
+  uk: 'Назви під заголовком'
+},
+interface_mod_new_title_mode_desc: {
+  en: 'Choose which titles to show under the header\nFallback: UA → EN → Original.',
+  uk: 'Оберіть, які назви показувати під заголовком\nFallback: укр → англ → оригінал.'
+},
+
+
+interface_mod_new_title_mode_off: {
+  en: 'No',
+  uk: 'Ні'
+},
+interface_mod_new_title_mode_orig: {
+  en: 'Original title',
+  uk: 'Оригінальна назва'
+},
+interface_mod_new_title_mode_en: {
+  en: 'English title',
+  uk: 'Англійська назва'
+},
+interface_mod_new_title_mode_ua: {
+  en: 'Ukrainian title',
+  uk: 'Українська назва'
+},
+interface_mod_new_title_mode_orig_ua: {
+  en: 'Original / Ukrainian',
+  uk: 'Оригінальна / Українська'
+},
+interface_mod_new_title_mode_en_ua: {
+  en: 'English / Ukrainian',
+  uk: 'Англійська / Українська'
+},
+
 
 
     
@@ -326,23 +341,18 @@ function isMonoEnabled() {
   }
 
 
-  function getTitleMode() {
-    // 1) Новий ключ (має пріоритет)
-    var m = Lampa.Storage.get('interface_mod_new_title_mode');
-    if (typeof m !== 'undefined' && m !== null && m !== '') return String(m);
+function getTitleMode(){
+  // 1) якщо вже є новий select — використовуємо його
+  var v = Lampa.Storage.get('interface_mod_new_title_mode');
+  if (typeof v !== 'undefined' && v !== null && v !== '') return String(v);
 
-    // 2) Міграція зі старого тумблера:
-    // true  -> orig
-    // false -> off
-    var old = Lampa.Storage.get('interface_mod_new_en_data');
-    if (typeof old !== 'undefined') return getBool('interface_mod_new_en_data', true) ? 'orig' : 'off';
+  // 2) fallback зі старого тумблера (міграція)
+  //    true  -> orig
+  //    false -> off
+  if (getBool('interface_mod_new_en_data', true)) return 'orig';
+  return 'off';
+}
 
-    // 3) Ще старіший ключ
-    var older = Lampa.Storage.get('interface_mod_new_english_data');
-    if (typeof older !== 'undefined') return getBool('interface_mod_new_english_data', false) ? 'orig' : 'off';
-
-    return 'orig';
-  }
 
 
   /**
@@ -679,23 +689,27 @@ var css = `
     });
     */
     // Назви під заголовком (3 режими)
-    add({
-      component: 'interface_mod_new',
-      param: {
-        name: 'interface_mod_new_title_mode',
-        type: 'select',
-        values: {
-          off: Lampa.Lang.translate('interface_mod_new_title_mode_off'),
-          orig: Lampa.Lang.translate('interface_mod_new_title_mode_orig'),
-          orig_ua: Lampa.Lang.translate('interface_mod_new_title_mode_orig_ua')
-        },
-        default: 'orig'
-      },
-      field: {
-        name: Lampa.Lang.translate('interface_mod_new_title_mode'),
-        description: Lampa.Lang.translate('interface_mod_new_title_mode_desc')
-      }
-    });
+add({
+  component: 'interface_mod_new',
+  param: {
+    name: 'interface_mod_new_title_mode',
+    type: 'select',
+    values: {
+      off:    Lampa.Lang.translate('interface_mod_new_title_mode_off'),
+      orig:   Lampa.Lang.translate('interface_mod_new_title_mode_orig'),
+      en:     Lampa.Lang.translate('interface_mod_new_title_mode_en'),
+      ua:     Lampa.Lang.translate('interface_mod_new_title_mode_ua'),
+      orig_ua:Lampa.Lang.translate('interface_mod_new_title_mode_orig_ua'),
+      en_ua:  Lampa.Lang.translate('interface_mod_new_title_mode_en_ua')
+    },
+    default: 'orig'
+  },
+  field: {
+    name: Lampa.Lang.translate('interface_mod_new_title_mode'),
+    description: Lampa.Lang.translate('interface_mod_new_title_mode_desc')
+  }
+});
+
 
     
     // Всі кнопки + Іконки без тексту
@@ -881,12 +895,13 @@ var css = `
               //closeOpenSelects(); // This is the only one that needs this
               break;
               
-            /*case 'interface_mod_new_en_data':
-            case 'interface_mod_new_english_data': // Handle fallback
-              settings.en_data = getOriginalTitleEnabled(); // This function already checks both keys
+            case 'interface_mod_new_en_data':
+            case 'interface_mod_new_english_data':
+              settings.en_data = getOriginalTitleEnabled();
               applyOriginalTitleToggle();
-              break;*/
-              
+              break;
+
+                    
             case 'interface_mod_new_all_buttons':
               settings.all_buttons = getBool(key, false);
               rebuildButtonsNow();
@@ -917,9 +932,12 @@ var css = `
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
               break;
 
+
             case 'interface_mod_new_title_mode':
+              // val містить рядок режиму
               applyOriginalTitleToggle();
               break;
+
            
           }
         }
@@ -1694,28 +1712,41 @@ function applyAgeOnceIn(elRoot) {
   /**
    * Додає оригінальну назву в заголовок картки
    */
-  function getUaTitle(movie) {
-    if (!movie) return '';
-    function clean(s) { return String(s || '').trim(); }
+function getUaTitle(movie) {
+  if (!movie) return '';
+  function clean(s){ return String(s || '').trim(); }
 
-    // 1) явні UA/UK поля (якщо десь з’являться)
-    var ua =
-      clean(movie.ua_title) || clean(movie.uk_title) ||
-      clean(movie.title_ua) || clean(movie.title_uk) ||
-      clean(movie.name_ua)  || clean(movie.name_uk)  ||
-      clean(movie.ua_name)  || clean(movie.uk_name);
+  // 1) явні UA/UK поля (якщо є)
+  var ua =
+    clean(movie.ua_title) || clean(movie.uk_title) ||
+    clean(movie.title_ua) || clean(movie.title_uk) ||
+    clean(movie.ua_name)  || clean(movie.uk_name)  ||
+    clean(movie.name_ua)  || clean(movie.name_uk);
 
-    if (ua) return ua;
+  return ua;
+}
 
-    // 2) якщо UI українською — title/name часто вже українські
-    var lang = (Lampa.Lang && Lampa.Lang.code) ? String(Lampa.Lang.code).toLowerCase() : '';
-    if (lang.indexOf('uk') === 0 || lang.indexOf('ua') === 0) {
-      return clean(movie.title || movie.name || '');
-    }
 
-    // 3) fallback
-    return clean(movie.title || movie.name || '');
-  }
+function getEnTitle(movie) {
+  if (!movie) return '';
+  function clean(s){ return String(s || '').trim(); }
+
+  // "English" — це те, що зазвичай у TMDB є original_* якщо оригінал англійський,
+  // але нам треба саме англ-локалізований title/name, якщо він доступний.
+  // У Lampa часто movie.title/movie.name = локаль (укр/рус/інше), тож це ненадійно.
+
+  // 1) Якщо десь є явні поля
+  var en =
+    clean(movie.en_title) || clean(movie.en_name) ||
+    clean(movie.title_en) || clean(movie.name_en) ||
+    clean(movie.english_title) || clean(movie.english_name);
+
+  if (en) return en;
+
+  // 2) Фолбек: original_* (часто це і є англ, або принаймні "оригінальна")
+  // Якщо оригінал НЕ англійський — це буде не ідеально, але кращого без зовнішніх даних немає.
+  return clean(movie.original_title || movie.original_name || '');
+}
 
     
 function setOriginalTitle(fullRoot, movie) {
@@ -1726,21 +1757,72 @@ function setOriginalTitle(fullRoot, movie) {
 
   head.find('.ifx-original-title').remove();
 
-  var mode = getTitleMode(); // off | orig | orig_ua
+  // NEW: керуємо показом через режим
+  var mode = getTitleMode(); // 'orig'|'en'|'ua'|'orig_ua'|'en_ua'|'off'
   if (mode === 'off') return;
 
-  var original = (movie.original_title || movie.original_name || movie.original || '').trim();
-  if (!original) return;
-
-  var text = original;
-
-  if (mode === 'orig_ua') {
-    var ua = getUaTitle(movie);
-    if (ua && ua !== original) text += ' / ' + ua;
+  function clean(s){
+    s = (s == null ? '' : String(s)).replace(/\s+/g,' ').trim();
+    return s;
   }
+
+  // NEW: дістань "англійську" та "українську" з твоїх полів
+  // !!! ВАЖЛИВО: якщо у тебе інші ключі — підстав тут свої.
+  function getEnTitle(m){
+    return clean(m.title_en || m.en_title || m.english_title || m.title); // fallback на title
+  }
+  function getUaTitle(m){
+    return clean(m.title_uk || m.uk_title || m.ua_title || m.title_ua || m.title_ukrainian || m.title); // <- тут теж перевір свої поля
+  }
+
+  var orig = clean(movie.original_title || movie.original_name || movie.original || '');
+  var en   = clean(getEnTitle(movie)) || orig;
+  var ua   = clean(getUaTitle(movie)) || en;   // <-- UA → EN → ORIG (твій бажаний ланцюжок)
+  var uaRaw = clean(getUaTitle(movie));        // <-- тільки якщо реально є (без fallback)
+
+  // Додатково: якщо "orig" порожній — підстрахуємось
+  if (!orig) orig = en || ua || '';
+
+  // NEW: якщо оригінальна = англійська — в режимах одиночного показу покажемо одну (це і так буде одна)
+  // А в режимах "/": дубль не додаємо (див. умови нижче)
+
+  var text = '';
+
+  switch (mode) {
+    case 'orig':
+      text = orig;
+      break;
+
+    case 'en':
+      text = en; // en вже = en||orig
+      break;
+
+    case 'ua':
+      text = ua; // ua вже = ua||en||orig
+      break;
+
+    case 'orig_ua':
+      text = orig;
+      if (uaRaw && uaRaw !== orig) text += ' / ' + uaRaw;
+      break;
+
+    case 'en_ua':
+      text = en; // en||orig
+      if (uaRaw && uaRaw !== en && uaRaw !== orig) text += ' / ' + uaRaw;
+      break;
+
+    default:
+      // на випадок старого тумблера або невідомого значення
+      text = orig;
+      break;
+  }
+
+  if (!text) return;
 
   $('<div class="ifx-original-title"></div>').text(text).appendTo(head);
 }
+
+
 
 
   /**
@@ -1750,10 +1832,10 @@ function applyOriginalTitleToggle() {
   if (!__ifx_last.fullRoot) return;
   var head = __ifx_last.fullRoot.find('.full-start-new__head, .full-start__head').first();
   if (!head.length) return;
-
   head.find('.ifx-original-title').remove();
-  if (getTitleMode() !== 'off') setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
+  setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
 }
+
 
 
   /* ============================================================

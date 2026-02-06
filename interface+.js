@@ -234,41 +234,26 @@ function isMonoEnabled() {
     },
 
     //Update
-interface_mod_new_title_mode: {
-  en: 'Titles under header',
-  uk: 'Назви під заголовком'
-},
-interface_mod_new_title_mode_desc: {
-  en: 'Choose which titles to show under the header\nFallback: UA → EN → Original.',
-  uk: 'Оберіть, які назви показувати під заголовком\nFallback: укр → англ → оригінал.'
-},
-
-
-interface_mod_new_title_mode_off: {
-  en: 'No',
-  uk: 'Ні'
-},
-interface_mod_new_title_mode_orig: {
-  en: 'Original title',
-  uk: 'Оригінальна назва'
-},
-interface_mod_new_title_mode_en: {
-  en: 'English title',
-  uk: 'Англійська назва'
-},
-interface_mod_new_title_mode_ua: {
-  en: 'Ukrainian title',
-  uk: 'Українська назва'
-},
-interface_mod_new_title_mode_orig_ua: {
-  en: 'Original / Ukrainian',
-  uk: 'Оригінальна / Українська'
-},
-interface_mod_new_title_mode_en_ua: {
-  en: 'English / Ukrainian',
-  uk: 'Англійська / Українська'
-},
-
+    interface_mod_new_title_mode: {
+    en: 'Titles under header',
+    uk: 'Назви під заголовком'
+    },
+    interface_mod_new_title_mode_desc: {
+    en: 'Show original title, original/UA, or hide',
+    uk: 'Показувати оригінальну, оригінальну/українську або вимкнути'
+    },
+    interface_mod_new_title_mode_off: {
+    en: 'No',
+    uk: 'Ні'
+    },
+    interface_mod_new_title_mode_orig: {
+    en: 'Original title',
+    uk: 'Оригінальна назва'
+    },
+    interface_mod_new_title_mode_orig_ua: {
+    en: 'Original / Ukrainian',
+    uk: 'Оригінальна / Українська назва'
+    },
 
 
     
@@ -341,18 +326,23 @@ interface_mod_new_title_mode_en_ua: {
   }
 
 
-function getTitleMode(){
-  // 1) новий select
-  var v = Lampa.Storage.get('interface_mod_new_title_mode'); // ✅ правильний ключ
-  if (typeof v !== 'undefined' && v !== null && v !== '') return String(v);
+  function getTitleMode() {
+    // 1) Новий ключ (має пріоритет)
+    var m = Lampa.Storage.get('interface_mod_new_title_mode');
+    if (typeof m !== 'undefined' && m !== null && m !== '') return String(m);
 
-  // 2) fallback зі старого тумблера
-  if (getBool('interface_mod_new_en_data', true)) return 'orig';
-  return 'off';
-}
+    // 2) Міграція зі старого тумблера:
+    // true  -> orig
+    // false -> off
+    var old = Lampa.Storage.get('interface_mod_new_en_data');
+    if (typeof old !== 'undefined') return getBool('interface_mod_new_en_data', true) ? 'orig' : 'off';
 
+    // 3) Ще старіший ключ
+    var older = Lampa.Storage.get('interface_mod_new_english_data');
+    if (typeof older !== 'undefined') return getBool('interface_mod_new_english_data', false) ? 'orig' : 'off';
 
-
+    return 'orig';
+  }
 
 
   /**
@@ -689,27 +679,23 @@ var css = `
     });
     */
     // Назви під заголовком (3 режими)
-add({
-  component: 'interface_mod_new',
-  param: {
-    name: 'interface_mod_new_title_mode',
-    type: 'select',
-    values: {
-      off:    Lampa.Lang.translate('interface_mod_new_title_mode_off'),
-      orig:   Lampa.Lang.translate('interface_mod_new_title_mode_orig'),
-      en:     Lampa.Lang.translate('interface_mod_new_title_mode_en'),
-      ua:     Lampa.Lang.translate('interface_mod_new_title_mode_ua'),
-      orig_ua:Lampa.Lang.translate('interface_mod_new_title_mode_orig_ua'),
-      en_ua:  Lampa.Lang.translate('interface_mod_new_title_mode_en_ua')
-    },
-    default: 'orig'
-  },
-  field: {
-    name: Lampa.Lang.translate('interface_mod_new_title_mode'),
-    description: Lampa.Lang.translate('interface_mod_new_title_mode_desc')
-  }
-});
-
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_title_mode',
+        type: 'select',
+        values: {
+          off: Lampa.Lang.translate('interface_mod_new_title_mode_off'),
+          orig: Lampa.Lang.translate('interface_mod_new_title_mode_orig'),
+          orig_ua: Lampa.Lang.translate('interface_mod_new_title_mode_orig_ua')
+        },
+        default: 'orig'
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_title_mode'),
+        description: Lampa.Lang.translate('interface_mod_new_title_mode_desc')
+      }
+    });
 
     
     // Всі кнопки + Іконки без тексту
@@ -895,13 +881,12 @@ add({
               //closeOpenSelects(); // This is the only one that needs this
               break;
               
-            case 'interface_mod_new_en_data':
-            case 'interface_mod_new_english_data':
-              settings.en_data = getOriginalTitleEnabled();
+            /*case 'interface_mod_new_en_data':
+            case 'interface_mod_new_english_data': // Handle fallback
+              settings.en_data = getOriginalTitleEnabled(); // This function already checks both keys
               applyOriginalTitleToggle();
-              break;
-
-                    
+              break;*/
+              
             case 'interface_mod_new_all_buttons':
               settings.all_buttons = getBool(key, false);
               rebuildButtonsNow();
@@ -932,33 +917,9 @@ add({
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
               break;
 
-
-case 'interface_mod_new_title_mode':
-  // перемалювати одразу тим, що є
-  applyOriginalTitleToggle();
-
-  // і догрузити потрібні мови для поточної картки, потім перемалювати ще раз
-  (function(){
-    if (!__ifx_last || !__ifx_last.movie) return;
-
-    var mode = getTitleMode();
-    var needEn = (mode === 'en' || mode === 'en_ua');
-    var needUa = (mode === 'ua' || mode === 'orig_ua' || mode === 'en_ua');
-
-    var p = Promise.resolve();
-    if (needEn) p = p.then(function(){ return ensureEnglishTitle(__ifx_last.movie); });
-    if (needUa) p = p.then(function(){ return ensureUkrainianTitle(__ifx_last.movie); });
-
-    p.then(function(){
-      // якщо режим не змінився поки грузили
-      if (getTitleMode() !== mode) return;
-      applyOriginalTitleToggle();
-    });
-  })();
-
-  break;
-
-
+            case 'interface_mod_new_title_mode':
+              applyOriginalTitleToggle();
+              break;
            
           }
         }
@@ -1733,143 +1694,28 @@ function applyAgeOnceIn(elRoot) {
   /**
    * Додає оригінальну назву в заголовок картки
    */
-function getTmdbId(movie){
-  if (!movie) return 0;
+  function getUaTitle(movie) {
+    if (!movie) return '';
+    function clean(s) { return String(s || '').trim(); }
 
-  // TMDB id має бути пріоритетом
-  var id = movie.tmdb_id || movie.tmdb || movie.id_tmdb;
+    // 1) явні UA/UK поля (якщо десь з’являться)
+    var ua =
+      clean(movie.ua_title) || clean(movie.uk_title) ||
+      clean(movie.title_ua) || clean(movie.title_uk) ||
+      clean(movie.name_ua)  || clean(movie.name_uk)  ||
+      clean(movie.ua_name)  || clean(movie.uk_name);
 
-  // movie.id використовуємо ТІЛЬКИ якщо точно TMDB-джерело (якщо є такі маркери)
-  if (!id && (movie.source === 'tmdb' || movie.provider === 'tmdb')) id = movie.id;
+    if (ua) return ua;
 
-  id = parseInt(id, 10);
-  return isFinite(id) ? id : 0;
-}
+    // 2) якщо UI українською — title/name часто вже українські
+    var lang = (Lampa.Lang && Lampa.Lang.code) ? String(Lampa.Lang.code).toLowerCase() : '';
+    if (lang.indexOf('uk') === 0 || lang.indexOf('ua') === 0) {
+      return clean(movie.title || movie.name || '');
+    }
 
-function getCacheKey(movie){
-  // для кешу теж краще TMDB id, але якщо його нема — падаємо на будь-який стабільний
-  return String(getTmdbId(movie) || movie.id || movie.movie_id || '');
-}
-
-  
-function getUaTitle(movie) {
-  if (!movie) return '';
-  // Реальна UA з кешу (uk-UA). Якщо ще не встигли підвантажити — порожньо.
-  return (getUaTitleCached ? getUaTitleCached(movie) : '') || '';
-}
-function getDisplayTitle(movie){
-  if (!movie) return '';
-  return ((movie.title || movie.name || '') + '').trim();
-}
-
-
-
-// памʼять на час сесії (без localStorage)
-var __ifx_enTitleMem = window.__ifx_enTitleMem || {};
-window.__ifx_enTitleMem = __ifx_enTitleMem;
-
-var __ifx_uaTitleMem = window.__ifx_uaTitleMem || {};
-window.__ifx_uaTitleMem = __ifx_uaTitleMem;
-
-function getUaTitleCached(movie){
-  if (!movie) return '';
-  var id = movie.id || movie.tmdb_id || movie.movie_id;
-  if (!id) return '';
-  return (__ifx_uaTitleMem[id] || '').toString().trim();
-}
-
-
-// повертає EN якщо вже підвантажили
-function getEnTitleCached(movie){
-  if (!movie) return '';
-  var id = movie.id || movie.tmdb_id || movie.movie_id;
-  if (!id) return '';
-  return (__ifx_enTitleMem[id] || '').toString().trim();
-}
-
-// універсальний wrapper: Promise і для різних реалізацій API в Lampa
-function ifxTmdbGet(path, params){
-  params = params || {};
-
-  // 1) Promise-варіант (деякі збірки реально так працюють)
-  if (Lampa.TMDB && typeof Lampa.TMDB.get === 'function') {
-    try {
-      var ret = Lampa.TMDB.get(path, params);
-
-      // якщо це promise-подібне
-      if (ret && typeof ret.then === 'function') return ret;
-
-      // якщо виклик без ретурна — спробуємо callback-сигнатуру
-      return new Promise(function(resolve, reject){
-        try{
-          Lampa.TMDB.get(path, params, function(r){ resolve(r); }, function(e){ reject(e); });
-        }catch(err){ reject(err); }
-      });
-    } catch(e) {}
+    // 3) fallback
+    return clean(movie.title || movie.name || '');
   }
-
-  // 2) Lampa.Api.tmdb callback
-  if (Lampa.Api && typeof Lampa.Api.tmdb === 'function'){
-    return new Promise(function(resolve, reject){
-      try{
-        Lampa.Api.tmdb(path, params, function(r){ resolve(r); }, function(e){ reject(e); });
-      }catch(err){ reject(err); }
-    });
-  }
-
-  return Promise.reject(new Error('TMDB API helper not found'));
-}
-
-
-// Підвантажити англ. назву (1 раз на id), потім перерисувати строку назв
-function ensureEnglishTitle(movie){
-  return new Promise(function(resolve){
-    if (!movie) return resolve('');
-
-    var tmdbId = getTmdbId(movie);
-    if (!tmdbId) return resolve('');
-
-    var key = getCacheKey(movie);
-    if (__ifx_enTitleMem[key]) return resolve(__ifx_enTitleMem[key]);
-
-    var isTv = (movie.type === 'tv' || movie.type === 'serial' || movie.number_of_seasons > 0);
-    var kind = isTv ? 'tv' : 'movie';
-
-    ifxTmdbGet(kind + '/' + tmdbId, { language: 'en-US' })
-      .then(function(r){
-        var en = (r && (r.title || r.name)) ? String(r.title || r.name).trim() : '';
-        if (en) __ifx_enTitleMem[key] = en;
-        resolve(en);
-      })
-      .catch(function(){ resolve(''); });
-  });
-}
-
-// Підвантажити УКР назву (1 раз на id), потім перерисувати строку назв
-function ensureUkrainianTitle(movie){
-  return new Promise(function(resolve){
-    if (!movie) return resolve('');
-
-    var tmdbId = getTmdbId(movie);
-    if (!tmdbId) return resolve('');
-
-    var key = getCacheKey(movie);
-    if (__ifx_uaTitleMem[key]) return resolve(__ifx_uaTitleMem[key]);
-
-    var isTv = (movie.type === 'tv' || movie.type === 'serial' || movie.number_of_seasons > 0);
-    var kind = isTv ? 'tv' : 'movie';
-
-    ifxTmdbGet(kind + '/' + tmdbId, { language: 'uk-UA' })
-      .then(function(r){
-        var ua = (r && (r.title || r.name)) ? String(r.title || r.name).trim() : '';
-        if (ua) __ifx_uaTitleMem[key] = ua;
-        resolve(ua);
-      })
-      .catch(function(){ resolve(''); });
-  });
-}
-
-
 
     
 function setOriginalTitle(fullRoot, movie) {
@@ -1880,74 +1726,21 @@ function setOriginalTitle(fullRoot, movie) {
 
   head.find('.ifx-original-title').remove();
 
-  var mode = getTitleMode(); // off|orig|en|ua|orig_ua|en_ua
+  var mode = getTitleMode(); // off | orig | orig_ua
   if (mode === 'off') return;
 
-  function clean(s){
-    return (s == null ? '' : String(s)).replace(/\s+/g,' ').trim();
+  var original = (movie.original_title || movie.original_name || movie.original || '').trim();
+  if (!original) return;
+
+  var text = original;
+
+  if (mode === 'orig_ua') {
+    var ua = getUaTitle(movie);
+    if (ua && ua !== original) text += ' / ' + ua;
   }
-
-  // ORIG (TMDB original)
-  var orig = clean(movie.original_title || movie.original_name || movie.original || '');
-
-  // DISPLAY (як показує Lampa зараз)
-  var disp = clean(getDisplayTitle(movie));
-
-  // EN (en-US) — тільки після ensureEnglishTitle
-  var enRaw = clean(getEnTitleCached ? getEnTitleCached(movie) : '');
-
-  // UA (uk-UA) — тільки після ensureUkrainianTitle
-  var uaRaw = clean(getUaTitleCached ? getUaTitleCached(movie) : '');
-
-  // fallback-ланцюжки як ти хотів:
-  // EN: enRaw -> orig -> disp
-  var en = enRaw || orig || disp;
-
-  // UA: uaRaw -> en -> orig -> disp
-  var ua = uaRaw || en || orig || disp;
-
-  // страховка, якщо orig порожній
-  if (!orig) orig = en || ua || disp || '';
-
-  var text = '';
-
-  switch (mode) {
-    case 'orig':
-      text = orig;
-      break;
-
-    case 'en':
-      text = en;
-      break;
-
-    case 'ua':
-      text = ua;
-      break;
-
-    case 'orig_ua':
-      text = orig;
-      // у комбінованих режимах показуємо РЕАЛЬНУ UA (uaRaw), не fallback
-      if (uaRaw && uaRaw !== orig) text += ' / ' + uaRaw;
-      break;
-
-    case 'en_ua':
-      text = en;
-      if (uaRaw && uaRaw !== en && uaRaw !== orig) text += ' / ' + uaRaw;
-      break;
-
-    default:
-      text = orig;
-      break;
-  }
-
-  if (!text) return;
 
   $('<div class="ifx-original-title"></div>').text(text).appendTo(head);
 }
-
-
-
-
 
 
   /**
@@ -1957,10 +1750,10 @@ function applyOriginalTitleToggle() {
   if (!__ifx_last.fullRoot) return;
   var head = __ifx_last.fullRoot.find('.full-start-new__head, .full-start__head').first();
   if (!head.length) return;
-  head.find('.ifx-original-title').remove();
-  setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
-}
 
+  head.find('.ifx-original-title').remove();
+  if (getTitleMode() !== 'off') setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
+}
 
 
   /* ============================================================
@@ -2424,75 +2217,45 @@ function replaceIconsIn($root) {
   /**
    * Встановлює слухача Lampa.Listener 'full' для кнопок та оригінальної назви
    */
-function wireFullCardEnhancers() {
-  Lampa.Listener.follow('full', function (e) {
-    if (e.type !== 'complite') return;
+  function wireFullCardEnhancers() {
+    Lampa.Listener.follow('full', function (e) {
+      if (e.type !== 'complite') return;
+      
+      setTimeout(function () {
+        var root = $(e.object.activity.render());
 
-    setTimeout(function () {
-      var root = $(e.object.activity.render());
+        // кешуємо поточний контейнер і його дітей (для відновлення)
+        var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
+        if ($container.length) {
+          __ifx_btn_cache.container = $container;
+          __ifx_btn_cache.nodes = $container.children().clone(true, true);
+        }
 
-      // кешуємо поточний контейнер і його дітей (для відновлення)
-      var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
-      if ($container.length) {
-        __ifx_btn_cache.container = $container;
-        __ifx_btn_cache.nodes = $container.children().clone(true, true);
-      }
+        __ifx_last.fullRoot = root;
+        __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
 
-      __ifx_last.fullRoot = root;
-      __ifx_last.movie = (e.data && (e.data.movie || e.data.data && e.data.data.movie)) || e.data || __ifx_last.movie || {};
+        // 1. Оригінальна назва
+        setOriginalTitle(root, __ifx_last.movie);
 
-      // 1) Намалювати одразу те, що є (ORIG / display вже доступні)
-      setOriginalTitle(root, __ifx_last.movie);
+        // 2. Всі кнопки
+        if (settings.all_buttons) reorderAndShowButtons(root);
 
-      // 2) Довантажити потрібні мови по режиму і перемалювати
-      var modeAtStart = getTitleMode();
+        // 3. Режим «іконки без тексту»
+        applyIconOnlyClass(root);
 
-      var needEn = (modeAtStart === 'en' || modeAtStart === 'en_ua');
-      var needUa = (modeAtStart === 'ua' || modeAtStart === 'orig_ua' || modeAtStart === 'en_ua');
-
-      // фіксуємо "контекст", щоб не перемальовувати іншу картку/інший режим
-      var idAtStart = getCacheKey(__ifx_last.movie) || null;
-      var rootAtStart = root;
-
-      var p = Promise.resolve();
-
-      if (needEn) p = p.then(function(){ return ensureEnglishTitle(__ifx_last.movie); });
-      if (needUa) p = p.then(function(){ return ensureUkrainianTitle(__ifx_last.movie); });
-
-      p.then(function(){
-        // якщо режим змінився — не чіпаємо (щоб не смикало/не плутало)
-        if (getTitleMode() !== modeAtStart) return;
-
-        // якщо вже інша картка/інший фільм — не чіпаємо
-        if (__ifx_last.fullRoot !== rootAtStart) return;
-
-        var cur = __ifx_last.movie || {};
-        var curId = getCacheKey(cur) || null;
-        if (idAtStart && curId && String(curId) !== String(idAtStart)) return;
-
-
-        applyOriginalTitleToggle(); // прибере старе і додасть нове (вже з кешів EN/UA)
-      });
-
-      // 2. Всі кнопки
-      if (settings.all_buttons) reorderAndShowButtons(root);
-
-      // 3. Режим «іконки без тексту»
-      applyIconOnlyClass(root);
-
-      // 4. Кольорові кнопки
-      if (settings.colored_buttons) {
+        // 4. Кольорові кнопки
+        //if (settings.colored_buttons) applyColoredButtonsIn(root);
+        if (settings.colored_buttons) {
         applyColoredButtonsIn(root);
 
         // BanderaOnline може вставити кнопку трохи пізніше — доганяємо
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 300);
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 900);
-      }
+        }
 
-    }, 120);
-  });
-}
-
+      }, 120);
+    });
+  }
 
   // Слухач для оновлення стилів торентів при відкритті картки
   Lampa.Listener.follow('full', function (e) {

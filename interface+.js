@@ -933,10 +933,31 @@ add({
               break;
 
 
-            case 'interface_mod_new_title_mode':
-              // val містить рядок режиму
-              applyOriginalTitleToggle();
-              break;
+case 'interface_mod_new_title_mode':
+  // перемалювати одразу тим, що є
+  applyOriginalTitleToggle();
+
+  // і догрузити потрібні мови для поточної картки, потім перемалювати ще раз
+  (function(){
+    if (!__ifx_last || !__ifx_last.movie) return;
+
+    var mode = getTitleMode();
+    var needEn = (mode === 'en' || mode === 'en_ua');
+    var needUa = (mode === 'ua' || mode === 'orig_ua' || mode === 'en_ua');
+
+    var p = Promise.resolve();
+    if (needEn) p = p.then(function(){ return ensureEnglishTitle(__ifx_last.movie); });
+    if (needUa) p = p.then(function(){ return ensureUkrainianTitle(__ifx_last.movie); });
+
+    p.then(function(){
+      // якщо режим не змінився поки грузили
+      if (getTitleMode() !== mode) return;
+      applyOriginalTitleToggle();
+    });
+  })();
+
+  break;
+
 
            
           }
@@ -1727,6 +1748,17 @@ function getDisplayTitle(movie){
 // памʼять на час сесії (без localStorage)
 var __ifx_enTitleMem = window.__ifx_enTitleMem || {};
 window.__ifx_enTitleMem = __ifx_enTitleMem;
+
+var __ifx_uaTitleMem = window.__ifx_uaTitleMem || {};
+window.__ifx_uaTitleMem = __ifx_uaTitleMem;
+
+function getUaTitleCached(movie){
+  if (!movie) return '';
+  var id = movie.id || movie.tmdb_id || movie.movie_id;
+  if (!id) return '';
+  return (__ifx_uaTitleMem[id] || '').toString().trim();
+}
+
 
 // повертає EN якщо вже підвантажили
 function getEnTitleCached(movie){

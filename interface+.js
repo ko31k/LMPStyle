@@ -342,16 +342,16 @@ interface_mod_new_title_mode_en_ua: {
 
 
 function getTitleMode(){
-  // 1) якщо вже є новий select — використовуємо його
-  var v = Lampa.Storage.get('interface_mod_new_title_mode');
+  // 1) новий select
+  var v = Lampa.Storage.get('interface_mod_new_title_mode'); // ✅ правильний ключ
   if (typeof v !== 'undefined' && v !== null && v !== '') return String(v);
 
-  // 2) fallback зі старого тумблера (міграція)
-  //    true  -> orig
-  //    false -> off
+  // 2) fallback зі старого тумблера
   if (getBool('interface_mod_new_en_data', true)) return 'orig';
   return 'off';
 }
+
+
 
 
 
@@ -1714,39 +1714,110 @@ function applyAgeOnceIn(elRoot) {
    */
 function getUaTitle(movie) {
   if (!movie) return '';
-  function clean(s){ return String(s || '').trim(); }
-
-  // 1) явні UA/UK поля (якщо є)
-  var ua =
-    clean(movie.ua_title) || clean(movie.uk_title) ||
-    clean(movie.title_ua) || clean(movie.title_uk) ||
-    clean(movie.ua_name)  || clean(movie.uk_name)  ||
-    clean(movie.name_ua)  || clean(movie.name_uk);
-
-  return ua;
+  // Реальна UA з кешу (uk-UA). Якщо ще не встигли підвантажити — порожньо.
+  return (getUaTitleCached ? getUaTitleCached(movie) : '') || '';
 }
-
-
-function getEnTitle(movie) {
+function getDisplayTitle(movie){
   if (!movie) return '';
-  function clean(s){ return String(s || '').trim(); }
-
-  // "English" — це те, що зазвичай у TMDB є original_* якщо оригінал англійський,
-  // але нам треба саме англ-локалізований title/name, якщо він доступний.
-  // У Lampa часто movie.title/movie.name = локаль (укр/рус/інше), тож це ненадійно.
-
-  // 1) Якщо десь є явні поля
-  var en =
-    clean(movie.en_title) || clean(movie.en_name) ||
-    clean(movie.title_en) || clean(movie.name_en) ||
-    clean(movie.english_title) || clean(movie.english_name);
-
-  if (en) return en;
-
-  // 2) Фолбек: original_* (часто це і є англ, або принаймні "оригінальна")
-  // Якщо оригінал НЕ англійський — це буде не ідеально, але кращого без зовнішніх даних немає.
-  return clean(movie.original_title || movie.original_name || '');
+  return ((movie.title || movie.name || '') + '').trim();
 }
+
+
+
+// памʼять на час сесії (без localStorage)
+var __ifx_enTitleMem = window.__ifx_enTitleMem || {};
+window.__ifx_enTitleMem = __ifx_enTitleMem;
+
+// повертає EN якщо вже підвантажили
+function getEnTitleCached(movie){
+  if (!movie) return '';
+  var id = movie.id || movie.tmdb_id || movie.movie_id;
+  if (!id) return '';
+  return (__ifx_enTitleMem[id] || '').toString().trim();
+}
+
+// універсальний wrapper: Promise і для різних реалізацій API в Lampa
+function ifxTmdbGet(path, params){
+  params = params || {};
+
+  // 1) Найчастіше в плагінах є Lampa.TMDB.get(...)
+  if (Lampa.TMDB && typeof Lampa.TMDB.get === 'function'){
+    try { return Promise.resolve(Lampa.TMDB.get(path, params)); } catch(e){}
+  }
+
+  // 2) Деякі збірки мають Lampa.Api.tmdb(...)
+  if (Lampa.Api && typeof Lampa.Api.tmdb === 'function'){
+    return new Promise(function(resolve, reject){
+      try{
+        Lampa.Api.tmdb(path, params, function(r){ resolve(r); }, function(e){ reject(e); });
+      }catch(err){ reject(err); }
+    });
+  }
+
+  return Promise.reject(new Error('TMDB API helper not found (Lampa.TMDB.get / Lampa.Api.tmdb)'));
+}
+
+// Підвантажити англ. назву (1 раз на id), потім перерисувати строку назв
+function ensureEnglishTitle(movie){
+  return new Promise(function(resolve){
+    if (!movie) return resolve('');
+    var id = movie.id || movie.tmdb_id || movie.movie_id;
+    if (!id) return resolve('');
+
+    if (__ifx_enTitleMem[id]) return resolve(__ifx_enTitleMem[id]);
+
+    var isTv = (movie.type === 'tv' || movie.type === 'serial' || movie.number_of_seasons > 0);
+    var kind = isTv ? 'tv' : 'movie';
+
+    // TMDB details endpoint: /movie/{id} або /tv/{id}
+    ifxTmdbGet(kind + '/' + id, { language: 'en-US' })
+      .then(function(r){
+        var en = (r && (r.title || r.name)) ? String(r.title || r.name).trim() : '';
+        if (en) __ifx_enTitleMem[id] = en;
+        resolve(en);
+      })
+      .catch(function(){
+        resolve('');
+      });
+  });
+}
+
+// памʼять на час сесії (без localStorage) — UA
+var __ifx_uaTitleMem = window.__ifx_uaTitleMem || {};
+window.__ifx_uaTitleMem = __ifx_uaTitleMem;
+
+function getUaTitleCached(movie){
+  if (!movie) return '';
+  var id = movie.id || movie.tmdb_id || movie.movie_id;
+  if (!id) return '';
+  return (__ifx_uaTitleMem[id] || '').toString().trim();
+}
+
+// Підвантажити УКР назву (1 раз на id), потім перерисувати строку назв
+function ensureUkrainianTitle(movie){
+  return new Promise(function(resolve){
+    if (!movie) return resolve('');
+    var id = movie.id || movie.tmdb_id || movie.movie_id;
+    if (!id) return resolve('');
+
+    if (__ifx_uaTitleMem[id]) return resolve(__ifx_uaTitleMem[id]);
+
+    var isTv = (movie.type === 'tv' || movie.type === 'serial' || movie.number_of_seasons > 0);
+    var kind = isTv ? 'tv' : 'movie';
+
+    ifxTmdbGet(kind + '/' + id, { language: 'uk-UA' })
+      .then(function(r){
+        var ua = (r && (r.title || r.name)) ? String(r.title || r.name).trim() : '';
+        if (ua) __ifx_uaTitleMem[id] = ua;
+        resolve(ua);
+      })
+      .catch(function(){
+        resolve('');
+      });
+  });
+}
+
+
 
     
 function setOriginalTitle(fullRoot, movie) {
@@ -1757,33 +1828,34 @@ function setOriginalTitle(fullRoot, movie) {
 
   head.find('.ifx-original-title').remove();
 
-  // NEW: керуємо показом через режим
-  var mode = getTitleMode(); // 'orig'|'en'|'ua'|'orig_ua'|'en_ua'|'off'
+  var mode = getTitleMode(); // off|orig|en|ua|orig_ua|en_ua
   if (mode === 'off') return;
 
   function clean(s){
-    s = (s == null ? '' : String(s)).replace(/\s+/g,' ').trim();
-    return s;
+    return (s == null ? '' : String(s)).replace(/\s+/g,' ').trim();
   }
 
-  var orig  = clean(movie.original_title || movie.original_name || movie.original || '');
+  // ORIG (TMDB original)
+  var orig = clean(movie.original_title || movie.original_name || movie.original || '');
 
-  // ВАЖЛИВО: беремо RAW з твоїх ГЛОБАЛЬНИХ функцій (які вище у файлі)
-  var enRaw = clean(getEnTitle(movie));     // тільки реальна EN (або orig_* як fallback всередині getEnTitle)
-  var uaRaw = clean(getUaTitle(movie));     // тільки реальна UA (без fallback)
+  // DISPLAY (як показує Lampa зараз)
+  var disp = clean(getDisplayTitle(movie));
 
-  // Ланцюжок fallback’ів як ти хотів:
-  // EN: enRaw -> orig
-  // UA: uaRaw -> EN -> orig
-  var en = enRaw || orig;
-  var ua = uaRaw || en;
+  // EN (en-US) — тільки після ensureEnglishTitle
+  var enRaw = clean(getEnTitleCached ? getEnTitleCached(movie) : '');
 
+  // UA (uk-UA) — тільки після ensureUkrainianTitle
+  var uaRaw = clean(getUaTitleCached ? getUaTitleCached(movie) : '');
 
-  // Додатково: якщо "orig" порожній — підстрахуємось
-  if (!orig) orig = en || ua || '';
+  // fallback-ланцюжки як ти хотів:
+  // EN: enRaw -> orig -> disp
+  var en = enRaw || orig || disp;
 
-  // NEW: якщо оригінальна = англійська — в режимах одиночного показу покажемо одну (це і так буде одна)
-  // А в режимах "/": дубль не додаємо (див. умови нижче)
+  // UA: uaRaw -> en -> orig -> disp
+  var ua = uaRaw || en || orig || disp;
+
+  // страховка, якщо orig порожній
+  if (!orig) orig = en || ua || disp || '';
 
   var text = '';
 
@@ -1793,25 +1865,25 @@ function setOriginalTitle(fullRoot, movie) {
       break;
 
     case 'en':
-      text = en; // en вже = en||orig
+      text = en;
       break;
 
     case 'ua':
-      text = ua; // ua вже = ua||en||orig
+      text = ua;
       break;
 
     case 'orig_ua':
       text = orig;
+      // у комбінованих режимах показуємо РЕАЛЬНУ UA (uaRaw), не fallback
       if (uaRaw && uaRaw !== orig) text += ' / ' + uaRaw;
       break;
 
     case 'en_ua':
-      text = en; // en||orig
+      text = en;
       if (uaRaw && uaRaw !== en && uaRaw !== orig) text += ' / ' + uaRaw;
       break;
 
     default:
-      // на випадок старого тумблера або невідомого значення
       text = orig;
       break;
   }
@@ -1820,6 +1892,8 @@ function setOriginalTitle(fullRoot, movie) {
 
   $('<div class="ifx-original-title"></div>').text(text).appendTo(head);
 }
+
+
 
 
 
@@ -2298,45 +2372,74 @@ function replaceIconsIn($root) {
   /**
    * Встановлює слухача Lampa.Listener 'full' для кнопок та оригінальної назви
    */
-  function wireFullCardEnhancers() {
-    Lampa.Listener.follow('full', function (e) {
-      if (e.type !== 'complite') return;
-      
-      setTimeout(function () {
-        var root = $(e.object.activity.render());
+function wireFullCardEnhancers() {
+  Lampa.Listener.follow('full', function (e) {
+    if (e.type !== 'complite') return;
 
-        // кешуємо поточний контейнер і його дітей (для відновлення)
-        var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
-        if ($container.length) {
-          __ifx_btn_cache.container = $container;
-          __ifx_btn_cache.nodes = $container.children().clone(true, true);
-        }
+    setTimeout(function () {
+      var root = $(e.object.activity.render());
 
-        __ifx_last.fullRoot = root;
-        __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
+      // кешуємо поточний контейнер і його дітей (для відновлення)
+      var $container = root.find('.full-start-new__buttons, .full-start__buttons').first();
+      if ($container.length) {
+        __ifx_btn_cache.container = $container;
+        __ifx_btn_cache.nodes = $container.children().clone(true, true);
+      }
 
-        // 1. Оригінальна назва
-        setOriginalTitle(root, __ifx_last.movie);
+      __ifx_last.fullRoot = root;
+      __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
 
-        // 2. Всі кнопки
-        if (settings.all_buttons) reorderAndShowButtons(root);
+      // 1) Намалювати одразу те, що є (ORIG / display вже доступні)
+      setOriginalTitle(root, __ifx_last.movie);
 
-        // 3. Режим «іконки без тексту»
-        applyIconOnlyClass(root);
+      // 2) Довантажити потрібні мови по режиму і перемалювати
+      var modeAtStart = getTitleMode();
 
-        // 4. Кольорові кнопки
-        //if (settings.colored_buttons) applyColoredButtonsIn(root);
-        if (settings.colored_buttons) {
+      var needEn = (modeAtStart === 'en' || modeAtStart === 'en_ua');
+      var needUa = (modeAtStart === 'ua' || modeAtStart === 'orig_ua' || modeAtStart === 'en_ua');
+
+      // фіксуємо "контекст", щоб не перемальовувати іншу картку/інший режим
+      var idAtStart = (__ifx_last.movie && (__ifx_last.movie.id || __ifx_last.movie.tmdb_id || __ifx_last.movie.movie_id)) || null;
+      var rootAtStart = root;
+
+      var p = Promise.resolve();
+
+      if (needEn) p = p.then(function(){ return ensureEnglishTitle(__ifx_last.movie); });
+      if (needUa) p = p.then(function(){ return ensureUkrainianTitle(__ifx_last.movie); });
+
+      p.then(function(){
+        // якщо режим змінився — не чіпаємо (щоб не смикало/не плутало)
+        if (getTitleMode() !== modeAtStart) return;
+
+        // якщо вже інша картка/інший фільм — не чіпаємо
+        if (__ifx_last.fullRoot !== rootAtStart) return;
+
+        var cur = __ifx_last.movie || {};
+        var curId = (cur.id || cur.tmdb_id || cur.movie_id) || null;
+        if (idAtStart && curId && String(curId) !== String(idAtStart)) return;
+
+        applyOriginalTitleToggle(); // прибере старе і додасть нове (вже з кешів EN/UA)
+      });
+
+      // 2. Всі кнопки
+      if (settings.all_buttons) reorderAndShowButtons(root);
+
+      // 3. Режим «іконки без тексту»
+      applyIconOnlyClass(root);
+
+      // 4. Кольорові кнопки
+      if (settings.colored_buttons) {
         applyColoredButtonsIn(root);
 
         // BanderaOnline може вставити кнопку трохи пізніше — доганяємо
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 300);
         setTimeout(function(){ try { replaceIconsIn(root); } catch(e){} }, 900);
-        }
+      }
 
-      }, 120);
-    });
-  }
+    }, 120);
+  });
+}
+
 
   // Слухач для оновлення стилів торентів при відкритті картки
   Lampa.Listener.follow('full', function (e) {

@@ -141,7 +141,7 @@
     {
       base: 'spawnum.duckdns.org:49117',
       name: 'SpawnUA (toloka, mazepa only)',
-      settings: { url: 'SpawnUA (toloka, mazepa, etc. )', key: '2', parser_torrent_type: 'jackett' }
+      settings: { url: 'http://spawnum.duckdns.org:49117', key: '2', parser_torrent_type: 'jackett' }
     }, 
     {
       base: 'spawnum_duckdns_org_59117',

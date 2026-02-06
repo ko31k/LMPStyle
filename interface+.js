@@ -233,6 +233,30 @@ function isMonoEnabled() {
       uk: 'Показувати оригінальну назву в заголовку картки'
     },
 
+    //Update
+    interface_mod_new_title_mode: {
+    en: 'Titles under header',
+    uk: 'Назви під заголовком'
+    },
+    interface_mod_new_title_mode_desc: {
+    en: 'Show original title, original/UA, or hide',
+    uk: 'Показувати оригінальну, оригінальну/укр або вимкнути'
+    },
+    interface_mod_new_title_mode_off: {
+    en: 'No',
+    uk: 'Ні'
+    },
+    interface_mod_new_title_mode_orig: {
+    en: 'Original title',
+    uk: 'Оригінальна назва'
+    },
+    interface_mod_new_title_mode_orig_ua: {
+    en: 'Original / Ukrainian',
+    uk: 'Оригінальна / українська назва'
+    },
+
+
+    
     // КНОПКИ
     interface_mod_new_all_buttons: {
       en: 'All buttons in card',
@@ -300,6 +324,26 @@ function isMonoEnabled() {
     // Fallback до старого ключа
     return getBool('interface_mod_new_english_data', false);
   }
+
+
+  function getTitleMode() {
+    // 1) Новий ключ (має пріоритет)
+    var m = Lampa.Storage.get('interface_mod_new_title_mode');
+    if (typeof m !== 'undefined' && m !== null && m !== '') return String(m);
+
+    // 2) Міграція зі старого тумблера:
+    // true  -> orig
+    // false -> off
+    var old = Lampa.Storage.get('interface_mod_new_en_data');
+    if (typeof old !== 'undefined') return getBool('interface_mod_new_en_data', true) ? 'orig' : 'off';
+
+    // 3) Ще старіший ключ
+    var older = Lampa.Storage.get('interface_mod_new_english_data');
+    if (typeof older !== 'undefined') return getBool('interface_mod_new_english_data', false) ? 'orig' : 'off';
+
+    return 'orig';
+  }
+
 
   /**
    * Об'єкт з поточними налаштуваннями плагіну
@@ -620,7 +664,7 @@ var css = `
     });
 
     // Оригінальна назва
-    add({
+    /*add({
       component: 'interface_mod_new',
       param: {
         name: 'interface_mod_new_en_data',
@@ -633,7 +677,27 @@ var css = `
         description: Lampa.Lang.translate('interface_mod_new_en_data_desc')
       }
     });
+    */
+    // Назви під заголовком (3 режими)
+    add({
+      component: 'interface_mod_new',
+      param: {
+        name: 'interface_mod_new_title_mode',
+        type: 'select',
+        values: {
+          off: Lampa.Lang.translate('interface_mod_new_title_mode_off'),
+          orig: Lampa.Lang.translate('interface_mod_new_title_mode_orig'),
+          orig_ua: Lampa.Lang.translate('interface_mod_new_title_mode_orig_ua')
+        },
+        default: 'orig'
+      },
+      field: {
+        name: Lampa.Lang.translate('interface_mod_new_title_mode'),
+        description: Lampa.Lang.translate('interface_mod_new_title_mode_desc')
+      }
+    });
 
+    
     // Всі кнопки + Іконки без тексту
     add({
       component: 'interface_mod_new',
@@ -817,11 +881,11 @@ var css = `
               //closeOpenSelects(); // This is the only one that needs this
               break;
               
-            case 'interface_mod_new_en_data':
+            /*case 'interface_mod_new_en_data':
             case 'interface_mod_new_english_data': // Handle fallback
               settings.en_data = getOriginalTitleEnabled(); // This function already checks both keys
               applyOriginalTitleToggle();
-              break;
+              break;*/
               
             case 'interface_mod_new_all_buttons':
               settings.all_buttons = getBool(key, false);
@@ -852,6 +916,11 @@ var css = `
               settings.tor_seeds = getBool(key, true);
               if (window.runTorrentStyleRefresh) window.runTorrentStyleRefresh();
               break;
+
+            case 'interface_mod_new_title_mode':
+              applyOriginalTitleToggle();
+              break;
+           
           }
         }
         return res;
@@ -1625,30 +1694,67 @@ function applyAgeOnceIn(elRoot) {
   /**
    * Додає оригінальну назву в заголовок картки
    */
-  function setOriginalTitle(fullRoot, movie) {
-    if (!fullRoot || !movie) return;
-    var head = fullRoot.find('.full-start-new__head, .full-start__head').first();
-    if (!head.length) return;
+  function getUaTitle(movie) {
+    if (!movie) return '';
+    function clean(s) { return String(s || '').trim(); }
 
-    head.find('.ifx-original-title').remove();
-    if (!getOriginalTitleEnabled()) return;
+    // 1) явні UA/UK поля (якщо десь з’являться)
+    var ua =
+      clean(movie.ua_title) || clean(movie.uk_title) ||
+      clean(movie.title_ua) || clean(movie.title_uk) ||
+      clean(movie.name_ua)  || clean(movie.name_uk)  ||
+      clean(movie.ua_name)  || clean(movie.uk_name);
 
-    var original = movie.original_title || movie.original_name || movie.original || movie.name || movie.title || '';
-    if (!original) return;
+    if (ua) return ua;
 
-    $('<div class="ifx-original-title"></div>').text(original).appendTo(head);
+    // 2) якщо UI українською — title/name часто вже українські
+    var lang = (Lampa.Lang && Lampa.Lang.code) ? String(Lampa.Lang.code).toLowerCase() : '';
+    if (lang.indexOf('uk') === 0 || lang.indexOf('ua') === 0) {
+      return clean(movie.title || movie.name || '');
+    }
+
+    // 3) fallback
+    return clean(movie.title || movie.name || '');
   }
+
+    
+function setOriginalTitle(fullRoot, movie) {
+  if (!fullRoot || !movie) return;
+
+  var head = fullRoot.find('.full-start-new__head, .full-start__head').first();
+  if (!head.length) return;
+
+  head.find('.ifx-original-title').remove();
+
+  var mode = getTitleMode(); // off | orig | orig_ua
+  if (mode === 'off') return;
+
+  var original = (movie.original_title || movie.original_name || movie.original || '').trim();
+  if (!original) return;
+
+  var text = original;
+
+  if (mode === 'orig_ua') {
+    var ua = getUaTitle(movie);
+    if (ua && ua !== original) text += ' / ' + ua;
+  }
+
+  $('<div class="ifx-original-title"></div>').text(text).appendTo(head);
+}
+
 
   /**
    * Оновлює показ оригінальної назви (для реактивності)
    */
-  function applyOriginalTitleToggle() {
-    if (!__ifx_last.fullRoot) return;
-    var head = __ifx_last.fullRoot.find('.full-start-new__head, .full-start__head').first();
-    if (!head.length) return;
-    head.find('.ifx-original-title').remove();
-    if (getOriginalTitleEnabled()) setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
-  }
+function applyOriginalTitleToggle() {
+  if (!__ifx_last.fullRoot) return;
+  var head = __ifx_last.fullRoot.find('.full-start-new__head, .full-start__head').first();
+  if (!head.length) return;
+
+  head.find('.ifx-original-title').remove();
+  if (getTitleMode() !== 'off') setOriginalTitle(__ifx_last.fullRoot, __ifx_last.movie || {});
+}
+
 
   /* ============================================================
    * КНОПКИ (Всі / Іконки без тексту)

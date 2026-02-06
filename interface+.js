@@ -1733,6 +1733,25 @@ function applyAgeOnceIn(elRoot) {
   /**
    * Додає оригінальну назву в заголовок картки
    */
+function getTmdbId(movie){
+  if (!movie) return 0;
+
+  // TMDB id має бути пріоритетом
+  var id = movie.tmdb_id || movie.tmdb || movie.id_tmdb;
+
+  // movie.id використовуємо ТІЛЬКИ якщо точно TMDB-джерело (якщо є такі маркери)
+  if (!id && (movie.source === 'tmdb' || movie.provider === 'tmdb')) id = movie.id;
+
+  id = parseInt(id, 10);
+  return isFinite(id) ? id : 0;
+}
+
+function getCacheKey(movie){
+  // для кешу теж краще TMDB id, але якщо його нема — падаємо на будь-який стабільний
+  return String(getTmdbId(movie) || movie.id || movie.movie_id || '');
+}
+
+  
 function getUaTitle(movie) {
   if (!movie) return '';
   // Реальна UA з кешу (uk-UA). Якщо ще не встигли підвантажити — порожньо.
@@ -1793,24 +1812,23 @@ function ifxTmdbGet(path, params){
 function ensureEnglishTitle(movie){
   return new Promise(function(resolve){
     if (!movie) return resolve('');
-    var id = movie.id || movie.tmdb_id || movie.movie_id;
-    if (!id) return resolve('');
 
-    if (__ifx_enTitleMem[id]) return resolve(__ifx_enTitleMem[id]);
+    var tmdbId = getTmdbId(movie);
+    if (!tmdbId) return resolve('');
+
+    var key = getCacheKey(movie);
+    if (__ifx_enTitleMem[key]) return resolve(__ifx_enTitleMem[key]);
 
     var isTv = (movie.type === 'tv' || movie.type === 'serial' || movie.number_of_seasons > 0);
     var kind = isTv ? 'tv' : 'movie';
 
-    // TMDB details endpoint: /movie/{id} або /tv/{id}
-    ifxTmdbGet(kind + '/' + id, { language: 'en-US' })
+    ifxTmdbGet(kind + '/' + tmdbId, { language: 'en-US' })
       .then(function(r){
         var en = (r && (r.title || r.name)) ? String(r.title || r.name).trim() : '';
-        if (en) __ifx_enTitleMem[id] = en;
+        if (en) __ifx_enTitleMem[key] = en;
         resolve(en);
       })
-      .catch(function(){
-        resolve('');
-      });
+      .catch(function(){ resolve(''); });
   });
 }
 
@@ -1829,23 +1847,23 @@ function getUaTitleCached(movie){
 function ensureUkrainianTitle(movie){
   return new Promise(function(resolve){
     if (!movie) return resolve('');
-    var id = movie.id || movie.tmdb_id || movie.movie_id;
-    if (!id) return resolve('');
 
-    if (__ifx_uaTitleMem[id]) return resolve(__ifx_uaTitleMem[id]);
+    var tmdbId = getTmdbId(movie);
+    if (!tmdbId) return resolve('');
+
+    var key = getCacheKey(movie);
+    if (__ifx_uaTitleMem[key]) return resolve(__ifx_uaTitleMem[key]);
 
     var isTv = (movie.type === 'tv' || movie.type === 'serial' || movie.number_of_seasons > 0);
     var kind = isTv ? 'tv' : 'movie';
 
-    ifxTmdbGet(kind + '/' + id, { language: 'uk-UA' })
+    ifxTmdbGet(kind + '/' + tmdbId, { language: 'uk-UA' })
       .then(function(r){
         var ua = (r && (r.title || r.name)) ? String(r.title || r.name).trim() : '';
-        if (ua) __ifx_uaTitleMem[id] = ua;
+        if (ua) __ifx_uaTitleMem[key] = ua;
         resolve(ua);
       })
-      .catch(function(){
-        resolve('');
-      });
+      .catch(function(){ resolve(''); });
   });
 }
 
@@ -2431,7 +2449,7 @@ function wireFullCardEnhancers() {
       var needUa = (modeAtStart === 'ua' || modeAtStart === 'orig_ua' || modeAtStart === 'en_ua');
 
       // фіксуємо "контекст", щоб не перемальовувати іншу картку/інший режим
-      var idAtStart = (__ifx_last.movie && (__ifx_last.movie.id || __ifx_last.movie.tmdb_id || __ifx_last.movie.movie_id)) || null;
+      var idAtStart = getCacheKey(__ifx_last.movie) || null;
       var rootAtStart = root;
 
       var p = Promise.resolve();
@@ -2447,8 +2465,9 @@ function wireFullCardEnhancers() {
         if (__ifx_last.fullRoot !== rootAtStart) return;
 
         var cur = __ifx_last.movie || {};
-        var curId = (cur.id || cur.tmdb_id || cur.movie_id) || null;
+        var curId = getCacheKey(cur) || null;
         if (idAtStart && curId && String(curId) !== String(idAtStart)) return;
+
 
         applyOriginalTitleToggle(); // прибере старе і додасть нове (вже з кешів EN/UA)
       });

@@ -139,7 +139,7 @@
       settings: { url: 'jackettua.mooo.com', key: 'ua', parser_torrent_type: 'jackett' }
     },
     {
-      base: 'spawnum.duckdns.org:49117',
+      base: 'spawnum_duckdns_org_49117',
       name: 'SpawnUA (toloka, mazepa only)',
       settings: { url: 'http://spawnum.duckdns.org:49117', key: '2', parser_torrent_type: 'jackett' }
     }, 

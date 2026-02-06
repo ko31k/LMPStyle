@@ -1766,19 +1766,18 @@ function setOriginalTitle(fullRoot, movie) {
     return s;
   }
 
-  // NEW: дістань "англійську" та "українську" з твоїх полів
-  // !!! ВАЖЛИВО: якщо у тебе інші ключі — підстав тут свої.
-  function getEnTitle(m){
-    return clean(m.title_en || m.en_title || m.english_title || m.title); // fallback на title
-  }
-  function getUaTitle(m){
-    return clean(m.title_uk || m.uk_title || m.ua_title || m.title_ua || m.title_ukrainian || m.title); // <- тут теж перевір свої поля
-  }
+  var orig  = clean(movie.original_title || movie.original_name || movie.original || '');
 
-  var orig = clean(movie.original_title || movie.original_name || movie.original || '');
-  var en   = clean(getEnTitle(movie)) || orig;
-  var ua   = clean(getUaTitle(movie)) || en;   // <-- UA → EN → ORIG (твій бажаний ланцюжок)
-  var uaRaw = clean(getUaTitle(movie));        // <-- тільки якщо реально є (без fallback)
+  // ВАЖЛИВО: беремо RAW з твоїх ГЛОБАЛЬНИХ функцій (які вище у файлі)
+  var enRaw = clean(getEnTitle(movie));     // тільки реальна EN (або orig_* як fallback всередині getEnTitle)
+  var uaRaw = clean(getUaTitle(movie));     // тільки реальна UA (без fallback)
+
+  // Ланцюжок fallback’ів як ти хотів:
+  // EN: enRaw -> orig
+  // UA: uaRaw -> EN -> orig
+  var en = enRaw || orig;
+  var ua = uaRaw || en;
+
 
   // Додатково: якщо "orig" порожній — підстрахуємось
   if (!orig) orig = en || ua || '';

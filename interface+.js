@@ -1791,12 +1791,24 @@ function getEnTitleCached(movie){
 function ifxTmdbGet(path, params){
   params = params || {};
 
-  // 1) Найчастіше в плагінах є Lampa.TMDB.get(...)
-  if (Lampa.TMDB && typeof Lampa.TMDB.get === 'function'){
-    try { return Promise.resolve(Lampa.TMDB.get(path, params)); } catch(e){}
+  // 1) Promise-варіант (деякі збірки реально так працюють)
+  if (Lampa.TMDB && typeof Lampa.TMDB.get === 'function') {
+    try {
+      var ret = Lampa.TMDB.get(path, params);
+
+      // якщо це promise-подібне
+      if (ret && typeof ret.then === 'function') return ret;
+
+      // якщо виклик без ретурна — спробуємо callback-сигнатуру
+      return new Promise(function(resolve, reject){
+        try{
+          Lampa.TMDB.get(path, params, function(r){ resolve(r); }, function(e){ reject(e); });
+        }catch(err){ reject(err); }
+      });
+    } catch(e) {}
   }
 
-  // 2) Деякі збірки мають Lampa.Api.tmdb(...)
+  // 2) Lampa.Api.tmdb callback
   if (Lampa.Api && typeof Lampa.Api.tmdb === 'function'){
     return new Promise(function(resolve, reject){
       try{
@@ -1805,8 +1817,9 @@ function ifxTmdbGet(path, params){
     });
   }
 
-  return Promise.reject(new Error('TMDB API helper not found (Lampa.TMDB.get / Lampa.Api.tmdb)'));
+  return Promise.reject(new Error('TMDB API helper not found'));
 }
+
 
 // Підвантажити англ. назву (1 раз на id), потім перерисувати строку назв
 function ensureEnglishTitle(movie){
@@ -1830,17 +1843,6 @@ function ensureEnglishTitle(movie){
       })
       .catch(function(){ resolve(''); });
   });
-}
-
-// памʼять на час сесії (без localStorage) — UA
-var __ifx_uaTitleMem = window.__ifx_uaTitleMem || {};
-window.__ifx_uaTitleMem = __ifx_uaTitleMem;
-
-function getUaTitleCached(movie){
-  if (!movie) return '';
-  var id = movie.id || movie.tmdb_id || movie.movie_id;
-  if (!id) return '';
-  return (__ifx_uaTitleMem[id] || '').toString().trim();
 }
 
 // Підвантажити УКР назву (1 раз на id), потім перерисувати строку назв
@@ -2437,7 +2439,7 @@ function wireFullCardEnhancers() {
       }
 
       __ifx_last.fullRoot = root;
-      __ifx_last.movie = e.data.movie || __ifx_last.movie || {};
+      __ifx_last.movie = (e.data && (e.data.movie || e.data.data && e.data.data.movie)) || e.data || __ifx_last.movie || {};
 
       // 1) Намалювати одразу те, що є (ORIG / display вже доступні)
       setOriginalTitle(root, __ifx_last.movie);

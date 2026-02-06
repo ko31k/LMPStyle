@@ -250,10 +250,6 @@ function isMonoEnabled() {
     en: 'Original title',
     uk: 'Оригінальна назва'
     },
-    interface_mod_new_title_mode_ua: {
-    en: 'Ukrainian title',
-    uk: 'Українська назва'
-    },
     interface_mod_new_title_mode_orig_ua: {
     en: 'Original / Ukrainian',
     uk: 'Оригінальна / Українська назва'
@@ -691,11 +687,9 @@ var css = `
         values: {
           off: Lampa.Lang.translate('interface_mod_new_title_mode_off'),
           orig: Lampa.Lang.translate('interface_mod_new_title_mode_orig'),
-          ua: Lampa.Lang.translate('interface_mod_new_title_mode_ua'),
           orig_ua: Lampa.Lang.translate('interface_mod_new_title_mode_orig_ua')
         },
-
-        default: 'off'
+        default: 'orig'
       },
       field: {
         name: Lampa.Lang.translate('interface_mod_new_title_mode'),
@@ -1716,26 +1710,12 @@ function applyAgeOnceIn(elRoot) {
     // 2) якщо UI українською — title/name часто вже українські
     var lang = (Lampa.Lang && Lampa.Lang.code) ? String(Lampa.Lang.code).toLowerCase() : '';
     if (lang.indexOf('uk') === 0 || lang.indexOf('ua') === 0) {
-      var t = clean(movie.title || movie.name || '');
-      return t;
-    }
-
-    // 3) якщо UI не укр — НЕ вгадуємо, повертаємо порожньо
-    return '';
-    }
-
-
-    /*
-    // 2) якщо UI українською — title/name часто вже українські
-    var lang = (Lampa.Lang && Lampa.Lang.code) ? String(Lampa.Lang.code).toLowerCase() : '';
-    if (lang.indexOf('uk') === 0 || lang.indexOf('ua') === 0) {
       return clean(movie.title || movie.name || '');
     }
 
     // 3) fallback
     return clean(movie.title || movie.name || '');
-    }
-    */
+  }
 
     
 function setOriginalTitle(fullRoot, movie) {
@@ -1746,30 +1726,21 @@ function setOriginalTitle(fullRoot, movie) {
 
   head.find('.ifx-original-title').remove();
 
-  var mode = getTitleMode(); // off | orig | ua | orig_ua
+  var mode = getTitleMode(); // off | orig | orig_ua
   if (mode === 'off') return;
 
   var original = (movie.original_title || movie.original_name || movie.original || '').trim();
   if (!original) return;
 
-  // UA з твоєї поточної логіки (title/name або ua_* поля)
-  var ua = getUaTitle(movie);
-
   var text = original;
 
-  if (mode === 'ua') {
-    // якщо UA нема — показуємо оригінальну (як ти й просив)
-    text = ua ? ua : original;
+  if (mode === 'orig_ua') {
+    var ua = getUaTitle(movie);
+    if (ua && ua !== original) text += ' / ' + ua;
   }
-  else if (mode === 'orig_ua') {
-    if (ua && ua !== original) text = original + ' / ' + ua;
-    else text = original; // якщо UA нема — лишаємо оригінальну
-  }
-  // mode === 'orig' -> text вже original
 
   $('<div class="ifx-original-title"></div>').text(text).appendTo(head);
 }
-
 
 
   /**

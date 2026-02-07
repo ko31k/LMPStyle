@@ -1,6 +1,4 @@
-//Оригінальний плагін https://github.com/FoxStudio24/lampa/blob/main/Quality/Quality.js
-//SVG Badges - Full Card only + UKR audio detection + placement menu + hides LQE label when enabled
-
+// SVG Badges - Full Card only + UKR audio detection + placement menu + hides LQE label when enabled
 (function () {
   'use strict';
 
@@ -18,7 +16,10 @@
   var SETTINGS_KEY = 'lmp_svg_badges_settings_v1';
   var settings = loadSettings();
 
-  // Icons (names must match your repo)
+  // Prevent duplicated settings params
+  var svgq_params_added = false;
+
+  // Icons
   var svgIcons = {
     '4K': RAW_BASE + '4K.svg',
     '2K': RAW_BASE + '2K.svg',
@@ -40,9 +41,7 @@
   function loadSettings() {
     var s = {};
     try { s = (Lampa.Storage && Lampa.Storage.get) ? (Lampa.Storage.get(SETTINGS_KEY) || {}) : {}; } catch (e) { s = {}; }
-    // placement: rate_line | after_details | off
-    if (!s.placement) s.placement = 'rate_line';
-    // if true: hide LQE full-card label (.lqe-quality) when SVG enabled
+    if (!s.placement) s.placement = 'rate_line'; // rate_line | after_details | off
     if (typeof s.hide_lqe !== 'boolean') s.hide_lqe = true;
     return s;
   }
@@ -53,13 +52,8 @@
   }
 
   function applyLqeHideClass() {
-    // Only hide LQE label when:
-    // - user enabled hide_lqe
-    // - SVG placement is not off
     var on = !!settings.hide_lqe && settings.placement !== 'off';
-    if (document && document.body) {
-      document.body.classList.toggle('svgq-hide-lqe', on);
-    }
+    if (document && document.body) document.body.classList.toggle('svgq-hide-lqe', on);
   }
 
   // ---------------------------
@@ -67,7 +61,6 @@
   // ---------------------------
   function cutBeforeSubs(s) {
     s = (s || '').toLowerCase();
-    // Find first subtitle marker
     var m = s.match(/(?:\bsub(?:s|titles?)?\b|subtitle(?:s)?\b|суб(?:титр(?:и|ы)?)?\b)/i);
     if (!m) return s;
     return s.slice(0, m.index);
@@ -76,11 +69,7 @@
   function hasUkrAudioTag(title) {
     var t = cutBeforeSubs(title);
 
-    // quick reject
     if (t.indexOf('ukr') === -1 && t.indexOf('укр') === -1 && !/\bua\b/.test(t)) return false;
-
-    // exclude explicit subtitle contexts even before cut (just in case)
-    if (/(?:\bsub(?:s|titles?)?\b|subtitle(?:s)?\b|суб(?:титр(?:и|ы)?)?\b)/i.test(t)) return false;
 
     // audio context words
     var audioCtx = /(?:\baudio\b|\bdub(?:bing)?\b|\bvoice\b|\bvo\b|\bmvo\b|\blvo\b|\bdvo\b|\bavo\b|озвуч|озвучк|дубл|голос|доріжк|дорожк)/i;
@@ -90,10 +79,7 @@
       return true;
     }
 
-    // ukr/укр token + audio context somewhere
     if ((/\bukr\b/.test(t) || /укр/.test(t)) && audioCtx.test(t)) return true;
-
-    // "ua" only as separate token + audio context
     if (/\bua\b/.test(t) && audioCtx.test(t)) return true;
 
     return false;
@@ -112,7 +98,6 @@
       ukr: false
     };
 
-    // IMPORTANT: this order must match foundRes strings
     var resOrder = ['HD', 'FULL HD', '2K', '4K'];
     var audioOrder = ['2.0', '4.0', '5.1', '7.1'];
 
@@ -123,7 +108,6 @@
       var titleRaw = (item.Title || item.title || '') + '';
       var title = titleRaw.toLowerCase();
 
-      // UKR audio detection (title-based only, no ffprobe fallback as requested)
       if (!best.ukr && hasUkrAudioTag(titleRaw)) best.ukr = true;
 
       // Resolution from title
@@ -144,7 +128,7 @@
       // DUB from title
       if (title.indexOf('dub') >= 0 || title.indexOf('дубл') >= 0 || title.indexOf('дубляж') >= 0) best.dub = true;
 
-      // ffprobe enhancements (resolution, hdr, dv, audio channels)
+      // ffprobe enhancements
       if (item.ffprobe && Array.isArray(item.ffprobe)) {
         for (var k = 0; k < item.ffprobe.length; k++) {
           var stream = item.ffprobe[k];
@@ -164,12 +148,10 @@
               best.resolution = res;
             }
 
-            // Dolby Vision hint
             try {
               if (stream.side_data_list && JSON.stringify(stream.side_data_list).indexOf('Vision') >= 0) best.dolbyVision = true;
             } catch (e) {}
 
-            // HDR hint
             if (stream.color_transfer === 'smpte2084' || stream.color_transfer === 'arib-std-b67') best.hdr = true;
           }
 
@@ -182,32 +164,32 @@
       }
     }
 
-    // DV implies HDR
     if (best.dolbyVision) best.hdr = true;
-
     return best;
   }
 
   // ---------------------------
   // UI BUILD
   // ---------------------------
-  function createBadgeImg(type, isCard, index) {
+  function createBadgeImg(type, index) {
     var iconPath = svgIcons[type];
     if (!iconPath) return '';
-    var className = isCard ? 'card-quality-badge' : 'quality-badge';
     var delay = (index * 0.08) + 's';
-    return '<div class="' + className + '" style="animation-delay: ' + delay + '"><img src="' + iconPath + '" draggable="false" oncontextmenu="return false;"></div>';
+    return (
+      '<div class="quality-badge" style="animation-delay:' + delay + '">' +
+        '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
+      '</div>'
+    );
   }
 
-  function buildBadges(best, isCard) {
+  function buildBadges(best) {
     var badges = [];
-    if (best.ukr) badges.push(createBadgeImg('UKR', isCard, badges.length));
-    if (best.resolution) badges.push(createBadgeImg(best.resolution, isCard, badges.length));
-    // HDR/DV: show HDR first then DV icon if present (your icons set includes both)
-    if (best.hdr) badges.push(createBadgeImg('HDR', isCard, badges.length));
-    if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', isCard, badges.length));
-    if (best.audio) badges.push(createBadgeImg(best.audio, isCard, badges.length));
-    if (best.dub) badges.push(createBadgeImg('DUB', isCard, badges.length));
+    if (best.ukr) badges.push(createBadgeImg('UKR', badges.length));
+    if (best.resolution) badges.push(createBadgeImg(best.resolution, badges.length));
+    if (best.hdr) badges.push(createBadgeImg('HDR', badges.length));
+    if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', badges.length));
+    if (best.audio) badges.push(createBadgeImg(best.audio, badges.length));
+    if (best.dub) badges.push(createBadgeImg('DUB', badges.length));
     return badges.join('');
   }
 
@@ -215,44 +197,35 @@
     var $root = $(renderRoot);
     if (!$root.length) return;
 
-    // remove old containers to avoid duplicates (safe re-render)
     $root.find('.quality-badges-container, .quality-badges-after-details').remove();
 
-    // rate line container
     var $rateLine = $root.find('.full-start-new__rate-line, .full-start__rate-line').first();
     if ($rateLine.length) {
-      // Place inside rate line (inline)
-      // We'll inject a span-like flex container at end of rate line
       $rateLine.append('<div class="quality-badges-container"></div>');
     }
 
-    // after details container
     var $details = $root.find('.full-start-new__details, .full-start__details').first();
     if ($details.length) {
       $details.after('<div class="quality-badges-after-details"></div>');
     }
   }
 
-  function renderBadgesToPlacement(renderRoot, best) {
+  function renderBadges(renderRoot, best) {
     var $root = $(renderRoot);
     if (!$root.length) return;
 
-    // Ensure containers exist
     ensureContainers(renderRoot);
 
-    // Clear content
     $root.find('.quality-badges-container').empty();
     $root.find('.quality-badges-after-details').empty();
 
-    var html = buildBadges(best, false);
+    var html = buildBadges(best);
     if (!html) return;
 
     if (settings.placement === 'rate_line') {
       $root.find('.quality-badges-container').html(html);
     } else if (settings.placement === 'after_details') {
       $root.find('.quality-badges-after-details').html(html);
-    } else {
-      // off
     }
   }
 
@@ -261,9 +234,7 @@
   // ---------------------------
   function readStorageCache() {
     var cache = {};
-    try {
-      cache = (Lampa.Storage && Lampa.Storage.get) ? (Lampa.Storage.get(CACHE_KEY) || {}) : {};
-    } catch (e) { cache = {}; }
+    try { cache = (Lampa.Storage && Lampa.Storage.get) ? (Lampa.Storage.get(CACHE_KEY) || {}) : {}; } catch (e) { cache = {}; }
     return cache || {};
   }
 
@@ -293,74 +264,60 @@
     writeStorageCache(st);
   }
 
-  // ---------------------------
-  // FETCH PARSER
-  // ---------------------------
   function makeCacheKey(movie) {
     var id = (movie && (movie.id || movie.tmdb_id)) ? String(movie.id || movie.tmdb_id) : '';
     var y = '';
     var d = movie && (movie.release_date || movie.first_air_date) ? String(movie.release_date || movie.first_air_date) : '';
     if (d && d.length >= 4) y = d.slice(0, 4);
-    // include title to reduce collisions when id is missing
     var t = (movie && (movie.title || movie.name)) ? String(movie.title || movie.name) : '';
     return 'v1|' + id + '|' + y + '|' + t.toLowerCase();
   }
 
   // ---------------------------
-  // MAIN: FULL CARD HOOK
+  // FULL CARD HOOK
   // ---------------------------
   Lampa.Listener.follow('full', function (e) {
     if (e.type !== 'complite') return;
 
-    // Apply LQE hide class based on settings
     applyLqeHideClass();
 
-    // Placement off => also do NOT hide LQE (handled by class toggle), and do nothing
+    var renderRoot = e.object && e.object.activity && e.object.activity.render ? e.object.activity.render() : null;
+    if (!renderRoot) return;
+
     if (settings.placement === 'off') {
-      // still ensure no stale containers
-      try {
-        var r0 = e.object && e.object.activity && e.object.activity.render ? e.object.activity.render() : null;
-        if (r0) $(r0).find('.quality-badges-container, .quality-badges-after-details').remove();
-      } catch (err) {}
+      $(renderRoot).find('.quality-badges-container, .quality-badges-after-details').remove();
       return;
     }
 
     var movie = e.data && e.data.movie ? e.data.movie : null;
     if (!movie) return;
 
-    // If parser not enabled/selected -> do nothing
     if (!Lampa.Storage || !Lampa.Storage.field || !Lampa.Storage.field('parser_use')) return;
 
-    var renderRoot = e.object && e.object.activity && e.object.activity.render ? e.object.activity.render() : null;
-    if (!renderRoot) return;
-
-    // Ensure containers are placed
     ensureContainers(renderRoot);
 
     var ckey = makeCacheKey(movie);
     var cached = cacheGet(ckey);
     if (cached) {
-      renderBadgesToPlacement(renderRoot, cached);
+      renderBadges(renderRoot, cached);
       return;
     }
 
-    // Fetch parser results (same as original logic)
     Lampa.Parser.get({ search: movie.title || movie.name, movie: movie, page: 1 }, function (response) {
       if (!response || !response.Results || !response.Results.length) return;
 
       var best = getBest(response.Results);
 
-      // cache only if anything exists (avoid caching "empty")
       if (best && (best.ukr || best.resolution || best.hdr || best.dolbyVision || best.audio || best.dub)) {
         cacheSet(ckey, best);
       }
 
-      renderBadgesToPlacement(renderRoot, best);
+      renderBadges(renderRoot, best);
     });
   });
 
   // ---------------------------
-  // SETTINGS UI
+  // SETTINGS UI (NO DUPES)
   // ---------------------------
   (function registerSettings() {
     function toast(msg) {
@@ -371,10 +328,16 @@
     }
 
     function openSettings() {
+      // Just open the page; params are registered once
       Lampa.Settings.create('svgq', {
         title: 'SVG Якість',
         onBack: function () { Lampa.Settings.create('interface'); }
       });
+    }
+
+    function registerParamsOnce() {
+      if (svgq_params_added) return;
+      svgq_params_added = true;
 
       // Placement
       Lampa.SettingsApi.addParam({
@@ -389,10 +352,7 @@
           },
           default: settings.placement
         },
-        field: {
-          name: 'Якість в картці',
-          description: 'Де показувати SVG-іконки якості у повній картці'
-        },
+        field: { name: 'Якість в картці', description: 'Де показувати SVG-іконки якості у повній картці' },
         onChange: function (v) {
           settings.placement = String(v || 'rate_line');
           saveSettings();
@@ -409,10 +369,7 @@
           values: { 'true': 'Так', 'false': 'Ні' },
           default: String(!!settings.hide_lqe)
         },
-        field: {
-          name: 'Приховати текстову мітку (Quality+Mod) у Full Card',
-          description: 'Ховає .lqe-quality, якщо SVG увімкнений'
-        },
+        field: { name: 'Приховати текстову мітку (Quality+Mod) у Full Card', description: 'Ховає .lqe-quality, якщо SVG увімкнений' },
         onChange: function (v) {
           settings.hide_lqe = (String(v) === 'true');
           saveSettings();
@@ -438,17 +395,19 @@
     function init() {
       if (!Lampa || !Lampa.SettingsApi || !Lampa.Template) return;
 
+      // Register settings page params once (fix empty + duplicates)
+      setTimeout(registerParamsOnce, 0);
+
       // Button entry in Interface settings
       Lampa.Template.add('settings_svgq', '<div></div>');
       Lampa.SettingsApi.addParam({
         component: 'interface',
         param: { type: 'button', component: 'svgq' },
-        field: {
-          name: 'SVG Якість',
-          description: 'SVG-іконки якості (Full Card)'
-        },
+        field: { name: 'SVG Якість', description: 'SVG-іконки якості (Full Card)' },
         onChange: openSettings
       });
+
+      applyLqeHideClass();
     }
 
     if (window.appready) init();
@@ -459,28 +418,64 @@
   // STYLES
   // ---------------------------
   var style = '<style id="svgq_styles">\
-    /* Hide Quality+Mod full label when SVG enabled */\
     body.svgq-hide-lqe .full-start__status.lqe-quality{ display:none !important; }\
     \
-    .quality-badges-container{ display:inline-flex; gap:0.3em; margin:0 0 0 0.4em; min-height:1.2em; pointer-events:none; vertical-align:middle; }\
-    .quality-badges-after-details{ display:flex; gap:0.3em; margin:0.35em 0 0.25em 0; min-height:1.2em; pointer-events:none; }\
+    /* Rate-line placement: allow wrapping without overlaps */\
+    .quality-badges-container{\
+      display:inline-flex;\
+      flex-wrap:wrap;\
+      align-items:center;\
+      column-gap:0.30em;\
+      row-gap:0.22em;\
+      margin:0.18em 0 0 0.45em;\
+      min-height:1.2em;\
+      pointer-events:none;\
+      vertical-align:middle;\
+      max-width:100%;\
+    }\
     \
-    .quality-badge{ height:1.2em; opacity:0; transform:translateY(8px); animation:qb_in 0.4s ease forwards; }\
+    /* After-details placement + bottom spacing */\
+    .quality-badges-after-details{\
+      display:flex;\
+      flex-wrap:wrap;\
+      align-items:center;\
+      column-gap:0.30em;\
+      row-gap:0.22em;\
+      margin:0.35em 0 0.45em 0;\
+      min-height:1.2em;\
+      pointer-events:none;\
+      max-width:100%;\
+    }\
+    \
+    /* Badge with universal frame (for ALL icons) */\
+    .quality-badge{\
+      height:1.2em;\
+      opacity:0;\
+      transform:translateY(8px);\
+      animation:qb_in 0.4s ease forwards;\
+      display:inline-flex;\
+      align-items:center;\
+      justify-content:center;\
+      padding:0.10em 0.14em;\
+      border:1px solid rgba(255,255,255,0.35);\
+      border-radius:0.26em;\
+      background:rgba(0,0,0,0.10);\
+      box-sizing:border-box;\
+    }\
     @keyframes qb_in{ to{ opacity:1; transform:translateY(0);} }\
     .quality-badge img{ height:100%; width:auto; display:block; }\
     .quality-badge img{ filter: drop-shadow(0 1px 2px #000); }\
     \
     @media (max-width:768px){\
-      .quality-badges-container{ gap:0.25em; min-height:1em; margin-left:0.3em; }\
-      .quality-badges-after-details{ gap:0.25em; min-height:1em; }\
-      .quality-badge{ height:1em; }\
+      .quality-badges-container{ column-gap:0.26em; row-gap:0.18em; min-height:1em; margin-left:0.35em; margin-top:0.16em; }\
+      .quality-badges-after-details{ column-gap:0.26em; row-gap:0.18em; min-height:1em; margin-bottom:0.40em; }\
+      .quality-badge{ height:1em; padding:0.09em 0.13em; }\
     }\
   </style>';
 
   $('body').append(style);
 
-  // Apply once at start
   applyLqeHideClass();
 
-  console.log('[SVG Quality] Full card only, UKR audio detection, settings+cache ready.');
+  console.log('[SVG Quality] Updated: settings no-dupes, universal frames, spacing tweaks.');
 })();

@@ -371,22 +371,22 @@ var style = '<style id="svgq_styles">\
     display:inline-flex;\
     flex-wrap:wrap;\
     align-items:center;\
-    column-gap:0.32em;   /* <-- GAP X між бейджами */\
-    row-gap:0.24em;      /* <-- GAP Y при переносі */\
-    margin:0.20em 0 0 0.48em; /* <-- відступ зліва/зверху у rate-line */\
+    column-gap:0.32em;   /* GAP X між бейджами */\
+    row-gap:0.24em;      /* GAP Y при переносі */\
+    margin:0.20em 0 0 0.48em; /* відступ у rate-line */\
     min-height:1.2em;\
     pointer-events:none;\
     vertical-align:middle;\
     max-width:100%;\
   }\
   \
-  /* ✅ Опція: гарантовано з нового рядка в rate-line */\
+  /* Опція: гарантовано з нового рядка в rate-line */\
   .quality-badges-container.svgq-force-new-row{\
     flex-basis:100%;\
     width:100%;\
     display:flex;\
     margin-left:0;\
-    margin-top:0.28em; /* <-- відступ зверху, коли на новому рядку */\
+    margin-top:0.28em;\
   }\
   \
   /* ===================================================== */\
@@ -398,29 +398,38 @@ var style = '<style id="svgq_styles">\
     align-items:center;\
     column-gap:0.32em;\
     row-gap:0.24em;\
-    margin:0.38em 0 0.72em 0; /* <-- БІЛЬШИЙ нижній відступ (after_details) */\
+    margin:0.18em 0 0.92em 0; /* нижній відступ після details */\
     min-height:1.2em;\
     pointer-events:none;\
     max-width:100%;\
   }\
   \
   /* ===================================================== */\
-  /* 3) Badge shell (БЕЗ рамки за замовчуванням!) */\
+  /* 3) Badge shell — БЕЗ рамок, БЕЗ фону */\
   /* ===================================================== */\
   .quality-badge{\
-    height:1.2em;        /* <-- РОЗМІР як у текстової мітки (підкручуй тут) */\
+    height:1.4em;        /* РОЗМІР як у текстової мітки */\
     display:inline-flex;\
     align-items:center;\
     justify-content:center;\
-    padding:0;           /* <-- НЕ додаємо паддінг, щоб не з’являлась “друга рамка” */\
+    padding:0;           /* критично: без паддінгів */\
+    background:none;\
+    box-shadow:none;\
+    border:none;\
+    border-radius:0;\
     box-sizing:border-box;\
     opacity:0;\
     transform:translateY(8px);\
     animation:qb_in 0.38s ease forwards;\
   }\
-  @keyframes qb_in{ to{ opacity:1; transform:translateY(0);} }\
   \
-  /* Іконки */\
+  @keyframes qb_in{\
+    to{ opacity:1; transform:translateY(0);}\
+  }\
+  \
+  /* ===================================================== */\
+  /* 4) SVG icons rendering */\
+  /* ===================================================== */\
   .quality-badge img{\
     height:100%;\
     width:auto;\
@@ -428,38 +437,14 @@ var style = '<style id="svgq_styles">\
     filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
   }\
   \
-  /* ===================================================== */\
-  /* 4) “Вбудована” рамка ТІЛЬКИ там, де її нема: UKR + Dolby */\
-  /* ===================================================== */\
-  .quality-badge.svgq-need-frame{\
-    position:relative;\
-    padding:0.11em 0.16em; /* <-- ВНУТР. ВІДСТУПИ рамки (підкручуй) */\
-    border-radius:0.30em;  /* <-- радіус (як у SVG-рамок) */\
-    background:rgba(0,0,0,0.10);\
-  }\
-  \
-  /* Рамка “ближча”, товстіша, щоб виглядало як SVG-рамка */\
-  .quality-badge.svgq-need-frame:before{\
-    content:"";\
-    position:absolute;\
-    inset:0; /* <-- рамка максимально близько до країв */\
-    border-radius:0.30em; /* <-- має співпасти з контейнером */\
-    box-shadow:\
-      0 0 0 2px rgba(255,255,255,0.95) inset,      /* основна біла рамка */\
-      0 0 0 1px rgba(0,0,0,0.55) inset;            /* темний внутрішній контур як у SVG */\
-    pointer-events:none;\
-  }\
-  \
-  /* ===================================================== */\
-  /* 5) Dolby Vision – оптичний розмір (бо SVG трохи завеликий) */\
-  /* ===================================================== */\
+  /* Dolby Vision — лише оптичне вирівнювання (БЕЗ рамок) */\
   .quality-badge.svgq-dolby img{\
-    transform:scale(0.88); /* <-- підкручуй, якщо ще завеликий */\
+    transform:scale(0.88);\
     transform-origin:center center;\
   }\
   \
   /* ===================================================== */\
-  /* 6) Mobile adjustments */\
+  /* 5) Mobile adjustments */\
   /* ===================================================== */\
   @media (max-width:768px){\
     .quality-badges-container{\
@@ -476,26 +461,17 @@ var style = '<style id="svgq_styles">\
       column-gap:0.26em;\
       row-gap:0.18em;\
       min-height:1em;\
-      margin:0.34em 0 0.78em 0; /* <-- ще трошки низу на мобілках */\
+      margin:0.34em 0 0.78em 0;\
     }\
     .quality-badge{\
-      height:1em; /* <-- розмір на мобі */\
-    }\
-    .quality-badge.svgq-need-frame{\
-      padding:0.09em 0.13em;\
-      border-radius:0.28em;\
-    }\
-    .quality-badge.svgq-need-frame:before{\
-      border-radius:0.28em;\
-      box-shadow:\
-        0 0 0 2px rgba(255,255,255,0.92) inset,\
-        0 0 0 1px rgba(0,0,0,0.55) inset;\
+      height:1.2em;\
     }\
     .quality-badge.svgq-dolby img{\
       transform:scale(0.86);\
     }\
   }\
 </style>';
+
 
 
   function injectStyleOnce() {

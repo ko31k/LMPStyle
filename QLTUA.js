@@ -745,7 +745,10 @@ var LQE_SVG_ICONS = {
 var LQE_FULLSVG_CACHE_KEY = 'lqe_full_svg_badges_cache_v1';
 var LQE_fullSvgMemoryCache = {};
 var LQE_fullSvgStorageCache = null;
+// inflight map для Parser->SVG (ГЛОБАЛЬНО, один раз на весь плагін)
+var inflightFullSvg = {};
 
+    
 function lqeGetFullSvgStorageCache() {
   if (!LQE_fullSvgStorageCache) LQE_fullSvgStorageCache = Lampa.Storage.get(LQE_FULLSVG_CACHE_KEY) || {};
   return LQE_fullSvgStorageCache;
@@ -1009,11 +1012,11 @@ function lqeFetchFullSvgBadgesViaParser(normalizedCard, cardId, renderElement) {
 
     // background refresh
     if ((Date.now() - cached.ts) > LQE_CONFIG.CACHE_REFRESH_THRESHOLD_MS) {
-      if (inflightRequests[cacheKey]) return;
-      inflightRequests[cacheKey] = true;
+      if (inflightFullSvg[cacheKey]) return;
+      inflightFullSvg[cacheKey] = true;
 
       var kill = setTimeout(function () {
-        if (inflightRequests[cacheKey]) delete inflightRequests[cacheKey];
+        if (inflightFullSvg[cacheKey]) delete inflightFullSvg[cacheKey];
       }, 12000);
 
       enqueueTask(function (done) {
@@ -1028,7 +1031,7 @@ function lqeFetchFullSvgBadgesViaParser(normalizedCard, cardId, renderElement) {
                 lqeRenderFullSvgBadges(renderElement, best);
               }
             } catch (e) {}
-            delete inflightRequests[cacheKey];
+            delete inflightFullSvg[cacheKey];
             done();
           }
         );
@@ -1039,15 +1042,15 @@ function lqeFetchFullSvgBadgesViaParser(normalizedCard, cardId, renderElement) {
   }
 
   // no cache -> fresh fetch
-  if (inflightRequests[cacheKey]) return;
-  inflightRequests[cacheKey] = true;
+  if (inflightFullSvg[cacheKey]) return;
+  inflightFullSvg[cacheKey] = true;
 
   // лоадер з твого коду (показує "Пошук…")
   addLoadingAnimation(cardId, renderElement);
 
   var kill2 = setTimeout(function () {
     removeLoadingAnimation(cardId, renderElement);
-    if (inflightRequests[cacheKey]) delete inflightRequests[cacheKey];
+    if (inflightFullSvg[cacheKey]) delete inflightFullSvg[cacheKey];
   }, 12000);
 
   enqueueTask(function (done) {
@@ -1069,7 +1072,7 @@ function lqeFetchFullSvgBadgesViaParser(normalizedCard, cardId, renderElement) {
           lqeClearFullSvgBadges(renderElement);
         }
 
-        delete inflightRequests[cacheKey];
+        delete inflightFullSvg[cacheKey];
         done();
       }
     );
@@ -1873,8 +1876,6 @@ function lqeSchedulePendingRetry(cardId) {
         return storageCache;
     }
 
-    // Захист від дубльованих мережевих запитів по одному ключу.
-    var inflightRequests = {};
 
     /**
      * Отримує дані з кешу
@@ -2164,6 +2165,9 @@ function lqeSchedulePendingRetry(cardId) {
             return;
         }
 
+        
+
+        
         // ===== FULL CARD uses Parser->SVG only =====
         clearFullCardQualityElements(cardId, renderElement); // прибрати старий текст
         lqeFetchFullSvgBadgesViaParser(normalizedCard, cardId, renderElement);

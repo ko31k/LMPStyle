@@ -1,5 +1,5 @@
 //Оригінальний плагін https://github.com/FoxStudio24/lampa/blob/main/Quality/Quality.js
-//SVG Quality Badges (Full card only) + settings
+//SVG Quality Badges (Full card only) + settings + cache
 //Працює при увімкненому парсері
 
 (function () {
@@ -9,11 +9,10 @@
   // CONFIG
   // =====================================================================
 
-  // RAW github icons folder (твій шлях)
-  // ⚠️ Тут саме /img/
+  // RAW github icons folder
   var pluginPath = 'https://raw.githubusercontent.com/ko31k/LMP/main/wwwroot/img/';
 
-  // ✅ ВАЖЛИВО: пробіли в назвах — через %20 (FULL%20HD.svg, Dolby%20Vision.svg)
+  // ✅ пробіли в назвах — %20
   var svgIcons = {
     '4K': pluginPath + '4K.svg',
     '2K': pluginPath + '2K.svg',
@@ -29,28 +28,42 @@
     'UKR': pluginPath + 'UKR.svg'
   };
 
-  // Settings key
-  var SETTINGS_KEY = 'svgq_user_settings_v2';
+  var SETTINGS_KEY = 'svgq_user_settings_v3';
+
+  // SVGQ cache (щоб не парсити щоразу при повторному вході в картку)
+  var CACHE_KEY = 'svgq_parser_cache_v1';
+  var CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h (можеш змінити)
 
   // Default settings
   var st = {
-    // "rate" | "after_details" | "off"
-    placement: 'rate',
-
-    // Hide old LQE full-card text label when SVG is ON
-    hide_lqe: true,
-
-    // Якщо rate-line “забитий” — переносимо SVG на новий рядок (flex-basis:100%)
-    force_new_line: false
+    placement: 'rate',        // "rate" | "after_details" | "off"
+    hide_lqe: true,           // hide LQE full-card text label
+    force_new_line: false     // ✅ завжди переносити SVG на новий рядок у rate-line
   };
+
+  // in-memory cache mirror
+  var memCache = null;
+
+  // =====================================================================
+  // SAFE STORAGE
+  // =====================================================================
+
+  function lsGet(key, def) {
+    try {
+      var v = Lampa.Storage.get(key, def);
+      return (typeof v === 'undefined') ? def : v;
+    } catch (e) { return def; }
+  }
+  function lsSet(key, val) {
+    try { Lampa.Storage.set(key, val); } catch (e) {}
+  }
 
   // =====================================================================
   // SETTINGS: load/save/apply
   // =====================================================================
 
   function loadSettings() {
-    var s = {};
-    try { s = Lampa.Storage.get(SETTINGS_KEY, {}) || {}; } catch (e) { s = {}; }
+    var s = lsGet(SETTINGS_KEY, {}) || {};
 
     st.placement = (s.placement === 'after_details' || s.placement === 'off' || s.placement === 'rate')
       ? s.placement
@@ -61,13 +74,12 @@
   }
 
   function saveSettings() {
-    try { Lampa.Storage.set(SETTINGS_KEY, st); } catch (e) {}
+    lsSet(SETTINGS_KEY, st);
     applySettings();
     toast('Збережено');
   }
 
   function applySettings() {
-    // Ховаємо LQE-мінтку (текст) коли включено hide_lqe
     if (document && document.body) {
       document.body.classList.toggle('svgq-hide-lqe', !!st.hide_lqe);
     }
@@ -78,13 +90,16 @@
       if (Lampa && typeof Lampa.Noty === 'function') { Lampa.Noty(msg); return; }
       if (Lampa && Lampa.Noty && Lampa.Noty.show) { Lampa.Noty.show(msg); return; }
     } catch (e) {}
-    // fallback toast
+
     var id = 'svgq_toast';
     var el = document.getElementById(id);
     if (!el) {
       el = document.createElement('div');
       el.id = id;
-      el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
+      el.style.cssText =
+        'position:fixed;left:50%;transform:translateX(-50%);bottom:2rem;' +
+        'padding:.6rem 1rem;background:rgba(0,0,0,.85);color:#fff;border-radius:.5rem;' +
+        'z-index:9999;font-size:14px;transition:opacity .2s;opacity:0';
       document.body.appendChild(el);
     }
     el.textContent = msg;
@@ -93,48 +108,79 @@
   }
 
   // =====================================================================
-  // getBest() – основа твоя, але підсилено:
-  //  - кращий детект UKR
-  //  - DUB
-  //  - audio channels fallback по title (якщо ffprobe нема)
-  //  - пріоритети (DV => HDR)
+  // SVGQ CACHE
   // =====================================================================
 
-  function hasUkrAudioMarkers(titleLower) {
-    if (!titleLower) return false;
+  function getCacheObj() {
+    if (memCache) return memCache;
+    memCache = lsGet(CACHE_KEY, {}) || {};
+    return memCache;
+  }
 
-    // ✅ Сильні маркери
-    // - ukr / ua як ОКРЕМІ токени, або "2xukr", "ukr+eng", "ukr dub", тощо
-    // - укр як окремий токен
-    // - українська/украинский/ukrainian
+  function makeCacheKey(movie) {
+    // Ключ: tmdb_id + year + title (щоб мінімізувати колізії)
+    var id = movie && movie.id ? String(movie.id) : '';
+    var year = '';
+    var rd = movie && (movie.release_date || movie.first_air_date);
+    if (rd && String(rd).length >= 4) year = String(rd).slice(0, 4);
+    var t = (movie.title || movie.name || movie.original_title || movie.original_name || '').toString().toLowerCase();
+    return id + '|' + year + '|' + t;
+  }
+
+  function cacheGet(movie) {
+    var key = makeCacheKey(movie);
+    var c = getCacheObj();
+    var it = c[key];
+    if (!it || !it.t || !it.v) return null;
+    if (Date.now() - it.t > CACHE_TTL_MS) return null;
+    return it.v;
+  }
+
+  function cacheSet(movie, value) {
+    var key = makeCacheKey(movie);
+    var c = getCacheObj();
+    c[key] = { t: Date.now(), v: value };
+    memCache = c;
+    lsSet(CACHE_KEY, c);
+  }
+
+  function cacheClear() {
+    memCache = {};
+    lsSet(CACHE_KEY, {});
+    toast('Кеш SVGQ очищено');
+  }
+
+  // =====================================================================
+  // getBest() – підсилено
+  // =====================================================================
+
+  function hasUkrAudioMarkers(tl) {
+    if (!tl) return false;
+
     var strong =
-      /(?:^|[\s\[\(\{\/\|,._-])(?:2x\s*)?ukr(?:$|[\s\]\)\}\/\|,._-])/i.test(titleLower) ||
-      /(?:^|[\s\[\(\{\/\|,._-])ua(?:$|[\s\]\)\}\/\|,._-])/i.test(titleLower) ||
-      /(?:^|[\s\[\(\{\/\|,._-])укр(?:$|[\s\]\)\}\/\|,._-])/i.test(titleLower) ||
-      /україн|украин|ukrain/i.test(titleLower);
+      /(?:^|[\s\[\(\{\/\|,._-])(?:2x\s*)?ukr(?:$|[\s\]\)\}\/\|,._-])/i.test(tl) ||
+      /(?:^|[\s\[\(\{\/\|,._-])ua(?:$|[\s\]\)\}\/\|,._-])/i.test(tl) ||
+      /(?:^|[\s\[\(\{\/\|,._-])укр(?:$|[\s\]\)\}\/\|,._-])/i.test(tl) ||
+      /україн|украин|ukrain/i.test(tl);
 
-    // ✅ Додатково: “dub ukr”, “ukr dubbing”, “укр дубляж”
     var dubUkr =
-      /(?:dub|dubbing|дубл|дубляж)[^\n]{0,16}(?:ukr|ua|укр)/i.test(titleLower) ||
-      /(?:ukr|ua|укр)[^\n]{0,16}(?:dub|dubbing|дубл|дубляж)/i.test(titleLower);
+      /(?:dub|dubbing|дубл|дубляж)[^\n]{0,18}(?:ukr|ua|укр)/i.test(tl) ||
+      /(?:ukr|ua|укр)[^\n]{0,18}(?:dub|dubbing|дубл|дубляж)/i.test(tl);
 
     return !!(strong || dubUkr);
   }
 
-  function hasDub(titleLower) {
-    if (!titleLower) return false;
-    return /(?:^|[\s\[\(\{\/\|,._-])dub(?:$|[\s\]\)\}\/\|,._-])|дубл|дубляж/i.test(titleLower);
+  function hasDub(tl) {
+    if (!tl) return false;
+    return /(?:^|[\s\[\(\{\/\|,._-])dub(?:$|[\s\]\)\}\/\|,._-])|дубл|дубляж/i.test(tl);
   }
 
-  function detectAudioFromTitle(titleLower) {
-    if (!titleLower) return null;
-
-    // ⚠️ тільки як fallback (коли ffprobe нема)
-    // типові маркери: 7.1, 5.1, 2.0, 6ch, 8ch
-    if (/\b7[\.\s]?1\b|\b8ch\b|\b8\s*ch\b|\b7\s*1\b/i.test(titleLower)) return '7.1';
-    if (/\b5[\.\s]?1\b|\b6ch\b|\b6\s*ch\b|\b5\s*1\b/i.test(titleLower)) return '5.1';
-    if (/\b4[\.\s]?0\b|\b4ch\b|\b4\s*ch\b|\b4\s*0\b/i.test(titleLower)) return '4.0';
-    if (/\b2[\.\s]?0\b|\b2ch\b|\b2\s*ch\b|\b2\s*0\b/i.test(titleLower)) return '2.0';
+  function detectAudioFromTitle(tl) {
+    if (!tl) return null;
+    if (/\b7[\.\s]?1\b|\b8ch\b|\b8\s*ch\b/i.test(tl)) return '7.1';
+    if (/\b5[\.\s]?1\b|\b6ch\b|\b6\s*ch\b/i.test(tl)) return '5.1';
+    if (/\b4[\.\s]?0\b|\b4ch\b|\b4\s*ch\b/i.test(tl)) return '4.0';
+    if (/\b2[\.\s]?0\b|\b2ch\b|\b2\s*ch\b/i.test(tl)) return '2.0';
     return null;
   }
 
@@ -149,13 +195,9 @@
       var title = (item.Title || item.title || '').toString();
       var tl = title.toLowerCase();
 
-      // UKR
       if (!best.ukr && hasUkrAudioMarkers(tl)) best.ukr = true;
-
-      // DUB
       if (!best.dub && hasDub(tl)) best.dub = true;
 
-      // Resolution from title
       var foundRes = null;
       if (tl.indexOf('4k') >= 0 || tl.indexOf('2160') >= 0 || tl.indexOf('uhd') >= 0) foundRes = '4K';
       else if (tl.indexOf('2k') >= 0 || tl.indexOf('1440') >= 0) foundRes = '2K';
@@ -166,11 +208,9 @@
         best.resolution = foundRes;
       }
 
-      // HDR / DV from title
       if (tl.indexOf('vision') >= 0 || tl.indexOf('dolby vision') >= 0 || tl.indexOf('dovi') >= 0) best.dolbyVision = true;
       if (tl.indexOf('hdr') >= 0) best.hdr = true;
 
-      // ffprobe (пріоритет)
       if (item.ffprobe && Array.isArray(item.ffprobe)) {
         for (var k = 0; k < item.ffprobe.length; k++) {
           var stream = item.ffprobe[k];
@@ -185,14 +225,10 @@
             else if (h >= 1080 || w >= 1920) res = 'FULL HD';
             else if (h >= 720 || w >= 1280) res = 'HD';
 
-            if (res && (!best.resolution || resOrder.indexOf(res) > resOrder.indexOf(best.resolution))) {
-              best.resolution = res;
-            }
+            if (res && (!best.resolution || resOrder.indexOf(res) > resOrder.indexOf(best.resolution))) best.resolution = res;
 
             try {
-              // DV hint
               if (stream.side_data_list && JSON.stringify(stream.side_data_list).indexOf('Vision') >= 0) best.dolbyVision = true;
-              // HDR hint
               if (stream.color_transfer === 'smpte2084' || stream.color_transfer === 'arib-std-b67') best.hdr = true;
             } catch (e) {}
           }
@@ -206,7 +242,6 @@
           }
         }
       } else {
-        // audio fallback by title (тільки якщо ffprobe нема)
         if (!best.audio) {
           var a = detectAudioFromTitle(tl);
           if (a) best.audio = a;
@@ -214,9 +249,7 @@
       }
     }
 
-    // DV implies HDR
     if (best.dolbyVision) best.hdr = true;
-
     return best;
   }
 
@@ -224,16 +257,31 @@
   // Rendering
   // =====================================================================
 
-  function createBadgeImg(type, index) {
-    var iconPath = svgIcons[type];
-    if (!iconPath) return '';
-    var delay = (index * 0.08) + 's';
-    return (
-      '<div class="quality-badge" style="animation-delay:' + delay + '">' +
-        '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
-      '</div>'
-    );
+function createBadgeImg(type, index) {
+  var iconPath = svgIcons[type];
+  if (!iconPath) return '';
+  var delay = (index * 0.08) + 's';
+
+  // базовий клас
+  var cls = 'quality-badge';
+
+  // 👉 ТІЛЬКИ ці іконки НЕ мають рамки в SVG
+  if (type === 'UKR' || type === 'Dolby Vision') {
+    cls += ' svgq-need-frame';
   }
+
+  // 👉 Додатковий клас ТІЛЬКИ для Dolby (корекція розміру)
+  if (type === 'Dolby Vision') {
+    cls += ' svgq-dolby';
+  }
+
+  return (
+    '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
+      '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
+    '</div>'
+  );
+}
+
 
   function buildBadgesHtml(best) {
     var badges = [];
@@ -247,18 +295,15 @@
   }
 
   function ensureContainer(renderRoot) {
-    // чистимо старі контейнери (щоб не було дублікатів при повторному відкритті)
+    // ✅ чистимо старі (жодних дублікатів)
     $('.quality-badges-container, .quality-badges-after-details', renderRoot).remove();
 
     if (st.placement === 'off') return null;
 
     if (st.placement === 'rate') {
-      // контейнер всередині rate-line
       var rateLine = $('.full-start-new__rate-line, .full-start__rate-line', renderRoot).first();
       if (!rateLine.length) return null;
 
-      // ✅ якщо треба гарантовано новий рядок — робимо flex-item на 100%
-      // (rate-line у Lampa — flex, тому це працює)
       var cls = 'quality-badges-container' + (st.force_new_line ? ' svgq-breakline' : '');
       var el = $('<div class="' + cls + '"></div>');
       rateLine.append(el);
@@ -266,7 +311,6 @@
     }
 
     if (st.placement === 'after_details') {
-      // після details (як ти і хотів)
       var details = $('.full-start-new__details, .full-start__details', renderRoot).first();
       if (!details.length) return null;
 
@@ -281,13 +325,19 @@
   function applyBadgesToFullCard(movie, renderRoot) {
     if (!movie || !renderRoot) return;
 
-    // якщо парсер не включений — нічого не робимо (як і домовлялись)
+    // parser must be enabled
     if (!Lampa || !Lampa.Storage || !Lampa.Storage.field || !Lampa.Storage.field('parser_use')) return;
 
     var container = ensureContainer(renderRoot);
     if (!container) return;
 
-    // тимчасово можна показувати порожньо, поки йде пошук
+    // 1) cache fast path
+    var cached = cacheGet(movie);
+    if (cached && typeof cached === 'string') {
+      container.html(cached);
+      return;
+    }
+
     container.html('');
 
     Lampa.Parser.get(
@@ -297,6 +347,10 @@
 
         var best = getBest(response.Results);
         var html = buildBadgesHtml(best);
+
+        // cache even empty (but as empty string) — to avoid repeated calls
+        cacheSet(movie, html || '');
+
         container.html(html);
       }
     );
@@ -306,138 +360,143 @@
   // Styles (UPDATED FULL BLOCK)
   // =====================================================================
 
-  // ⚙️ ТУТ КОРИГУЄШ РОЗМІР ІКОНОК ПІД СВОЮ “текстову мітку”:
-  // - --svgq-badge-h = висота бейджа (зараз ~як fullcard label 1.72em)
-  // - --svgq-pad-y/x = внутрішні відступи рамки
-  // - --svgq-gap-x/y = відступи між бейджами
-  // - --svgq-after-mb = нижній відступ для after_details
-  var style = '<style id="svgq_styles">\
-    /* Hide old LQE text label when SVG quality is enabled */\
-    body.svgq-hide-lqe .full-start__status.lqe-quality{ display:none !important; }\
-    \
-    :root{\
-      /* ===== SIZE TUNING (edit here) ===== */\
-      --svgq-badge-h: 1.72em;     /* ⬅️ висота бейджів (як твоя текстова мітка в fullcard) */\
-      --svgq-pad-y: 0.11em;       /* ⬅️ вертикальний padding рамки */\
-      --svgq-pad-x: 0.16em;       /* ⬅️ горизонтальний padding рамки */\
-      --svgq-gap-x: 0.32em;       /* ⬅️ відступ між бейджами по X */\
-      --svgq-gap-y: 0.24em;       /* ⬅️ відступ між бейджами по Y при переносі */\
-      --svgq-rate-ml: 0.48em;     /* ⬅️ відступ зліва в rate-line */\
-      --svgq-rate-mt: 0.20em;     /* ⬅️ відступ зверху в rate-line */\
-      --svgq-after-mt: 0.38em;    /* ⬅️ відступ зверху після details */\
-      --svgq-after-mb: 0.68em;    /* ⬅️ ВАЖЛИВО: більший відступ знизу after_details */\
-      --svgq-radius: 0.32em;      /* ⬅️ заокруглення “як у SVG” */\
-    }\
-    \
-    /* ===================================================== */\
-    /* Rate-line placement (inline, wraps, no overlaps) */\
-    /* ===================================================== */\
+var style = '<style id="svgq_styles">\
+  /* Hide old LQE text label when SVG quality is enabled */\
+  body.svgq-hide-lqe .full-start__status.lqe-quality{ display:none !important; }\
+  \
+  /* ===================================================== */\
+  /* 1) Rate-line placement (inline, wraps, no overlaps) */\
+  /* ===================================================== */\
+  .quality-badges-container{\
+    display:inline-flex;\
+    flex-wrap:wrap;\
+    align-items:center;\
+    column-gap:0.32em;   /* <-- GAP X між бейджами */\
+    row-gap:0.24em;      /* <-- GAP Y при переносі */\
+    margin:0.20em 0 0 0.48em; /* <-- відступ зліва/зверху у rate-line */\
+    min-height:1.2em;\
+    pointer-events:none;\
+    vertical-align:middle;\
+    max-width:100%;\
+  }\
+  \
+  /* ✅ Опція: гарантовано з нового рядка в rate-line */\
+  .quality-badges-container.svgq-force-new-row{\
+    flex-basis:100%;\
+    width:100%;\
+    display:flex;\
+    margin-left:0;\
+    margin-top:0.28em; /* <-- відступ зверху, коли на новому рядку */\
+  }\
+  \
+  /* ===================================================== */\
+  /* 2) After-details placement (separate row + bottom space) */\
+  /* ===================================================== */\
+  .quality-badges-after-details{\
+    display:flex;\
+    flex-wrap:wrap;\
+    align-items:center;\
+    column-gap:0.32em;\
+    row-gap:0.24em;\
+    margin:0.38em 0 0.72em 0; /* <-- БІЛЬШИЙ нижній відступ (after_details) */\
+    min-height:1.2em;\
+    pointer-events:none;\
+    max-width:100%;\
+  }\
+  \
+  /* ===================================================== */\
+  /* 3) Badge shell (БЕЗ рамки за замовчуванням!) */\
+  /* ===================================================== */\
+  .quality-badge{\
+    height:1.2em;        /* <-- РОЗМІР як у текстової мітки (підкручуй тут) */\
+    display:inline-flex;\
+    align-items:center;\
+    justify-content:center;\
+    padding:0;           /* <-- НЕ додаємо паддінг, щоб не з’являлась “друга рамка” */\
+    box-sizing:border-box;\
+    opacity:0;\
+    transform:translateY(8px);\
+    animation:qb_in 0.38s ease forwards;\
+  }\
+  @keyframes qb_in{ to{ opacity:1; transform:translateY(0);} }\
+  \
+  /* Іконки */\
+  .quality-badge img{\
+    height:100%;\
+    width:auto;\
+    display:block;\
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
+  }\
+  \
+  /* ===================================================== */\
+  /* 4) “Вбудована” рамка ТІЛЬКИ там, де її нема: UKR + Dolby */\
+  /* ===================================================== */\
+  .quality-badge.svgq-need-frame{\
+    position:relative;\
+    padding:0.11em 0.16em; /* <-- ВНУТР. ВІДСТУПИ рамки (підкручуй) */\
+    border-radius:0.30em;  /* <-- радіус (як у SVG-рамок) */\
+    background:rgba(0,0,0,0.10);\
+  }\
+  \
+  /* Рамка “ближча”, товстіша, щоб виглядало як SVG-рамка */\
+  .quality-badge.svgq-need-frame:before{\
+    content:"";\
+    position:absolute;\
+    inset:0; /* <-- рамка максимально близько до країв */\
+    border-radius:0.30em; /* <-- має співпасти з контейнером */\
+    box-shadow:\
+      0 0 0 2px rgba(255,255,255,0.95) inset,      /* основна біла рамка */\
+      0 0 0 1px rgba(0,0,0,0.55) inset;            /* темний внутрішній контур як у SVG */\
+    pointer-events:none;\
+  }\
+  \
+  /* ===================================================== */\
+  /* 5) Dolby Vision – оптичний розмір (бо SVG трохи завеликий) */\
+  /* ===================================================== */\
+  .quality-badge.svgq-dolby img{\
+    transform:scale(0.88); /* <-- підкручуй, якщо ще завеликий */\
+    transform-origin:center center;\
+  }\
+  \
+  /* ===================================================== */\
+  /* 6) Mobile adjustments */\
+  /* ===================================================== */\
+  @media (max-width:768px){\
     .quality-badges-container{\
-      display:inline-flex;\
-      flex-wrap:wrap;\
-      align-items:center;\
-      column-gap:var(--svgq-gap-x);\
-      row-gap:var(--svgq-gap-y);\
-      margin:var(--svgq-rate-mt) 0 0 var(--svgq-rate-ml);\
-      min-height:var(--svgq-badge-h);\
-      pointer-events:none;\
-      vertical-align:middle;\
-      max-width:100%;\
+      column-gap:0.26em;\
+      row-gap:0.18em;\
+      min-height:1em;\
+      margin-left:0.38em;\
+      margin-top:0.18em;\
     }\
-    \
-    /* ✅ якщо включено “гарантовано новий рядок” */\
-    .quality-badges-container.svgq-breakline{\
-      display:flex;\
-      flex-basis:100%;\
-      width:100%;\
-      margin-left:0 !important;\
+    .quality-badges-container.svgq-force-new-row{\
+      margin-top:0.24em;\
     }\
-    \
-    /* ===================================================== */\
-    /* After-details placement (separate row + bottom space) */\
-    /* ===================================================== */\
     .quality-badges-after-details{\
-      display:flex;\
-      flex-wrap:wrap;\
-      align-items:center;\
-      column-gap:var(--svgq-gap-x);\
-      row-gap:var(--svgq-gap-y);\
-      margin:var(--svgq-after-mt) 0 var(--svgq-after-mb) 0;\
-      min-height:var(--svgq-badge-h);\
-      pointer-events:none;\
-      max-width:100%;\
+      column-gap:0.26em;\
+      row-gap:0.18em;\
+      min-height:1em;\
+      margin:0.34em 0 0.78em 0; /* <-- ще трошки низу на мобілках */\
     }\
-    \
-    /* ===================================================== */\
-    /* Universal badge shell – thin white frame like in SVG */\
-    /* ===================================================== */\
     .quality-badge{\
-      height:var(--svgq-badge-h);\
-      display:inline-flex;\
-      align-items:center;\
-      justify-content:center;\
-      padding:var(--svgq-pad-y) var(--svgq-pad-x);\
-      box-sizing:border-box;\
-      border-radius:var(--svgq-radius);\
-      background:rgba(0,0,0,0.10);\
-      position:relative;\
-      opacity:0;\
-      transform:translateY(8px);\
-      animation:qb_in 0.38s ease forwards;\
+      height:1em; /* <-- розмір на мобі */\
     }\
-    \
-    /* тонка біла рамка + легкий inner highlight (як “намальовано в SVG”) */\
-    .quality-badge:before{\
-      content:"";\
-      position:absolute;\
-      inset:0;\
-      border-radius:inherit;\
-      border:1px solid rgba(255,255,255,0.70);\
+    .quality-badge.svgq-need-frame{\
+      padding:0.09em 0.13em;\
+      border-radius:0.28em;\
+    }\
+    .quality-badge.svgq-need-frame:before{\
+      border-radius:0.28em;\
       box-shadow:\
-        inset 0 0 0 1px rgba(255,255,255,0.08),\
-        0 1px 2px rgba(0,0,0,0.35);\
-      pointer-events:none;\
+        0 0 0 2px rgba(255,255,255,0.92) inset,\
+        0 0 0 1px rgba(0,0,0,0.55) inset;\
     }\
-    \
-    @keyframes qb_in{ to{ opacity:1; transform:translateY(0);} }\
-    \
-    /* ===================================================== */\
-    /* Icon rendering */\
-    /* ===================================================== */\
-    .quality-badge img{\
-      height:100%;\
-      width:auto;\
-      display:block;\
-      filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
+    .quality-badge.svgq-dolby img{\
+      transform:scale(0.86);\
     }\
-    \
-    /* Dolby Vision – optical size fix (бо SVG трохи “більший”) */\
-    .quality-badge img[src*="Dolby"],\
-    .quality-badge img[src*="dolby"]{\
-      transform:scale(0.88);\
-      transform-origin:center center;\
-    }\
-    \
-    /* ===================================================== */\
-    /* Mobile adjustments */\
-    /* ===================================================== */\
-    @media (max-width:768px){\
-      :root{\
-        --svgq-badge-h: 1.45em;   /* ⬅️ мобільна висота */\
-        --svgq-pad-y: 0.09em;\
-        --svgq-pad-x: 0.13em;\
-        --svgq-gap-x: 0.26em;\
-        --svgq-gap-y: 0.18em;\
-        --svgq-rate-ml: 0.38em;\
-        --svgq-rate-mt: 0.18em;\
-        --svgq-after-mb: 0.62em;\
-      }\
-      .quality-badge img[src*="Dolby"],\
-      .quality-badge img[src*="dolby"]{\
-        transform:scale(0.86);\
-      }\
-    }\
-  </style>';
+  }\
+</style>';
+
 
   function injectStyleOnce() {
     if (document.getElementById('svgq_styles')) return;
@@ -445,14 +504,13 @@
   }
 
   // =====================================================================
-  // Settings UI (fix: no empty, no duplicates)
+  // Settings UI (no duplicates, always populated) + Clear cache
   // =====================================================================
 
   function registerSettingsUIOnce() {
     if (window.__svgq_settings_registered) return;
     window.__svgq_settings_registered = true;
 
-    // button in Interface
     Lampa.Template.add('settings_svgq', '<div></div>');
 
     Lampa.SettingsApi.addParam({
@@ -470,7 +528,6 @@
       }
     });
 
-    // placement select
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: {
@@ -487,7 +544,6 @@
       onChange: function (v) { st.placement = String(v); saveSettings(); }
     });
 
-    // hide LQE label toggle
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: {
@@ -500,7 +556,7 @@
       onChange: function (v) { st.hide_lqe = (String(v) === 'true'); saveSettings(); }
     });
 
-    // force new line in rate-line
+    // ✅ тепер це НЕ “коли забитий”, а просто “завжди переносити / не переносити”
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: {
@@ -509,8 +565,16 @@
         values: { 'false': 'Ні', 'true': 'Так' },
         default: String(!!st.force_new_line)
       },
-      field: { name: 'Коли rate-line забитий — переносити SVG бейджі на новий рядок' },
+      field: { name: 'Переносити SVG бейджі на новий рядок у rate-line' },
       onChange: function (v) { st.force_new_line = (String(v) === 'true'); saveSettings(); }
+    });
+
+    // ✅ Повернув кнопку очищення кешу (наш SVGQ cache)
+    Lampa.SettingsApi.addParam({
+      component: 'svgq',
+      param: { type: 'button', component: 'svgq_clear_cache' },
+      field: { name: 'Очистити кеш' },
+      onChange: function () { cacheClear(); }
     });
   }
 
@@ -519,7 +583,6 @@
     applySettings();
 
     if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
-      // ✅ важливо: реєструємо після готовності, і ОДИН раз
       setTimeout(registerSettingsUIOnce, 0);
     }
   }
@@ -534,11 +597,9 @@
     try {
       injectStyleOnce();
 
-      // settings init on first run
       if (!window.__svgq_settings_inited) {
         window.__svgq_settings_inited = true;
 
-        // запускаємо settings реєстрацію після app ready
         if (window.appready) startSettings();
         else if (Lampa && Lampa.Listener) {
           Lampa.Listener.follow('app', function (ev) {
@@ -547,12 +608,8 @@
         }
       }
 
-      // apply badges
-      var detailsRender = $('.full-start-new__details').closest('.full-start-new');
-      if (!detailsRender.length) detailsRender = $('.full-start__details').closest('.full-start');
-
-      var root = detailsRender.length ? detailsRender : $(e.object.activity.render());
-
+      // choose a stable root
+      var root = $(e.object.activity.render());
       applyBadgesToFullCard(e.data.movie, root);
     } catch (err) {
       console.error('[SVGQ] error:', err);

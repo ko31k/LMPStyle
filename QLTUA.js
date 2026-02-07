@@ -13,6 +13,7 @@
   var pluginPath = 'https://raw.githubusercontent.com/ko31k/LMP/main/wwwroot/img/';
 
   // ✅ пробіли в назвах — %20
+  // ❌ DUB прибрали
   var svgIcons = {
     '4K': pluginPath + '4K.svg',
     '2K': pluginPath + '2K.svg',
@@ -24,21 +25,21 @@
     '5.1': pluginPath + '5.1.svg',
     '4.0': pluginPath + '4.0.svg',
     '2.0': pluginPath + '2.0.svg',
-    'DUB': pluginPath + 'DUB.svg',
     'UKR': pluginPath + 'UA.png'
   };
 
   // Settings key (bump if you want to reset users)
-  var SETTINGS_KEY = 'svgq_user_settings_v4';
+  var SETTINGS_KEY = 'svgq_user_settings_v5';
 
-  // SVGQ cache (щоб не парсити щоразу при повторному вході в картку)
+  // SVGQ cache
   var CACHE_KEY = 'svgq_parser_cache_v1';
-  var CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h (можеш змінити)
+  var CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
   // Default settings
   var st = {
     placement: 'rate',        // "rate" | "under_rate" | "after_details"
-    force_new_line: false     // ✅ переносити мітки на новий рядок (актуально лише для "rate")
+    force_new_line: false,    // ✅ переносити мітки на новий рядок (актуально лише для "rate")
+    badge_size: 2.0           // ✅ РОЗМІР міток в em (вводиш 1.4 => 1.4em)
   };
 
   // in-memory cache mirror
@@ -62,6 +63,16 @@
   // SETTINGS: load/save/apply
   // =====================================================================
 
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+  function applyCssVars() {
+    try {
+      if (document && document.documentElement) {
+        document.documentElement.style.setProperty('--svgq-badge-size', String(st.badge_size) + 'em');
+      }
+    } catch (e) {}
+  }
+
   function loadSettings() {
     var s = lsGet(SETTINGS_KEY, {}) || {};
 
@@ -70,10 +81,19 @@
       : 'rate';
 
     st.force_new_line = (typeof s.force_new_line === 'boolean') ? s.force_new_line : false;
+
+    // badge_size: число (em)
+    if (typeof s.badge_size !== 'undefined') {
+      var n = parseFloat(s.badge_size);
+      if (!isNaN(n) && isFinite(n)) st.badge_size = clamp(n, 0.6, 4.0);
+    }
+
+    applyCssVars();
   }
 
   function saveSettings() {
     lsSet(SETTINGS_KEY, st);
+    applyCssVars();
     toast('Збережено');
   }
 
@@ -110,7 +130,6 @@
   }
 
   function makeCacheKey(movie) {
-    // Ключ: tmdb_id + year + title (щоб мінімізувати колізії)
     var id = movie && movie.id ? String(movie.id) : '';
     var year = '';
     var rd = movie && (movie.release_date || movie.first_air_date);
@@ -143,29 +162,68 @@
   }
 
   // =====================================================================
-  // getBest() – підсилено
+  // UA-Finder-like UA track detection (ignore subtitles)
   // =====================================================================
 
-  function hasUkrAudioMarkers(tl) {
-    if (!tl) return false;
+  // Як у UA-Finder+Mod: обрізаємо по "sub", потім NxUkr, потім ukr
+  function countUkrainianTracks(title) {
+    if (!title) return 0;
+    var cleanTitle = String(title).toLowerCase();
 
-    var strong =
-      /(?:^|[\s\[\(\{\/\|,._-])(?:2x\s*)?ukr(?:$|[\s\]\)\}\/\|,._-])/i.test(tl) ||
-      /(?:^|[\s\[\(\{\/\|,._-])ua(?:$|[\s\]\)\}\/\|,._-])/i.test(tl) ||
-      /(?:^|[\s\[\(\{\/\|,._-])укр(?:$|[\s\]\)\}\/\|,._-])/i.test(tl) ||
-      /україн|украин|ukrain/i.test(tl);
+    // ❗ ігнор сабів: беремо тільки ДО "sub"
+    var subsIndex = cleanTitle.indexOf('sub');
+    if (subsIndex !== -1) cleanTitle = cleanTitle.substring(0, subsIndex);
 
-    var dubUkr =
-      /(?:dub|dubbing|дубл|дубляж)[^\n]{0,18}(?:ukr|ua|укр)/i.test(tl) ||
-      /(?:ukr|ua|укр)[^\n]{0,18}(?:dub|dubbing|дубл|дубляж)/i.test(tl);
+    // 3xUkr / 2xUkr ...
+    var multi = cleanTitle.match(/(\d+)x\s*ukr/);
+    if (multi && multi[1]) return parseInt(multi[1], 10) || 0;
 
-    return !!(strong || dubUkr);
+    // одиночні ukr
+    var singles = cleanTitle.match(/\bukr\b/g);
+    if (singles) return singles.length;
+
+    return 0;
   }
 
-  function hasDub(tl) {
-    if (!tl) return false;
-    return /(?:^|[\s\[\(\{\/\|,._-])dub(?:$|[\s\]\)\}\/\|,._-])|дубл|дубляж/i.test(tl);
+  // =====================================================================
+  // Helpers (light filters to avoid movie/tv mixing + year mismatch)
+  // =====================================================================
+
+  function getCardType(cardData) {
+    var type = cardData && (cardData.media_type || cardData.type);
+    if (type === 'movie' || type === 'tv') return type;
+    return (cardData && (cardData.name || cardData.original_name)) ? 'tv' : 'movie';
   }
+
+  function extractYearFromTitle(title) {
+    if (!title) return 0;
+    var regex = /(?:^|[^\d])(\d{4})(?:[^\d]|$)/g;
+    var match, lastYear = 0;
+    var currentYear = new Date().getFullYear();
+    while ((match = regex.exec(title)) !== null) {
+      var y = parseInt(match[1], 10);
+      if (y >= 1900 && y <= currentYear + 1) lastYear = y;
+    }
+    return lastYear;
+  }
+
+  function getMovieYear(movie) {
+    var rd = movie && (movie.release_date || movie.first_air_date);
+    if (rd && String(rd).length >= 4) {
+      var y = parseInt(String(rd).slice(0, 4), 10);
+      return isNaN(y) ? 0 : y;
+    }
+    return 0;
+  }
+
+  function isSeriesTorrentTitle(tl) {
+    // як у UA-Finder+Mod: ознаки сезону/серій
+    return /(сезон|season|s\d{1,2}|серии|серії|episodes|епізод|\d{1,2}\s*из\s*\d{1,2}|\d+×\d+)/i.test(tl);
+  }
+
+  // =====================================================================
+  // getBest() – only among torrents with UA tracks
+  // =====================================================================
 
   function detectAudioFromTitle(tl) {
     if (!tl) return null;
@@ -176,20 +234,53 @@
     return null;
   }
 
-  function getBest(results) {
-    var best = { resolution: null, hdr: false, dolbyVision: false, audio: null, dub: false, ukr: false };
+  // Повертає або null (UA не знайдено), або best-обʼєкт
+  function getBest(results, movie) {
+    var cardType = getCardType(movie);
+    var cardYear = getMovieYear(movie);
+
+    var best = {
+      resolution: null,
+      hdr: false,
+      dolbyVision: false,
+      audio: null,
+      ua: false,
+      ua_tracks: 0
+    };
+
     var resOrder = ['HD', 'FULL HD', '2K', '4K'];
     var audioOrder = ['2.0', '4.0', '5.1', '7.1'];
 
-    var limit = Math.min(results.length, 25);
+    var limit = Math.min(results.length, 40);
+
+    // ✅ працюємо ТІЛЬКИ з релізами, де є UA-доріжка
     for (var i = 0; i < limit; i++) {
       var item = results[i];
-      var title = (item.Title || item.title || '').toString();
+      var title = (item.Title || item.title || item.name || '').toString();
+      if (!title) continue;
+
       var tl = title.toLowerCase();
 
-      if (!best.ukr && hasUkrAudioMarkers(tl)) best.ukr = true;
-      if (!best.dub && hasDub(tl)) best.dub = true;
+      // --- ФІЛЬТР "movie/tv", щоб не тягнуло не те ---
+      var seriesLike = isSeriesTorrentTitle(tl);
+      if (cardType === 'tv' && !seriesLike) continue;
+      if (cardType === 'movie' && seriesLike) continue;
 
+      // --- ФІЛЬТР за роком (точний збіг, якщо рік реально знайдено) ---
+      if (cardYear > 1900) {
+        var y = extractYearFromTitle(title) || parseInt(item.relased || item.released || 0, 10) || 0;
+        if (y > 1900 && y !== cardYear) continue;
+      }
+
+      // --- UA TRACKS (UA-Finder style) ---
+      var uaCount = countUkrainianTracks(title);
+      if (!uaCount || uaCount <= 0) continue;
+
+      // якщо ми тут — UA знайдено
+      best.ua = true;
+      if (uaCount > best.ua_tracks) best.ua_tracks = uaCount;
+
+      // --- Resolution ---
       var foundRes = null;
       if (tl.indexOf('4k') >= 0 || tl.indexOf('2160') >= 0 || tl.indexOf('uhd') >= 0) foundRes = '4K';
       else if (tl.indexOf('2k') >= 0 || tl.indexOf('1440') >= 0) foundRes = '2K';
@@ -200,14 +291,17 @@
         best.resolution = foundRes;
       }
 
-      if (tl.indexOf('vision') >= 0 || tl.indexOf('dolby vision') >= 0 || tl.indexOf('dovi') >= 0) best.dolbyVision = true;
+      // --- HDR / DV (from title) ---
+      if (tl.indexOf('dolby vision') >= 0 || tl.indexOf('dovi') >= 0) best.dolbyVision = true;
       if (tl.indexOf('hdr') >= 0) best.hdr = true;
 
+      // --- Audio channels (prefer ffprobe) ---
       if (item.ffprobe && Array.isArray(item.ffprobe)) {
         for (var k = 0; k < item.ffprobe.length; k++) {
           var stream = item.ffprobe[k];
+          if (!stream) continue;
 
-          if (stream && stream.codec_type === 'video') {
+          if (stream.codec_type === 'video') {
             var h = parseInt(stream.height || 0, 10);
             var w = parseInt(stream.width || 0, 10);
             var res = null;
@@ -225,7 +319,7 @@
             } catch (e) {}
           }
 
-          if (stream && stream.codec_type === 'audio') {
+          if (stream.codec_type === 'audio') {
             var ch = parseInt(stream.channels || 0, 10);
             if (ch) {
               var aud = (ch >= 8) ? '7.1' : (ch >= 6) ? '5.1' : (ch >= 4) ? '4.0' : '2.0';
@@ -241,37 +335,44 @@
       }
     }
 
+    // DV => HDR
     if (best.dolbyVision) best.hdr = true;
-    return best;
+
+    // якщо UA не знайдено — нічого не показуємо
+    return best.ua ? best : null;
   }
 
   // =====================================================================
   // Rendering
   // =====================================================================
 
-function createBadgeImg(type, index) {
-  var iconPath = svgIcons[type];
-  if (!iconPath) return '';
-  var delay = (index * 0.08) + 's';
+  function createBadgeImg(type, index) {
+    var iconPath = svgIcons[type];
+    if (!iconPath) return '';
+    var delay = (index * 0.08) + 's';
 
-  var cls = 'quality-badge'; // <-- ОБОВ’ЯЗКОВО
+    var cls = 'quality-badge';
 
-  return (
-    '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
-      '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
-    '</div>'
-  );
-}
-
+    return (
+      '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
+        '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
+      '</div>'
+    );
+  }
 
   function buildBadgesHtml(best) {
+    if (!best || !best.ua) return '';
+
     var badges = [];
-    if (best.ukr) badges.push(createBadgeImg('UKR', badges.length));
+
+    // ✅ UA в кінці (замість DUB)
     if (best.resolution) badges.push(createBadgeImg(best.resolution, badges.length));
     if (best.hdr) badges.push(createBadgeImg('HDR', badges.length));
     if (best.dolbyVision) badges.push(createBadgeImg('Dolby Vision', badges.length));
     if (best.audio) badges.push(createBadgeImg(best.audio, badges.length));
-    if (best.dub) badges.push(createBadgeImg('DUB', badges.length));
+
+    badges.push(createBadgeImg('UKR', badges.length));
+
     return badges.join('');
   }
 
@@ -285,8 +386,6 @@ function createBadgeImg(type, index) {
     if (st.placement === 'rate') {
       if (!rateLine.length) return null;
 
-      // ⚙️ якщо треба перенос на новий рядок всередині rate-line
-      // (це залишаємо як опцію, але вона НЕ рівнозначна "під рядком рейтингів")
       var cls = 'quality-badges-container' + (st.force_new_line ? ' svgq-force-new-row' : '');
       var el = $('<div class="' + cls + '"></div>');
       rateLine.append(el);
@@ -294,16 +393,15 @@ function createBadgeImg(type, index) {
     }
 
     if (st.placement === 'under_rate') {
-      // ✅ Завжди окремим рядком ПІД rate-line (не залежить від заповнення рейтингу)
       if (!rateLine.length) return null;
 
+      // ✅ окремим рядком ПІД rate-line
       var elU = $('<div class="quality-badges-under-rate"></div>');
       rateLine.after(elU);
       return elU;
     }
 
     if (st.placement === 'after_details') {
-      // ✅ Як було: після додаткової інформації (details)
       if (!details.length) return null;
 
       var elA = $('<div class="quality-badges-after-details"></div>');
@@ -323,7 +421,7 @@ function createBadgeImg(type, index) {
     var container = ensureContainer(renderRoot);
     if (!container) return;
 
-    // 1) cache fast path
+    // cache fast path
     var cached = cacheGet(movie);
     if (cached && typeof cached === 'string') {
       container.html(cached);
@@ -337,42 +435,39 @@ function createBadgeImg(type, index) {
       function (response) {
         if (!response || !response.Results) return;
 
-        var best = getBest(response.Results);
+        var best = getBest(response.Results, movie);
         var html = buildBadgesHtml(best);
 
-        // cache even empty (but as empty string) — to avoid repeated calls
         cacheSet(movie, html || '');
-
         container.html(html);
       }
     );
   }
 
   // =====================================================================
-  // Styles (UPDATED FULL BLOCK)
+  // Styles
   // =====================================================================
 
   var style = '<style id="svgq_styles">\
     /* Завжди ховаємо текстову мітку Quality+Mod (LQE) у full card */\
     .full-start__status.lqe-quality{ display:none !important; }\
     \
-    /* ===================================================== */\
+    /* CSS var: розмір міток (міняється з меню) */\
+    :root{ --svgq-badge-size: 2.0em; }\
+    \
     /* 1) В рядку рейтингів (rate-line) */\
-    /* ===================================================== */\
     .quality-badges-container{\
       display:inline-flex;\
       flex-wrap:wrap;\
       align-items:center;\
-      column-gap:0.32em;   /* GAP X між бейджами */\
-      row-gap:0.24em;      /* GAP Y при переносі */\
-      margin:0.20em 0 0 0.48em; /* відступ у rate-line */\
+      column-gap:0.32em;\
+      row-gap:0.24em;\
+      margin:0.20em 0 0 0.48em;\
       min-height:1.2em;\
       pointer-events:none;\
       vertical-align:middle;\
       max-width:100%;\
     }\
-    \
-    /* Опція: переносити мітки на новий рядок всередині rate-line */\
     .quality-badges-container.svgq-force-new-row{\
       flex-basis:100%;\
       width:100%;\
@@ -381,41 +476,38 @@ function createBadgeImg(type, index) {
       margin-top:0.28em;\
     }\
     \
-    /* ===================================================== */\
-    /* 2) Під рядком рейтингів (НОВИЙ окремий рядок) */\
-    /* ===================================================== */\
+    /* 2) Під рядком рейтингів (FIX накладання) */\
     .quality-badges-under-rate{\
       display:flex;\
       flex-wrap:wrap;\
       align-items:center;\
       column-gap:0.32em;\
       row-gap:0.24em;\
-      margin:0.26em 0 0.52em 0; /* ↑ від рейтингів / ↓ до details */\
+      width:100%;\
+      margin:0.28em 0 0.95em 0; /* ↑ від рейтингів / ↓ збільшено щоб НЕ накладалось на details */\
       min-height:1.2em;\
       pointer-events:none;\
       max-width:100%;\
+      position:relative;\
+      z-index:1;\
     }\
     \
-    /* ===================================================== */\
     /* 3) Після додаткової інформації (details) */\
-    /* ===================================================== */\
     .quality-badges-after-details{\
       display:flex;\
       flex-wrap:wrap;\
       align-items:center;\
       column-gap:0.32em;\
       row-gap:0.24em;\
-      margin:0.18em 0 0.92em 0; /* нижній відступ після details */\
+      margin:0.18em 0 0.92em 0;\
       min-height:1.2em;\
       pointer-events:none;\
       max-width:100%;\
     }\
     \
-    /* ===================================================== */\
     /* 4) Badge shell — БЕЗ рамок, БЕЗ фону */\
-    /* ===================================================== */\
     .quality-badge{\
-      height:2.0em;        /* РОЗМІР міток (підкручуй тут) */\
+      height:var(--svgq-badge-size);\
       display:inline-flex;\
       align-items:center;\
       justify-content:center;\
@@ -430,8 +522,6 @@ function createBadgeImg(type, index) {
       animation:qb_in 0.38s ease forwards;\
     }\
     @keyframes qb_in{ to{ opacity:1; transform:translateY(0);} }\
-    \
-    /* SVG icons rendering */\
     .quality-badge img{\
       height:100%;\
       width:auto;\
@@ -439,13 +529,11 @@ function createBadgeImg(type, index) {
       filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
     }\
     \
-    \
-    /* Mobile */\
+    /* Mobile: лишаємо ті ж пропорції, розмір керується тим самим --svgq-badge-size */\
     @media (max-width:768px){\
       .quality-badges-container{\
         column-gap:0.26em;\
         row-gap:0.18em;\
-        min-height:1em;\
         margin-left:0.38em;\
         margin-top:0.18em;\
       }\
@@ -455,17 +543,12 @@ function createBadgeImg(type, index) {
       .quality-badges-under-rate{\
         column-gap:0.26em;\
         row-gap:0.18em;\
-        min-height:1em;\
-        margin:0.22em 0 0.46em 0;\
+        margin:0.24em 0 0.95em 0;\
       }\
       .quality-badges-after-details{\
         column-gap:0.26em;\
         row-gap:0.18em;\
-        min-height:1em;\
         margin:0.34em 0 0.78em 0;\
-      }\
-      .quality-badge{\
-        height:2.0em; /* розмір на мобі (підкручуй тут) */\
       }\
     }\
   </style>';
@@ -473,6 +556,7 @@ function createBadgeImg(type, index) {
   function injectStyleOnce() {
     if (document.getElementById('svgq_styles')) return;
     $('body').append(style);
+    applyCssVars(); // одразу застосувати size
   }
 
   // =====================================================================
@@ -531,6 +615,27 @@ function createBadgeImg(type, index) {
       onChange: function (v) { st.force_new_line = (String(v) === 'true'); saveSettings(); }
     });
 
+    // ✅ Розмір міток (em) — вводиш число: 1.4 => 1.4em
+    // Якщо у твоїй Lampa збірці "input" не підтримується, скажи — замінимо на select (пресети).
+    Lampa.SettingsApi.addParam({
+      component: 'svgq',
+      param: {
+        name: 'svgq_badge_size',
+        type: 'input',
+        default: String(st.badge_size)
+      },
+      field: { name: 'Розмір міток (em)', description: 'Напр.: 2.0 або 1.4 (це буде em)' },
+      onChange: function (v) {
+        var n = parseFloat(String(v).replace(',', '.'));
+        if (isNaN(n) || !isFinite(n)) {
+          toast('Некоректне число');
+          return;
+        }
+        st.badge_size = clamp(n, 0.6, 4.0);
+        saveSettings();
+      }
+    });
+
     // Очистити кеш (ми його реально використовуємо)
     Lampa.SettingsApi.addParam({
       component: 'svgq',
@@ -543,7 +648,6 @@ function createBadgeImg(type, index) {
   function startSettings() {
     loadSettings();
     if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
-      // важливо: реєстрацію робимо один раз
       setTimeout(registerSettingsUIOnce, 0);
     }
   }

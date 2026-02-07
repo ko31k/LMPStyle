@@ -19,13 +19,13 @@
     'FULL HD': pluginPath + 'FULL%20HD.svg',
     'HD': pluginPath + 'HD.svg',
     'HDR': pluginPath + 'HDR.svg',
-    'Dolby Vision': pluginPath + 'Dolby%20Vision.svg',
+    'Dolby Vision': pluginPath + 'Dolby.png',
     '7.1': pluginPath + '7.1.svg',
     '5.1': pluginPath + '5.1.svg',
     '4.0': pluginPath + '4.0.svg',
     '2.0': pluginPath + '2.0.svg',
     'DUB': pluginPath + 'DUB.svg',
-    'UKR': pluginPath + 'UKR.svg'
+    'UKR': pluginPath + 'UADUB.png'
   };
 
   // Settings key (bump if you want to reset users)

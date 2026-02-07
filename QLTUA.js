@@ -415,7 +415,7 @@ function createBadgeImg(type, index) {
     /* 4) Badge shell — БЕЗ рамок, БЕЗ фону */\
     /* ===================================================== */\
     .quality-badge{\
-      height:1.8em;        /* РОЗМІР міток (підкручуй тут) */\
+      height:2.0em;        /* РОЗМІР міток (підкручуй тут) */\
       display:inline-flex;\
       align-items:center;\
       justify-content:center;\
@@ -465,7 +465,7 @@ function createBadgeImg(type, index) {
         margin:0.34em 0 0.78em 0;\
       }\
       .quality-badge{\
-        height:1.8em; /* розмір на мобі (підкручуй тут) */\
+        height:2.0em; /* розмір на мобі (підкручуй тут) */\
       }\
     }\
   </style>';

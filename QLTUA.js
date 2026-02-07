@@ -417,61 +417,115 @@
   // ---------------------------
   // STYLES
   // ---------------------------
-  var style = '<style id="svgq_styles">\
-    body.svgq-hide-lqe .full-start__status.lqe-quality{ display:none !important; }\
+var style = '<style id="svgq_styles">\
+  /* Hide old LQE text label when SVG quality is enabled */\
+  body.svgq-hide-lqe .full-start__status.lqe-quality{ display:none !important; }\
+  \
+  /* ===================================================== */\
+  /* Rate-line placement (inline, wraps, no overlaps) */\
+  /* ===================================================== */\
+  .quality-badges-container{\
+    display:inline-flex;\
+    flex-wrap:wrap;\
+    align-items:center;\
+    column-gap:0.32em;\
+    row-gap:0.24em;\
+    margin:0.20em 0 0 0.48em;\
+    min-height:1.2em;\
+    pointer-events:none;\
+    vertical-align:middle;\
+    max-width:100%;\
+  }\
+  \
+  /* ===================================================== */\
+  /* After-details placement (separate row + bottom space) */\
+  /* ===================================================== */\
+  .quality-badges-after-details{\
+    display:flex;\
+    flex-wrap:wrap;\
+    align-items:center;\
+    column-gap:0.32em;\
+    row-gap:0.24em;\
+    margin:0.38em 0 0.52em 0;\
+    min-height:1.2em;\
+    pointer-events:none;\
+    max-width:100%;\
+  }\
+  \
+  /* ===================================================== */\
+  /* Universal badge shell – looks like SVG-built frame */\
+  /* ===================================================== */\
+  .quality-badge{\
+    height:1.2em;\
+    display:inline-flex;\
+    align-items:center;\
+    justify-content:center;\
+    padding:0.11em 0.16em;\
+    box-sizing:border-box;\
+    border-radius:0.28em;\
     \
-    /* Rate-line placement: allow wrapping without overlaps */\
+    /* frame illusion (NOT a raw border) */\
+    background:\
+      linear-gradient(rgba(255,255,255,0.45), rgba(255,255,255,0.45)) top / 100% 1px no-repeat,\
+      linear-gradient(rgba(255,255,255,0.25), rgba(255,255,255,0.25)) bottom / 100% 1px no-repeat,\
+      linear-gradient(rgba(255,255,255,0.35), rgba(255,255,255,0.35)) left / 1px 100% no-repeat,\
+      linear-gradient(rgba(255,255,255,0.35), rgba(255,255,255,0.35)) right / 1px 100% no-repeat,\
+      rgba(0,0,0,0.12);\
+    \
+    opacity:0;\
+    transform:translateY(8px);\
+    animation:qb_in 0.38s ease forwards;\
+  }\
+  \
+  @keyframes qb_in{\
+    to{ opacity:1; transform:translateY(0);}\
+  }\
+  \
+  /* ===================================================== */\
+  /* Icon rendering */\
+  /* ===================================================== */\
+  .quality-badge img{\
+    height:100%;\
+    width:auto;\
+    display:block;\
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
+  }\
+  \
+  /* Dolby Vision – optical size fix */\
+  .quality-badge img[src*=\"Dolby\"],\
+  .quality-badge img[src*=\"dolby\"]{\
+    transform:scale(0.88);\
+    transform-origin:center center;\
+  }\
+  \
+  /* ===================================================== */\
+  /* Mobile adjustments */\
+  /* ===================================================== */\
+  @media (max-width:768px){\
     .quality-badges-container{\
-      display:inline-flex;\
-      flex-wrap:wrap;\
-      align-items:center;\
-      column-gap:0.30em;\
-      row-gap:0.22em;\
-      margin:0.18em 0 0 0.45em;\
-      min-height:1.2em;\
-      pointer-events:none;\
-      vertical-align:middle;\
-      max-width:100%;\
+      column-gap:0.26em;\
+      row-gap:0.18em;\
+      min-height:1em;\
+      margin-left:0.38em;\
+      margin-top:0.18em;\
     }\
-    \
-    /* After-details placement + bottom spacing */\
     .quality-badges-after-details{\
-      display:flex;\
-      flex-wrap:wrap;\
-      align-items:center;\
-      column-gap:0.30em;\
-      row-gap:0.22em;\
-      margin:0.35em 0 0.45em 0;\
-      min-height:1.2em;\
-      pointer-events:none;\
-      max-width:100%;\
+      column-gap:0.26em;\
+      row-gap:0.18em;\
+      min-height:1em;\
+      margin-bottom:0.44em;\
     }\
-    \
-    /* Badge with universal frame (for ALL icons) */\
     .quality-badge{\
-      height:1.2em;\
-      opacity:0;\
-      transform:translateY(8px);\
-      animation:qb_in 0.4s ease forwards;\
-      display:inline-flex;\
-      align-items:center;\
-      justify-content:center;\
-      padding:0.10em 0.14em;\
-      border:1px solid rgba(255,255,255,0.35);\
-      border-radius:0.26em;\
-      background:rgba(0,0,0,0.10);\
-      box-sizing:border-box;\
+      height:1em;\
+      padding:0.09em 0.13em;\
     }\
-    @keyframes qb_in{ to{ opacity:1; transform:translateY(0);} }\
-    .quality-badge img{ height:100%; width:auto; display:block; }\
-    .quality-badge img{ filter: drop-shadow(0 1px 2px #000); }\
-    \
-    @media (max-width:768px){\
-      .quality-badges-container{ column-gap:0.26em; row-gap:0.18em; min-height:1em; margin-left:0.35em; margin-top:0.16em; }\
-      .quality-badges-after-details{ column-gap:0.26em; row-gap:0.18em; min-height:1em; margin-bottom:0.40em; }\
-      .quality-badge{ height:1em; padding:0.09em 0.13em; }\
+    .quality-badge img[src*=\"Dolby\"],\
+    .quality-badge img[src*=\"dolby\"]{\
+      transform:scale(0.86);\
     }\
-  </style>';
+  }\
+</style>';
+
 
   $('body').append(style);
 

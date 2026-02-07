@@ -28,7 +28,8 @@
     'UKR': pluginPath + 'UKR.svg'
   };
 
-  var SETTINGS_KEY = 'svgq_user_settings_v3';
+  // Settings key (bump if you want to reset users)
+  var SETTINGS_KEY = 'svgq_user_settings_v4';
 
   // SVGQ cache (щоб не парсити щоразу при повторному вході в картку)
   var CACHE_KEY = 'svgq_parser_cache_v1';
@@ -36,9 +37,8 @@
 
   // Default settings
   var st = {
-    placement: 'rate',        // "rate" | "after_details" | "off"
-    hide_lqe: true,           // hide LQE full-card text label
-    force_new_line: false     // ✅ завжди переносити SVG на новий рядок у rate-line
+    placement: 'rate',        // "rate" | "under_rate" | "after_details"
+    force_new_line: false     // ✅ переносити мітки на новий рядок (актуально лише для "rate")
   };
 
   // in-memory cache mirror
@@ -65,24 +65,16 @@
   function loadSettings() {
     var s = lsGet(SETTINGS_KEY, {}) || {};
 
-    st.placement = (s.placement === 'after_details' || s.placement === 'off' || s.placement === 'rate')
+    st.placement = (s.placement === 'rate' || s.placement === 'under_rate' || s.placement === 'after_details')
       ? s.placement
       : 'rate';
 
-    st.hide_lqe = (typeof s.hide_lqe === 'boolean') ? s.hide_lqe : true;
     st.force_new_line = (typeof s.force_new_line === 'boolean') ? s.force_new_line : false;
   }
 
   function saveSettings() {
     lsSet(SETTINGS_KEY, st);
-    applySettings();
     toast('Збережено');
-  }
-
-  function applySettings() {
-    if (document && document.body) {
-      document.body.classList.toggle('svgq-hide-lqe', !!st.hide_lqe);
-    }
   }
 
   function toast(msg) {
@@ -131,7 +123,7 @@
     var key = makeCacheKey(movie);
     var c = getCacheObj();
     var it = c[key];
-    if (!it || !it.t || !it.v) return null;
+    if (!it || !it.t || typeof it.v === 'undefined') return null;
     if (Date.now() - it.t > CACHE_TTL_MS) return null;
     return it.v;
   }
@@ -147,7 +139,7 @@
   function cacheClear() {
     memCache = {};
     lsSet(CACHE_KEY, {});
-    toast('Кеш SVGQ очищено');
+    toast('Кеш очищено');
   }
 
   // =====================================================================
@@ -257,31 +249,20 @@
   // Rendering
   // =====================================================================
 
-function createBadgeImg(type, index) {
-  var iconPath = svgIcons[type];
-  if (!iconPath) return '';
-  var delay = (index * 0.08) + 's';
+  function createBadgeImg(type, index) {
+    var iconPath = svgIcons[type];
+    if (!iconPath) return '';
+    var delay = (index * 0.08) + 's';
 
-  // базовий клас
-  var cls = 'quality-badge';
+    // Dolby Vision – оптична корекція розміру (бо SVG трохи завеликий)
+    var cls = 'quality-badge' + (type === 'Dolby Vision' ? ' svgq-dolby' : '');
 
-  // 👉 ТІЛЬКИ ці іконки НЕ мають рамки в SVG
-  if (type === 'UKR' || type === 'Dolby Vision') {
-    cls += ' svgq-need-frame';
+    return (
+      '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
+        '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
+      '</div>'
+    );
   }
-
-  // 👉 Додатковий клас ТІЛЬКИ для Dolby (корекція розміру)
-  if (type === 'Dolby Vision') {
-    cls += ' svgq-dolby';
-  }
-
-  return (
-    '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
-      '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
-    '</div>'
-  );
-}
-
 
   function buildBadgesHtml(best) {
     var badges = [];
@@ -296,27 +277,38 @@ function createBadgeImg(type, index) {
 
   function ensureContainer(renderRoot) {
     // ✅ чистимо старі (жодних дублікатів)
-    $('.quality-badges-container, .quality-badges-after-details', renderRoot).remove();
+    $('.quality-badges-container, .quality-badges-under-rate, .quality-badges-after-details', renderRoot).remove();
 
-    if (st.placement === 'off') return null;
+    var rateLine = $('.full-start-new__rate-line, .full-start__rate-line', renderRoot).first();
+    var details = $('.full-start-new__details, .full-start__details', renderRoot).first();
 
     if (st.placement === 'rate') {
-      var rateLine = $('.full-start-new__rate-line, .full-start__rate-line', renderRoot).first();
       if (!rateLine.length) return null;
 
-      var cls = 'quality-badges-container' + (st.force_new_line ? ' svgq-breakline' : '');
+      // ⚙️ якщо треба перенос на новий рядок всередині rate-line
+      // (це залишаємо як опцію, але вона НЕ рівнозначна "під рядком рейтингів")
+      var cls = 'quality-badges-container' + (st.force_new_line ? ' svgq-force-new-row' : '');
       var el = $('<div class="' + cls + '"></div>');
       rateLine.append(el);
       return el;
     }
 
+    if (st.placement === 'under_rate') {
+      // ✅ Завжди окремим рядком ПІД rate-line (не залежить від заповнення рейтингу)
+      if (!rateLine.length) return null;
+
+      var elU = $('<div class="quality-badges-under-rate"></div>');
+      rateLine.after(elU);
+      return elU;
+    }
+
     if (st.placement === 'after_details') {
-      var details = $('.full-start-new__details, .full-start__details', renderRoot).first();
+      // ✅ Як було: після додаткової інформації (details)
       if (!details.length) return null;
 
-      var el2 = $('<div class="quality-badges-after-details"></div>');
-      details.after(el2);
-      return el2;
+      var elA = $('<div class="quality-badges-after-details"></div>');
+      details.after(elA);
+      return elA;
     }
 
     return null;
@@ -360,119 +352,131 @@ function createBadgeImg(type, index) {
   // Styles (UPDATED FULL BLOCK)
   // =====================================================================
 
-var style = '<style id="svgq_styles">\
-  /* Hide old LQE text label when SVG quality is enabled */\
-  body.svgq-hide-lqe .full-start__status.lqe-quality{ display:none !important; }\
-  \
-  /* ===================================================== */\
-  /* 1) Rate-line placement (inline, wraps, no overlaps) */\
-  /* ===================================================== */\
-  .quality-badges-container{\
-    display:inline-flex;\
-    flex-wrap:wrap;\
-    align-items:center;\
-    column-gap:0.32em;   /* GAP X між бейджами */\
-    row-gap:0.24em;      /* GAP Y при переносі */\
-    margin:0.20em 0 0 0.48em; /* відступ у rate-line */\
-    min-height:1.2em;\
-    pointer-events:none;\
-    vertical-align:middle;\
-    max-width:100%;\
-  }\
-  \
-  /* Опція: гарантовано з нового рядка в rate-line */\
-  .quality-badges-container.svgq-force-new-row{\
-    flex-basis:100%;\
-    width:100%;\
-    display:flex;\
-    margin-left:0;\
-    margin-top:0.28em;\
-  }\
-  \
-  /* ===================================================== */\
-  /* 2) After-details placement (separate row + bottom space) */\
-  /* ===================================================== */\
-  .quality-badges-after-details{\
-    display:flex;\
-    flex-wrap:wrap;\
-    align-items:center;\
-    column-gap:0.32em;\
-    row-gap:0.24em;\
-    margin:0.18em 0 0.92em 0; /* нижній відступ після details */\
-    min-height:1.2em;\
-    pointer-events:none;\
-    max-width:100%;\
-  }\
-  \
-  /* ===================================================== */\
-  /* 3) Badge shell — БЕЗ рамок, БЕЗ фону */\
-  /* ===================================================== */\
-  .quality-badge{\
-    height:1.4em;        /* РОЗМІР як у текстової мітки */\
-    display:inline-flex;\
-    align-items:center;\
-    justify-content:center;\
-    padding:0;           /* критично: без паддінгів */\
-    background:none;\
-    box-shadow:none;\
-    border:none;\
-    border-radius:0;\
-    box-sizing:border-box;\
-    opacity:0;\
-    transform:translateY(8px);\
-    animation:qb_in 0.38s ease forwards;\
-  }\
-  \
-  @keyframes qb_in{\
-    to{ opacity:1; transform:translateY(0);}\
-  }\
-  \
-  /* ===================================================== */\
-  /* 4) SVG icons rendering */\
-  /* ===================================================== */\
-  .quality-badge img{\
-    height:100%;\
-    width:auto;\
-    display:block;\
-    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
-  }\
-  \
-  /* Dolby Vision — лише оптичне вирівнювання (БЕЗ рамок) */\
-  .quality-badge.svgq-dolby img{\
-    transform:scale(0.88);\
-    transform-origin:center center;\
-  }\
-  \
-  /* ===================================================== */\
-  /* 5) Mobile adjustments */\
-  /* ===================================================== */\
-  @media (max-width:768px){\
+  var style = '<style id="svgq_styles">\
+    /* Завжди ховаємо текстову мітку Quality+Mod (LQE) у full card */\
+    .full-start__status.lqe-quality{ display:none !important; }\
+    \
+    /* ===================================================== */\
+    /* 1) В рядку рейтингів (rate-line) */\
+    /* ===================================================== */\
     .quality-badges-container{\
-      column-gap:0.26em;\
-      row-gap:0.18em;\
-      min-height:1em;\
-      margin-left:0.38em;\
-      margin-top:0.18em;\
+      display:inline-flex;\
+      flex-wrap:wrap;\
+      align-items:center;\
+      column-gap:0.32em;   /* GAP X між бейджами */\
+      row-gap:0.24em;      /* GAP Y при переносі */\
+      margin:0.20em 0 0 0.48em; /* відступ у rate-line */\
+      min-height:1.2em;\
+      pointer-events:none;\
+      vertical-align:middle;\
+      max-width:100%;\
     }\
+    \
+    /* Опція: переносити мітки на новий рядок всередині rate-line */\
     .quality-badges-container.svgq-force-new-row{\
-      margin-top:0.24em;\
+      flex-basis:100%;\
+      width:100%;\
+      display:flex;\
+      margin-left:0;\
+      margin-top:0.28em;\
     }\
+    \
+    /* ===================================================== */\
+    /* 2) Під рядком рейтингів (НОВИЙ окремий рядок) */\
+    /* ===================================================== */\
+    .quality-badges-under-rate{\
+      display:flex;\
+      flex-wrap:wrap;\
+      align-items:center;\
+      column-gap:0.32em;\
+      row-gap:0.24em;\
+      margin:0.26em 0 0.52em 0; /* ↑ від рейтингів / ↓ до details */\
+      min-height:1.2em;\
+      pointer-events:none;\
+      max-width:100%;\
+    }\
+    \
+    /* ===================================================== */\
+    /* 3) Після додаткової інформації (details) */\
+    /* ===================================================== */\
     .quality-badges-after-details{\
-      column-gap:0.26em;\
-      row-gap:0.18em;\
-      min-height:1em;\
-      margin:0.34em 0 0.78em 0;\
+      display:flex;\
+      flex-wrap:wrap;\
+      align-items:center;\
+      column-gap:0.32em;\
+      row-gap:0.24em;\
+      margin:0.18em 0 0.92em 0; /* нижній відступ після details */\
+      min-height:1.2em;\
+      pointer-events:none;\
+      max-width:100%;\
     }\
+    \
+    /* ===================================================== */\
+    /* 4) Badge shell — БЕЗ рамок, БЕЗ фону */\
+    /* ===================================================== */\
     .quality-badge{\
-      height:1.2em;\
+      height:1.4em;        /* РОЗМІР міток (підкручуй тут) */\
+      display:inline-flex;\
+      align-items:center;\
+      justify-content:center;\
+      padding:0;\
+      background:none;\
+      box-shadow:none;\
+      border:none;\
+      border-radius:0;\
+      box-sizing:border-box;\
+      opacity:0;\
+      transform:translateY(8px);\
+      animation:qb_in 0.38s ease forwards;\
     }\
+    @keyframes qb_in{ to{ opacity:1; transform:translateY(0);} }\
+    \
+    /* SVG icons rendering */\
+    .quality-badge img{\
+      height:100%;\
+      width:auto;\
+      display:block;\
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
+    }\
+    \
+    /* Dolby Vision – оптичне зменшення */\
     .quality-badge.svgq-dolby img{\
-      transform:scale(0.86);\
+      transform:scale(0.88);\
+      transform-origin:center center;\
     }\
-  }\
-</style>';
-
-
+    \
+    /* Mobile */\
+    @media (max-width:768px){\
+      .quality-badges-container{\
+        column-gap:0.26em;\
+        row-gap:0.18em;\
+        min-height:1em;\
+        margin-left:0.38em;\
+        margin-top:0.18em;\
+      }\
+      .quality-badges-container.svgq-force-new-row{\
+        margin-top:0.24em;\
+      }\
+      .quality-badges-under-rate{\
+        column-gap:0.26em;\
+        row-gap:0.18em;\
+        min-height:1em;\
+        margin:0.22em 0 0.46em 0;\
+      }\
+      .quality-badges-after-details{\
+        column-gap:0.26em;\
+        row-gap:0.18em;\
+        min-height:1em;\
+        margin:0.34em 0 0.78em 0;\
+      }\
+      .quality-badge{\
+        height:1.2em; /* розмір на мобі (підкручуй тут) */\
+      }\
+      .quality-badge.svgq-dolby img{\
+        transform:scale(0.86);\
+      }\
+    }\
+  </style>';
 
   function injectStyleOnce() {
     if (document.getElementById('svgq_styles')) return;
@@ -480,7 +484,7 @@ var style = '<style id="svgq_styles">\
   }
 
   // =====================================================================
-  // Settings UI (no duplicates, always populated) + Clear cache
+  // Settings UI (no duplicates) + Clear cache
   // =====================================================================
 
   function registerSettingsUIOnce() {
@@ -489,12 +493,13 @@ var style = '<style id="svgq_styles">\
 
     Lampa.Template.add('settings_svgq', '<div></div>');
 
+    // Головний пункт в Interface
     Lampa.SettingsApi.addParam({
       component: 'interface',
       param: { type: 'button', component: 'svgq' },
       field: {
-        name: 'SVG якість',
-        description: 'SVG бейджі якості у повній картці (працює з парсером)'
+        name: 'Мітки якості в повній картці',
+        description: 'SVG бейджі якості у full card (працює з парсером)'
       },
       onChange: function () {
         Lampa.Settings.create('svgq', {
@@ -504,35 +509,24 @@ var style = '<style id="svgq_styles">\
       }
     });
 
+    // Розміщення міток
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: {
         name: 'svgq_placement',
         type: 'select',
         values: {
-          rate: 'Показувати в рядку рейтингів (rate-line)',
-          after_details: 'Показувати після details (як було)',
-          off: 'Вимкнено'
+          rate: 'Показувати в рядку рейтингів',
+          under_rate: 'Показувати під рядком рейтингів',
+          after_details: 'Показувати після додаткової інформації'
         },
         default: st.placement
       },
-      field: { name: 'Якість в картці' },
+      field: { name: 'Розміщення міток' },
       onChange: function (v) { st.placement = String(v); saveSettings(); }
     });
 
-    Lampa.SettingsApi.addParam({
-      component: 'svgq',
-      param: {
-        name: 'svgq_hide_lqe',
-        type: 'select',
-        values: { 'true': 'Так', 'false': 'Ні' },
-        default: String(!!st.hide_lqe)
-      },
-      field: { name: 'Приховувати текстову мітку Quality+Mod (LQE) у full card' },
-      onChange: function (v) { st.hide_lqe = (String(v) === 'true'); saveSettings(); }
-    });
-
-    // ✅ тепер це НЕ “коли забитий”, а просто “завжди переносити / не переносити”
+    // Переносити мітки на новий рядок (актуально для "в рядку рейтингів")
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: {
@@ -541,11 +535,11 @@ var style = '<style id="svgq_styles">\
         values: { 'false': 'Ні', 'true': 'Так' },
         default: String(!!st.force_new_line)
       },
-      field: { name: 'Переносити SVG бейджі на новий рядок у rate-line' },
+      field: { name: 'Переносити мітки на новий рядок в рядку рейтингів' },
       onChange: function (v) { st.force_new_line = (String(v) === 'true'); saveSettings(); }
     });
 
-    // ✅ Повернув кнопку очищення кешу (наш SVGQ cache)
+    // Очистити кеш (ми його реально використовуємо)
     Lampa.SettingsApi.addParam({
       component: 'svgq',
       param: { type: 'button', component: 'svgq_clear_cache' },
@@ -556,9 +550,8 @@ var style = '<style id="svgq_styles">\
 
   function startSettings() {
     loadSettings();
-    applySettings();
-
     if (Lampa && Lampa.SettingsApi && typeof Lampa.SettingsApi.addParam === 'function') {
+      // важливо: реєстрацію робимо один раз
       setTimeout(registerSettingsUIOnce, 0);
     }
   }
@@ -584,7 +577,7 @@ var style = '<style id="svgq_styles">\
         }
       }
 
-      // choose a stable root
+      // stable root
       var root = $(e.object.activity.render());
       applyBadgesToFullCard(e.data.movie, root);
     } catch (err) {

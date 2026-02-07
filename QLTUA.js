@@ -249,17 +249,20 @@
   // Rendering
   // =====================================================================
 
-  function createBadgeImg(type, index) {
-    var iconPath = svgIcons[type];
-    if (!iconPath) return '';
-    var delay = (index * 0.08) + 's';
+function createBadgeImg(type, index) {
+  var iconPath = svgIcons[type];
+  if (!iconPath) return '';
+  var delay = (index * 0.08) + 's';
 
-    return (
-      '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
-        '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
-      '</div>'
-    );
-  }
+  var cls = 'quality-badge'; // <-- ОБОВ’ЯЗКОВО
+
+  return (
+    '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
+      '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
+    '</div>'
+  );
+}
+
 
   function buildBadgesHtml(best) {
     var badges = [];
@@ -412,7 +415,7 @@
     /* 4) Badge shell — БЕЗ рамок, БЕЗ фону */\
     /* ===================================================== */\
     .quality-badge{\
-      height:1.4em;        /* РОЗМІР міток (підкручуй тут) */\
+      height:1.6em;        /* РОЗМІР міток (підкручуй тут) */\
       display:inline-flex;\
       align-items:center;\
       justify-content:center;\
@@ -462,7 +465,7 @@
         margin:0.34em 0 0.78em 0;\
       }\
       .quality-badge{\
-        height:1.2em; /* розмір на мобі (підкручуй тут) */\
+        height:1.6em; /* розмір на мобі (підкручуй тут) */\
       }\
     }\
   </style>';

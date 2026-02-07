@@ -254,9 +254,6 @@
     if (!iconPath) return '';
     var delay = (index * 0.08) + 's';
 
-    // Dolby Vision – оптична корекція розміру (бо SVG трохи завеликий)
-    var cls = 'quality-badge' + (type === 'Dolby Vision' ? ' svgq-dolby' : '');
-
     return (
       '<div class="' + cls + '" style="animation-delay:' + delay + '">' +
         '<img src="' + iconPath + '" draggable="false" oncontextmenu="return false;">' +
@@ -439,11 +436,6 @@
       filter:drop-shadow(0 1px 2px rgba(0,0,0,0.85));\
     }\
     \
-    /* Dolby Vision – оптичне зменшення */\
-    .quality-badge.svgq-dolby img{\
-      transform:scale(0.88);\
-      transform-origin:center center;\
-    }\
     \
     /* Mobile */\
     @media (max-width:768px){\
@@ -471,9 +463,6 @@
       }\
       .quality-badge{\
         height:1.2em; /* розмір на мобі (підкручуй тут) */\
-      }\
-      .quality-badge.svgq-dolby img{\
-        transform:scale(0.86);\
       }\
     }\
   </style>';

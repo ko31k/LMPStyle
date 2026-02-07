@@ -5,7 +5,7 @@
   'use strict';
 
   var cardBadgesCache = {};
-  var pluginPath = 'https://ko31k.github.io/wwwroot/';
+  var pluginPath = 'https://raw.githubusercontent.com/ko3ik/LMP/main/wwwroot/';
 
   var svgIcons = {
     '4K': pluginPath + '4K.svg',

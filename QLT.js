@@ -460,6 +460,9 @@
       margin-left:0;\
       margin-top:0.28em;\
     }\
+    .full-start-new__rate-line{\
+      margin-bottom:0.15em !important;\
+    }\
     \
     /* 2) Під рядком рейтингів (FIX накладання з details у деяких темах) */\
     .quality-badges-under-rate{\
@@ -469,7 +472,7 @@
       column-gap:0.32em;\
       row-gap:0.24em;\
       width:100%;\
-      margin:0.28em 0 0.95em 0;\
+      margin:0.10em 0 0.35em 0; /* TOP | LEFT/RIGHT | BOTTOM */\
       min-height:1.2em;\
       pointer-events:none;\
       max-width:100%;\

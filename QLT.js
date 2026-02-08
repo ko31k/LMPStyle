@@ -472,7 +472,7 @@
       column-gap:0.32em;\
       row-gap:0.24em;\
       width:100%;\
-      margin:0.15em 0 0.35em 0; /* ✅ TOP | LEFT/RIGHT | BOTTOM */\
+      margin:0.20em 0 0.55em 0; /* ✅ TOP | LEFT/RIGHT | BOTTOM */\
       min-height:1.2em;\
       pointer-events:none;\
       max-width:100%;\

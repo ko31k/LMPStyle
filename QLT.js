@@ -539,7 +539,7 @@
       }\
       .quality-badges-after-details{\
         column-gap:0.26em;\
-        row-gap:0.18em;\
+        row-gap:0.24em;\
         margin:0.34em 0 0.78em 0;\
       }\
     }\

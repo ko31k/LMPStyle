@@ -438,7 +438,7 @@
     .full-start__status.lqe-quality{ display:none !important; }\
     \
     /* CSS var: розмір міток (міняється з меню) */\
-    :root{ --svgq-badge-size: 2.0em; }\
+    :root{ --svgq-badge-size: 2.2em; }\
     \
     /* 1) В рядку рейтингів (rate-line) */\
     .quality-badges-container{\
@@ -539,7 +539,7 @@
       }\
       .quality-badges-after-details{\
         column-gap:0.26em;\
-        row-gap:0.24em;\
+        row-gap:0.18em;\
         margin:0.34em 0 0.78em 0;\
       }\
     }\
